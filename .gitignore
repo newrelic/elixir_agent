@@ -1,0 +1,8 @@
+/_build
+/deps
+/doc
+erl_crash.dump
+*.ez
+tmp
+config/secret.exs
+.DS_Store
