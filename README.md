@@ -1,12 +1,16 @@
 ## New Relic's Open Source Elixir Agent
 
-### Support Statement:
+[![Version](https://img.shields.io/github/tag/newrelic/elixir_agent.svg)](https://github.com/newrelic/elixir_agent/releases)
+[![Build Status](https://travis-ci.org/newrelic/elixir_agent.svg?branch=master)](https://travis-ci.org/newrelic/elixir_agent)
+[![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://github.com/newrelic/elixir_agent/blob/master/LICENSE)
 
-New Relic has open-sourced this integration to enable monitoring of this technology. This integration is provided AS-IS WITHOUT WARRANTY OR SUPPORT, although you can report issues and contribute to this integration via GitHub.
+The Open-Source Elixir Agent allows you to monitor your `Elixir` applications with New Relic. It helps you track transactions, distributed traces and other parts of your application's behavior and provides an overview of underlying BEAM activity.
 
-----
+## Support Statement:
 
-### Installation
+New Relic has open-sourced this project to enable monitoring of Elixir. This project is provided AS-IS WITHOUT WARRANTY OR SUPPORT, although you can report issues and contribute to the project here on GitHub.
+
+## Installation
 
 Requirements:
 * Elixir `1.7`
@@ -19,13 +23,11 @@ defp deps do
 end
 ```
 
-----
-
-### Configuration
+## Configuration
 
 You need to set a few required configuration keys so we can authenticate properly.
 
-##### Via Application config
+#### Via Application config
 
 ```elixir
 config :new_relic,
@@ -33,7 +35,7 @@ config :new_relic,
   license_key: "license_key"
 ```
 
-##### Via Environment variables
+#### Via Environment variables
 
 You can also configure these attributes via `ENV` vars, which helps keep secrets out of source code.
 
@@ -41,7 +43,7 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 * `NEW_RELIC_LICENSE_KEY`
 
 
-#### Logging
+## Logging
 
 The agent will log important events. By default they will go to `tmp/new_relic.log`. You can also configure it to go to `STDOUT` or any other writable file location:
 
@@ -50,9 +52,7 @@ config :new_relic,
   log: "stdout"
 ```
 
-----
-
-### Feature Support
+## Feature Support
 
 This agent is an open-source project, not a New Relic product. It has been running in production for more than two years, but we have only implemented a subset of the full New Relic product suite.
 
