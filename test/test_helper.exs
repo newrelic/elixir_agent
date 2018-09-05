@@ -11,12 +11,12 @@ defmodule TestHelper do
   end
 
   def trigger_report(module) do
-    Process.sleep(200)
+    Process.sleep(300)
     GenServer.call(module, :report)
   end
 
   def gather_harvest(harvester) do
-    Process.sleep(200)
+    Process.sleep(300)
     harvester.gather_harvest
   end
 

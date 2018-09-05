@@ -3,6 +3,8 @@ defmodule BackoffSamplerTest do
   alias NewRelic.DistributedTrace.BackoffSampler
 
   test "Backoff behavior as best as we can" do
+    # This is testing an inherently random algorithm
+
     send(BackoffSampler, :reset)
 
     assert BackoffSampler.sample?()
@@ -30,6 +32,10 @@ defmodule BackoffSamplerTest do
     send(BackoffSampler, :cycle)
 
     decisions = [
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
       BackoffSampler.sample?(),
       BackoffSampler.sample?(),
       BackoffSampler.sample?(),
