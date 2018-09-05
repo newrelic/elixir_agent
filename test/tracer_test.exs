@@ -10,6 +10,10 @@ defmodule TracerTest do
     def fun do
     end
 
+    @trace :funny
+    def funny do
+    end
+
     @trace :bar
     def foo do
     end
@@ -195,7 +199,7 @@ defmodule TracerTest do
   test "Don't track trace segments that are NOT part of a process in a Transaction" do
     Application.put_env(:new_relic_agent, :tx_attr_expire, 50)
 
-    Traced.fun()
+    Traced.funny()
 
     attrs = NewRelic.Util.AttrStore.find_attributes(NewRelic.Transaction.Reporter, [self()])
     assert Enum.empty?(attrs)
