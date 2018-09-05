@@ -8,7 +8,7 @@ The Open-Source Elixir Agent allows you to monitor your `Elixir` applications wi
 
 ## Support Statement:
 
-New Relic has open-sourced this project to enable monitoring of Elixir. This project is provided AS-IS WITHOUT WARRANTY OR SUPPORT, although you can report issues and contribute to the project here on GitHub.
+New Relic has open-sourced this project to enable monitoring of `Elixir` applications. This project is provided AS-IS WITHOUT WARRANTY OR SUPPORT, although you can report issues and contribute to the project here on GitHub.
 
 ## Installation
 
