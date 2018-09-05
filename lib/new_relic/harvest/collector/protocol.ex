@@ -56,12 +56,12 @@ defmodule NewRelic.Harvest.Collector.Protocol do
 
     %URI{
       host:
-        Application.get_env(:new_relic, :collector_instance_host) ||
-          Application.get_env(:new_relic, :collector_host),
+        Application.get_env(:new_relic_agent, :collector_instance_host) ||
+          Application.get_env(:new_relic_agent, :collector_host),
       path: "/agent_listener/invoke_raw_method",
       query: URI.encode_query(params),
-      scheme: Application.get_env(:new_relic, :scheme, "https"),
-      port: Application.get_env(:new_relic, :port, 443)
+      scheme: Application.get_env(:new_relic_agent, :scheme, "https"),
+      port: Application.get_env(:new_relic_agent, :port, 443)
     }
     |> URI.to_string()
   end
@@ -92,7 +92,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
             ] do
     NewRelic.log(:error, exception["message"])
     NewRelic.log(:error, "Disabling agent harvest")
-    Application.put_env(:new_relic, :harvest_enabled, false)
+    Application.put_env(:new_relic_agent, :harvest_enabled, false)
     {:error, :license_exception}
   end
 

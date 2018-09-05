@@ -86,7 +86,7 @@ defmodule TransactionTraceTest do
   end
 
   test "harvest cycle" do
-    Application.put_env(:new_relic, :data_report_period, 300)
+    Application.put_env(:new_relic_agent, :data_report_period, 300)
     TestHelper.restart_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
 
     first = Collector.HarvestCycle.current_harvester(Collector.TransactionTrace.HarvestCycle)
@@ -102,7 +102,7 @@ defmodule TransactionTraceTest do
     assert Process.alive?(second)
 
     TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
-    Application.delete_env(:new_relic, :data_report_period)
+    Application.delete_env(:new_relic_agent, :data_report_period)
 
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000

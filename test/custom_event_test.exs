@@ -64,7 +64,7 @@ defmodule CustomEventTest do
   end
 
   test "harvest cycle" do
-    Application.put_env(:new_relic, :custom_event_harvest_cycle, 300)
+    Application.put_env(:new_relic_agent, :custom_event_harvest_cycle, 300)
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
     first = Collector.HarvestCycle.current_harvester(Collector.CustomEvent.HarvestCycle)
@@ -80,7 +80,7 @@ defmodule CustomEventTest do
     assert Process.alive?(second)
 
     TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-    Application.delete_env(:new_relic, :custom_event_harvest_cycle)
+    Application.delete_env(:new_relic_agent, :custom_event_harvest_cycle)
 
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
@@ -118,7 +118,7 @@ defmodule CustomEventTest do
     System.put_env("MY_SERVICE_NAME", "crazy-service")
 
     Application.put_env(
-      :new_relic,
+      :new_relic_agent,
       :automatic_attributes,
       service_name: {:system, "MY_SERVICE_NAME"}
     )
@@ -132,12 +132,12 @@ defmodule CustomEventTest do
              event[:key] == "TestEvent" && event[:service_name] == "crazy-service"
            end)
 
-    Application.put_env(:new_relic, :automatic_attributes, [])
+    Application.put_env(:new_relic_agent, :automatic_attributes, [])
     System.delete_env("MY_SERVICE_NAME")
   end
 
   test "Respect the reservoir_size" do
-    Application.put_env(:new_relic, :custom_event_reservoir_size, 3)
+    Application.put_env(:new_relic_agent, :custom_event_reservoir_size, 3)
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
     NewRelic.report_custom_event(:Event, %{key: "TestEvent1"})
@@ -149,7 +149,7 @@ defmodule CustomEventTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
     assert length(events) == 3
 
-    Application.delete_env(:new_relic, :custom_event_reservoir_size)
+    Application.delete_env(:new_relic_agent, :custom_event_reservoir_size)
     TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
 end

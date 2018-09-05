@@ -115,7 +115,7 @@ defmodule NewRelic.Transaction.Reporter do
     Process.send_after(
       __MODULE__,
       {:purge, AttrStore.find_root(__MODULE__, pid)},
-      Application.get_env(:new_relic, :tx_pid_expire, 2_000)
+      Application.get_env(:new_relic_agent, :tx_pid_expire, 2_000)
     )
   end
 

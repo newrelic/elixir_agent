@@ -22,7 +22,7 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
           :ignore
 
         %{"redirect_host" => redirect_host} ->
-          Application.put_env(:new_relic, :collector_instance_host, redirect_host)
+          Application.put_env(:new_relic_agent, :collector_instance_host, redirect_host)
           send(self(), :connect)
       end
     end
@@ -123,7 +123,7 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
   end
 
   def lookup(key) do
-    Application.get_env(:new_relic, key) ||
+    Application.get_env(:new_relic_agent, key) ||
       case :ets.lookup(__MODULE__, key) do
         [{^key, value}] -> value
         [] -> nil

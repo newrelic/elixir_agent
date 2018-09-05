@@ -30,7 +30,7 @@ You need to set a few required configuration keys so we can authenticate properl
 #### Via Application config
 
 ```elixir
-config :new_relic,
+config :new_relic_agent,
   app_name: "My App",
   license_key: "license_key"
 ```
@@ -48,6 +48,6 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 The agent will log important events. By default they will go to `tmp/new_relic.log`. You can also configure it to go to `STDOUT` or any other writable file location:
 
 ```elixir
-config :new_relic,
+config :new_relic_agent,
   log: "stdout"
 ```

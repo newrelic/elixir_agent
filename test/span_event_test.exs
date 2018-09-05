@@ -42,7 +42,7 @@ defmodule SpanEventTest do
   end
 
   test "collect and store top priority events" do
-    Application.put_env(:new_relic, :span_event_reservoir_size, 2)
+    Application.put_env(:new_relic_agent, :span_event_reservoir_size, 2)
     {:ok, harvester} = Supervisor.start_child(Collector.SpanEvent.HarvesterSupervisor, [])
 
     s1 = %NewRelic.Span.Event{priority: 3, trace_id: "abc123"}
@@ -65,7 +65,7 @@ defmodule SpanEventTest do
     Collector.SpanEvent.Harvester.complete(harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
 
-    Application.delete_env(:new_relic, :span_event_reservoir_size)
+    Application.delete_env(:new_relic_agent, :span_event_reservoir_size)
   end
 
   test "report a span event through the harvester" do

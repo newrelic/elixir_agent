@@ -68,15 +68,17 @@ defmodule CollectorStubTest do
   end
 
   def with_config(env, fun) do
-    original_env = env |> Enum.map(fn {key, _} -> {key, Application.get_env(:new_relic, key)} end)
-    env |> Enum.each(fn {key, value} -> Application.put_env(:new_relic, key, value) end)
+    original_env =
+      env |> Enum.map(fn {key, _} -> {key, Application.get_env(:new_relic_agent, key)} end)
+
+    env |> Enum.each(fn {key, value} -> Application.put_env(:new_relic_agent, key, value) end)
 
     fun.()
 
     original_env
     |> Enum.each(fn
-      {key, nil} -> Application.delete_env(:new_relic, key)
-      {key, value} -> Application.put_env(:new_relic, key, value)
+      {key, nil} -> Application.delete_env(:new_relic_agent, key)
+      {key, value} -> Application.put_env(:new_relic_agent, key, value)
     end)
   end
 end
