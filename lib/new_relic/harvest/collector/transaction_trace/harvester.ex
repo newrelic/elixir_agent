@@ -122,10 +122,12 @@ defmodule NewRelic.Harvest.Collector.TransactionTrace.Harvester do
   def collect_traces(%{slowest_traces: slowest_traces, traces_by_name: traces_by_name}),
     do: (slowest_traces ++ Map.values(traces_by_name)) |> List.flatten() |> Enum.uniq()
 
-  defp min_duration, do: Application.get_env(:new_relic, :transaction_trace_min_duration, 50)
+  defp min_duration,
+    do: Application.get_env(:new_relic_agent, :transaction_trace_min_duration, 50)
 
   defp max_named_traces,
-    do: Application.get_env(:new_relic, :transaction_trace_max_named_traces, 2)
+    do: Application.get_env(:new_relic_agent, :transaction_trace_max_named_traces, 2)
 
-  defp max_slow_traces, do: Application.get_env(:new_relic, :transaction_trace_max_slow_traces, 5)
+  defp max_slow_traces,
+    do: Application.get_env(:new_relic_agent, :transaction_trace_max_slow_traces, 5)
 end

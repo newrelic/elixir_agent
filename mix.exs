@@ -3,7 +3,7 @@ defmodule NewRelic.Mixfile do
 
   def project do
     [
-      app: :new_relic,
+      app: :new_relic_agent,
       description: "New Relic's Open-Source Elixir Agent",
       version: agent_version(),
       elixir: "~> 1.7",
@@ -26,7 +26,6 @@ defmodule NewRelic.Mixfile do
 
   defp package do
     [
-      name: "new_relic_agent",
       files: ["lib", "mix.exs", "README.md", "CHANGELOG.md", "VERSION"],
       maintainers: ["Vince Foley"],
       licenses: ["Apache 2.0"],

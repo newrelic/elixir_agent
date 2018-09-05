@@ -6,7 +6,7 @@ defmodule NewRelic.Init do
   end
 
   def init_collector_host() do
-    Application.put_env(:new_relic, :collector_host, determine_collector_host())
+    Application.put_env(:new_relic_agent, :collector_host, determine_collector_host())
   end
 
   def determine_collector_host() do

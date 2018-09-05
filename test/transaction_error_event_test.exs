@@ -107,7 +107,7 @@ defmodule TransactionErrorEventTest do
   end
 
   test "harvest cycle" do
-    Application.put_env(:new_relic, :error_event_harvest_cycle, 300)
+    Application.put_env(:new_relic_agent, :error_event_harvest_cycle, 300)
     TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
 
     first = Collector.HarvestCycle.current_harvester(Collector.TransactionErrorEvent.HarvestCycle)
@@ -125,7 +125,7 @@ defmodule TransactionErrorEventTest do
     assert Process.alive?(second)
 
     TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
-    Application.delete_env(:new_relic, :error_event_harvest_cycle)
+    Application.delete_env(:new_relic_agent, :error_event_harvest_cycle)
 
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000

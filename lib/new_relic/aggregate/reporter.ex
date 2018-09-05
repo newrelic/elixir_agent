@@ -46,5 +46,5 @@ defmodule NewRelic.Aggregate.Reporter do
   end
 
   def aggregate_event_type,
-    do: Application.get_env(:new_relic, :aggregate_event_type, "ElixirAggregate")
+    do: Application.get_env(:new_relic_agent, :aggregate_event_type, "ElixirAggregate")
 end

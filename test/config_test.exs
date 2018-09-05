@@ -22,7 +22,7 @@ defmodule ConfigTest do
     System.put_env("ENV_VAR_NAME", "env-var-value")
 
     Application.put_env(
-      :new_relic,
+      :new_relic_agent,
       :automatic_attributes,
       env_var: {:system, "ENV_VAR_NAME"},
       function_call: {String, :upcase, ["fun"]},
@@ -35,7 +35,7 @@ defmodule ConfigTest do
              function_call: "FUN"
            }
 
-    Application.put_env(:new_relic, :automatic_attributes, [])
+    Application.put_env(:new_relic_agent, :automatic_attributes, [])
     System.delete_env("ENV_VAR_NAME")
   end
 end

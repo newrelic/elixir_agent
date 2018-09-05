@@ -34,13 +34,13 @@ defmodule CollectorIntegrationTest do
   end
 
   test "handles invalid license key" do
-    prev = Application.get_env(:new_relic, :harvest_enabled)
+    prev = Application.get_env(:new_relic_agent, :harvest_enabled)
     System.put_env("NEW_RELIC_LICENSE_KEY", "invalid_key")
 
     assert {:error, :license_exception} = Collector.Protocol.preconnect()
 
     System.delete_env("NEW_RELIC_LICENSE_KEY")
-    Application.put_env(:new_relic, :harvest_enabled, prev)
+    Application.put_env(:new_relic_agent, :harvest_enabled, prev)
   end
 
   test "Can post a metric" do

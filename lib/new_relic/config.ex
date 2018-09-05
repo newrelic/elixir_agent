@@ -7,15 +7,17 @@ defmodule NewRelic.Config do
 
   @doc "Configure your application name. **Required**"
   def app_name,
-    do: System.get_env("NEW_RELIC_APP_NAME") || Application.get_env(:new_relic, :app_name)
+    do: System.get_env("NEW_RELIC_APP_NAME") || Application.get_env(:new_relic_agent, :app_name)
 
   @doc "Configure your New Relic License Key. **Required**"
   def license_key,
-    do: System.get_env("NEW_RELIC_LICENSE_KEY") || Application.get_env(:new_relic, :license_key)
+    do:
+      System.get_env("NEW_RELIC_LICENSE_KEY") ||
+        Application.get_env(:new_relic_agent, :license_key)
 
   @doc "Configure the host to report to. Most customers have no need to set this."
   def host,
-    do: System.get_env("NEW_RELIC_HOST") || Application.get_env(:new_relic, :host)
+    do: System.get_env("NEW_RELIC_HOST") || Application.get_env(:new_relic_agent, :host)
 
   @doc """
   Configure the Agent logging mechanism. Defaults to `"tmp/new_relic.log"`
@@ -26,7 +28,7 @@ defmodule NewRelic.Config do
   - `"file_name.log"`
   """
   def logger,
-    do: System.get_env("NEW_RELIC_LOG") || Application.get_env(:new_relic, :log)
+    do: System.get_env("NEW_RELIC_LOG") || Application.get_env(:new_relic_agent, :log)
 
   @doc """
   An optional list of key/value pairs that will be automatic custom attributes
@@ -40,7 +42,7 @@ defmodule NewRelic.Config do
   Example:
 
   ```
-  config :new_relic,
+  config :new_relic_agent,
     automatic_attributes: [
       environment: {:system, "APP_ENV"},
       node_name: {Node, :self, []},
@@ -49,7 +51,7 @@ defmodule NewRelic.Config do
   ```
   """
   def automatic_attributes do
-    Application.get_env(:new_relic, :automatic_attributes, [])
+    Application.get_env(:new_relic_agent, :automatic_attributes, [])
     |> Enum.into(%{}, fn
       {name, {:system, env_var}} -> {name, System.get_env(env_var)}
       {name, {m, f, a}} -> {name, apply(m, f, a)}
@@ -63,7 +65,7 @@ defmodule NewRelic.Config do
   defp harvest_enabled?,
     do:
       System.get_env("NEW_RELIC_HARVEST_ENABLED") ||
-        Application.get_env(:new_relic, :harvest_enabled, true)
+        Application.get_env(:new_relic_agent, :harvest_enabled, true)
 
   @external_resource "VERSION"
   @agent_version "VERSION" |> File.read!() |> String.trim()

@@ -44,7 +44,7 @@ defmodule TransactionEventTest do
   end
 
   test "collect and store top priority events" do
-    Application.put_env(:new_relic, :transaction_event_reservoir_size, 2)
+    Application.put_env(:new_relic_agent, :transaction_event_reservoir_size, 2)
     {:ok, harvester} = Supervisor.start_child(Collector.TransactionEvent.HarvesterSupervisor, [])
 
     ev1 = %Event{name: "Ev1", duration: 1, user_attributes: %{priority: 3}}
@@ -67,7 +67,7 @@ defmodule TransactionEventTest do
     Collector.TransactionEvent.Harvester.complete(harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
 
-    Application.delete_env(:new_relic, :transaction_event_reservoir_size)
+    Application.delete_env(:new_relic_agent, :transaction_event_reservoir_size)
   end
 
   test "user attributes can be truncated" do
@@ -87,7 +87,7 @@ defmodule TransactionEventTest do
   end
 
   test "harvest cycle" do
-    Application.put_env(:new_relic, :transaction_event_harvest_cycle, 300)
+    Application.put_env(:new_relic_agent, :transaction_event_harvest_cycle, 300)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     first = Collector.HarvestCycle.current_harvester(Collector.TransactionEvent.HarvestCycle)
@@ -103,7 +103,7 @@ defmodule TransactionEventTest do
     assert Process.alive?(second)
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-    Application.delete_env(:new_relic, :transaction_event_harvest_cycle)
+    Application.delete_env(:new_relic_agent, :transaction_event_harvest_cycle)
 
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
@@ -138,7 +138,7 @@ defmodule TransactionEventTest do
   end
 
   test "Respect the reservoir_size" do
-    Application.put_env(:new_relic, :transaction_event_reservoir_size, 3)
+    Application.put_env(:new_relic_agent, :transaction_event_reservoir_size, 3)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     Task.async(fn ->
@@ -153,7 +153,7 @@ defmodule TransactionEventTest do
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
     assert length(events) == 3
 
-    Application.delete_env(:new_relic, :transaction_event_reservoir_size)
+    Application.delete_env(:new_relic_agent, :transaction_event_reservoir_size)
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 end

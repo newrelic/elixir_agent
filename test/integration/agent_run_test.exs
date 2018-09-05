@@ -38,8 +38,8 @@ defmodule AgentRunIntegrationTest do
   test "Agent restart ability" do
     original_agent_run_id = Collector.AgentRun.agent_run_id()
 
-    Application.stop(:new_relic)
-    Application.start(:new_relic)
+    Application.stop(:new_relic_agent)
+    Application.start(:new_relic_agent)
 
     GenServer.call(Collector.AgentRun, :connected)
     new_agent_run_id = Collector.AgentRun.agent_run_id()
