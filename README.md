@@ -44,3 +44,39 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 
 * `NEW_RELIC_APP_NAME`
 * `NEW_RELIC_LICENSE_KEY`
+
+## Instrumentation
+
+Out of the box, we will report Error Traces & some general BEAM VM stats. For further visibility, you'll need to add some basic instrumentation.
+
+* `NewRelic.Transaction` enables rich Transaction Monitoring for a `Plug` pipeline. It's a macro that injects a few plugs and an error handler.
+
+```elixir
+defmodule MyApp do
+  use Plug.Router
+  use NewRelic.Transaction
+  # ...
+end
+```
+
+* `NewRelic.Tracer` enables detailed Function Tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it.
+
+```elixir
+defmodule MyModule do
+  use NewRelic.Tracer
+
+  @trace :func
+  def func do
+    # Will report as `MyModule.func/0`
+  end
+end
+```
+
+#### Pre-Instrumented Modules
+
+* `NewRelic.Instrumented.HTTPoison` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace.
+
+```elixir
+alias NewRelic.Instrumented.HTTPoison
+HTTPoison.get("http://www.example.com")
+```

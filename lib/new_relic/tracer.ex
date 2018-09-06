@@ -19,6 +19,7 @@ defmodule NewRelic.Tracer do
   ```elixir
   defmodule MyModule do
     use NewRelic.Tracer
+
     @trace :func
     def func do
       # Will report as `MyModule.func/0`
@@ -33,6 +34,7 @@ defmodule NewRelic.Tracer do
   ```elixir
   defmodule MyExternalService do
     use NewRelic.Tracer
+
     @trace {:query, category: :external}
     def query(args) do
       # Make the call
