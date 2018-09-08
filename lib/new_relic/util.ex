@@ -7,31 +7,11 @@ defmodule NewRelic.Util do
 
   def pid, do: System.get_pid() |> String.to_integer()
 
-  def get(url, headers, timeout_ms \\ :infinity) do
-    with url = to_charlist(url),
-         headers = for({k, v} <- headers, do: {to_charlist(k), to_charlist(v)}) do
-      :httpc.request(
-        :get,
-        {url, headers},
-        [{:timeout, timeout_ms}],
-        []
-      )
-    end
-  end
+  def post(url, body, headers) when is_binary(body),
+    do: HTTPoison.post(url, body, headers)
 
-  def post(url, body, headers) when is_binary(body) do
-    with url = to_charlist(url),
-         headers = for({k, v} <- headers, do: {to_charlist(k), to_charlist(v)}) do
-      :httpc.request(
-        :post,
-        {url, headers, 'application/json', body},
-        [],
-        []
-      )
-    end
-  end
-
-  def post(url, body, headers), do: post(url, Jason.encode!(body), headers)
+  def post(url, body, headers),
+    do: post(url, Jason.encode!(body), headers)
 
   def time_to_ms({megasec, sec, microsec}),
     do: (megasec * 1_000_000 + sec) * 1_000 + round(microsec / 1_000)
@@ -85,8 +65,8 @@ defmodule NewRelic.Util do
 
   @aws_vendor_data ["availabilityZone", "instanceId", "instanceType"]
   defp aws_vendor_hash(url) do
-    case get(url, [], 100) do
-      {:ok, {{_, 200, 'OK'}, _headers, body}} ->
+    case HTTPoison.get(url, [], timeout: 100) do
+      {:ok, %{status_code: 200, body: body}} ->
         case Jason.decode(body) do
           {:ok, data} -> Map.take(data, @aws_vendor_data)
           _ -> nil

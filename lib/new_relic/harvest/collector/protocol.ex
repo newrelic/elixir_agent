@@ -66,10 +66,10 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     |> URI.to_string()
   end
 
-  defp parse_http_response({:ok, {{_, 200, 'OK'}, _headers, body}}),
+  defp parse_http_response({:ok, %{status_code: 200, body: body}}),
     do: {:ok, Jason.decode!(body)}
 
-  defp parse_http_response({:ok, {{_, status, _}, _headers, body}}) do
+  defp parse_http_response({:ok, %{status_code: status, body: body}}) do
     NewRelic.log(:error, "(#{status}) #{body}")
     {:error, status}
   end

@@ -39,7 +39,7 @@ defmodule NewRelic.Mixfile do
       {:jason, "~> 1.0"},
       {:plug, "~> 1.6"},
       {:cowboy, "~> 2.0"},
-      {:httpoison, ">= 1.0.0", optional: true}
+      {:httpoison, "~> 1.0"}
     ]
   end
 
