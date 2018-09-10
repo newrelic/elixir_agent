@@ -1,6 +1,6 @@
 # New Relic's Open Source Elixir Agent
 
-[![Version](https://img.shields.io/github/tag/newrelic/elixir_agent.svg)](https://github.com/newrelic/elixir_agent/releases)
+[![Hex.pm Version](https://img.shields.io/hexpm/v/new_relic_agent.svg)](https://hex.pm/packages/new_relic_agent)
 [![Build Status](https://travis-ci.org/newrelic/elixir_agent.svg?branch=master)](https://travis-ci.org/newrelic/elixir_agent)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://github.com/newrelic/elixir_agent/blob/master/LICENSE)
 
