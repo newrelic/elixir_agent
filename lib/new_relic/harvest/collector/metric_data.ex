@@ -98,6 +98,10 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         call_count: harvest_size
       },
       %Metric{
+        name: "Supportability/Elixir/Harvest",
+        call_count: 1
+      },
+      %Metric{
         name: "Supportability/Harvest",
         call_count: 1
       }
