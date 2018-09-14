@@ -55,7 +55,7 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
   def connect_payload do
     [
       %{
-        language: "sdk",
+        language: "elixir",
         pid: NewRelic.Util.pid(),
         host: NewRelic.Util.hostname(),
         app_name: [NewRelic.Config.app_name()],
