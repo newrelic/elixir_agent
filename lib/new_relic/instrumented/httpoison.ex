@@ -103,5 +103,17 @@ if Code.ensure_loaded?(HTTPoison) do
       headers = instrument("OPTIONS", url, headers)
       HTTPoison.options!(url, headers, options)
     end
+
+    @trace {:request, category: :external}
+    def request(method, url, body \\ "", headers \\ [], options \\ []) do
+      headers = instrument(String.upcase(to_string(method)), url, headers)
+      HTTPoison.request(method, url, body, headers, options)
+    end
+
+    @trace {:request!, category: :external}
+    def request!(method, url, body \\ "", headers \\ [], options \\ []) do
+      headers = instrument(String.upcase(to_string(method)), url, headers)
+      HTTPoison.request!(method, url, body, headers, options)
+    end
   end
 end
