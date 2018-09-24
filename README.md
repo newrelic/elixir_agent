@@ -51,7 +51,7 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 ## Instrumentation
 
 Out of the box, we will report Error Traces & some general BEAM VM stats. For further visibility, you'll need to add some basic instrumentation.
-
+asdfasdfasdfasdfa
 * `NewRelic.Transaction` enables rich Transaction Monitoring for a `Plug` pipeline. It's a macro that injects a few plugs and an error handler.
 
 ```elixir
