@@ -13,6 +13,19 @@ if Code.ensure_loaded?(HTTPoison) do
     ```
 
     This module mirrors the interface of `HTTPoison`
+
+    #### Notes:
+
+    * If you need to pattern match against a result, note that the structs that come back are
+    the original `HTTPoison` structs.
+
+    ```elixir
+    # Match against the full struct name
+    {:ok, %Elixir.HTTPoison.Response{body: body}} = HTTPoison.get("http://www.example.com")
+
+    # Match against it with a raw map
+    {:ok, %{body: body}} = HTTPoison.get("http://www.example.com")
+    ```
     """
 
     defp instrument(method, url, headers) do
