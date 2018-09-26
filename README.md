@@ -80,6 +80,6 @@ end
 * `NewRelic.Instrumented.HTTPoison` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace.
 
 ```elixir
-alias NewRelic.Instrumented.HTTPoison
+alias NewRelic.Instrumented.HTTPoisonasdfasdfasdfasdfas
 HTTPoison.get("http://www.example.com")
 ```
