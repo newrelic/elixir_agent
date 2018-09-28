@@ -71,7 +71,7 @@ defmodule MetricTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
+    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
   end
 
   test "Custom transaction names" do
@@ -79,7 +79,7 @@ defmodule MetricTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert_metric(metrics, "WebTransaction/very/unique/name")
+    assert TestHelper.find_metric(metrics, "WebTransaction/very/unique/name")
   end
 
   test "fancy transaction names" do
@@ -87,7 +87,10 @@ defmodule MetricTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert_metric(metrics, "WebTransaction/Plug/GET//fancy/:transaction/:_names/*supported")
+    assert TestHelper.find_metric(
+             metrics,
+             "WebTransaction/Plug/GET//fancy/:transaction/:_names/*supported"
+           )
   end
 
   test "Forwarding transaction names" do
@@ -97,14 +100,7 @@ defmodule MetricTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert_metric(metrics, "WebTransaction/Plug/GET//status/check", 2)
-    assert_metric(metrics, "WebTransaction/Plug/GET//status/info")
+    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//status/check", 2)
+    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//status/info")
   end
-
-  def assert_metric(metrics, name, call_count \\ 1) do
-    assert [_metric_identity, [^call_count, _, _, _, _, _]] = find_metric_by_name(metrics, name)
-  end
-
-  def find_metric_by_name(metrics, name),
-    do: Enum.find(metrics, fn [%{name: n}, _] -> n == name end)
 end

@@ -34,7 +34,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
     ]
 
   def transform(
-        {:caller, parent_type, parent_account_id, parent_app_id, transport_type} = foo,
+        {:caller, parent_type, parent_account_id, parent_app_id, transport_type},
         duration_s: duration_s
       ),
       do: [

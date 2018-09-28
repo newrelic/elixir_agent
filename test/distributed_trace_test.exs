@@ -104,18 +104,10 @@ defmodule DistributedTraceTest do
       |> TestPlugApp.call([])
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
-
-    assert_metric(metrics, "DurationByCaller/Browser/190/2827902/http/all", 1)
+    assert TestHelper.find_metric(metrics, "DurationByCaller/Browser/190/2827902/HTTP/all")
 
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
-
-  def assert_metric(metrics, name, call_count \\ 1) do
-    assert [_metric_identity, [^call_count, _, _, _, _, _]] = find_metric_by_name(metrics, name)
-  end
-
-  def find_metric_by_name(metrics, name),
-    do: Enum.find(metrics, fn [%{name: n}, _] -> n == name end)
 
   test "propigate the context through connected Elixir processes" do
     response =

@@ -40,8 +40,13 @@ defmodule MetricTracerTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert_metric(metrics, "External/MetricTracerTest.MetricTraced.query/all", 2)
-    assert_metric(metrics, "External/MetricTracerTest.MetricTraced.custom_name:special/all", 2)
+    assert TestHelper.find_metric(metrics, "External/MetricTracerTest.MetricTraced.query/all", 2)
+
+    assert TestHelper.find_metric(
+             metrics,
+             "External/MetricTracerTest.MetricTraced.custom_name:special/all",
+             2
+           )
   end
 
   test "Datastore metrics" do
@@ -49,14 +54,11 @@ defmodule MetricTracerTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert_metric(metrics, "Datastore/statement/Postgres/MetricTracerTest.MetricTraced.db")
-    assert_metric(metrics, "Datastore/Postgres/all")
-  end
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/statement/Postgres/MetricTracerTest.MetricTraced.db"
+           )
 
-  def assert_metric(metrics, name, call_count \\ 1) do
-    assert [_metric_identity, [^call_count, _, _, _, _, _]] = find_metric_by_name(metrics, name)
+    assert TestHelper.find_metric(metrics, "Datastore/Postgres/all")
   end
-
-  def find_metric_by_name(metrics, name),
-    do: Enum.find(metrics, fn [%{name: n}, _] -> n == name end)
 end
