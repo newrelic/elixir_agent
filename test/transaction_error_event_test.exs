@@ -149,7 +149,7 @@ defmodule TransactionErrorEventTest do
     assert Jason.encode!(events)
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
-    assert Enum.find(metrics, fn [%{name: "Errors/all"}, [1, _, _, _, _, _]] -> true end)
+    assert_metric(metrics, "Errors/all", 1)
 
     traces = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
     assert length(traces) == 1
@@ -161,6 +161,13 @@ defmodule TransactionErrorEventTest do
     TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
+
+  def assert_metric(metrics, name, call_count \\ 1) do
+    assert [_metric_identity, [^call_count, _, _, _, _, _]] = find_metric_by_name(metrics, name)
+  end
+
+  def find_metric_by_name(metrics, name),
+    do: Enum.find(metrics, fn [%{name: n}, _] -> n == name end)
 
   test "Ignore late reports" do
     TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)

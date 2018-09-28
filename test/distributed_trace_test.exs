@@ -95,6 +95,28 @@ defmodule DistributedTraceTest do
     refute NewRelic.DistributedTrace.Tracker.fetch(self())
   end
 
+  test "Generate the expected caller metric" do
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    _response =
+      conn(:get, "/")
+      |> put_req_header(@dt_header, generate_inbound_payload())
+      |> TestPlugApp.call([])
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert_metric(metrics, "DurationByCaller/Browser/190/2827902/http/all", 1)
+
+    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+  end
+
+  def assert_metric(metrics, name, call_count \\ 1) do
+    assert [_metric_identity, [^call_count, _, _, _, _, _]] = find_metric_by_name(metrics, name)
+  end
+
+  def find_metric_by_name(metrics, name),
+    do: Enum.find(metrics, fn [%{name: n}, _] -> n == name end)
+
   test "propigate the context through connected Elixir processes" do
     response =
       conn(:get, "/connected")

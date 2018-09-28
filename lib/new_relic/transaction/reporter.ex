@@ -154,8 +154,9 @@ defmodule NewRelic.Transaction.Reporter do
     report_transaction_event(tx_attrs)
     report_transaction_trace(tx_attrs, tx_segments)
     report_transaction_error_event(tx_attrs, tx_error)
-    report_metric(tx_attrs)
+    report_transaction_metric(tx_attrs)
     report_aggregate(tx_attrs)
+    report_caller_metric(tx_attrs)
     report_span_events(span_events)
   end
 
@@ -258,6 +259,27 @@ defmodule NewRelic.Transaction.Reporter do
       duration: tx_attrs[:duration_ms] / 1000,
       entry_point: true
     }
+  end
+
+  defp report_caller_metric(
+         %{
+           "parent.type": parent_type,
+           "parent.account": parent_account_id,
+           "parent.app": parent_app_id,
+           "parent.transportType": transport_type
+         } = tx_attrs
+       ) do
+    NewRelic.report_metric(
+      {:caller, parent_type, parent_account_id, parent_app_id, transport_type},
+      duration_s: tx_attrs[:duration_ms] / 1000
+    )
+  end
+
+  defp report_caller_metric(tx_attrs) do
+    NewRelic.report_metric(
+      {:caller, "Unknown", "Unknown", "Unknown", "Unknown"},
+      duration_s: tx_attrs[:duration_ms] / 1000
+    )
   end
 
   defp spawned_process_events(tx_attrs, process_spawns, process_names, process_exits) do
@@ -403,7 +425,7 @@ defmodule NewRelic.Transaction.Reporter do
     })
   end
 
-  def report_metric(tx) do
+  def report_transaction_metric(tx) do
     NewRelic.report_metric({:transaction, tx.name}, duration_s: tx.duration_ms / 1_000)
   end
 
