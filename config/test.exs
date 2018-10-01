@@ -7,5 +7,3 @@ config :new_relic_agent,
   app_name: "ElixirAgentTest",
   automatic_attributes: [test_attribute: "test_value"],
   log: "memory"
-
-if File.exists?("config/secret.exs"), do: import_config("secret.exs")
