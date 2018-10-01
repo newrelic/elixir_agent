@@ -31,6 +31,7 @@ defmodule NewRelic.Sampler.Beam do
   def record_sample(state) do
     {current_sample, stats} = collect(state.last)
     NewRelic.report_sample(:BeamStat, stats)
+    NewRelic.report_metric(:memory, mb: stats[:memory_total_mb])
     current_sample
   end
 
