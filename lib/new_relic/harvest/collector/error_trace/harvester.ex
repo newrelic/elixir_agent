@@ -39,7 +39,7 @@ defmodule NewRelic.Harvest.Collector.ErrorTrace.Harvester do
 
   def complete(harvester) do
     Task.Supervisor.start_child(Collector.ErrorTrace.TaskSupervisor, fn ->
-      GenServer.call(harvester, :send_harvest)
+      GenServer.call(harvester, :send_harvest, 15_000)
       Supervisor.terminate_child(Collector.ErrorTrace.HarvesterSupervisor, harvester)
     end)
   end

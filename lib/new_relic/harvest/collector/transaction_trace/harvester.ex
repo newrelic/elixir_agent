@@ -44,7 +44,7 @@ defmodule NewRelic.Harvest.Collector.TransactionTrace.Harvester do
 
   def complete(harvester) do
     Task.Supervisor.start_child(Collector.TransactionTrace.TaskSupervisor, fn ->
-      GenServer.call(harvester, :send_harvest)
+      GenServer.call(harvester, :send_harvest, 15_000)
       Supervisor.terminate_child(Collector.TransactionTrace.HarvesterSupervisor, harvester)
     end)
   end

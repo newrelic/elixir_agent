@@ -51,7 +51,7 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
 
   def complete(harvester) do
     Task.Supervisor.start_child(Collector.CustomEvent.TaskSupervisor, fn ->
-      GenServer.call(harvester, :send_harvest)
+      GenServer.call(harvester, :send_harvest, 15_000)
       Supervisor.terminate_child(Collector.CustomEvent.HarvesterSupervisor, harvester)
     end)
   end
