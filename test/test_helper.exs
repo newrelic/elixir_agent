@@ -27,6 +27,13 @@ defmodule TestHelper do
   def pause_harvest_cycle(harvest_cycle) do
     GenServer.call(harvest_cycle, :pause)
   end
+
+  def find_metric(metrics, name, call_count \\ 1) do
+    Enum.find(metrics, fn
+      [%{name: ^name}, [^call_count, _, _, _, _, _]] -> true
+      _ -> false
+    end)
+  end
 end
 
 ExUnit.start()

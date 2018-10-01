@@ -33,6 +33,29 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform(
+        {:caller, parent_type, parent_account_id, parent_app_id, transport_type},
+        duration_s: duration_s
+      ),
+      do: [
+        %Metric{
+          name:
+            join([
+              "DurationByCaller",
+              parent_type,
+              parent_account_id,
+              parent_app_id,
+              transport_type,
+              "all"
+            ]),
+          call_count: 1,
+          total_call_time: duration_s,
+          total_exclusive_time: duration_s,
+          min_call_time: duration_s,
+          max_call_time: duration_s
+        }
+      ]
+
   def transform({:datastore, name}, duration_s: duration_s),
     do: [
       %Metric{
@@ -108,8 +131,6 @@ defmodule NewRelic.Harvest.Collector.MetricData do
     ]
 
   defp join(prefix, name, suffix \\ nil)
-  defp join(prefix, "/" <> name, suffix), do: join(prefix, name, suffix)
-
-  defp join(prefix, name, suffix),
-    do: [prefix, name, suffix] |> Enum.filter(& &1) |> Enum.join("/")
+  defp join(prefix, "/" <> name, suffix), do: join([prefix, name, suffix])
+  defp join(segments) when is_list(segments), do: segments |> Enum.filter(& &1) |> Enum.join("/")
 end

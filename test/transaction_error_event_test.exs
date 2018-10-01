@@ -149,7 +149,7 @@ defmodule TransactionErrorEventTest do
     assert Jason.encode!(events)
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
-    assert Enum.find(metrics, fn [%{name: "Errors/all"}, [1, _, _, _, _, _]] -> true end)
+    assert TestHelper.find_metric(metrics, "Errors/all")
 
     traces = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
     assert length(traces) == 1

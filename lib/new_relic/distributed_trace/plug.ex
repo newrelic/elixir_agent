@@ -74,7 +74,7 @@ defmodule NewRelic.DistributedTrace.Plug do
       "parent.type": context.type,
       "parent.app": context.app_id,
       "parent.account": context.account_id,
-      "parent.transportType": "http",
+      "parent.transportType": "HTTP",
       "parent.transportDuration": transport_duration(context.timestamp),
       parentId: context.parent_id,
       parentSpanId: context.span_guid,
