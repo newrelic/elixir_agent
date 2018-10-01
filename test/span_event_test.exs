@@ -62,7 +62,7 @@ defmodule SpanEventTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.SpanEvent.Harvester.complete(harvester)
+    Collector.HarvestCycle.send_harvest(Collector.SpanEvent.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
 
     Application.delete_env(:new_relic_agent, :span_event_reservoir_size)

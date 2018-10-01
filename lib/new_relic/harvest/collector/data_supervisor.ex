@@ -15,7 +15,6 @@ defmodule NewRelic.Harvest.Collector.DataSupervisor do
     harvester_cycle = Module.concat(namespace, HarvestCycle)
 
     children = [
-      supervisor(Task.Supervisor, [[name: Module.concat(namespace, TaskSupervisor)]]),
       supervisor(Collector.HarvesterSupervisor, [
         [harvester: harvester, name: harvester_supervisor]
       ]),
@@ -23,7 +22,6 @@ defmodule NewRelic.Harvest.Collector.DataSupervisor do
         [
           name: harvester_cycle,
           harvest_cycle_key: harvest_cycle_key,
-          module: harvester,
           supervisor: harvester_supervisor
         ]
       ])

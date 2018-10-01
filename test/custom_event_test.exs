@@ -48,7 +48,7 @@ defmodule CustomEventTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.CustomEvent.Harvester.complete(harvester)
+    Collector.HarvestCycle.send_harvest(Collector.CustomEvent.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
   end
 

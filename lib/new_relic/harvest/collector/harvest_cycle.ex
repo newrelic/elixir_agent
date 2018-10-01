@@ -14,7 +14,6 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
   def init(
         name: name,
         harvest_cycle_key: harvest_cycle_key,
-        module: module,
         supervisor: supervisor
       ) do
     if NewRelic.Config.enabled?(), do: send(self(), :harvest_cycle)
@@ -23,7 +22,6 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
      %{
        name: name,
        harvest_cycle_key: harvest_cycle_key,
-       module: module,
        supervisor: supervisor,
        harvester: nil,
        timer: nil
@@ -55,8 +53,8 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
     {:reply, :ok, %{state | harvester: harvester, timer: timer}}
   end
 
-  def handle_call(:pause, _from, %{harvester: harvester, timer: old_timer} = state) do
-    stop_harvester(state, harvester)
+  def handle_call(:pause, _from, %{timer: old_timer} = state) do
+    stop_harvester(state)
     stop_harvest_cycle(old_timer)
     {:reply, :ok, %{state | harvester: nil, timer: nil}}
   end
@@ -88,18 +86,31 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
 
   # Helpers
 
-  defp swap_harvester(%{supervisor: supervisor, name: name, module: harvester_module}) do
+  defp swap_harvester(%{supervisor: supervisor, name: name, harvester: harvester}) do
     {:ok, next} = Supervisor.start_child(supervisor, [])
     Process.monitor(next)
-    prev = Collector.HarvesterStore.current(name)
     Collector.HarvesterStore.update(name, next)
-    harvester_module.complete(prev)
+    send_harvest(supervisor, harvester)
     next
   end
 
-  defp stop_harvester(%{name: name, module: harvester_module}, harvester) do
+  defp stop_harvester(%{supervisor: supervisor, name: name, harvester: harvester}) do
     Collector.HarvesterStore.update(name, nil)
-    harvester_module.complete(harvester)
+    send_harvest(supervisor, harvester)
+  end
+
+  def send_harvest(_supervisor, nil), do: :no_harvester
+
+  @harvest_timeout 15_000
+  def send_harvest(supervisor, harvester) do
+    Task.Supervisor.start_child(
+      Collector.TaskSupervisor,
+      fn ->
+        GenServer.call(harvester, :send_harvest, @harvest_timeout)
+        Supervisor.terminate_child(supervisor, harvester)
+      end,
+      shutdown: @harvest_timeout
+    )
   end
 
   defp stop_harvest_cycle(timer), do: timer && Process.cancel_timer(timer)

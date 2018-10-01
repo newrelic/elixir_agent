@@ -81,7 +81,7 @@ defmodule TransactionTraceTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.TransactionTrace.Harvester.complete(harvester)
+    Collector.HarvestCycle.send_harvest(Collector.TransactionTrace.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
   end
 

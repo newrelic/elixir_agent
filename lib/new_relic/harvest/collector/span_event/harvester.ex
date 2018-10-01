@@ -76,15 +76,6 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
       |> Collector.HarvestCycle.current_harvester()
       |> GenServer.call(:gather_harvest)
 
-  def complete(nil), do: :ignore
-
-  def complete(harvester) do
-    Task.Supervisor.start_child(Collector.SpanEvent.TaskSupervisor, fn ->
-      GenServer.call(harvester, :send_harvest, 15_000)
-      Supervisor.terminate_child(Collector.SpanEvent.HarvesterSupervisor, harvester)
-    end)
-  end
-
   # Server
 
   def handle_cast(_late_msg, :completed), do: {:noreply, :completed}

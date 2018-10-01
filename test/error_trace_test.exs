@@ -42,7 +42,7 @@ defmodule ErrorTraceTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.ErrorTrace.Harvester.complete(harvester)
+    Collector.HarvestCycle.send_harvest(Collector.ErrorTrace.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
   end
 
