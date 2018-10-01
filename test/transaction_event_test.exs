@@ -64,7 +64,7 @@ defmodule TransactionEventTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.TransactionEvent.Harvester.complete(harvester)
+    Collector.HarvestCycle.send_harvest(Collector.TransactionEvent.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
 
     Application.delete_env(:new_relic_agent, :transaction_event_reservoir_size)
