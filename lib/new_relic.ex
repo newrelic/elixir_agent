@@ -4,10 +4,16 @@ defmodule NewRelic do
   """
 
   @doc """
-  Set the name of the current transaction
+  Set the name of the current transaction.
+
+  The first segment will be treated as the Transaction namespace,
+  and commonly contains the name of the framework.
+
+  In the following example, you will see `/custom/transaction/name`
+  in the Transaction list.
 
   ```elixir
-  NewRelic.set_transaction_name("GET//custom/transaction/name")
+  NewRelic.set_transaction_name("Plug/custom/transaction/name")
   ```
   """
   defdelegate set_transaction_name(name), to: NewRelic.Transaction.Reporter
