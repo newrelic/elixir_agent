@@ -46,7 +46,7 @@ defmodule NewRelic.Mixfile do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"]
+      extras: ["README.md", "CHANGELOG.md"]
     ]
   end
 
