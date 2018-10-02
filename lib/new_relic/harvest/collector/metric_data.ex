@@ -102,6 +102,20 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       call_count: error_count
     }
 
+  def transform(:memory, mb: memory_mb),
+    do: %Metric{
+      name: "Memory/Physical",
+      call_count: 1,
+      total_call_time: memory_mb
+    }
+
+  def transform(:cpu, utilization: utilization),
+    do: %Metric{
+      name: "CPU/User Time",
+      call_count: 1,
+      total_call_time: utilization
+    }
+
   def transform({:supportability, :error_event}, error_count: error_count),
     do: [
       %Metric{

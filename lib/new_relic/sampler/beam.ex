@@ -12,6 +12,9 @@ defmodule NewRelic.Sampler.Beam do
   end
 
   def init(:ok) do
+    # throw away first value
+    :cpu_sup.util()
+
     NewRelic.sample_process()
     if NewRelic.Config.enabled?(), do: send(self(), :report)
     {:ok, %{last: take_sample()}}
@@ -31,6 +34,8 @@ defmodule NewRelic.Sampler.Beam do
   def record_sample(state) do
     {current_sample, stats} = collect(state.last)
     NewRelic.report_sample(:BeamStat, stats)
+    NewRelic.report_metric(:memory, mb: stats[:memory_total_mb])
+    NewRelic.report_metric(:cpu, utilization: stats[:cpu_utilization])
     current_sample
   end
 
@@ -56,7 +61,8 @@ defmodule NewRelic.Sampler.Beam do
       memory_total_mb: memory[:total] / @mb,
       memory_procs_mb: memory[:processes_used] / @mb,
       memory_ets_mb: memory[:ets] / @mb,
-      memory_atom_mb: memory[:atom_used] / @mb
+      memory_atom_mb: memory[:atom_used] / @mb,
+      cpu_utilization: :cpu_sup.util()
     }
   end
 

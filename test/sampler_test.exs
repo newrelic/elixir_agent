@@ -24,13 +24,26 @@ defmodule SamplerTest do
 
   test "Beam stats Sampler" do
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
     TestHelper.trigger_report(NewRelic.Sampler.Beam)
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
              event[:category] == :BeamStat && event[:reductions] > 0 && event[:process_count] > 0
            end)
+
+    [%{name: "Memory/Physical"}, [_, mb, _, _, _, _]] =
+      TestHelper.find_metric(metrics, "Memory/Physical")
+
+    assert 5 < mb
+    assert mb < 100
+
+    assert [%{name: "CPU/User Time"}, [_, cpu, _, _, _, _]] =
+             TestHelper.find_metric(metrics, "CPU/User Time")
+
+    assert cpu > 0
   end
 
   test "Process Sampler" do
