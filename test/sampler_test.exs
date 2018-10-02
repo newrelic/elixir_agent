@@ -39,6 +39,11 @@ defmodule SamplerTest do
 
     assert 5 < mb
     assert mb < 100
+
+    assert [%{name: "CPU/User Time"}, [_, cpu, _, _, _, _]] =
+             TestHelper.find_metric(metrics, "CPU/User Time")
+
+    assert cpu > 0
   end
 
   test "Process Sampler" do
