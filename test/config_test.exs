@@ -38,4 +38,19 @@ defmodule ConfigTest do
     Application.put_env(:new_relic_agent, :automatic_attributes, [])
     System.delete_env("ENV_VAR_NAME")
   end
+
+  test "Can configure error collecting via ENV and Application" do
+    System.put_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED", "false")
+
+    refute NewRelic.Config.feature?(:error_collector)
+
+    System.delete_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED")
+
+    assert NewRelic.Config.feature?(:error_collector)
+
+    System.put_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED", "true")
+    Application.get_env(:new_relic_agent, :error_collector_enabled, false)
+
+    assert NewRelic.Config.feature?(:error_collector)
+  end
 end

@@ -103,8 +103,6 @@ defmodule ErrorTraceTest do
   @tag :capture_log
   test "record an expected error" do
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
     start_supervised({Task.Supervisor, name: TestSupervisor})
 
     {:exit, {_exception, _stacktrace}} =
@@ -131,8 +129,31 @@ defmodule ErrorTraceTest do
              | _
            ] = traces
 
-    TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+  end
+
+  test "Doesn't report an error if the handler is not installed" do
+    TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+    :error_logger.delete_report_handler(NewRelic.Error.ErrorHandler)
+
+    :proc_lib.spawn(fn ->
+      raise "RAISE"
+    end)
+
+    :timer.sleep(100)
+
+    traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
+    assert length(traces) == 0
+
+    :error_logger.add_report_handler(NewRelic.Error.ErrorHandler)
+
+    :proc_lib.spawn(fn ->
+      raise "RAISE"
+    end)
+
+    :timer.sleep(100)
+
+    traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
+    assert length(traces) == 1
   end
 end

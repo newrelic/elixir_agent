@@ -59,6 +59,19 @@ defmodule NewRelic.Config do
     end)
   end
 
+  @doc """
+  Some Agent features can be controlled via configuration
+
+  * `:error_collector_enabled` (default `true`)
+  """
+  def feature?(:error_collector) do
+    case System.get_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED") do
+      "true" -> true
+      "false" -> false
+      _ -> Application.get_env(:new_relic_agent, :error_collector_enabled, true)
+    end
+  end
+
   @doc false
   def enabled?, do: (harvest_enabled?() && app_name() && license_key() && true) || false
 
