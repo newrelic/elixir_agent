@@ -34,6 +34,12 @@ defmodule TestHelper do
       _ -> false
     end)
   end
+
+  def with_error_reporting_disabled(func) do
+    Application.put_env(:new_relic_agent, :error_reporting_enabled, false)
+    func.()
+    Application.put_env(:new_relic_agent, :error_reporting_enabled, true)
+  end
 end
 
 ExUnit.start()

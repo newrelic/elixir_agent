@@ -12,11 +12,17 @@ defmodule NewRelic.Application do
       worker(NewRelic.Logger, []),
       supervisor(NewRelic.Harvest.Supervisor, []),
       supervisor(NewRelic.Sampler.Supervisor, []),
-      supervisor(NewRelic.Error.Supervisor, []),
       supervisor(NewRelic.Transaction.Supervisor, []),
       supervisor(NewRelic.DistributedTrace.Supervisor, []),
       supervisor(NewRelic.Aggregate.Supervisor, [])
     ]
+
+    children =
+      if NewRelic.Config.error_reporting_enabled?() do
+        children ++ [supervisor(NewRelic.Error.Supervisor, [])]
+      else
+        children
+      end
 
     opts = [strategy: :one_for_one, name: NewRelic.Supervisor]
     Supervisor.start_link(children, opts)

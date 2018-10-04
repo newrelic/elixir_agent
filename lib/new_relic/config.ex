@@ -59,6 +59,11 @@ defmodule NewRelic.Config do
     end)
   end
 
+  @doc "Whether error reporting is enabled. Default is true (error reporting on)."
+  def error_reporting_enabled? do
+    Application.get_env(:new_relic_agent, :error_reporting_enabled, true)
+  end
+
   @doc false
   def enabled?, do: (harvest_enabled?() && app_name() && license_key() && true) || false
 
