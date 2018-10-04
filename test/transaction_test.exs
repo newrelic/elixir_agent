@@ -134,21 +134,23 @@ defmodule TransactionTest do
            end)
   end
 
-  test "Error in Transaction when error_reporting_enabled = false" do
-    TestHelper.with_error_reporting_disabled(fn ->
-      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+  test "Allow disabling error collection" do
+    Application.put_env(:new_relic_agent, :error_collector_enabled, false)
 
-      assert_raise RuntimeError, fn ->
-        TestPlugApp.call(conn(:get, "/error"), [])
-      end
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-      events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    assert_raise RuntimeError, fn ->
+      TestPlugApp.call(conn(:get, "/error"), [])
+    end
 
-      assert Enum.find(events, fn [_, event] ->
-               event[:status] == 500 && event[:error] == true && event[:error_reason] == nil &&
-                 event[:error_kind] == nil && event[:error_stack] == nil
-             end)
-    end)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert Enum.find(events, fn [_, event] ->
+             event[:status] == 500 && event[:error] == true && event[:error_reason] == nil &&
+               event[:error_kind] == nil && event[:error_stack] == nil
+           end)
+
+    Application.delete_env(:new_relic_agent, :error_collector_enabled)
   end
 
   test "Transaction with traced external service call" do

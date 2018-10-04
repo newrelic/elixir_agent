@@ -219,38 +219,6 @@ defmodule TransactionErrorEventTest do
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
-  test "Any errors are not reported if error reporting is disabled" do
-    TestHelper.with_error_reporting_disabled(fn ->
-      Application.stop(:new_relic_agent)
-      :error_logger.delete_report_handler(NewRelic.Error.ErrorHandler)
-      Application.start(:new_relic_agent)
-
-      Logger.remove_backend(:console)
-      TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-      TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
-      TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-      {:ok, _sup} = Task.Supervisor.start_link(name: TestSup)
-
-      TestHelper.request(TestPlugApp, conn(:get, "/error"))
-      TestHelper.request(TestPlugApp, conn(:get, "/caught/error"))
-
-      traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
-      assert length(traces) == 0
-
-      traces = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
-      assert length(traces) == 0
-
-      Process.sleep(50)
-      Logger.add_backend(:console)
-      TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
-      TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-      TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
-    end)
-
-    Application.stop(:new_relic_agent)
-    Application.start(:new_relic_agent)
-  end
-
   defmodule CustomError do
     defexception [:message, :expected]
   end

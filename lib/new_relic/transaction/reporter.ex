@@ -1,7 +1,6 @@
 defmodule NewRelic.Transaction.Reporter do
   use GenServer
 
-  alias NewRelic.Config
   alias NewRelic.Util
   alias NewRelic.Util.AttrStore
   alias NewRelic.Transaction
@@ -59,17 +58,19 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   def stop(%{kind: _kind} = error) do
-    add_attributes(
-      end_time_mono: System.monotonic_time(),
-      error: true
-    )
-
-    if Config.error_reporting_enabled?() do
+    if NewRelic.Config.feature?(:error_collector) do
       add_attributes(
+        end_time_mono: System.monotonic_time(),
+        error: true,
         transaction_error: error,
         error_kind: error.kind,
         error_reason: inspect(error.reason),
         error_stack: inspect(error.stack)
+      )
+    else
+      add_attributes(
+        end_time_mono: System.monotonic_time(),
+        error: true
       )
     end
 

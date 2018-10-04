@@ -14,8 +14,11 @@ defmodule NewRelic.Error.Supervisor do
       supervisor(Task.Supervisor, [[name: NewRelic.Error.TaskSupervisor]])
     ]
 
-    :error_logger.delete_report_handler(NewRelic.Error.ErrorHandler)
-    :error_logger.add_report_handler(NewRelic.Error.ErrorHandler)
+    if NewRelic.Config.feature?(:error_collector) do
+      :error_logger.delete_report_handler(NewRelic.Error.ErrorHandler)
+      :error_logger.add_report_handler(NewRelic.Error.ErrorHandler)
+    end
+
     supervise(children, strategy: :one_for_one)
   end
 end
