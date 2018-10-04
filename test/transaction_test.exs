@@ -129,8 +129,26 @@ defmodule TransactionTest do
 
     assert Enum.find(events, fn [_, event] ->
              event[:status] == 500 && event[:query] =~ "query{}" &&
-               event[:error_reason] =~ "TransactionError"
+               event[:error_reason] =~ "TransactionError" && event[:error_kind] == :error &&
+               event[:error_stack] =~ "test/transaction_test.exs"
            end)
+  end
+
+  test "Error in Transaction when error_reporting_enabled = false" do
+    TestHelper.with_error_reporting_disabled(fn ->
+      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+      assert_raise RuntimeError, fn ->
+        TestPlugApp.call(conn(:get, "/error"), [])
+      end
+
+      events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+      assert Enum.find(events, fn [_, event] ->
+               event[:status] == 500 && event[:error] == true && event[:error_reason] == nil &&
+                 event[:error_kind] == nil && event[:error_stack] == nil
+             end)
+    end)
   end
 
   test "Transaction with traced external service call" do
