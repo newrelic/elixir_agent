@@ -56,7 +56,7 @@ defmodule NewRelic.Sampler.Beam do
       input_kb: bytes_in / @kb,
       output_kb: bytes_out / @kb,
       reductions: reductions,
-      run_queue: :erlang.statistics(:run_queue),
+      run_queue: :erlang.statistics(:total_run_queue_lengths),
       process_count: :erlang.system_info(:process_count),
       memory_total_mb: memory[:total] / @mb,
       memory_procs_mb: memory[:processes_used] / @mb,
