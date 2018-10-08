@@ -49,17 +49,17 @@ defmodule SamplerTest do
   end
 
   test "Calculate scheduler utilization" do
-    last = :erlang.statistics(:scheduler_wall_time)
+    first = :erlang.statistics(:scheduler_wall_time)
 
     TestProcess.fib(20)
-    current = :erlang.statistics(:scheduler_wall_time)
+    second = :erlang.statistics(:scheduler_wall_time)
 
-    util_1 = NewRelic.Sampler.Beam.scheduler_utilization_delta(current, last)
+    util_1 = NewRelic.Sampler.Beam.scheduler_utilization_delta(second, first)
     assert util_1 > 0.05
 
     Process.sleep(5)
-    next = :erlang.statistics(:scheduler_wall_time)
-    util_2 = NewRelic.Sampler.Beam.scheduler_utilization_delta(next, last)
+    third = :erlang.statistics(:scheduler_wall_time)
+    util_2 = NewRelic.Sampler.Beam.scheduler_utilization_delta(third, first)
     assert util_1 > util_2
   end
 

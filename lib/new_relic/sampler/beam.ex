@@ -19,31 +19,31 @@ defmodule NewRelic.Sampler.Beam do
 
     NewRelic.sample_process()
     if NewRelic.Config.enabled?(), do: send(self(), :report)
-    {:ok, %{last: take_sample()}}
+    {:ok, %{previous: take_sample()}}
   end
 
   def handle_info(:report, state) do
     current_sample = record_sample(state)
     Process.send_after(self(), :report, NewRelic.Sampler.Reporter.sample_cycle())
-    {:noreply, %{state | last: current_sample}}
+    {:noreply, %{state | previous: current_sample}}
   end
 
   def handle_call(:report, _from, state) do
     current_sample = record_sample(state)
-    {:reply, :ok, %{state | last: current_sample}}
+    {:reply, :ok, %{state | previous: current_sample}}
   end
 
   def record_sample(state) do
-    {current_sample, stats} = collect(state.last)
+    {current_sample, stats} = collect(state.previous)
     NewRelic.report_sample(:BeamStat, stats)
     NewRelic.report_metric(:memory, mb: stats[:memory_total_mb])
     NewRelic.report_metric(:cpu, utilization: stats[:cpu_utilization])
     current_sample
   end
 
-  defp collect(last) do
+  defp collect(previous) do
     current_sample = take_sample()
-    stats = Map.merge(current_sample, delta(last, current_sample))
+    stats = Map.merge(current_sample, delta(previous, current_sample))
     {current_sample, stats}
   end
 
@@ -77,21 +77,21 @@ defmodule NewRelic.Sampler.Beam do
     }
   end
 
-  defp delta(last, current),
+  defp delta(previous, current),
     do: %{
-      garbage_collections: current.garbage_collections - last.garbage_collections,
-      input_kb: current.input_kb - last.input_kb,
-      output_kb: current.output_kb - last.output_kb,
-      reductions: current.reductions - last.reductions,
+      garbage_collections: current.garbage_collections - previous.garbage_collections,
+      input_kb: current.input_kb - previous.input_kb,
+      output_kb: current.output_kb - previous.output_kb,
+      reductions: current.reductions - previous.reductions,
       scheduler_utilization:
-        scheduler_utilization_delta(current.scheduler_utilization, last.scheduler_utilization)
+        scheduler_utilization_delta(current.scheduler_utilization, previous.scheduler_utilization)
     }
 
-  def scheduler_utilization_delta(current, last) do
+  def scheduler_utilization_delta(current, previous) do
     # http://erlang.org/doc/man/erlang.html#statistics_scheduler_wall_time
 
     {active, total} =
-      Enum.zip(last, current)
+      Enum.zip(previous, current)
       |> Enum.reduce({0, 0}, fn {{_i0, a0, t0}, {_i1, a1, t1}}, {a, t} ->
         {a + (a1 - a0), t + (t1 - t0)}
       end)
