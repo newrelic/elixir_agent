@@ -26,6 +26,8 @@ defmodule SamplerTest do
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
+    TestProcess.fib(15)
+
     TestHelper.trigger_report(NewRelic.Sampler.Beam)
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
@@ -44,6 +46,21 @@ defmodule SamplerTest do
              TestHelper.find_metric(metrics, "CPU/User Time")
 
     assert cpu > 0
+  end
+
+  test "Calculate scheduler utilization" do
+    last = :erlang.statistics(:scheduler_wall_time)
+
+    TestProcess.fib(20)
+    current = :erlang.statistics(:scheduler_wall_time)
+
+    util_1 = NewRelic.Sampler.Beam.scheduler_utilization_delta(current, last)
+    assert util_1 > 0.05
+
+    Process.sleep(5)
+    next = :erlang.statistics(:scheduler_wall_time)
+    util_2 = NewRelic.Sampler.Beam.scheduler_utilization_delta(next, last)
+    assert util_1 > util_2
   end
 
   test "Process Sampler" do
