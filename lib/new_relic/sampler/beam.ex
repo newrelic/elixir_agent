@@ -12,8 +12,6 @@ defmodule NewRelic.Sampler.Beam do
   end
 
   def init(:ok) do
-    :erlang.system_flag(:scheduler_wall_time, true)
-
     # throw away first value
     :cpu_sup.util()
 
@@ -72,30 +70,21 @@ defmodule NewRelic.Sampler.Beam do
       port_limit: :erlang.system_info(:port_limit),
       process_limit: :erlang.system_info(:process_limit),
       schedulers: :erlang.system_info(:schedulers),
-      scheduler_utilization: :erlang.statistics(:scheduler_wall_time),
+      scheduler_utilization: :scheduler.sample(),
       cpu_utilization: :cpu_sup.util()
     }
   end
 
-  defp delta(previous, current),
-    do: %{
+  defp delta(previous, current) do
+    [{:total, scheduler_utilization, _} | _] =
+      :scheduler.utilization(previous.scheduler_utilization, current.scheduler_utilization)
+
+    %{
       garbage_collections: current.garbage_collections - previous.garbage_collections,
       input_kb: current.input_kb - previous.input_kb,
       output_kb: current.output_kb - previous.output_kb,
       reductions: current.reductions - previous.reductions,
-      scheduler_utilization:
-        scheduler_utilization_delta(current.scheduler_utilization, previous.scheduler_utilization)
+      scheduler_utilization: scheduler_utilization
     }
-
-  def scheduler_utilization_delta(current, previous) do
-    # http://erlang.org/doc/man/erlang.html#statistics_scheduler_wall_time
-
-    {active, total} =
-      Enum.zip(previous, current)
-      |> Enum.reduce({0, 0}, fn {{_i0, a0, t0}, {_i1, a1, t1}}, {a, t} ->
-        {a + (a1 - a0), t + (t1 - t0)}
-      end)
-
-    active / total
   end
 end
