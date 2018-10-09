@@ -19,9 +19,9 @@ defmodule NewRelic.Transaction.Reporter do
 
   # Customer Exposed API
 
-  def add_attributes(attrs) do
+  def add_attributes(attrs) when is_list(attrs) do
     if tracking?(self()) do
-      AttrStore.add(__MODULE__, self(), attrs)
+      AttrStore.add(__MODULE__, self(), NewRelic.Util.deep_flatten(attrs))
     end
   end
 

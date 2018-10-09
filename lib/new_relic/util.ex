@@ -16,6 +16,18 @@ defmodule NewRelic.Util do
   def time_to_ms({megasec, sec, microsec}),
     do: (megasec * 1_000_000 + sec) * 1_000 + round(microsec / 1_000)
 
+  def deep_flatten(attrs) when is_list(attrs) do
+    Enum.flat_map(attrs, &deep_flatten/1)
+  end
+
+  def deep_flatten({key, value}) when is_map(value) do
+    Enum.flat_map(value, fn {k, v} -> deep_flatten({"#{key}.#{k}", v}) end)
+  end
+
+  def deep_flatten({key, value}) do
+    [{key, value}]
+  end
+
   def elixir_environment() do
     build_info = System.build_info()
 

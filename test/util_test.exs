@@ -24,6 +24,14 @@ defmodule UtilTest do
     refute json =~ ":node"
   end
 
+  test "flatten deeply nested map attributes" do
+    flattened =
+      NewRelic.Util.deep_flatten(not_nested: "value", nested: %{foo: %{bar: %{baz: "qux"}}})
+
+    assert {"nested.foo.bar.baz", "qux"} in flattened
+    assert {:not_nested, "value"} in flattened
+  end
+
   test "Truncates unicode strings correctly" do
     %{key: truncated} =
       NewRelic.Util.Event.process_event(%{key: String.duplicate("a", 4094) <> "é"})
