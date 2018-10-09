@@ -104,16 +104,17 @@ defmodule AttrStoreTest do
     AttrStore.add(table, :task, foo: "BAR")
     AttrStore.add(table, :another_task, baz: "QUX")
     AttrStore.add(table, :sibling_task, sibling: "ANOTHER_TASK")
-    AttrStore.add(table, :super_nested, crazy: "STUFF")
+    AttrStore.add(table, :super_nested, map: %{key1: "value1", key2: %{key3: "value3"}})
 
     attrs = AttrStore.collect(table, :pid)
 
     assert attrs == %{
-             grand: "PARENT",
-             foo: "BAR",
-             baz: "QUX",
-             sibling: "ANOTHER_TASK",
-             crazy: "STUFF"
+             :baz => "QUX",
+             :foo => "BAR",
+             :grand => "PARENT",
+             :sibling => "ANOTHER_TASK",
+             "map.key1" => "value1",
+             "map.key2.key3" => "value3"
            }
   end
 

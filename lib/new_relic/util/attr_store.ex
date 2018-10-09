@@ -31,9 +31,33 @@ defmodule NewRelic.Util.AttrStore do
 
   def add(table, pid, attrs)
       when is_list(attrs) do
-    items = Enum.map(attrs, fn {key, value} -> {pid, {key, value}} end)
+    items =
+      flatten(attrs)
+      |> Enum.map(fn {key, value} -> {pid, {key, value}} end)
+
     insert(table, items)
   end
+
+  defp flatten(list) do
+    flatten_maps(list)
+    |> List.flatten()
+  end
+
+  defp flatten_maps(attrs, key_prefix \\ "") do
+    Enum.map(attrs, fn
+      {:transaction_error = key, value} ->
+        {key, value}
+
+      {key, value} when is_map(value) ->
+        flatten_maps(value, "#{key_prefix}#{key}.")
+
+      {key, value} ->
+        {format_key(key, key_prefix), value}
+    end)
+  end
+
+  defp format_key(key, ""), do: key
+  defp format_key(key, key_prefix), do: "#{key_prefix}#{key}"
 
   def incr(table, pid, attrs)
       when is_list(attrs) do
