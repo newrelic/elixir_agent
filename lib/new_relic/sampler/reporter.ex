@@ -8,4 +8,6 @@ defmodule NewRelic.Sampler.Reporter do
     do: Application.get_env(:new_relic_agent, :sample_event_type, "ElixirSample")
 
   def sample_cycle, do: Application.get_env(:new_relic_agent, :sample_cycle, 15_000)
+
+  def random_offset, do: :rand.uniform(5 * 1000)
 end

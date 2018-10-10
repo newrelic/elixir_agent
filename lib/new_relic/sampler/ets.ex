@@ -13,7 +13,10 @@ defmodule NewRelic.Sampler.Ets do
 
   def init(:ok) do
     NewRelic.sample_process()
-    if NewRelic.Config.enabled?(), do: send(self(), :report)
+
+    if NewRelic.Config.enabled?(),
+      do: Process.send_after(self(), :report, NewRelic.Sampler.Reporter.random_offset())
+
     {:ok, %{}}
   end
 

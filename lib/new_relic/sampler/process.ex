@@ -1,6 +1,5 @@
 defmodule NewRelic.Sampler.Process do
   use GenServer
-  @kb 1024
 
   # Takes samples of the state of requested processes at an interval
 
@@ -12,17 +11,18 @@ defmodule NewRelic.Sampler.Process do
 
   def init(:ok) do
     NewRelic.sample_process()
-    if NewRelic.Config.enabled?(), do: send(self(), :report)
-    {:ok, %{pids: MapSet.new(), previous: %{}}}
+
+    if NewRelic.Config.enabled?(),
+      do: Process.send_after(self(), :report, NewRelic.Sampler.Reporter.random_offset())
+
+    {:ok, %{pids: %{}, previous: %{}}}
   end
 
   def sample_process, do: GenServer.cast(__MODULE__, {:sample_process, self()})
 
   def handle_cast({:sample_process, pid}, state) do
-    Process.monitor(pid)
-    pids = MapSet.put(state.pids, pid)
-    previous = Map.put(state.previous, pid, take_sample(pid))
-    {:noreply, %{state | pids: pids, previous: previous}}
+    state = store_pid(state.pids[pid], state, pid)
+    {:noreply, state}
   end
 
   def handle_info(:report, state) do
@@ -32,7 +32,13 @@ defmodule NewRelic.Sampler.Process do
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    {:noreply, %{state | pids: MapSet.delete(state.pids, pid)}}
+    state = %{
+      state
+      | pids: Map.delete(state.pids, pid),
+        previous: Map.delete(state.previous, pid)
+    }
+
+    {:noreply, state}
   end
 
   def handle_call(:report, _from, state) do
@@ -41,11 +47,20 @@ defmodule NewRelic.Sampler.Process do
   end
 
   def record_samples(state) do
-    Enum.reduce(state.pids, %{}, fn pid, acc ->
+    Enum.reduce(state.pids, %{}, fn {pid, true}, acc ->
       {current_sample, stats} = collect(pid, state.previous[pid])
       NewRelic.report_sample(:ProcessSample, stats)
       Map.put(acc, pid, current_sample)
     end)
+  end
+
+  def store_pid(true, state, _existing_pid), do: state
+
+  def store_pid(nil, state, pid) do
+    Process.monitor(pid)
+    pids = Map.put(state.pids, pid, true)
+    previous = Map.put(state.previous, pid, take_sample(pid))
+    %{state | pids: pids, previous: previous}
   end
 
   def collect(pid, previous) do
@@ -54,9 +69,10 @@ defmodule NewRelic.Sampler.Process do
     {current_sample, stats}
   end
 
+  @kb 1024
   def take_sample(pid) do
     # http://erlang.org/doc/man/erlang.html#process_info-2
-    info = :erlang.process_info(pid, [:message_queue_len, :memory, :reductions, :registered_name])
+    info = Process.info(pid, [:message_queue_len, :memory, :reductions, :registered_name])
 
     %{
       pid: inspect(pid),

@@ -11,6 +11,7 @@ defmodule NewRelic.Sampler.Supervisor do
     children = [
       worker(NewRelic.Sampler.Beam, []),
       worker(NewRelic.Sampler.Process, []),
+      worker(NewRelic.Sampler.TopProcess, []),
       worker(NewRelic.Sampler.Ets, [])
     ]
 
