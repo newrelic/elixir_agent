@@ -13,7 +13,7 @@ defmodule NewRelic.Sampler.Process do
   def init(:ok) do
     NewRelic.sample_process()
     if NewRelic.Config.enabled?(), do: send(self(), :report)
-    {:ok, %{pids: MapSet.new(), last: %{}}}
+    {:ok, %{pids: MapSet.new(), previous: %{}}}
   end
 
   def sample_process, do: GenServer.cast(__MODULE__, {:sample_process, self()})
@@ -21,14 +21,14 @@ defmodule NewRelic.Sampler.Process do
   def handle_cast({:sample_process, pid}, state) do
     Process.monitor(pid)
     pids = MapSet.put(state.pids, pid)
-    last = Map.put(state.last, pid, take_sample(pid))
-    {:noreply, %{state | pids: pids, last: last}}
+    previous = Map.put(state.previous, pid, take_sample(pid))
+    {:noreply, %{state | pids: pids, previous: previous}}
   end
 
   def handle_info(:report, state) do
-    last = record_samples(state)
+    previous = record_samples(state)
     Process.send_after(self(), :report, NewRelic.Sampler.Reporter.sample_cycle())
-    {:noreply, %{state | last: last}}
+    {:noreply, %{state | previous: previous}}
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
@@ -36,21 +36,21 @@ defmodule NewRelic.Sampler.Process do
   end
 
   def handle_call(:report, _from, state) do
-    last = record_samples(state)
-    {:reply, :ok, %{state | last: last}}
+    previous = record_samples(state)
+    {:reply, :ok, %{state | previous: previous}}
   end
 
   def record_samples(state) do
     Enum.reduce(state.pids, %{}, fn pid, acc ->
-      {current_sample, stats} = collect(pid, state.last[pid])
+      {current_sample, stats} = collect(pid, state.previous[pid])
       NewRelic.report_sample(:ProcessSample, stats)
       Map.put(acc, pid, current_sample)
     end)
   end
 
-  def collect(pid, last) do
+  def collect(pid, previous) do
     current_sample = take_sample(pid)
-    stats = Map.merge(current_sample, delta(last, current_sample))
+    stats = Map.merge(current_sample, delta(previous, current_sample))
     {current_sample, stats}
   end
 
@@ -67,7 +67,7 @@ defmodule NewRelic.Sampler.Process do
     }
   end
 
-  defp delta(last, current), do: %{reductions: current.reductions - last.reductions}
+  defp delta(previous, current), do: %{reductions: current.reductions - previous.reductions}
 
   defp parse(:name, []), do: nil
   defp parse(:name, name), do: inspect(name)
