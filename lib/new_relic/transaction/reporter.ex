@@ -19,9 +19,9 @@ defmodule NewRelic.Transaction.Reporter do
 
   # Customer Exposed API
 
-  def add_attributes(attrs) do
+  def add_attributes(attrs) when is_list(attrs) do
     if tracking?(self()) do
-      AttrStore.add(__MODULE__, self(), attrs)
+      AttrStore.add(__MODULE__, self(), NewRelic.Util.deep_flatten(attrs))
     end
   end
 
@@ -62,7 +62,7 @@ defmodule NewRelic.Transaction.Reporter do
       add_attributes(
         end_time_mono: System.monotonic_time(),
         error: true,
-        transaction_error: error,
+        transaction_error: {:error, error},
         error_kind: error.kind,
         error_reason: inspect(error.reason),
         error_stack: inspect(error.stack)
@@ -85,7 +85,7 @@ defmodule NewRelic.Transaction.Reporter do
 
   def set_transaction_error(pid, error) do
     if tracking?(pid) do
-      AttrStore.add(__MODULE__, pid, transaction_error: error)
+      AttrStore.add(__MODULE__, pid, transaction_error: {:error, error})
     end
   end
 
@@ -381,7 +381,7 @@ defmodule NewRelic.Transaction.Reporter do
 
   defp report_transaction_error_event(_tx_attrs, nil), do: :ignore
 
-  defp report_transaction_error_event(tx_attrs, error) do
+  defp report_transaction_error_event(tx_attrs, {:error, error}) do
     attributes = Map.drop(tx_attrs, [:error, :error_kind, :error_reason, :error_stack])
 
     {exception_type, exception_reason, exception_stacktrace} =

@@ -45,6 +45,11 @@ defmodule TransactionTest do
       send_resp(conn, 200, "service")
     end
 
+    get "/map" do
+      NewRelic.add_attributes(plain: "attr", deep: %{foo: %{bar: "baz", baz: "bar"}})
+      send_resp(conn, 200, "map")
+    end
+
     get "/sequential/:order" do
       NewRelic.set_transaction_name("/sequential")
       NewRelic.add_attributes(order: order)
@@ -221,6 +226,19 @@ defmodule TransactionTest do
              event[:path] == "/spawn" && event[:inside] == "spawned" && event[:nested] == "spawn" &&
                event[:not_linked] == "still_tracked" && event[:nested_inside] == "nolink" &&
                event[:rabbit] == "hole" && event[:status] == 200
+           end)
+  end
+
+  test "Flatten the keys of a nested map into a list of individual attributes" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/map"))
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert Enum.find(events, fn [_, event] ->
+             event[:path] == "/map" && event[:plain] == "attr" && event["deep.foo.bar"] == "baz" &&
+               event["deep.foo.baz"] == "bar"
            end)
   end
 end
