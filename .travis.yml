@@ -1,6 +1,8 @@
 language: elixir
 elixir: 1.7.3
-otp_release: 21.0.7
+otp_release:
+  - 21.1
+  - 20.3
 notifications:
   email:
     - vince@newrelic.com
