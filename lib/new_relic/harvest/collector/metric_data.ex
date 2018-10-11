@@ -146,5 +146,6 @@ defmodule NewRelic.Harvest.Collector.MetricData do
 
   defp join(prefix, name, suffix \\ nil)
   defp join(prefix, "/" <> name, suffix), do: join([prefix, name, suffix])
+  defp join(prefix, name, suffix), do: join([prefix, name, suffix])
   defp join(segments) when is_list(segments), do: segments |> Enum.filter(& &1) |> Enum.join("/")
 end
