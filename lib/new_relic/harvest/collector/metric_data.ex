@@ -24,7 +24,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         max_call_time: duration_s
       },
       %Metric{
-        name: join("WebTransaction", name),
+        name: join(["WebTransaction", name]),
         call_count: 1,
         total_call_time: duration_s,
         total_exclusive_time: duration_s,
@@ -59,7 +59,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
   def transform({:datastore, name}, duration_s: duration_s),
     do: [
       %Metric{
-        name: join("Datastore/statement/Postgres", name),
+        name: join(["Datastore/statement/Postgres", name]),
         call_count: 1,
         total_call_time: duration_s,
         total_exclusive_time: duration_s,
@@ -79,7 +79,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
   def transform({:external, name}, duration_s: duration_s),
     do: [
       %Metric{
-        name: join("External", name, "all"),
+        name: join(["External", name, "all"]),
         call_count: 1,
         total_call_time: duration_s,
         total_exclusive_time: duration_s,
@@ -131,7 +131,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
   def transform({:supportability, harvester}, harvest_size: harvest_size),
     do: [
       %Metric{
-        name: "Supportability/Elixir/Collector/HarvestSize/#{inspect(harvester)}",
+        name: join(["Supportability/Elixir/Collector/HarvestSize", inspect(harvester)]),
         call_count: harvest_size
       },
       %Metric{
@@ -144,7 +144,11 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
-  defp join(prefix, name, suffix \\ nil)
-  defp join(prefix, "/" <> name, suffix), do: join([prefix, name, suffix])
-  defp join(segments) when is_list(segments), do: segments |> Enum.filter(& &1) |> Enum.join("/")
+  defp join(segments) when is_list(segments) do
+    segments
+    |> Enum.filter(& &1)
+    |> Enum.map(&String.replace_leading(&1, "/", ""))
+    |> Enum.map(&String.replace_trailing(&1, "/", ""))
+    |> Enum.join("/")
+  end
 end
