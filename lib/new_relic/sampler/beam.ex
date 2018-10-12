@@ -62,7 +62,7 @@ defmodule NewRelic.Sampler.Beam do
       memory_ets_mb: memory[:ets] / @mb,
       memory_atom_mb: memory[:atom_used] / @mb,
       atom_count: :erlang.system_info(:atom_count),
-      ets_count: :erlang.system_info(:ets_count),
+      ets_count: safe_check(:erlang, :system_info, [:ets_count]),
       port_count: :erlang.system_info(:port_count),
       process_count: :erlang.system_info(:process_count),
       atom_limit: :erlang.system_info(:atom_limit),
@@ -70,21 +70,33 @@ defmodule NewRelic.Sampler.Beam do
       port_limit: :erlang.system_info(:port_limit),
       process_limit: :erlang.system_info(:process_limit),
       schedulers: :erlang.system_info(:schedulers),
-      scheduler_utilization: :scheduler.sample(),
+      scheduler_utilization: safe_check(:scheduler, :sample, []),
       cpu_utilization: :cpu_sup.util()
     }
   end
 
-  defp delta(previous, current) do
-    [{:total, scheduler_utilization, _} | _] =
-      :scheduler.utilization(previous.scheduler_utilization, current.scheduler_utilization)
+  def safe_check(m, f, a) do
+    # Some checks only available in OTP 21+
+    apply(m, f, a)
+  rescue
+    _ -> nil
+  end
 
+  defp delta(previous, current) do
     %{
       garbage_collections: current.garbage_collections - previous.garbage_collections,
       input_kb: current.input_kb - previous.input_kb,
       output_kb: current.output_kb - previous.output_kb,
       reductions: current.reductions - previous.reductions,
-      scheduler_utilization: scheduler_utilization
+      scheduler_utilization:
+        delta(:util, previous.scheduler_utilization, current.scheduler_utilization)
     }
+  end
+
+  defp delta(:util, nil, nil), do: nil
+
+  defp delta(:util, previous, current) do
+    [{:total, scheduler_utilization, _} | _] = :scheduler.utilization(previous, current)
+    scheduler_utilization
   end
 end
