@@ -25,4 +25,8 @@ defmodule NewRelic.Util.PriorityQueue do
   def values(tree) do
     :gb_trees.values(tree)
   end
+
+  def list(tree) do
+    :gb_trees.to_list(tree)
+  end
 end

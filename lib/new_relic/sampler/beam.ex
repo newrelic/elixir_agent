@@ -16,7 +16,10 @@ defmodule NewRelic.Sampler.Beam do
     :cpu_sup.util()
 
     NewRelic.sample_process()
-    if NewRelic.Config.enabled?(), do: send(self(), :report)
+
+    if NewRelic.Config.enabled?(),
+      do: Process.send_after(self(), :report, NewRelic.Sampler.Reporter.random_offset())
+
     {:ok, %{previous: take_sample()}}
   end
 

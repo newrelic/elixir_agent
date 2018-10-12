@@ -129,4 +129,11 @@ defmodule SamplerTest do
       assert NewRelic.Sampler.Ets.record_sample(:nope_not_here) == :ignore
     end
   end
+
+  test "detect the processes which are top consumers" do
+    top_procs = NewRelic.Sampler.TopProcess.detect_top_processes()
+
+    assert length(top_procs) >= 5
+    assert length(top_procs) <= 10
+  end
 end
