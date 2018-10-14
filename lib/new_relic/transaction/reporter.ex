@@ -203,10 +203,9 @@ defmodule NewRelic.Transaction.Reporter do
              System.convert_time_unit(end_time_mono - start_time_mono, :native, :milliseconds)
          })
 
-  defp transform_name_attrs(%{custom_name: custom_name} = tx), do: Map.put(tx, :name, custom_name)
-
-  defp transform_name_attrs(%{default_name: default_name} = tx),
-    do: Map.put(tx, :name, default_name)
+  defp transform_name_attrs(%{custom_name: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{framework_name: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{plug_name: name} = tx), do: Map.put(tx, :name, name)
 
   defp extract_transaction_info(tx_attrs, pid) do
     {function_segments, tx_attrs} = Map.pop(tx_attrs, :trace_function_segments, [])
