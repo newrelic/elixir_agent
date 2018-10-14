@@ -44,6 +44,7 @@ defmodule NewRelic.Transaction do
   def handle_errors(conn, error) do
     NewRelic.DistributedTrace.Tracker.cleanup(self())
     NewRelic.Transaction.Plug.add_stop_attrs(conn)
-    NewRelic.Transaction.Reporter.stop(error)
+    NewRelic.Transaction.Reporter.fail(error)
+    NewRelic.Transaction.Reporter.stop(conn)
   end
 end
