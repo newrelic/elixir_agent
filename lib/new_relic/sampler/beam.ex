@@ -64,6 +64,8 @@ defmodule NewRelic.Sampler.Beam do
       memory_procs_mb: memory[:processes_used] / @mb,
       memory_ets_mb: memory[:ets] / @mb,
       memory_atom_mb: memory[:atom_used] / @mb,
+      memory_binary_mb: memory[:binary] / @mb,
+      memory_code_mb: memory[:code] / @mb,
       atom_count: :erlang.system_info(:atom_count),
       ets_count: safe_check(:erlang, :system_info, [:ets_count]),
       port_count: :erlang.system_info(:port_count),
