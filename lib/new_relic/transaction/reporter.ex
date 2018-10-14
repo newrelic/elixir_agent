@@ -51,29 +51,24 @@ defmodule NewRelic.Transaction.Reporter do
     )
   end
 
-  def stop(%Plug.Conn{}) do
-    add_attributes(end_time_mono: System.monotonic_time())
-
-    complete()
+  def fail(%{kind: kind, reason: reason, stack: stack} = error) do
+    if tracking?(self()) do
+      if NewRelic.Config.feature?(:error_collector) do
+        add_attributes(
+          error: true,
+          transaction_error: {:error, error},
+          error_kind: kind,
+          error_reason: inspect(reason),
+          error_stack: inspect(stack)
+        )
+      else
+        add_attributes(error: true)
+      end
+    end
   end
 
-  def stop(%{kind: _kind} = error) do
-    if NewRelic.Config.feature?(:error_collector) do
-      add_attributes(
-        end_time_mono: System.monotonic_time(),
-        error: true,
-        transaction_error: {:error, error},
-        error_kind: error.kind,
-        error_reason: inspect(error.reason),
-        error_stack: inspect(error.stack)
-      )
-    else
-      add_attributes(
-        end_time_mono: System.monotonic_time(),
-        error: true
-      )
-    end
-
+  def stop(%Plug.Conn{}) do
+    add_attributes(end_time_mono: System.monotonic_time())
     complete()
   end
 
