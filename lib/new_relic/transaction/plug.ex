@@ -56,13 +56,13 @@ defmodule NewRelic.Transaction.Plug do
 
   def add_stop_attrs(conn) do
     [
-      default_name: default_name(conn),
+      plug_name: plug_name(conn),
       status: conn.status
     ]
     |> NewRelic.add_attributes()
   end
 
-  def default_name(conn),
+  def plug_name(conn),
     do:
       "/Plug/#{conn.method}/#{match_path(conn)}"
       |> String.replace("/*glob", "")
