@@ -3,6 +3,7 @@ defmodule TestHelper do
     Task.async(fn ->
       try do
         module.call(conn, [])
+        |> Map.put(:request_pid, self())
       rescue
         error -> error
       end

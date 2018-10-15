@@ -62,6 +62,11 @@ defmodule NewRelic.Transaction.Plug do
     |> NewRelic.add_attributes()
   end
 
+  def plug_name(%{private: %{phoenix_controller: controller, phoenix_action: action}}),
+    do:
+      "/Phoenix/#{controller}/#{action}"
+      |> String.replace("/Phoenix/Elixir.", "/Phoenix/")
+
   def plug_name(conn),
     do:
       "/Plug/#{conn.method}/#{match_path(conn)}"
