@@ -67,8 +67,12 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
-  def stop(%Plug.Conn{}) do
-    add_attributes(end_time_mono: System.monotonic_time())
+  def stop(%Plug.Conn{} = conn) do
+    add_attributes(
+      plug_name: Transaction.Plug.plug_name(conn),
+      end_time_mono: System.monotonic_time()
+    )
+
     complete()
   end
 

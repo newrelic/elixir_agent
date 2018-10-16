@@ -56,7 +56,6 @@ defmodule NewRelic.Transaction.Plug do
 
   def add_stop_attrs(conn) do
     [
-      plug_name: plug_name(conn),
       status: conn.status
     ]
     |> NewRelic.add_attributes()
