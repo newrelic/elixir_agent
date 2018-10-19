@@ -55,9 +55,11 @@ defmodule UtilTest do
     end
   end
 
-  test "AWS utilization info" do
-    assert %{} == NewRelic.Util.maybe_add_vendors(%{}, aws_url: "http://foo.com")
+  test "AWS utilization fast timeout" do
+    assert %{} == NewRelic.Util.maybe_add_vendors(%{}, aws_url: "http://httpbin.org/delay/1")
+  end
 
+  test "AWS utilization info" do
     {:ok, _} = Plug.Adapters.Cowboy2.http(FakeAwsPlug, [], port: 8883)
 
     util = NewRelic.Util.maybe_add_vendors(%{}, aws_url: "http://localhost:8883")
