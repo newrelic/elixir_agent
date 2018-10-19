@@ -56,7 +56,7 @@ defmodule UtilTest do
   end
 
   test "AWS utilization fast timeout" do
-    assert %{} == NewRelic.Util.maybe_add_vendors(%{}, aws_url: "http://httpbin.org/delay/1")
+    assert %{} == NewRelic.Util.maybe_add_vendors(%{}, aws_url: "http://httpbin.org/delay/10")
   end
 
   test "AWS utilization info" do
