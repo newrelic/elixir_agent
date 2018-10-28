@@ -224,14 +224,8 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.group_by(& &1.pid)
-      # |> IO.inspect(label: "FUN")
-      |> Enum.into(%{}, fn {pid, segs} ->
-        IO.inspect(segs, label: "SEG")
-        {parents, possible} = Enum.split_with(segs, &(&1.parent_id == nil))
-        parent_segs = Enum.map(parents, &treeize(&1, possible))
-        {pid, parent_segs}
-      end)
-      |> IO.inspect(label: "FUNS")
+      |> Enum.into(%{}, &generate_segment_tree/1)
+      |> IO.inspect(label: "FUN TREE")
 
     process_segments =
       process_spawns
@@ -278,12 +272,20 @@ defmodule NewRelic.Transaction.Reporter do
 
   defp add_cowboy_process_event(spans, _tx_attrs, _pid), do: spans
 
-  defp treeize(leaf, []), do: leaf
+  defp generate_segment_tree({pid, segments}) do
+    parent_map = Enum.group_by(segments, & &1.parent_id)
+    %{children: children} = generate_segment_tree(%{id: nil}, parent_map)
+    {pid, children}
+  end
 
-  defp treeize(parent, possible) do
-    {children, next_possible} = Enum.split_with(possible, &(&1.parent_id == parent.id))
-    child_segs = Enum.map(children, &treeize(&1, next_possible))
-    Map.put(parent, :children, child_segs)
+  defp generate_segment_tree(leaf, parent_map) when map_size(parent_map) == 0 do
+    leaf
+  end
+
+  defp generate_segment_tree(parent, parent_map) do
+    {children, parent_map} = Map.pop(parent_map, parent.id, [])
+    children = Enum.map(children, &generate_segment_tree(&1, parent_map))
+    Map.put(parent, :children, children)
   end
 
   defp report_caller_metric(
