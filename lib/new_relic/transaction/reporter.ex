@@ -379,7 +379,7 @@ defmodule NewRelic.Transaction.Reporter do
 
   defp generate_segment_tree({pid, segments}) do
     parent_map = Enum.group_by(segments, & &1.parent_id)
-    %{children: children} = generate_segment_tree(%{id: nil}, parent_map)
+    %{children: children} = generate_segment_tree(%{id: :root}, parent_map)
     {pid, children}
   end
 
