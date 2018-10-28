@@ -14,6 +14,7 @@ defmodule NewRelic.Tracer.Report do
         {module, function, args},
         {name, category: :datastore},
         pid,
+        ref,
         parent_id,
         {start_time, start_time_mono, end_time_mono}
       ) do
@@ -28,6 +29,7 @@ defmodule NewRelic.Tracer.Report do
       name: name,
       args: args,
       pid: pid,
+      id: {module, function, arity, ref},
       parent_id: parent_id,
       start_time: start_time,
       start_time_mono: start_time_mono,
@@ -70,6 +72,7 @@ defmodule NewRelic.Tracer.Report do
         {module, function, args},
         {name, category: :external},
         pid,
+        ref,
         parent_id,
         {start_time, start_time_mono, end_time_mono}
       ) do
@@ -84,6 +87,7 @@ defmodule NewRelic.Tracer.Report do
       name: name,
       args: args,
       pid: pid,
+      id: {module, function, arity, ref},
       parent_id: parent_id,
       start_time: start_time,
       start_time_mono: start_time_mono,
@@ -125,6 +129,7 @@ defmodule NewRelic.Tracer.Report do
         {module, function, args},
         name,
         pid,
+        ref,
         parent_id,
         {start_time, start_time_mono, end_time_mono}
       )
@@ -140,6 +145,7 @@ defmodule NewRelic.Tracer.Report do
       name: name,
       args: args,
       pid: pid,
+      id: {module, function, arity, ref},
       parent_id: parent_id,
       start_time: start_time,
       start_time_mono: start_time_mono,

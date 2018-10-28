@@ -152,7 +152,8 @@ defmodule NewRelic.Tracer.Macro do
       start_time = System.system_time()
       start_time_mono = System.monotonic_time()
 
-      mfa = {unquote(module), unquote(function), unquote(length(args))}
+      ref = make_ref()
+      mfa = {unquote(module), unquote(function), unquote(length(args)), ref}
       prev_span = NewRelic.DistributedTrace.set_current_span(mfa: mfa)
 
       try do
@@ -166,6 +167,7 @@ defmodule NewRelic.Tracer.Macro do
           {unquote(module), unquote(function), unquote(build_call_args(args))},
           unquote(trace_info),
           inspect(self()),
+          ref,
           prev_span,
           {start_time, start_time_mono, end_time_mono}
         )

@@ -358,15 +358,17 @@ defmodule NewRelic.Transaction.Reporter do
          })
 
   defp transform_trace_name_attrs(
-         %{module: module, function: function, arity: arity, args: args, parent_id: parent_id} =
-           attrs
+         %{
+           module: module,
+           function: function,
+           arity: arity,
+           args: args
+         } = attrs
        ),
        do:
          attrs
          |> Map.merge(%{
            class_name: "#{function}/#{arity}",
-           id: {module, function, arity},
-           parent_id: parent_id,
            method_name: nil,
            metric_name: "#{inspect(module)}.#{function}",
            attributes: %{query: inspect(args, charlists: false)}
