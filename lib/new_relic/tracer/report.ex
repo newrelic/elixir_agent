@@ -14,6 +14,7 @@ defmodule NewRelic.Tracer.Report do
         {module, function, args},
         {name, category: :datastore},
         pid,
+        parent_id,
         {start_time, start_time_mono, end_time_mono}
       ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
@@ -27,6 +28,7 @@ defmodule NewRelic.Tracer.Report do
       name: name,
       args: args,
       pid: pid,
+      parent_id: parent_id,
       start_time: start_time,
       start_time_mono: start_time_mono,
       end_time_mono: end_time_mono
@@ -68,6 +70,7 @@ defmodule NewRelic.Tracer.Report do
         {module, function, args},
         {name, category: :external},
         pid,
+        parent_id,
         {start_time, start_time_mono, end_time_mono}
       ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
@@ -81,6 +84,7 @@ defmodule NewRelic.Tracer.Report do
       name: name,
       args: args,
       pid: pid,
+      parent_id: parent_id,
       start_time: start_time,
       start_time_mono: start_time_mono,
       end_time_mono: end_time_mono
@@ -117,7 +121,13 @@ defmodule NewRelic.Tracer.Report do
     )
   end
 
-  def call({module, function, args}, name, pid, {start_time, start_time_mono, end_time_mono})
+  def call(
+        {module, function, args},
+        name,
+        pid,
+        parent_id,
+        {start_time, start_time_mono, end_time_mono}
+      )
       when is_atom(name) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
@@ -130,6 +140,7 @@ defmodule NewRelic.Tracer.Report do
       name: name,
       args: args,
       pid: pid,
+      parent_id: parent_id,
       start_time: start_time,
       start_time_mono: start_time_mono,
       end_time_mono: end_time_mono

@@ -70,7 +70,9 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def set_current_span(mfa: mfa) do
+    prev = Process.get(:nr_current_span)
     Process.put(:nr_current_span, mfa)
+    prev
   end
 
   def get_current_span_guid() do
@@ -80,8 +82,8 @@ defmodule NewRelic.DistributedTrace do
     end
   end
 
-  def clear_current_span() do
-    Process.delete(:nr_current_span)
+  def reset_current_span(prev: prev) do
+    Process.put(:nr_current_span, prev)
   end
 
   def generate_guid(), do: :crypto.strong_rand_bytes(8) |> Base.encode16() |> String.downcase()

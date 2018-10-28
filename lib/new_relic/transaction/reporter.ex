@@ -224,6 +224,14 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.group_by(& &1.pid)
+      # |> IO.inspect(label: "FUN")
+      |> Enum.into(%{}, fn {pid, segs} ->
+        IO.inspect(segs, label: "SEG")
+        {parents, possible} = Enum.split_with(segs, &(&1.parent_id == nil))
+        parent_segs = Enum.map(parents, &treeize(&1, possible))
+        {pid, parent_segs}
+      end)
+      |> IO.inspect(label: "FUNS")
 
     process_segments =
       process_spawns
@@ -243,7 +251,7 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> List.first()
 
-    top_children = List.wrap(function_segments[tx_attrs.pid]) ++ process_segments
+    top_children = List.wrap(function_segments[pid]) ++ process_segments
     top_segment = Map.put(top_segment, :children, top_children)
 
     {[top_segment], tx_attrs, tx_error, span_events}
@@ -269,6 +277,14 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   defp add_cowboy_process_event(spans, _tx_attrs, _pid), do: spans
+
+  defp treeize(leaf, []), do: leaf
+
+  defp treeize(parent, possible) do
+    {children, next_possible} = Enum.split_with(possible, &(&1.parent_id == parent.id))
+    child_segs = Enum.map(children, &treeize(&1, next_possible))
+    Map.put(parent, :children, child_segs)
+  end
 
   defp report_caller_metric(
          %{
@@ -342,12 +358,15 @@ defmodule NewRelic.Transaction.Reporter do
          })
 
   defp transform_trace_name_attrs(
-         %{module: module, function: function, arity: arity, args: args} = attrs
+         %{module: module, function: function, arity: arity, args: args, parent_id: parent_id} =
+           attrs
        ),
        do:
          attrs
          |> Map.merge(%{
            class_name: "#{function}/#{arity}",
+           id: {module, function, arity},
+           parent_id: parent_id,
            method_name: nil,
            metric_name: "#{inspect(module)}.#{function}",
            attributes: %{query: inspect(args, charlists: false)}
