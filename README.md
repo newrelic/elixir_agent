@@ -4,15 +4,15 @@
 [![Build Status](https://travis-ci.org/newrelic/elixir_agent.svg?branch=master)](https://travis-ci.org/newrelic/elixir_agent)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://github.com/newrelic/elixir_agent/blob/master/LICENSE)
 
-The Open-Source Elixir Agent allows you to monitor your `Elixir` applications with New Relic. It helps you track transactions, distributed traces and other parts of your application's behavior and provides an overview of underlying BEAM activity.
+The Open-Source Elixir Agent allows you to monitor your `Elixir` applications with New Relic. It helps you track transactions, distributed traces and other parts of your application's behavior and provides an overview of underlying [BEAM activity](https://github.com/newrelic/elixir_agent/wiki/BEAM-stats-page).
 
 [View the Documentation](https://hexdocs.pm/new_relic_agent)
 
-## Support Statement
+### Support Statement
 
 New Relic has open-sourced this project to enable monitoring of `Elixir` applications. This project is provided AS-IS WITHOUT WARRANTY OR SUPPORT, although you can report issues and contribute to the project here on GitHub.
 
-## Contributing
+### Contributing
 
 We'd love to get your contributions to improve the elixir agent! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. If you'd like to execute our corporate CLA, or if you have any questions, please drop us an email at [open-source@newrelic.com](mailto:open-source@newrelic.com). 
 
@@ -29,13 +29,6 @@ defp deps do
   ]
 end
 ```
-
-## Adapters
-
-There are a few adapters which leverage this agent to provide library / framework instrumentation:
-
-* https://github.com/binaryseed/new_relic_phoenix
-* https://github.com/binaryseed/new_relic_ecto
 
 ## Configuration
 
@@ -82,6 +75,15 @@ defmodule MyModule do
   end
 end
 ```
+
+#### Adapters
+
+There are a few adapters which leverage this agent to provide library / framework instrumentation:
+
+* https://github.com/binaryseed/new_relic_phoenix
+* https://github.com/binaryseed/new_relic_ecto
+* https://github.com/binaryseed/new_relic_absinthe
+
 
 #### Pre-Instrumented Modules
 

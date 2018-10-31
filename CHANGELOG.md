@@ -1,5 +1,15 @@
 ## CHANGELOG
 
+### `v1.1.0`
+
+* Report as `elixir`. [#19](https://github.com/newrelic/elixir_agent/pull/19)
+
+APM now has first-class support for Elixir! Along with this agent upgrade, you will find the BEAM stats page availble with easy access to information about the VM, including Processes, Memory and Network. See https://github.com/newrelic/elixir_agent/wiki/BEAM-stats-page for more info.
+
+* Note: I haven't followed semver very well, from now on I'll be bumping the minor version for each release of new features, and reserve the patch for bugfixes.
+
+-------
+
 ### `v1.0.5`
 
 * Report more Beam VM stats. [#38](https://github.com/newrelic/elixir_agent/pull/38), [#46](https://github.com/newrelic/elixir_agent/pull/46)
