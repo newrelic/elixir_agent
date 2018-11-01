@@ -69,27 +69,27 @@ defmodule NewRelic.DistributedTrace do
     Process.get(:nr_current_span_attrs) || %{}
   end
 
-  def set_current_span(mfa: mfa) do
-    prev = Process.get(:nr_current_span)
-    Process.put(:nr_current_span, mfa)
-    prev
+  def set_current_span(label: label, ref: ref) do
+    current = {label, ref}
+    previous = Process.get(:nr_current_span)
+    Process.put(:nr_current_span, current)
+    {current, previous}
   end
 
   def get_current_span_guid() do
     case Process.get(:nr_current_span) do
       nil -> generate_guid(pid: self())
-      mfa -> generate_guid(pid: self(), mfa: mfa)
+      {label, ref} -> generate_guid(pid: self(), label: label, ref: ref)
     end
   end
 
-  def reset_current_span(prev: prev) do
-    Process.put(:nr_current_span, prev)
+  def reset_span(previous: previous) do
+    Process.put(:nr_current_span, previous)
   end
 
   def generate_guid(), do: :crypto.strong_rand_bytes(8) |> Base.encode16() |> String.downcase()
   def generate_guid(pid: pid), do: encode_guid([pid, node()])
-  def generate_guid(pid: pid, mfa: mfa), do: encode_guid([mfa, pid, node()])
-  def generate_guid(pid: pid, mfa: mfa, ref: ref), do: encode_guid([mfa, ref, pid, node()])
+  def generate_guid(pid: pid, label: label, ref: ref), do: encode_guid([label, ref, pid, node()])
 
   def encode_guid(segments) when is_list(segments) do
     segments

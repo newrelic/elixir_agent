@@ -39,9 +39,9 @@ defmodule NewRelic.Tracer.Report do
       timestamp_ms: start_time,
       duration_s: duration_s,
       name: function_name({module, function, arity}, name),
-      mfa: {id, parent_id},
       category: "datastore",
-      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args))
+      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args)),
+      edge: {id, parent_id}
     )
 
     NewRelic.incr_attributes(
@@ -96,9 +96,9 @@ defmodule NewRelic.Tracer.Report do
       timestamp_ms: System.convert_time_unit(start_time, :native, :milliseconds),
       duration_s: duration_s,
       name: function_name({module, function, arity}, name),
-      mfa: {id, parent_id},
       category: "http",
-      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args))
+      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args)),
+      edge: {id, parent_id}
     )
 
     NewRelic.incr_attributes(
@@ -153,9 +153,9 @@ defmodule NewRelic.Tracer.Report do
       timestamp_ms: System.convert_time_unit(start_time, :native, :milliseconds),
       duration_s: duration_s,
       name: function_name({module, function, arity}, name),
-      mfa: {id, parent_id},
       category: "generic",
-      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args))
+      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args)),
+      edge: {id, parent_id}
     )
 
     NewRelic.report_aggregate(

@@ -222,7 +222,7 @@ defmodule SpanEventTest do
   describe "Generate span GUIDs" do
     test "for a process" do
       NewRelic.DistributedTrace.generate_guid(pid: self())
-      NewRelic.DistributedTrace.generate_guid(pid: self(), mfa: {:m, :f, 1})
+      NewRelic.DistributedTrace.generate_guid(pid: self(), label: {:m, :f, 1}, ref: make_ref())
     end
   end
 

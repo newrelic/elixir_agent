@@ -28,13 +28,17 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
 
   # API
 
+  # TODO: typespec this
+  # edge: {span, parent_span}
+  # span: {label, ref}
+  # parent_span: :root | {label, ref}
   def report_span(
         timestamp_ms: timestamp_ms,
         duration_s: duration_s,
         name: name,
-        mfa: mfa,
         category: category,
-        attributes: attributes
+        attributes: attributes,
+        edge: {_span, _parent_span} = edge
       ) do
     %Event{
       timestamp: timestamp_ms,
@@ -43,7 +47,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
       category: category,
       category_attributes: attributes
     }
-    |> report_span_event(DistributedTrace.get_tracing_context(), mfa)
+    |> report_span_event(DistributedTrace.get_tracing_context(), edge)
   end
 
   def report_span_event(%Event{} = _event, nil = _context, _mfa), do: :no_transaction
@@ -54,24 +58,18 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   def report_span_event(
         %Event{} = event,
         %DistributedTrace.Context{sampled: true} = context,
-        {{mfa, ref}, parent_id}
+        {{label, ref}, parent_id}
       ) do
     event
     |> Map.merge(%{
-      # guid: DistributedTrace.generate_guid(pid: self(), mfa: mfa),
-      # parent_id: DistributedTrace.generate_guid(pid: self()),
-
-      # TODO: clean up how we pass this to be general
-      # tracer_id
-      # tracer_parent_id
-      guid: DistributedTrace.generate_guid(pid: self(), mfa: mfa, ref: ref),
+      guid: DistributedTrace.generate_guid(pid: self(), label: label, ref: ref),
       parent_id:
         case parent_id do
           :root ->
             DistributedTrace.generate_guid(pid: self())
 
-          {parent_mfa, parent_ref} ->
-            DistributedTrace.generate_guid(pid: self(), mfa: parent_mfa, ref: parent_ref)
+          {parent_label, parent_ref} ->
+            DistributedTrace.generate_guid(pid: self(), label: parent_label, ref: parent_ref)
         end,
       trace_id: context.trace_id,
       transaction_id: context.guid,
