@@ -152,6 +152,7 @@ defmodule NewRelic.Tracer.Macro do
       start_time = System.system_time()
       start_time_mono = System.monotonic_time()
 
+      # TODO: move back to {m, f, a, ref}
       prev_ref = Process.get(:nr_trace_ref)
       ref = make_ref()
       Process.put(:nr_trace_ref, ref)

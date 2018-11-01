@@ -89,6 +89,7 @@ defmodule NewRelic.DistributedTrace do
   def generate_guid(), do: :crypto.strong_rand_bytes(8) |> Base.encode16() |> String.downcase()
   def generate_guid(pid: pid), do: encode_guid([pid, node()])
   def generate_guid(pid: pid, mfa: mfa), do: encode_guid([mfa, pid, node()])
+  def generate_guid(pid: pid, mfa: mfa, ref: ref), do: encode_guid([mfa, ref, pid, node()])
 
   def encode_guid(segments) when is_list(segments) do
     segments

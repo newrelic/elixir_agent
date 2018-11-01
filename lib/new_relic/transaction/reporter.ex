@@ -225,8 +225,10 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.group_by(& &1.pid)
       |> Enum.into(%{}, &generate_segment_tree/1)
-      |> IO.inspect(label: "FUN TREE")
 
+    # |> IO.inspect(label: "FUN TREE")
+
+    # TODO: make tree out of processes too!
     process_segments =
       process_spawns
       |> collect_process_segments(process_names, process_exits)

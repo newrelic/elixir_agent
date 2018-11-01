@@ -82,7 +82,7 @@ defmodule SpanEventTest do
       category_attributes: %{}
     }
 
-    Collector.SpanEvent.Harvester.report_span_event(event, context, mfa)
+    Collector.SpanEvent.Harvester.report_span_event(event, context, {{mfa, :ref}, :root})
 
     [[attrs, _, _]] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
@@ -96,6 +96,11 @@ defmodule SpanEventTest do
     use NewRelic.Tracer
     @trace :hello
     def hello do
+      do_hello()
+    end
+
+    @trace :do_hello
+    def do_hello do
       Process.sleep(10)
       "world"
     end
@@ -143,6 +148,9 @@ defmodule SpanEventTest do
     [function_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.hello/0" end)
 
+    [nested_function_event, _, _] =
+      Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.do_hello/0" end)
+
     [task_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] -> String.starts_with?(ev[:name], "Process #PID") end)
 
@@ -156,23 +164,27 @@ defmodule SpanEventTest do
     assert tx_event[:traceId] == "d6b4ba0c3a712ca"
     assert cowboy_event[:traceId] == "d6b4ba0c3a712ca"
     assert function_event[:traceId] == "d6b4ba0c3a712ca"
+    assert nested_function_event[:traceId] == "d6b4ba0c3a712ca"
     assert task_event[:traceId] == "d6b4ba0c3a712ca"
     assert nested_event[:traceId] == "d6b4ba0c3a712ca"
 
     assert cowboy_event[:transactionId] == tx_event[:guid]
     assert function_event[:transactionId] == tx_event[:guid]
+    assert nested_function_event[:transactionId] == tx_event[:guid]
     assert task_event[:transactionId] == tx_event[:guid]
     assert nested_event[:transactionId] == tx_event[:guid]
 
     assert tx_event[:sampled] == true
     assert cowboy_event[:sampled] == true
     assert function_event[:sampled] == true
+    assert nested_function_event[:sampled] == true
     assert task_event[:sampled] == true
     assert nested_event[:sampled] == true
 
     assert tx_event[:priority] == 0.987654
     assert cowboy_event[:priority] == 0.987654
     assert function_event[:priority] == 0.987654
+    assert nested_function_event[:priority] == 0.987654
     assert task_event[:priority] == 0.987654
     assert nested_event[:priority] == 0.987654
 
@@ -181,6 +193,7 @@ defmodule SpanEventTest do
 
     assert cowboy_event[:parentId] == "5f474d64b9cc9b2a"
     assert function_event[:parentId] == cowboy_event[:guid]
+    assert nested_function_event[:parentId] == function_event[:guid]
     assert task_event[:parentId] == cowboy_event[:guid]
     assert nested_event[:parentId] == task_event[:guid]
 
@@ -194,6 +207,9 @@ defmodule SpanEventTest do
     assert nested_event[:"span.kind"] == "client"
     assert nested_event[:component] == "HTTPoison"
     assert nested_event[:args]
+
+    assert nested_function_event[:category] == "generic"
+    assert nested_function_event[:name] == "SpanEventTest.Traced.do_hello/0"
 
     # Ensure these will encode properly
     Jason.encode!(tx_event)

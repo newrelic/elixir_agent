@@ -51,11 +51,28 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   def report_span_event(%Event{} = _event, %DistributedTrace.Context{sampled: false}, _mfa),
     do: :not_sampled
 
-  def report_span_event(%Event{} = event, %DistributedTrace.Context{sampled: true} = context, mfa) do
+  def report_span_event(
+        %Event{} = event,
+        %DistributedTrace.Context{sampled: true} = context,
+        {{mfa, ref}, parent_id}
+      ) do
     event
     |> Map.merge(%{
-      guid: DistributedTrace.generate_guid(pid: self(), mfa: mfa),
-      parent_id: DistributedTrace.generate_guid(pid: self()),
+      # guid: DistributedTrace.generate_guid(pid: self(), mfa: mfa),
+      # parent_id: DistributedTrace.generate_guid(pid: self()),
+
+      # TODO: clean up how we pass this to be general
+      # tracer_id
+      # tracer_parent_id
+      guid: DistributedTrace.generate_guid(pid: self(), mfa: mfa, ref: ref),
+      parent_id:
+        case parent_id do
+          :root ->
+            DistributedTrace.generate_guid(pid: self())
+
+          {parent_mfa, parent_ref} ->
+            DistributedTrace.generate_guid(pid: self(), mfa: parent_mfa, ref: parent_ref)
+        end,
       trace_id: context.trace_id,
       transaction_id: context.guid,
       sampled: true,
