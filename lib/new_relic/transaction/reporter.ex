@@ -224,19 +224,8 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.group_by(& &1.pid)
-      |> Enum.into(%{}, &generate_segment_tree/1)
-
-    # |> IO.inspect(label: "FUN TREE")
-
-    # TODO: make tree out of processes too!
-    process_segments =
-      process_spawns
-      |> collect_process_segments(process_names, process_exits)
-      |> Enum.map(&transform_trace_time_attrs(&1, tx_attrs.start_time))
-      |> Enum.map(&transform_trace_name_attrs/1)
-      |> Enum.map(&struct(Transaction.Trace.Segment, &1))
-      |> Enum.filter(&function_segments[&1.pid])
-      |> Enum.map(&Map.put(&1, :children, function_segments[&1.pid]))
+      |> Enum.into(%{}, &generate_segment_tree(&1))
+      |> IO.inspect(label: "FUN TREE")
 
     top_segment =
       tx_attrs
@@ -246,9 +235,26 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> List.first()
+      |> Map.put(:id, pid)
 
-    top_children = List.wrap(function_segments[pid]) ++ process_segments
-    top_segment = Map.put(top_segment, :children, top_children)
+    # TODO: make tree out of processes too!
+    top_segment =
+      process_spawns
+      |> collect_process_segments(process_names, process_exits)
+      |> Enum.map(&transform_trace_time_attrs(&1, tx_attrs.start_time))
+      |> Enum.map(&transform_trace_name_attrs/1)
+      |> Enum.map(&struct(Transaction.Trace.Segment, &1))
+      |> Enum.map(&Map.put(&1, :children, function_segments[&1.pid] || []))
+      |> IO.inspect(label: "PROCz")
+      |> generate_process_tree(root: top_segment)
+
+    top_children =
+      List.wrap(function_segments[inspect(pid)])
+      |> IO.inspect(label: "TOPKIDS")
+
+    top_segment =
+      Map.update!(top_segment, :children, &(&1 ++ top_children))
+      |> IO.inspect(label: "FULL TREEEE")
 
     {[top_segment], tx_attrs, tx_error, span_events}
   end
@@ -323,8 +329,8 @@ defmodule NewRelic.Transaction.Reporter do
         priority: tx_attrs[:priority],
         category: "generic",
         name: "Process #{proc.name || proc.pid}",
-        guid: DistributedTrace.generate_guid(pid: proc.raw_pid),
-        parent_id: DistributedTrace.generate_guid(pid: proc.parent_pid),
+        guid: DistributedTrace.generate_guid(pid: proc.id),
+        parent_id: DistributedTrace.generate_guid(pid: proc.parent_id),
         timestamp: proc[:start_time],
         duration: (proc[:end_time] - proc[:start_time]) / 1000
       }
@@ -337,8 +343,8 @@ defmodule NewRelic.Transaction.Reporter do
         {^pid, end_time} <- exits do
       %{
         pid: inspect(pid),
-        raw_pid: pid,
-        parent_pid: original,
+        id: pid,
+        parent_id: original,
         name: name,
         start_time: start_time,
         end_time: end_time
@@ -378,6 +384,22 @@ defmodule NewRelic.Transaction.Reporter do
     do:
       attrs
       |> Map.merge(%{class_name: name || "Process", method_name: nil, metric_name: pid})
+
+  defp generate_process_tree(processes, root: root) do
+    parent_map = Enum.group_by(processes, & &1.parent_id)
+    generate_process_tree(root, parent_map)
+  end
+
+  defp generate_process_tree(leaf, parent_map) when map_size(parent_map) == 0 do
+    leaf
+  end
+
+  # TODO: can use update! version for both
+  defp generate_process_tree(parent, parent_map) do
+    {children, parent_map} = Map.pop(parent_map, parent.id, [])
+    children = Enum.map(children, &generate_process_tree(&1, parent_map))
+    Map.update!(parent, :children, &(&1 ++ children))
+  end
 
   defp generate_segment_tree({pid, segments}) do
     parent_map = Enum.group_by(segments, & &1.parent_id)
