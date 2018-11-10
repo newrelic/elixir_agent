@@ -1,11 +1,17 @@
-defmodule NewRelic.Error.ErrorHandler do
+defmodule NewRelic.Error.ErrorLoggerHandler do
   @behaviour :gen_event
+  @moduledoc false
 
-  # This event handler gets installed as an Error Logger, which
-  # receives messages when error events are logged.
   # http://erlang.org/doc/man/error_logger.html
 
-  @moduledoc false
+  def add_handler() do
+    :error_logger.delete_report_handler(NewRelic.Error.ErrorLoggerHandler)
+    :error_logger.add_report_handler(NewRelic.Error.ErrorLoggerHandler)
+  end
+
+  def remove_handler() do
+    :error_logger.delete_report_handler(NewRelic.Error.ErrorLoggerHandler)
+  end
 
   def init(args) do
     NewRelic.sample_process()
