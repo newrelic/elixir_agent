@@ -387,34 +387,23 @@ defmodule NewRelic.Transaction.Reporter do
 
   defp generate_process_tree(processes, root: root) do
     parent_map = Enum.group_by(processes, & &1.parent_id)
-    generate_process_tree(root, parent_map)
-  end
-
-  defp generate_process_tree(leaf, parent_map) when map_size(parent_map) == 0 do
-    leaf
-  end
-
-  # TODO: can use update! version for both
-  defp generate_process_tree(parent, parent_map) do
-    {children, parent_map} = Map.pop(parent_map, parent.id, [])
-    children = Enum.map(children, &generate_process_tree(&1, parent_map))
-    Map.update!(parent, :children, &(&1 ++ children))
+    generate_tree(root, parent_map)
   end
 
   defp generate_segment_tree({pid, segments}) do
     parent_map = Enum.group_by(segments, & &1.parent_id)
-    %{children: children} = generate_segment_tree(%{id: :root}, parent_map)
+    %{children: children} = generate_tree(%{id: :root}, parent_map)
     {pid, children}
   end
 
-  defp generate_segment_tree(leaf, parent_map) when map_size(parent_map) == 0 do
+  defp generate_tree(leaf, parent_map) when map_size(parent_map) == 0 do
     leaf
   end
 
-  defp generate_segment_tree(parent, parent_map) do
+  defp generate_tree(parent, parent_map) do
     {children, parent_map} = Map.pop(parent_map, parent.id, [])
-    children = Enum.map(children, &generate_segment_tree(&1, parent_map))
-    Map.put(parent, :children, children)
+    children = Enum.map(children, &generate_tree(&1, parent_map))
+    Map.update(parent, :children, children, &(&1 ++ children))
   end
 
   defp report_caller_metric(
