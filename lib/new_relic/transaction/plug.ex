@@ -54,9 +54,14 @@ defmodule NewRelic.Transaction.Plug do
     |> NewRelic.add_attributes()
   end
 
+  @kb 1024
   def add_stop_attrs(conn) do
+    info = Process.info(self(), [:memory, :reductions])
+
     [
-      status: conn.status
+      status: conn.status,
+      memory_kb: info[:memory] / @kb,
+      reductions: info[:reductions]
     ]
     |> NewRelic.add_attributes()
   end
