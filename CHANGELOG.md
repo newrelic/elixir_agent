@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.2.0`
+
+* Leverage the new Erlang `:logger` when running OTP 21 for improved Transaction / Error connecting [#55](https://github.com/newrelic/elixir_agent/pull/55)
+* Record process memory & reductions at the end of a Transaction [#56](https://github.com/newrelic/elixir_agent/pull/56)
+
+-------
+
 ### `v1.1.0`
 
 * Report as `elixir`. [#19](https://github.com/newrelic/elixir_agent/pull/19)
