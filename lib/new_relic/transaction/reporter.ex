@@ -106,7 +106,7 @@ defmodule NewRelic.Transaction.Reporter do
         original,
         pid,
         trace_process_spawns: {:list, {pid, timestamp, original}},
-        trace_process_names: {:list, {pid, process_name(pid)}}
+        trace_process_names: {:list, {pid, NewRelic.Util.process_name(pid)}}
       )
     end
   end
@@ -166,14 +166,6 @@ defmodule NewRelic.Transaction.Reporter do
     report_span_events(span_events)
   end
 
-  defp process_name(pid) do
-    case Process.info(pid, :registered_name) do
-      nil -> nil
-      {:registered_name, []} -> nil
-      {:registered_name, name} -> name
-    end
-  end
-
   defp gather_transaction_info(tx_attrs, pid) do
     tx_attrs
     |> transform_name_attrs
@@ -224,8 +216,7 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.group_by(& &1.pid)
-      |> Enum.into(%{}, &generate_segment_tree(&1))
-      |> IO.inspect(label: "FUN TREE")
+      |> Enum.into(%{}, &generate_process_segment_tree(&1))
 
     top_segment =
       tx_attrs
@@ -245,16 +236,10 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.map(&Map.put(&1, :children, function_segments[&1.pid] || []))
-      |> IO.inspect(label: "PROCz")
       |> generate_process_tree(root: top_segment)
 
-    top_children =
-      List.wrap(function_segments[inspect(pid)])
-      |> IO.inspect(label: "TOPKIDS")
-
-    top_segment =
-      Map.update!(top_segment, :children, &(&1 ++ top_children))
-      |> IO.inspect(label: "FULL TREEEE")
+    top_children = List.wrap(function_segments[inspect(pid)])
+    top_segment = Map.update!(top_segment, :children, &(&1 ++ top_children))
 
     {[top_segment], tx_attrs, tx_error, span_events}
   end
@@ -390,7 +375,7 @@ defmodule NewRelic.Transaction.Reporter do
     generate_tree(root, parent_map)
   end
 
-  defp generate_segment_tree({pid, segments}) do
+  defp generate_process_segment_tree({pid, segments}) do
     parent_map = Enum.group_by(segments, & &1.parent_id)
     %{children: children} = generate_tree(%{id: :root}, parent_map)
     {pid, children}

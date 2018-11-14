@@ -184,14 +184,12 @@ defmodule TransactionTraceTest do
 
   test "Transaction Trace instrument & harvest" do
     TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
-    # TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
+    TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
 
     [trace | _] = traces = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
 
-    # assert length(traces) == 2
-    # Jason.encode!(traces)
-
-    # IO.inspect(trace)
+    assert length(traces) == 2
+    Jason.encode!(traces)
   end
 
   test "Don't report traces with a short duration" do
