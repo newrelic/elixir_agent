@@ -23,9 +23,7 @@ Install the [Hex package](https://hex.pm/packages/new_relic_agent)
 ```elixir
 defp deps do
   [
-    {:new_relic_agent, "~> 1.0"},
-    {:cowboy, "~> 2.0"},
-    {:plug, "~> 1.6"}
+    {:new_relic_agent, "~> 1.0"}
   ]
 end
 ```
@@ -53,17 +51,31 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 
 Out of the box, we will report Error Traces & some general BEAM VM stats. For further visibility, you'll need to add some basic instrumentation.
 
-* `NewRelic.Transaction` enables rich Transaction Monitoring for a `Plug` pipeline. It's a macro that injects a few plugs and an error handler.
+#### Adapters
+
+There are a few adapters which leverage this agent to provide library / framework specific instrumentation:
+
+* `Phoenix` https://github.com/binaryseed/new_relic_phoenix
+* `Ecto` (coming soon) https://github.com/binaryseed/new_relic_ecto
+* `Absinthe` (coming soon) https://github.com/binaryseed/new_relic_absinthe
+
+#### Plug
+
+Plug instrumentation is built into the agent.
+
+* `NewRelic.Transaction` enables rich Transaction Monitoring for a `Plug` pipeline. It's a macro that injects a few plugs and an error handler. Install it by adding `use NewRelic.Transaction` to your Plug module.
 
 ```elixir
-defmodule MyApp do
+defmodule MyPlug do
   use Plug.Router
   use NewRelic.Transaction
   # ...
 end
 ```
 
-* `NewRelic.Tracer` enables detailed Function Tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it.
+#### Function Tracing
+
+* `NewRelic.Tracer` enables detailed Function Tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it. Install it by adding `use NewRelic.Tracer` to any module, and annotating any function with `@trace` module attribute
 
 ```elixir
 defmodule MyModule do
@@ -75,15 +87,6 @@ defmodule MyModule do
   end
 end
 ```
-
-#### Adapters
-
-There are a few adapters which leverage this agent to provide library / framework instrumentation:
-
-* https://github.com/binaryseed/new_relic_phoenix
-* https://github.com/binaryseed/new_relic_ecto
-* https://github.com/binaryseed/new_relic_absinthe
-
 
 #### Pre-Instrumented Modules
 
