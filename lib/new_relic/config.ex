@@ -30,6 +30,10 @@ defmodule NewRelic.Config do
   def logger,
     do: System.get_env("NEW_RELIC_LOG") || Application.get_env(:new_relic_agent, :log)
 
+  @doc "Configure the option for HTTPoison."
+  def httpoison_opts,
+    do: Application.get_env(:new_relic_agent, :httpoison_opts, [])
+
   @doc """
   An optional list of key/value pairs that will be automatic custom attributes
   on all event types reported (Transactions, etc)

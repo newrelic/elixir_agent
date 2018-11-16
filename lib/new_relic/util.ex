@@ -7,8 +7,9 @@ defmodule NewRelic.Util do
 
   def pid, do: System.get_pid() |> String.to_integer()
 
-  def post(url, body, headers) when is_binary(body),
-    do: HTTPoison.post(url, body, headers)
+  def post(url, body, headers) when is_binary(body) do
+    HTTPoison.post(url, body, headers, NewRelic.Config.httpoison_opts())
+  end
 
   def post(url, body, headers),
     do: post(url, Jason.encode!(body), headers)
@@ -77,7 +78,9 @@ defmodule NewRelic.Util do
 
   @aws_vendor_data ["availabilityZone", "instanceId", "instanceType"]
   defp aws_vendor_hash(url) do
-    case HTTPoison.get(url, [], timeout: 100) do
+    opts = NewRelic.Config.httpoison_opts()
+
+    case HTTPoison.get(url, [], [timeout: 100] ++ opts) do
       {:ok, %{status_code: 200, body: body}} ->
         case Jason.decode(body) do
           {:ok, data} -> Map.take(data, @aws_vendor_data)

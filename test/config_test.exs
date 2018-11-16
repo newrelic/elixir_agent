@@ -53,4 +53,16 @@ defmodule ConfigTest do
 
     assert NewRelic.Config.feature?(:error_collector)
   end
+
+  test "Can configure httpoison options" do
+    Application.put_env(:new_relic_agent, :httpoison_opts,
+      ssl: [{:versions, [:"tlsv1.2"]}],
+      recv_timeout: 500
+    )
+
+    assert NewRelic.Config.httpoison_opts() == [
+             ssl: [{:versions, [:"tlsv1.2"]}],
+             recv_timeout: 500
+           ]
+  end
 end
