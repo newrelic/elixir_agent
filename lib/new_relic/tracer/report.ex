@@ -41,7 +41,7 @@ defmodule NewRelic.Tracer.Report do
       name: function_name({module, function, arity}, name),
       category: "datastore",
       attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args)),
-      edge: {id, parent_id}
+      edge: [span: id, parent: parent_id]
     )
 
     NewRelic.incr_attributes(
@@ -98,7 +98,7 @@ defmodule NewRelic.Tracer.Report do
       name: function_name({module, function, arity}, name),
       category: "http",
       attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args)),
-      edge: {id, parent_id}
+      edge: [span: id, parent: parent_id]
     )
 
     NewRelic.incr_attributes(
@@ -155,7 +155,7 @@ defmodule NewRelic.Tracer.Report do
       name: function_name({module, function, arity}, name),
       category: "generic",
       attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args)),
-      edge: {id, parent_id}
+      edge: [span: id, parent: parent_id]
     )
 
     NewRelic.report_aggregate(

@@ -186,7 +186,7 @@ defmodule TransactionTraceTest do
     TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
     TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
 
-    [trace | _] = traces = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
+    traces = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
 
     assert length(traces) == 2
     Jason.encode!(traces)

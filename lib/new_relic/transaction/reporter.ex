@@ -228,7 +228,6 @@ defmodule NewRelic.Transaction.Reporter do
       |> List.first()
       |> Map.put(:id, pid)
 
-    # TODO: make tree out of processes too!
     top_segment =
       process_spawns
       |> collect_process_segments(process_names, process_exits)

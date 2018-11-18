@@ -28,17 +28,22 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
 
   # API
 
-  # TODO: typespec this
-  # edge: {span, parent_span}
-  # span: {label, ref}
-  # parent_span: :root | {label, ref}
+  # Label is any term that identifies the thing the span represents
+  #  ex: {m, f, a} for a function call
+  # Reference identifies the unique instance of the span
+  #  ex: make_ref()
+
+  @type label :: any
+  @type span :: {label, reference}
+  @type parent_span :: {label, reference} | :root
+
   def report_span(
         timestamp_ms: timestamp_ms,
         duration_s: duration_s,
         name: name,
         category: category,
         attributes: attributes,
-        edge: {_span, _parent_span} = edge
+        edge: [span: _span, parent_span: _parent_span] = edge
       ) do
     %Event{
       timestamp: timestamp_ms,
