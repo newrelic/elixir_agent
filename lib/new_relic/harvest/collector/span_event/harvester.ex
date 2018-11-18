@@ -35,15 +35,15 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
 
   @type label :: any
   @type span :: {label, reference}
-  @type parent_span :: {label, reference} | :root
+  @type parent :: {label, reference} | :root
 
   def report_span(
         timestamp_ms: timestamp_ms,
         duration_s: duration_s,
         name: name,
+        edge: [span: _span, parent: _parent] = edge,
         category: category,
-        attributes: attributes,
-        edge: [span: _span, parent_span: _parent_span] = edge
+        attributes: attributes
       ) do
     %Event{
       timestamp: timestamp_ms,
@@ -63,19 +63,13 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   def report_span_event(
         %Event{} = event,
         %DistributedTrace.Context{sampled: true} = context,
-        {{label, ref}, parent_id}
+        span: span,
+        parent: parent
       ) do
     event
     |> Map.merge(%{
-      guid: DistributedTrace.generate_guid(pid: self(), label: label, ref: ref),
-      parent_id:
-        case parent_id do
-          :root ->
-            DistributedTrace.generate_guid(pid: self())
-
-          {parent_label, parent_ref} ->
-            DistributedTrace.generate_guid(pid: self(), label: parent_label, ref: parent_ref)
-        end,
+      guid: generate_guid(span),
+      parent_id: generate_guid(parent),
       trace_id: context.trace_id,
       transaction_id: context.guid,
       sampled: true,
@@ -139,6 +133,11 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
 
     log_harvest(length(spans))
   end
+
+  def generate_guid(:root), do: DistributedTrace.generate_guid(pid: self())
+
+  def generate_guid({label, ref}),
+    do: DistributedTrace.generate_guid(pid: self(), label: label, ref: ref)
 
   def log_harvest(harvest_size) do
     NewRelic.report_metric({:supportability, SpanEvent}, harvest_size: harvest_size)

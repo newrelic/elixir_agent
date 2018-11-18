@@ -1,18 +1,16 @@
 defmodule NewRelic.Span.Event do
-  @moduledoc """
-  Struct for a Span Event
-
-  * trace_id: Distributed Trace ID
-    - trace_id from Transaction
-  * guid: Segment Identifier
-  * parent_id: Segment's Parent's GUID
-    - id of incoming DT payload OR `guid` of parent segment
-  * transaction_id: Transaction's guid
-  * timestamp: Segment start in unix timestamp milliseconds
-  * duration: Segment elapsed in seconds
-  * category: http | datastore | generic
-  * entry_point: Only included if span is First segment
-  """
+  # Struct for a Span Event
+  #
+  # * trace_id: Distributed Trace ID
+  #   - trace_id from Transaction
+  # * guid: Segment Identifier
+  # * parent_id: Segment's Parent's GUID
+  #   - id of incoming DT payload OR `guid` of parent segment
+  # * transaction_id: Transaction's guid
+  # * timestamp: Segment start in unix timestamp milliseconds
+  # * duration: Segment elapsed in seconds
+  # * category: http | datastore | generic
+  # * entry_point: Only included if span is First segment
 
   defstruct type: "Span",
             trace_id: nil,

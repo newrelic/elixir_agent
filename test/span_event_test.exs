@@ -82,7 +82,10 @@ defmodule SpanEventTest do
       category_attributes: %{}
     }
 
-    Collector.SpanEvent.Harvester.report_span_event(event, context, {{mfa, :ref}, :root})
+    Collector.SpanEvent.Harvester.report_span_event(event, context,
+      span: {mfa, :ref},
+      parent: :root
+    )
 
     [[attrs, _, _]] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 

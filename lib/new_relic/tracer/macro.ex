@@ -162,7 +162,6 @@ defmodule NewRelic.Tracer.Macro do
         unquote(body)
       after
         end_time_mono = System.monotonic_time()
-
         NewRelic.DistributedTrace.reset_span(previous: previous_span)
 
         Tracer.Report.call(
