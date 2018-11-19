@@ -49,6 +49,7 @@ defmodule NewRelic.Transaction.Plug do
       remote_ip: conn.remote_ip |> :inet_parse.ntoa() |> to_string(),
       referer: get_req_header(conn, "referer") |> List.first(),
       user_agent: get_req_header(conn, "user-agent") |> List.first(),
+      content_type: get_req_header(conn, "content-type") |> List.first(),
       request_method: conn.method
     ]
     |> NewRelic.add_attributes()
