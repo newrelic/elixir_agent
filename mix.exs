@@ -38,7 +38,7 @@ defmodule NewRelic.Mixfile do
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:jason, "~> 1.0"},
       {:plug, "~> 1.6"},
-      {:cowboy, "~> 2.0"},
+      {:cowboy, "~> 2.0", only: :test},
       {:httpoison, "~> 1.0"}
     ]
   end
