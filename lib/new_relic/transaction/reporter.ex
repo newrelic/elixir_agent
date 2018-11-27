@@ -213,10 +213,9 @@ defmodule NewRelic.Transaction.Reporter do
     {process_exits, tx_attrs} = Map.pop(tx_attrs, :trace_process_exits, [])
     {tx_error, tx_attrs} = Map.pop(tx_attrs, :transaction_error, nil)
 
-    span_events = [
-      cowboy_process_event(tx_attrs, pid)
-      | spawned_process_events(tx_attrs, process_spawns, process_names, process_exits)
-    ]
+    span_events =
+      spawned_process_events(tx_attrs, process_spawns, process_names, process_exits)
+      |> add_cowboy_process_event(tx_attrs, pid)
 
     function_segments =
       function_segments
@@ -250,21 +249,26 @@ defmodule NewRelic.Transaction.Reporter do
     {[top_segment], tx_attrs, tx_error, span_events}
   end
 
-  defp cowboy_process_event(tx_attrs, pid) do
-    %NewRelic.Span.Event{
-      trace_id: tx_attrs[:traceId],
-      transaction_id: tx_attrs[:guid],
-      sampled: tx_attrs[:sampled],
-      priority: tx_attrs[:priority],
-      category: "generic",
-      name: "Cowboy Process #{inspect(pid)}",
-      guid: DistributedTrace.generate_guid(pid: pid),
-      parent_id: tx_attrs[:parentSpanId],
-      timestamp: tx_attrs[:start_time],
-      duration: tx_attrs[:duration_ms] / 1000,
-      entry_point: true
-    }
+  defp add_cowboy_process_event(spans, %{sampled: true} = tx_attrs, pid) do
+    [
+      %NewRelic.Span.Event{
+        trace_id: tx_attrs[:traceId],
+        transaction_id: tx_attrs[:guid],
+        sampled: true,
+        priority: tx_attrs[:priority],
+        category: "generic",
+        name: "Cowboy Process #{inspect(pid)}",
+        guid: DistributedTrace.generate_guid(pid: pid),
+        parent_id: tx_attrs[:parentSpanId],
+        timestamp: tx_attrs[:start_time],
+        duration: tx_attrs[:duration_ms] / 1000,
+        entry_point: true
+      }
+      | spans
+    ]
   end
+
+  defp add_cowboy_process_event(spans, _tx_attrs, _pid), do: spans
 
   defp report_caller_metric(
          %{
