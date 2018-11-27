@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.2.1`
+
+* Fix a bug that caused a subset of Span Events to be sent even though the Transaction wasn't sampled [#63](https://github.com/newrelic/elixir_agent/pull/63)
+
+-------
+
 ### `v1.2.0`
 
 * Leverage the new Erlang `:logger` when running OTP 21 for improved Transaction / Error connecting [#55](https://github.com/newrelic/elixir_agent/pull/55)
