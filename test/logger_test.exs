@@ -30,4 +30,12 @@ defmodule LoggerTest do
       GenServer.call(NewRelic.Logger, {:replace, previous_logger})
     end
   end
+
+  @tag :capture_log
+  test "Logger logger" do
+    previous_logger = GenServer.call(NewRelic.Logger, {:logger, :logger})
+    NewRelic.log(:info, "HELLO")
+    NewRelic.log(:error, "DANG")
+    GenServer.call(NewRelic.Logger, {:replace, previous_logger})
+  end
 end

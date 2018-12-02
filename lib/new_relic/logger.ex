@@ -1,5 +1,6 @@
 defmodule NewRelic.Logger do
   use GenServer
+  require Logger
 
   # Log Agent events to the configured output device
   #  - "tmp/new_relic.log" (Default)
@@ -29,6 +30,11 @@ defmodule NewRelic.Logger do
 
   # Server
 
+  def handle_cast({:log, level, message}, %{io_device: Logger} = state) do
+    Logger.log(level, "new_relic_agent - " <> message)
+    {:noreply, state}
+  end
+
   def handle_cast({:log, level, message}, %{io_device: io_device} = state) do
     IO.write(io_device, formatted(level, message))
     {:noreply, state}
@@ -54,12 +60,14 @@ defmodule NewRelic.Logger do
       nil -> {:file, "tmp/new_relic.log"}
       "stdout" -> :stdio
       "memory" -> :memory
+      "Logger" -> :logger
       log_file_path -> {:file, log_file_path}
     end
   end
 
   def device(:stdio), do: {:ok, :stdio}
   def device(:memory), do: StringIO.open("")
+  def device(:logger), do: {:ok, Logger}
 
   def device({:file, logfile}) do
     log(:info, "Log File: #{Path.absname(logfile)}")
