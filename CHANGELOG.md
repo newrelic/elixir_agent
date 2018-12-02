@@ -1,5 +1,13 @@
 ## CHANGELOG
 
+### `v1.3.0`
+
+* Enable the NewRelic logger to use the Elixir Logger [#67](https://github.com/newrelic/elixir_agent/pull/67)
+* Properly assign multiple app names [#66](https://github.com/newrelic/elixir_agent/pull/66).
+* Log the collector method along with failed requests [#65](https://github.com/newrelic/elixir_agent/pull/65).
+
+-------
+
 ### `v1.2.1`
 
 * Fix a bug that caused a subset of Span Events to be sent even though the Transaction wasn't sampled [#63](https://github.com/newrelic/elixir_agent/pull/63)
