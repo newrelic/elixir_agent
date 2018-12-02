@@ -46,7 +46,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
       params
       |> collector_method_url
       |> NewRelic.Util.post(payload, collector_headers())
-      |> parse_http_response
+      |> parse_http_response(params)
 
   defp retry_call({:ok, response}, _params, _payload), do: {:ok, response}
   defp retry_call({:error, _response}, params, payload), do: issue_call(params, payload)
@@ -66,16 +66,16 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     |> URI.to_string()
   end
 
-  defp parse_http_response({:ok, %{status_code: 200, body: body}}),
+  defp parse_http_response({:ok, %{status_code: 200, body: body}}, _params),
     do: {:ok, Jason.decode!(body)}
 
-  defp parse_http_response({:ok, %{status_code: status, body: body}}) do
-    NewRelic.log(:error, "(#{status}) #{body}")
+  defp parse_http_response({:ok, %{status_code: status, body: body}}, params) do
+    NewRelic.log(:error, "#{params[:method]}: (#{status}) #{body}")
     {:error, status}
   end
 
-  defp parse_http_response({:error, reason}) do
-    NewRelic.log(:error, "#{inspect(reason)}")
+  defp parse_http_response({:error, reason}, params) do
+    NewRelic.log(:error, "#{params[:method]}: #{inspect(reason)}")
     {:error, reason}
   end
 
