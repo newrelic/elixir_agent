@@ -58,7 +58,7 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
         language: "elixir",
         pid: NewRelic.Util.pid(),
         host: NewRelic.Util.hostname(),
-        app_name: [NewRelic.Config.app_name()],
+        app_name: NewRelic.Config.app_name(),
         utilization: NewRelic.Util.utilization(),
         environment: NewRelic.Util.elixir_environment(),
         agent_version: NewRelic.Config.agent_version()

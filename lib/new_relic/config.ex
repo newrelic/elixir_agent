@@ -5,9 +5,11 @@ defmodule NewRelic.Config do
   All configuration items can be set via ENV variable _or_ via Application config
   """
 
-  @doc "Configure your application name. **Required**"
-  def app_name,
-    do: System.get_env("NEW_RELIC_APP_NAME") || Application.get_env(:new_relic_agent, :app_name)
+  @doc "Configure your application name. May contain up to 3 names seperated by `;`. **Required**"
+  def app_name do
+    (System.get_env("NEW_RELIC_APP_NAME") || Application.get_env(:new_relic_agent, :app_name))
+    |> parse_app_names
+  end
 
   @doc "Configure your New Relic License Key. **Required**"
   def license_key,
@@ -80,6 +82,12 @@ defmodule NewRelic.Config do
     do:
       System.get_env("NEW_RELIC_HARVEST_ENABLED") ||
         Application.get_env(:new_relic_agent, :harvest_enabled, true)
+
+  defp parse_app_names(name_string) do
+    name_string
+    |> String.split(";")
+    |> Enum.map(&String.trim/1)
+  end
 
   @external_resource "VERSION"
   @agent_version "VERSION" |> File.read!() |> String.trim()
