@@ -14,6 +14,9 @@ defmodule ConfigTest do
     System.put_env("NEW_RELIC_LOG", "some_file.log")
     assert {:file, "some_file.log"} == NewRelic.Logger.initial_logger()
 
+    System.put_env("NEW_RELIC_LOG", "Logger")
+    assert :logger == NewRelic.Logger.initial_logger()
+
     System.delete_env("NEW_RELIC_LOG")
     assert inital_logger == NewRelic.Logger.initial_logger()
   end

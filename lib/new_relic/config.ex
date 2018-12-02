@@ -24,6 +24,7 @@ defmodule NewRelic.Config do
 
   Options:
   - `"stdout"`
+  - `"Logger"` Elixir's Logger
   - `"memory"` (Useful for testing)
   - `"file_name.log"`
   """
