@@ -83,6 +83,8 @@ defmodule NewRelic.Config do
       System.get_env("NEW_RELIC_HARVEST_ENABLED") ||
         Application.get_env(:new_relic_agent, :harvest_enabled, true)
 
+  defp parse_app_names(nil), do: nil
+
   defp parse_app_names(name_string) do
     name_string
     |> String.split(";")
