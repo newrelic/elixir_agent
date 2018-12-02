@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.3.1`
+
+* Properly handle when no app name has been supplied.
+
+-------
+
 ### `v1.3.0`
 
 * Enable the NewRelic logger to use the Elixir Logger [#67](https://github.com/newrelic/elixir_agent/pull/67)
