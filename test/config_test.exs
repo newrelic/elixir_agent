@@ -52,6 +52,8 @@ defmodule ConfigTest do
     Application.get_env(:new_relic_agent, :error_collector_enabled, false)
 
     assert NewRelic.Config.feature?(:error_collector)
+
+    System.delete_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED")
   end
 
   test "Parse multiple app names" do
@@ -61,5 +63,7 @@ defmodule ConfigTest do
 
     System.put_env("NEW_RELIC_APP_NAME", "One Name")
     assert length(NewRelic.Config.app_name()) == 1
+
+    System.delete_env("NEW_RELIC_APP_NAME")
   end
 end
