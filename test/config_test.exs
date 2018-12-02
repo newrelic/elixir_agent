@@ -53,4 +53,13 @@ defmodule ConfigTest do
 
     assert NewRelic.Config.feature?(:error_collector)
   end
+
+  test "Parse multiple app names" do
+    System.put_env("NEW_RELIC_APP_NAME", "One Name; Two Names ")
+    assert "Two Names" in NewRelic.Config.app_name()
+    assert length(NewRelic.Config.app_name()) == 2
+
+    System.put_env("NEW_RELIC_APP_NAME", "One Name")
+    assert length(NewRelic.Config.app_name()) == 1
+  end
 end
