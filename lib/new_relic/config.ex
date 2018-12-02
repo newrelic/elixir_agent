@@ -34,6 +34,12 @@ defmodule NewRelic.Config do
     do: System.get_env("NEW_RELIC_LOG") || Application.get_env(:new_relic_agent, :log)
 
   @doc """
+  Configure the Agent to communicate through a proxy. The value should be the URL of your proxy.
+  """
+  def proxy,
+    do: System.get_env("NEW_RELIC_PROXY_URL") || Application.get_env(:new_relic_agent, :proxy_url)
+
+  @doc """
   An optional list of key/value pairs that will be automatic custom attributes
   on all event types reported (Transactions, etc)
 
