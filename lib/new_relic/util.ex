@@ -9,12 +9,6 @@ defmodule NewRelic.Util do
 
   def pid, do: System.get_pid() |> String.to_integer()
 
-  def post(url, body, headers) when is_binary(body),
-    do: HTTPoison.post(url, body, headers)
-
-  def post(url, body, headers),
-    do: post(url, Jason.encode!(body), headers)
-
   def time_to_ms({megasec, sec, microsec}),
     do: (megasec * 1_000_000 + sec) * 1_000 + round(microsec / 1_000)
 

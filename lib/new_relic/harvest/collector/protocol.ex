@@ -45,7 +45,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     do:
       params
       |> collector_method_url
-      |> NewRelic.Util.post(payload, collector_headers())
+      |> NewRelic.Util.HTTP.post(payload, collector_headers())
       |> parse_http_response(params)
 
   defp retry_call({:ok, response}, _params, _payload), do: {:ok, response}
