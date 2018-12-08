@@ -264,43 +264,6 @@ defmodule NewRelic.Transaction.Reporter do
 
   defp add_cowboy_process_event(spans, _tx_attrs, _pid), do: spans
 
-  defp generate_segment_tree({pid, segments}) do
-    parent_map = Enum.group_by(segments, & &1.parent_id)
-    %{children: children} = generate_segment_tree(%{id: nil}, parent_map)
-    {pid, children}
-  end
-
-  defp generate_segment_tree(leaf, parent_map) when map_size(parent_map) == 0 do
-    leaf
-  end
-
-  defp generate_segment_tree(parent, parent_map) do
-    {children, parent_map} = Map.pop(parent_map, parent.id, [])
-    children = Enum.map(children, &generate_segment_tree(&1, parent_map))
-    Map.put(parent, :children, children)
-  end
-
-  defp report_caller_metric(
-         %{
-           "parent.type": parent_type,
-           "parent.account": parent_account_id,
-           "parent.app": parent_app_id,
-           "parent.transportType": transport_type
-         } = tx_attrs
-       ) do
-    NewRelic.report_metric(
-      {:caller, parent_type, parent_account_id, parent_app_id, transport_type},
-      duration_s: tx_attrs[:duration_ms] / 1000
-    )
-  end
-
-  defp report_caller_metric(tx_attrs) do
-    NewRelic.report_metric(
-      {:caller, "Unknown", "Unknown", "Unknown", "Unknown"},
-      duration_s: tx_attrs[:duration_ms] / 1000
-    )
-  end
-
   defp spawned_process_events(tx_attrs, process_spawns, process_names, process_exits) do
     process_spawns
     |> collect_process_segments(process_names, process_exits)
