@@ -234,6 +234,7 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&transform_trace_time_attrs(&1, tx_attrs.start_time))
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
+      |> Enum.sort_by(& &1.relative_start_time)
       |> Enum.map(&Map.put(&1, :children, function_segments[&1.pid] || []))
       |> generate_process_tree(root: top_segment)
 
@@ -312,6 +313,22 @@ defmodule NewRelic.Transaction.Reporter do
 
   defp transform_trace_name_attrs(
          %{
+           primary_name: metric_name,
+           secondary_name: class_name,
+           attributes: attributes
+         } = attrs
+       ) do
+    attrs
+    |> Map.merge(%{
+      class_name: class_name,
+      method_name: nil,
+      metric_name: metric_name |> String.replace("/", ""),
+      attributes: attributes
+    })
+  end
+
+  defp transform_trace_name_attrs(
+         %{
            module: module,
            function: function,
            arity: arity,
@@ -349,7 +366,12 @@ defmodule NewRelic.Transaction.Reporter do
 
   defp generate_tree(parent, parent_map) do
     {children, parent_map} = Map.pop(parent_map, parent.id, [])
-    children = Enum.map(children, &generate_tree(&1, parent_map))
+
+    children =
+      children
+      |> Enum.sort_by(& &1.relative_start_time)
+      |> Enum.map(&generate_tree(&1, parent_map))
+
     Map.update(parent, :children, children, &(&1 ++ children))
   end
 
