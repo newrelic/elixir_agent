@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.3.2`
+
+* Specify `Plug` and `Cowboy` versions via `plug_cowboy` package.
+
+-------
+
 ### `v1.3.1`
 
 * Properly handle when no app name has been supplied.
