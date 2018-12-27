@@ -60,7 +60,7 @@ defmodule UtilTest do
   end
 
   test "AWS utilization info" do
-    {:ok, _} = Plug.Adapters.Cowboy2.http(FakeAwsPlug, [], port: 8883)
+    {:ok, _} = Plug.Cowboy.http(FakeAwsPlug, [], port: 8883)
 
     util = NewRelic.Util.maybe_add_vendors(%{}, aws_url: "http://localhost:8883")
     assert get_in(util, [:vendors, :aws, "instanceId"]) == "test.id"

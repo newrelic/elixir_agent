@@ -14,7 +14,7 @@ defmodule CollectorStubTest do
   end
 
   test "Retry on 503" do
-    {:ok, _} = Plug.Adapters.Cowboy2.http(EvilCollectorPlug, [test_pid: self()], port: 8881)
+    {:ok, _} = Plug.Cowboy.http(EvilCollectorPlug, [test_pid: self()], port: 8881)
 
     with_config(
       [
@@ -44,7 +44,7 @@ defmodule CollectorStubTest do
 
   test "Log out collector error response" do
     previous_logger = GenServer.call(NewRelic.Logger, {:logger, :memory})
-    {:ok, _} = Plug.Adapters.Cowboy2.http(TeapotCollectorPlug, [], port: 8882)
+    {:ok, _} = Plug.Cowboy.http(TeapotCollectorPlug, [], port: 8882)
 
     with_config(
       [
