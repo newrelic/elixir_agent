@@ -21,6 +21,8 @@ defmodule NewRelic.Transaction.Trace do
               children: [],
               class_name: nil,
               method_name: nil,
+              parent_id: nil,
+              id: nil,
               pid: nil
 
     @moduledoc false

@@ -106,7 +106,7 @@ defmodule NewRelic.Transaction.Reporter do
         original,
         pid,
         trace_process_spawns: {:list, {pid, timestamp, original}},
-        trace_process_names: {:list, {pid, process_name(pid)}}
+        trace_process_names: {:list, {pid, NewRelic.Util.process_name(pid)}}
       )
     end
   end
@@ -166,14 +166,6 @@ defmodule NewRelic.Transaction.Reporter do
     report_span_events(span_events)
   end
 
-  defp process_name(pid) do
-    case Process.info(pid, :registered_name) do
-      nil -> nil
-      {:registered_name, []} -> nil
-      {:registered_name, name} -> name
-    end
-  end
-
   defp gather_transaction_info(tx_attrs, pid) do
     tx_attrs
     |> transform_name_attrs
@@ -224,15 +216,7 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.group_by(& &1.pid)
-
-    process_segments =
-      process_spawns
-      |> collect_process_segments(process_names, process_exits)
-      |> Enum.map(&transform_trace_time_attrs(&1, tx_attrs.start_time))
-      |> Enum.map(&transform_trace_name_attrs/1)
-      |> Enum.map(&struct(Transaction.Trace.Segment, &1))
-      |> Enum.filter(&function_segments[&1.pid])
-      |> Enum.map(&Map.put(&1, :children, function_segments[&1.pid]))
+      |> Enum.into(%{}, &generate_process_segment_tree(&1))
 
     top_segment =
       tx_attrs
@@ -242,9 +226,20 @@ defmodule NewRelic.Transaction.Reporter do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> List.first()
+      |> Map.put(:id, pid)
 
-    top_children = List.wrap(function_segments[tx_attrs.pid]) ++ process_segments
-    top_segment = Map.put(top_segment, :children, top_children)
+    top_segment =
+      process_spawns
+      |> collect_process_segments(process_names, process_exits)
+      |> Enum.map(&transform_trace_time_attrs(&1, tx_attrs.start_time))
+      |> Enum.map(&transform_trace_name_attrs/1)
+      |> Enum.map(&struct(Transaction.Trace.Segment, &1))
+      |> Enum.sort_by(& &1.relative_start_time)
+      |> Enum.map(&Map.put(&1, :children, function_segments[&1.pid] || []))
+      |> generate_process_tree(root: top_segment)
+
+    top_children = List.wrap(function_segments[inspect(pid)])
+    top_segment = Map.update!(top_segment, :children, &(&1 ++ top_children))
 
     {[top_segment], tx_attrs, tx_error, span_events}
   end
@@ -270,6 +265,116 @@ defmodule NewRelic.Transaction.Reporter do
 
   defp add_cowboy_process_event(spans, _tx_attrs, _pid), do: spans
 
+  defp spawned_process_events(tx_attrs, process_spawns, process_names, process_exits) do
+    process_spawns
+    |> collect_process_segments(process_names, process_exits)
+    |> Enum.map(&transform_trace_name_attrs/1)
+    |> Enum.map(fn proc ->
+      %NewRelic.Span.Event{
+        trace_id: tx_attrs[:traceId],
+        transaction_id: tx_attrs[:guid],
+        sampled: tx_attrs[:sampled],
+        priority: tx_attrs[:priority],
+        category: "generic",
+        name: "Process #{proc.name || proc.pid}",
+        guid: DistributedTrace.generate_guid(pid: proc.id),
+        parent_id: DistributedTrace.generate_guid(pid: proc.parent_id),
+        timestamp: proc[:start_time],
+        duration: (proc[:end_time] - proc[:start_time]) / 1000
+      }
+    end)
+  end
+
+  defp collect_process_segments(spawns, names, exits) do
+    for {pid, start_time, original} <- spawns,
+        {^pid, name} <- names,
+        {^pid, end_time} <- exits do
+      %{
+        pid: inspect(pid),
+        id: pid,
+        parent_id: original,
+        name: name,
+        start_time: start_time,
+        end_time: end_time
+      }
+    end
+  end
+
+  defp transform_trace_time_attrs(
+         %{start_time: start_time, end_time: end_time} = attrs,
+         trace_start_time
+       ),
+       do:
+         attrs
+         |> Map.merge(%{
+           relative_start_time: start_time - trace_start_time,
+           relative_end_time: end_time - trace_start_time
+         })
+
+  defp transform_trace_name_attrs(
+         %{
+           primary_name: metric_name,
+           secondary_name: class_name,
+           attributes: attributes
+         } = attrs
+       ) do
+    attrs
+    |> Map.merge(%{
+      class_name: class_name,
+      method_name: nil,
+      metric_name: metric_name |> String.replace("/", ""),
+      attributes: attributes
+    })
+  end
+
+  defp transform_trace_name_attrs(
+         %{
+           module: module,
+           function: function,
+           arity: arity,
+           args: args
+         } = attrs
+       ),
+       do:
+         attrs
+         |> Map.merge(%{
+           class_name: "#{function}/#{arity}",
+           method_name: nil,
+           metric_name: "#{inspect(module)}.#{function}",
+           attributes: %{query: inspect(args, charlists: false)}
+         })
+
+  defp transform_trace_name_attrs(%{pid: pid, name: name} = attrs),
+    do:
+      attrs
+      |> Map.merge(%{class_name: name || "Process", method_name: nil, metric_name: pid})
+
+  defp generate_process_tree(processes, root: root) do
+    parent_map = Enum.group_by(processes, & &1.parent_id)
+    generate_tree(root, parent_map)
+  end
+
+  defp generate_process_segment_tree({pid, segments}) do
+    parent_map = Enum.group_by(segments, & &1.parent_id)
+    %{children: children} = generate_tree(%{id: :root}, parent_map)
+    {pid, children}
+  end
+
+  defp generate_tree(leaf, parent_map) when map_size(parent_map) == 0 do
+    leaf
+  end
+
+  defp generate_tree(parent, parent_map) do
+    {children, parent_map} = Map.pop(parent_map, parent.id, [])
+
+    children =
+      children
+      |> Enum.sort_by(& &1.relative_start_time)
+      |> Enum.map(&generate_tree(&1, parent_map))
+
+    Map.update(parent, :children, children, &(&1 ++ children))
+  end
+
   defp report_caller_metric(
          %{
            "parent.type": parent_type,
@@ -291,72 +396,9 @@ defmodule NewRelic.Transaction.Reporter do
     )
   end
 
-  defp spawned_process_events(tx_attrs, process_spawns, process_names, process_exits) do
-    process_spawns
-    |> collect_process_segments(process_names, process_exits)
-    |> Enum.map(&transform_trace_name_attrs/1)
-    |> Enum.map(fn proc ->
-      %NewRelic.Span.Event{
-        trace_id: tx_attrs[:traceId],
-        transaction_id: tx_attrs[:guid],
-        sampled: tx_attrs[:sampled],
-        priority: tx_attrs[:priority],
-        category: "generic",
-        name: "Process #{proc.name || proc.pid}",
-        guid: DistributedTrace.generate_guid(pid: proc.raw_pid),
-        parent_id: DistributedTrace.generate_guid(pid: proc.parent_pid),
-        timestamp: proc[:start_time],
-        duration: (proc[:end_time] - proc[:start_time]) / 1000
-      }
-    end)
-  end
-
   defp report_span_events(span_events) do
     Enum.each(span_events, &Collector.SpanEvent.Harvester.report_span_event/1)
   end
-
-  defp collect_process_segments(spawns, names, exits) do
-    for {pid, start_time, original} <- spawns,
-        {^pid, name} <- names,
-        {^pid, end_time} <- exits do
-      %{
-        pid: inspect(pid),
-        raw_pid: pid,
-        parent_pid: original,
-        name: name,
-        start_time: start_time,
-        end_time: end_time
-      }
-    end
-  end
-
-  defp transform_trace_time_attrs(
-         %{start_time: start_time, end_time: end_time} = attrs,
-         trace_start_time
-       ),
-       do:
-         attrs
-         |> Map.merge(%{
-           relative_start_time: start_time - trace_start_time,
-           relative_end_time: end_time - trace_start_time
-         })
-
-  defp transform_trace_name_attrs(
-         %{module: module, function: function, arity: arity, args: args} = attrs
-       ),
-       do:
-         attrs
-         |> Map.merge(%{
-           class_name: "#{function}/#{arity}",
-           method_name: nil,
-           metric_name: "#{inspect(module)}.#{function}",
-           attributes: %{query: inspect(args, charlists: false)}
-         })
-
-  defp transform_trace_name_attrs(%{pid: pid, name: name} = attrs),
-    do:
-      attrs
-      |> Map.merge(%{class_name: name || "Process", method_name: nil, metric_name: pid})
 
   defp report_transaction_event(tx_attrs) do
     Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{

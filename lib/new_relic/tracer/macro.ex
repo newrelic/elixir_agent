@@ -152,20 +152,23 @@ defmodule NewRelic.Tracer.Macro do
       start_time = System.system_time()
       start_time_mono = System.monotonic_time()
 
-      NewRelic.DistributedTrace.set_current_span(
-        mfa: {unquote(module), unquote(function), unquote(length(args))}
-      )
+      {span, previous_span} =
+        NewRelic.DistributedTrace.set_current_span(
+          label: {unquote(module), unquote(function), unquote(length(args))},
+          ref: make_ref()
+        )
 
       try do
         unquote(body)
       after
         end_time_mono = System.monotonic_time()
-        NewRelic.DistributedTrace.clear_current_span()
+        NewRelic.DistributedTrace.reset_span(previous: previous_span)
 
         Tracer.Report.call(
           {unquote(module), unquote(function), unquote(build_call_args(args))},
           unquote(trace_info),
           inspect(self()),
+          {span, previous_span || :root},
           {start_time, start_time_mono, end_time_mono}
         )
       end

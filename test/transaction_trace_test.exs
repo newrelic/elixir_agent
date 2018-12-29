@@ -24,7 +24,7 @@ defmodule TransactionTraceTest do
   defmodule ExternalService do
     use NewRelic.Tracer
     @trace {:query, category: :external}
-    def query(n), do: Process.sleep(n)
+    def query(n), do: HelperModule.function(n)
   end
 
   defmodule TestPlugApp do
@@ -43,7 +43,6 @@ defmodule TransactionTraceTest do
           Task.async(fn ->
             ExternalService.query(202)
             Process.sleep(20)
-            HelperModule.function(203)
           end)
           |> Task.await()
         end)
@@ -57,7 +56,7 @@ defmodule TransactionTraceTest do
 
       Task.await(t1)
       Task.await(t2)
-      ExternalService.query(105)
+      ExternalService.query(405)
       send_resp(conn, 200, "transaction_trace")
     end
 

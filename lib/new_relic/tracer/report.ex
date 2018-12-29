@@ -14,6 +14,7 @@ defmodule NewRelic.Tracer.Report do
         {module, function, args},
         {name, category: :datastore},
         pid,
+        {id, parent_id},
         {start_time, start_time_mono, end_time_mono}
       ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
@@ -27,6 +28,8 @@ defmodule NewRelic.Tracer.Report do
       name: name,
       args: args,
       pid: pid,
+      id: id,
+      parent_id: parent_id,
       start_time: start_time,
       start_time_mono: start_time_mono,
       end_time_mono: end_time_mono
@@ -36,7 +39,7 @@ defmodule NewRelic.Tracer.Report do
       timestamp_ms: start_time,
       duration_s: duration_s,
       name: function_name({module, function, arity}, name),
-      mfa: {module, function, arity},
+      edge: [span: id, parent: parent_id],
       category: "datastore",
       attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args))
     )
@@ -68,6 +71,7 @@ defmodule NewRelic.Tracer.Report do
         {module, function, args},
         {name, category: :external},
         pid,
+        {id, parent_id},
         {start_time, start_time_mono, end_time_mono}
       ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
@@ -81,6 +85,8 @@ defmodule NewRelic.Tracer.Report do
       name: name,
       args: args,
       pid: pid,
+      id: id,
+      parent_id: parent_id,
       start_time: start_time,
       start_time_mono: start_time_mono,
       end_time_mono: end_time_mono
@@ -90,7 +96,7 @@ defmodule NewRelic.Tracer.Report do
       timestamp_ms: System.convert_time_unit(start_time, :native, :milliseconds),
       duration_s: duration_s,
       name: function_name({module, function, arity}, name),
-      mfa: {module, function, arity},
+      edge: [span: id, parent: parent_id],
       category: "http",
       attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args))
     )
@@ -117,7 +123,13 @@ defmodule NewRelic.Tracer.Report do
     )
   end
 
-  def call({module, function, args}, name, pid, {start_time, start_time_mono, end_time_mono})
+  def call(
+        {module, function, args},
+        name,
+        pid,
+        {id, parent_id},
+        {start_time, start_time_mono, end_time_mono}
+      )
       when is_atom(name) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
@@ -130,6 +142,8 @@ defmodule NewRelic.Tracer.Report do
       name: name,
       args: args,
       pid: pid,
+      id: id,
+      parent_id: parent_id,
       start_time: start_time,
       start_time_mono: start_time_mono,
       end_time_mono: end_time_mono
@@ -139,7 +153,7 @@ defmodule NewRelic.Tracer.Report do
       timestamp_ms: System.convert_time_unit(start_time, :native, :milliseconds),
       duration_s: duration_s,
       name: function_name({module, function, arity}, name),
-      mfa: {module, function, arity},
+      edge: [span: id, parent: parent_id],
       category: "generic",
       attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args))
     )

@@ -28,11 +28,20 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
 
   # API
 
+  # Label is any term that identifies the thing the span represents
+  #  ex: {m, f, a} for a function call
+  # Reference identifies the unique instance of the span
+  #  ex: make_ref()
+
+  @type label :: any
+  @type span :: {label, reference}
+  @type parent :: {label, reference} | :root
+
   def report_span(
         timestamp_ms: timestamp_ms,
         duration_s: duration_s,
         name: name,
-        mfa: mfa,
+        edge: [span: _span, parent: _parent] = edge,
         category: category,
         attributes: attributes
       ) do
@@ -43,7 +52,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
       category: category,
       category_attributes: attributes
     }
-    |> report_span_event(DistributedTrace.get_tracing_context(), mfa)
+    |> report_span_event(DistributedTrace.get_tracing_context(), edge)
   end
 
   def report_span_event(%Event{} = _event, nil = _context, _mfa), do: :no_transaction
@@ -51,11 +60,16 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   def report_span_event(%Event{} = _event, %DistributedTrace.Context{sampled: false}, _mfa),
     do: :not_sampled
 
-  def report_span_event(%Event{} = event, %DistributedTrace.Context{sampled: true} = context, mfa) do
+  def report_span_event(
+        %Event{} = event,
+        %DistributedTrace.Context{sampled: true} = context,
+        span: span,
+        parent: parent
+      ) do
     event
     |> Map.merge(%{
-      guid: DistributedTrace.generate_guid(pid: self(), mfa: mfa),
-      parent_id: DistributedTrace.generate_guid(pid: self()),
+      guid: generate_guid(span),
+      parent_id: generate_guid(parent),
       trace_id: context.trace_id,
       transaction_id: context.guid,
       sampled: true,
@@ -119,6 +133,11 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
 
     log_harvest(length(spans))
   end
+
+  def generate_guid(:root), do: DistributedTrace.generate_guid(pid: self())
+
+  def generate_guid({label, ref}),
+    do: DistributedTrace.generate_guid(pid: self(), label: label, ref: ref)
 
   def log_harvest(harvest_size) do
     NewRelic.report_metric({:supportability, SpanEvent}, harvest_size: harvest_size)
