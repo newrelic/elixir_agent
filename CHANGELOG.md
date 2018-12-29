@@ -1,16 +1,18 @@
 ## CHANGELOG
 
+### `v1.4.0`
+
+* Support nested Function Tracers in Transaction Traces and Distributed Tracing. [#58](https://github.com/newrelic/elixir_agent/pull/58)
+
+-------
+
 ### `v1.3.2`
 
 * Specify `Plug` and `Cowboy` versions via `plug_cowboy` package.
 
--------
-
 ### `v1.3.1`
 
 * Properly handle when no app name has been supplied.
-
--------
 
 ### `v1.3.0`
 
@@ -23,8 +25,6 @@
 ### `v1.2.1`
 
 * Fix a bug that caused a subset of Span Events to be sent even though the Transaction wasn't sampled [#63](https://github.com/newrelic/elixir_agent/pull/63)
-
--------
 
 ### `v1.2.0`
 
@@ -49,13 +49,9 @@ APM now has first-class support for Elixir! Along with this agent upgrade, you w
 * Report process stats for top consuming processes. [#41](https://github.com/newrelic/elixir_agent/pull/41)
 * Re-factor a few agent innards to enable transaction name and errors.
 
--------
-
 ### `v1.0.4`
 
 * Enable configuring Error collection via `:error_collector_enabled` [#36](https://github.com/newrelic/elixir_agent/pull/36) (Thanks @sb8244)
-
--------
 
 ### `v1.0.3`
 
