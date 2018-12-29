@@ -55,8 +55,8 @@ Out of the box, we will report Error Traces & some general BEAM VM stats. For fu
 There are a few adapters which leverage this agent to provide library / framework specific instrumentation:
 
 * `Phoenix` https://github.com/binaryseed/new_relic_phoenix
+* `Absinthe` https://github.com/binaryseed/new_relic_absinthe
 * `Ecto` (coming soon) https://github.com/binaryseed/new_relic_ecto
-* `Absinthe` (coming soon) https://github.com/binaryseed/new_relic_absinthe
 
 #### Plug
 
