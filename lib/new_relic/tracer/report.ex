@@ -45,7 +45,6 @@ defmodule NewRelic.Tracer.Report do
     )
 
     NewRelic.incr_attributes(
-      timestamp_ms: System.convert_time_unit(start_time, :native, :milliseconds),
       datastore_call_count: 1,
       datastore_duration_ms: duration_ms,
       "datastore.#{function_name({module, function}, name)}.call_count": 1,
@@ -62,7 +61,7 @@ defmodule NewRelic.Tracer.Report do
     )
 
     NewRelic.report_metric(
-      {:datastore, "/#{function_name({module, function}, name)}"},
+      {:datastore, "Database", inspect(module), function_name(function, name)},
       duration_s: duration_s
     )
   end
@@ -171,4 +170,6 @@ defmodule NewRelic.Tracer.Report do
   defp function_name({m, f}, i), do: "#{inspect(m)}.#{f}:#{i}"
   defp function_name({m, f, a}, f), do: "#{inspect(m)}.#{f}/#{a}"
   defp function_name({m, f, a}, i), do: "#{inspect(m)}.#{f}:#{i}/#{a}"
+  defp function_name(f, f), do: "#{f}"
+  defp function_name(_f, i), do: "#{i}"
 end
