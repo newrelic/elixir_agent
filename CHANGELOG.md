@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.5.0`
+
+* More flexible datastore metric reporting in prep for `Ecto` instrumentation. [#76](https://github.com/newrelic/elixir_agent/pull/76)
+
+-------
+
 ### `v1.4.0`
 
 * Support nested Function Tracers in Transaction Traces and Distributed Tracing. [#58](https://github.com/newrelic/elixir_agent/pull/58)
