@@ -23,8 +23,8 @@ defmodule MetricTracerTest do
     def query do
     end
 
-    @trace {:db, category: :datastore}
-    def db do
+    @trace {:db_query, category: :datastore}
+    def db_query do
     end
 
     @trace {:special, category: :external}
@@ -50,15 +50,15 @@ defmodule MetricTracerTest do
   end
 
   test "Datastore metrics" do
-    MetricTraced.db()
+    MetricTraced.db_query()
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
     assert TestHelper.find_metric(
              metrics,
-             "Datastore/statement/Postgres/MetricTracerTest.MetricTraced.db"
+             "Datastore/statement/Database/MetricTracerTest.MetricTraced/db_query"
            )
 
-    assert TestHelper.find_metric(metrics, "Datastore/Postgres/all")
+    assert TestHelper.find_metric(metrics, "Datastore/Database/all")
   end
 end
