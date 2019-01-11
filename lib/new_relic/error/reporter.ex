@@ -60,8 +60,13 @@ defmodule NewRelic.Error.Reporter do
   defp parse_process_name([], _stacktrace), do: "UnknownProcess"
   defp parse_process_name(registered_name, _stacktrace), do: inspect(registered_name)
 
-  defp parse_error_info({kind, {exception, stacktrace}, _stack}) when is_list(stacktrace),
-    do: {kind, exception, stacktrace}
+  defp parse_error_info({kind, {{{exception, stacktrace}, _init_call}, _init_stack}, _proc_stack}) do
+    {kind, exception, stacktrace}
+  end
+
+  defp parse_error_info({kind, {exception, stacktrace}, _stack}) when is_list(stacktrace) do
+    {kind, exception, stacktrace}
+  end
 
   defp parse_error_info({kind, exception, stacktrace}), do: {kind, exception, stacktrace}
 
