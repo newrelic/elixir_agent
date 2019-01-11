@@ -39,7 +39,7 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
 
   def handle_info(:connect, _state) do
     state =
-      connect_payload()
+      Collector.Connect.payload()
       |> Collector.Protocol.connect()
       |> parse_connect
 
@@ -50,20 +50,6 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
 
   def handle_call(:connected, _from, state) do
     {:reply, true, state}
-  end
-
-  def connect_payload do
-    [
-      %{
-        language: "elixir",
-        pid: NewRelic.Util.pid(),
-        host: NewRelic.Util.hostname(),
-        app_name: NewRelic.Config.app_name(),
-        utilization: NewRelic.Util.utilization(),
-        environment: NewRelic.Util.elixir_environment(),
-        agent_version: NewRelic.Config.agent_version()
-      }
-    ]
   end
 
   defp store_agent_run(%{"agent_run_id" => _} = state) do

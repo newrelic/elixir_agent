@@ -6,17 +6,6 @@ defmodule CollectorIntegrationTest do
 
   # mix test test/integration --include skip
 
-  defmodule EvilCollectorPlug do
-    import Plug.Conn
-
-    def init(options), do: options
-
-    def call(conn, test_pid: test_pid) do
-      send(test_pid, :attempt)
-      send_resp(conn, 503, ':(')
-    end
-  end
-
   setup do
     GenServer.call(Collector.AgentRun, :connected)
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")

@@ -5,7 +5,11 @@ defmodule NewRelic.Config do
   All configuration items can be set via ENV variable _or_ via Application config
   """
 
-  @doc "Configure your application name. May contain up to 3 names seperated by `;`. **Required**"
+  @doc """
+  Configure your application name. **Required**
+
+  May contain up to 3 names seperated by `;`
+  """
   def app_name do
     (System.get_env("NEW_RELIC_APP_NAME") || Application.get_env(:new_relic_agent, :app_name))
     |> parse_app_names
@@ -22,7 +26,9 @@ defmodule NewRelic.Config do
     do: System.get_env("NEW_RELIC_HOST") || Application.get_env(:new_relic_agent, :host)
 
   @doc """
-  Configure the Agent logging mechanism. Defaults to `"tmp/new_relic.log"`
+  Configure the Agent logging mechanism.
+
+  Defaults to `"tmp/new_relic.log"`.
 
   Options:
   - `"stdout"`
@@ -35,7 +41,7 @@ defmodule NewRelic.Config do
 
   @doc """
   An optional list of key/value pairs that will be automatic custom attributes
-  on all event types reported (Transactions, etc)
+  on all event types reported (Transactions, etc).
 
   Options:
   - `{:system, "ENV_NAME"}` Read a System ENV variable
@@ -60,6 +66,26 @@ defmodule NewRelic.Config do
       {name, {m, f, a}} -> {name, apply(m, f, a)}
       {name, value} -> {name, value}
     end)
+  end
+
+  @doc """
+  An optional list of labels that will be applied to the application.
+
+  Configured with a single string containing a list of key-value pairs:
+
+  `key1:value1;key2:value2`
+
+  The delimiting characters `;` and `:` are not allowed in the `key` or `value`
+
+  Example:
+
+  ```
+  config :new_relic_agent, labels: "region:west;env:prod"
+  ```
+  """
+  def labels do
+    (System.get_env("NEW_RELIC_LABELS") || Application.get_env(:new_relic_agent, :labels))
+    |> parse_labels()
   end
 
   @doc """
@@ -89,6 +115,16 @@ defmodule NewRelic.Config do
     name_string
     |> String.split(";")
     |> Enum.map(&String.trim/1)
+  end
+
+  defp parse_labels(nil), do: []
+
+  @label_splitter ~r/;|:/
+  defp parse_labels(label_string) do
+    label_string
+    |> String.split(@label_splitter, trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.chunk_every(2, 2, :discard)
   end
 
   @external_resource "VERSION"

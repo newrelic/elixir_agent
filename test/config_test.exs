@@ -69,4 +69,17 @@ defmodule ConfigTest do
 
     System.delete_env("NEW_RELIC_APP_NAME")
   end
+
+  test "Parse labels" do
+    System.put_env("NEW_RELIC_LABELS", "key1:value1;key2:value2; key3 :value3;stray ")
+
+    labels = NewRelic.Config.labels()
+
+    assert ["key3", "value3"] in labels
+    assert length(labels) == 3
+
+    System.delete_env("NEW_RELIC_LABELS")
+
+    assert [] == NewRelic.Config.labels()
+  end
 end
