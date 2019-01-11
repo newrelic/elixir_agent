@@ -2,7 +2,7 @@ defmodule NewRelic.Util do
   @moduledoc false
 
   def hostname do
-    with {:ok, name} <- :inet.gethostname(), do: to_string(name)
+    maybe_heroku_dyno_hostname() || get_hostname()
   end
 
   def pid, do: System.get_pid() |> String.to_integer()
@@ -94,6 +94,20 @@ defmodule NewRelic.Util do
 
       _error ->
         nil
+    end
+  end
+
+  defp get_hostname do
+    with {:ok, name} <- :inet.gethostname(), do: to_string(name)
+  end
+
+  defp maybe_heroku_dyno_hostname do
+    System.get_env("DYNO")
+    |> case do
+      nil -> nil
+      "scheduler." <> _ -> "scheduler.*"
+      "run." <> _ -> "run.*"
+      name -> name
     end
   end
 end

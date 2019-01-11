@@ -65,4 +65,16 @@ defmodule UtilTest do
     util = NewRelic.Util.maybe_add_vendors(%{}, aws_url: "http://localhost:8883")
     assert get_in(util, [:vendors, :aws, "instanceId"]) == "test.id"
   end
+
+  test "hostname detection" do
+    System.put_env("DYNO", "foobar")
+    assert NewRelic.Util.hostname() == "foobar"
+
+    System.put_env("DYNO", "run.100")
+    assert NewRelic.Util.hostname() == "run.*"
+
+    System.delete_env("DYNO")
+    hostname = NewRelic.Util.hostname()
+    assert is_binary(hostname)
+  end
 end
