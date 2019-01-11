@@ -1,5 +1,13 @@
 ## CHANGELOG
 
+### `v1.6.0`
+
+* Add support for applying labels. [#79](https://github.com/newrelic/elixir_agent/pull/79)
+* Detect Heroku dyno hostnames. [#80](https://github.com/newrelic/elixir_agent/pull/80)
+* Provide better error structure for wrapped exceptions. [#78](https://github.com/newrelic/elixir_agent/pull/78)
+
+-------
+
 ### `v1.5.0`
 
 * More flexible datastore metric reporting in prep for `Ecto` instrumentation. [#76](https://github.com/newrelic/elixir_agent/pull/76)
