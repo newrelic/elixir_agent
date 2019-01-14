@@ -8,7 +8,7 @@ defmodule ErrorTraceTest do
     agent_run_id = Collector.AgentRun.agent_run_id()
 
     er_1 = %Trace{
-      timestamp: System.system_time(:milliseconds) / 1_000,
+      timestamp: System.system_time(:millisecond) / 1_000,
       transaction_name: "WebTransaction/AgentTest/Transaction/name",
       request_uri: "http://google.com",
       message: "Error: message",

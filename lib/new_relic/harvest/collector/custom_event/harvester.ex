@@ -31,7 +31,7 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
       %Event{
         type: type,
         attributes: annotate(attributes),
-        timestamp: System.system_time(:milliseconds) / 1_000
+        timestamp: System.system_time(:millisecond) / 1_000
       }
       |> report_custom_event
 

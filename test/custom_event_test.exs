@@ -8,7 +8,7 @@ defmodule CustomEventTest do
     agent_run_id = Collector.AgentRun.agent_run_id()
 
     tr_1 = %Event{
-      timestamp: System.system_time(:milliseconds) / 1_000,
+      timestamp: System.system_time(:millisecond) / 1_000,
       type: "CustomEventTest",
       attributes: %{
         foo: "bar"
@@ -30,13 +30,13 @@ defmodule CustomEventTest do
 
     ev1 = %Event{
       type: "CustomEventTest",
-      timestamp: System.system_time(:milliseconds) / 1_000,
+      timestamp: System.system_time(:millisecond) / 1_000,
       attributes: %{foo: "baz"}
     }
 
     ev2 = %Event{
       type: "CustomEventTest",
-      timestamp: System.system_time(:milliseconds) / 1_000,
+      timestamp: System.system_time(:millisecond) / 1_000,
       attributes: %{foo: "bar"}
     }
 

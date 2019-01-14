@@ -33,7 +33,7 @@ defmodule CollectorIntegrationTest do
   end
 
   test "Can post a metric" do
-    ts_end = System.system_time(:seconds)
+    ts_end = System.system_time(:second)
     ts_start = ts_end - 60
     agent_run_id = Collector.AgentRun.agent_run_id()
 

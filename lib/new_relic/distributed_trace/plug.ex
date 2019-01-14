@@ -149,6 +149,6 @@ defmodule NewRelic.DistributedTrace.Plug do
   defp generate_priority, do: :rand.uniform() |> Float.round(6)
 
   defp transport_duration(context_start_time) do
-    (System.system_time(:milliseconds) - context_start_time) / 1_000
+    (System.system_time(:millisecond) - context_start_time) / 1_000
   end
 end
