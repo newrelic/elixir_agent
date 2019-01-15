@@ -70,7 +70,7 @@ defmodule NewRelic.DistributedTrace.Context do
           "tr" => context.trace_id,
           "pr" => context.priority,
           "sa" => context.sampled,
-          "ti" => System.system_time(:milliseconds)
+          "ti" => System.system_time(:millisecond)
         }
         |> maybe_put(:span_guid, "id", context.sampled, current_span_guid)
         |> maybe_put(:trust_key, "tk", context.account_id, context.trust_key)

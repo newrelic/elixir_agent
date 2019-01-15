@@ -61,11 +61,11 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
 
     Collector.Protocol.metric_data([
       Collector.AgentRun.agent_run_id(),
-      System.convert_time_unit(state.start_time, :native, :seconds),
+      System.convert_time_unit(state.start_time, :native, :second),
       System.convert_time_unit(
         state.start_time + (state.end_time_mono - state.start_time_mono),
         :native,
-        :seconds
+        :second
       ),
       metric_data
     ])

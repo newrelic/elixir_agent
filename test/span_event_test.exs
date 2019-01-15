@@ -75,7 +75,7 @@ defmodule SpanEventTest do
     mfa = {:mod, :fun, 3}
 
     event = %NewRelic.Span.Event{
-      timestamp: System.system_time(:milliseconds),
+      timestamp: System.system_time(:millisecond),
       duration: 0.120,
       name: "SomeSpan",
       category: "generic",
@@ -241,7 +241,7 @@ defmodule SpanEventTest do
         "tx": "7d3efb1b173fecfa",
         "tr": "d6b4ba0c3a712ca",
         "id": "5f474d64b9cc9b2a",
-        "ti": #{System.system_time(:milliseconds) - 100},
+        "ti": #{System.system_time(:millisecond) - 100},
         "sa": true,
         "pr": 0.987654
       }

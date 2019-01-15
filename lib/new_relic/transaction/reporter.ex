@@ -181,17 +181,17 @@ defmodule NewRelic.Transaction.Reporter do
          tx
          |> Map.drop([:start_time_mono, :end_time_mono])
          |> Map.merge(%{
-           start_time: System.convert_time_unit(start_time, :native, :milliseconds),
+           start_time: System.convert_time_unit(start_time, :native, :millisecond),
            end_time:
              System.convert_time_unit(
                start_time + (end_time_mono - start_time_mono),
                :native,
-               :milliseconds
+               :millisecond
              ),
            duration_us:
-             System.convert_time_unit(end_time_mono - start_time_mono, :native, :microseconds),
+             System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond),
            duration_ms:
-             System.convert_time_unit(end_time_mono - start_time_mono, :native, :milliseconds)
+             System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
          })
 
   defp transform_name_attrs(%{custom_name: name} = tx), do: Map.put(tx, :name, name)

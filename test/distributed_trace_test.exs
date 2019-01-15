@@ -241,7 +241,7 @@ defmodule DistributedTraceTest do
         "tx": "7d3efb1b173fecfa",
         "tr": "d6b4ba0c3a712ca",
         "id": "5f474d64b9cc9b2a",
-        "ti": #{System.system_time(:milliseconds) - 100},
+        "ti": #{System.system_time(:millisecond) - 100},
         "pr": 0.123456,
         "sa": true
       }

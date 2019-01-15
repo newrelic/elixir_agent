@@ -25,7 +25,7 @@ defmodule NewRelic.Error.Reporter do
     automatic_attributes = NewRelic.Config.automatic_attributes()
 
     Collector.ErrorTrace.Harvester.report_error(%NewRelic.Error.Trace{
-      timestamp: System.system_time(:milliseconds) / 1_000,
+      timestamp: System.system_time(:millisecond) / 1_000,
       error_type: inspect(exception_type),
       message: exception_reason,
       expected: expected,
@@ -38,7 +38,7 @@ defmodule NewRelic.Error.Reporter do
     })
 
     Collector.TransactionErrorEvent.Harvester.report_error(%NewRelic.Error.Event{
-      timestamp: System.system_time(:milliseconds) / 1_000,
+      timestamp: System.system_time(:millisecond) / 1_000,
       error_class: inspect(exception_type),
       error_message: exception_reason,
       expected: expected,

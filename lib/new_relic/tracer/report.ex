@@ -92,7 +92,7 @@ defmodule NewRelic.Tracer.Report do
     })
 
     NewRelic.report_span(
-      timestamp_ms: System.convert_time_unit(start_time, :native, :milliseconds),
+      timestamp_ms: System.convert_time_unit(start_time, :native, :millisecond),
       duration_s: duration_s,
       name: function_name({module, function, arity}, name),
       edge: [span: id, parent: parent_id],
@@ -149,7 +149,7 @@ defmodule NewRelic.Tracer.Report do
     })
 
     NewRelic.report_span(
-      timestamp_ms: System.convert_time_unit(start_time, :native, :milliseconds),
+      timestamp_ms: System.convert_time_unit(start_time, :native, :millisecond),
       duration_s: duration_s,
       name: function_name({module, function, arity}, name),
       edge: [span: id, parent: parent_id],
@@ -164,7 +164,7 @@ defmodule NewRelic.Tracer.Report do
   end
 
   def duration_ms(start_time_mono, end_time_mono),
-    do: System.convert_time_unit(end_time_mono - start_time_mono, :native, :milliseconds)
+    do: System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
 
   defp function_name({m, f}, f), do: "#{inspect(m)}.#{f}"
   defp function_name({m, f}, i), do: "#{inspect(m)}.#{f}:#{i}"

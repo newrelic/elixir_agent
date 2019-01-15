@@ -24,7 +24,7 @@ defmodule TransactionEventTest do
     tr_1 = %Event{
       web_duration: 0.010,
       database_duration: nil,
-      timestamp: System.system_time(:milliseconds) / 1_000,
+      timestamp: System.system_time(:millisecond) / 1_000,
       name: "WebTransaction/AgentTest/Transaction/name",
       duration: 0.010,
       type: "Transaction",

@@ -30,7 +30,7 @@ defmodule TransactionErrorEventTest do
   end
 
   test "post required supportability metrics" do
-    ts_end = System.system_time(:seconds)
+    ts_end = System.system_time(:second)
     ts_start = ts_end - 60
     agent_run_id = NewRelic.Harvest.Collector.AgentRun.agent_run_id()
 
@@ -49,7 +49,7 @@ defmodule TransactionErrorEventTest do
     er_1 = %Event{
       error_class: "ErrorClass",
       error_message: "Error: message",
-      timestamp: System.system_time(:milliseconds) / 1_000,
+      timestamp: System.system_time(:millisecond) / 1_000,
       transaction_name: "WebTransaction/AgentTest/Transaction/name",
       queue_duration: 0.010,
       database_duration: 0.010,
