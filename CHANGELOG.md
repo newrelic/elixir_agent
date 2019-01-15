@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### `v1.6.1`
+
+* Clear up some deprecation warnings in Elixir `1.8.0`
+
 ### `v1.6.0`
 
 * Add support for applying labels. [#79](https://github.com/newrelic/elixir_agent/pull/79)
