@@ -152,6 +152,16 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform(:supportability, [:dt, :accept, :success]),
+    do: [
+      %Metric{name: "Supportability/DistributedTrace/AcceptPayload/Success", call_count: 1}
+    ]
+
+  def transform(:supportability, [:dt, :accept, :parse_error]),
+    do: [
+      %Metric{name: "Supportability/DistributedTrace/AcceptPayload/ParseException", call_count: 1}
+    ]
+
   defp join(segments) when is_list(segments) do
     segments
     |> Enum.filter(& &1)
