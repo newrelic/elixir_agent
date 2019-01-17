@@ -91,7 +91,7 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
 
   def encode(%NewRelic.Metric{name: name, scope: scope} = m),
     do: [
-      %{name: name, scope: scope},
+      %{name: to_string(name), scope: to_string(scope)},
       [
         m.call_count,
         m.total_call_time,
