@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### `v1.6.2`
+
+* Improve error logging when encountering a bad DT payload
+
 ### `v1.6.1`
 
 * Clear up some deprecation warnings in Elixir `1.8.0`
