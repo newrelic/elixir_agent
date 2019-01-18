@@ -8,7 +8,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
   def transform({:transaction, name}, duration_s: duration_s),
     do: [
       %Metric{
-        name: "HttpDispatcher",
+        name: :HttpDispatcher,
         call_count: 1,
         total_call_time: duration_s,
         total_exclusive_time: duration_s,
@@ -16,7 +16,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         max_call_time: duration_s
       },
       %Metric{
-        name: "WebTransaction",
+        name: :WebTransaction,
         call_count: 1,
         total_call_time: duration_s,
         total_exclusive_time: duration_s,
@@ -95,7 +95,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         max_call_time: duration_s
       },
       %Metric{
-        name: "External/allWeb",
+        name: :"External/allWeb",
         call_count: 1,
         total_call_time: duration_s,
         total_exclusive_time: duration_s,
@@ -106,20 +106,20 @@ defmodule NewRelic.Harvest.Collector.MetricData do
 
   def transform(:error, error_count: error_count),
     do: %Metric{
-      name: "Errors/all",
+      name: :"Errors/all",
       call_count: error_count
     }
 
   def transform(:memory, mb: memory_mb),
     do: %Metric{
-      name: "Memory/Physical",
+      name: :"Memory/Physical",
       call_count: 1,
       total_call_time: memory_mb
     }
 
   def transform(:cpu, utilization: utilization),
     do: %Metric{
-      name: "CPU/User Time",
+      name: :"CPU/User Time",
       call_count: 1,
       total_call_time: utilization
     }
@@ -127,11 +127,11 @@ defmodule NewRelic.Harvest.Collector.MetricData do
   def transform({:supportability, :error_event}, error_count: error_count),
     do: [
       %Metric{
-        name: "Supportability/Events/TransactionError/Sent",
+        name: :"Supportability/Events/TransactionError/Sent",
         call_count: error_count
       },
       %Metric{
-        name: "Supportability/Events/TransactionError/Seen",
+        name: :"Supportability/Events/TransactionError/Seen",
         call_count: error_count
       }
     ]
@@ -143,11 +143,27 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         call_count: harvest_size
       },
       %Metric{
-        name: "Supportability/Elixir/Harvest",
+        name: :"Supportability/Elixir/Harvest",
         call_count: 1
       },
       %Metric{
-        name: "Supportability/Harvest",
+        name: :"Supportability/Harvest",
+        call_count: 1
+      }
+    ]
+
+  def transform(:supportability, [:dt, :accept, :success]),
+    do: [
+      %Metric{
+        name: :"Supportability/DistributedTrace/AcceptPayload/Success",
+        call_count: 1
+      }
+    ]
+
+  def transform(:supportability, [:dt, :accept, :parse_error]),
+    do: [
+      %Metric{
+        name: :"Supportability/DistributedTrace/AcceptPayload/ParseException",
         call_count: 1
       }
     ]

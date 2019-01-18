@@ -22,10 +22,12 @@ defmodule NewRelic.DistributedTrace.Context do
     with {:ok, json} <- Base.decode64(raw_payload),
          {:ok, map} <- Jason.decode(json),
          context <- validate(map) do
+      NewRelic.report_metric(:supportability, [:dt, :accept, :success])
       context
     else
       error ->
-        NewRelic.log(:error, "Bad DT Payload: #{inspect(error)} #{inspect(raw_payload)}")
+        NewRelic.report_metric(:supportability, [:dt, :accept, :parse_error])
+        NewRelic.log(:debug, "Bad DT Payload: #{inspect(error)} #{inspect(raw_payload)}")
         nil
     end
   end

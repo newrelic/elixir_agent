@@ -95,7 +95,7 @@ defmodule DistributedTraceTest do
     refute NewRelic.DistributedTrace.Tracker.fetch(self())
   end
 
-  test "Generate the expected caller metric" do
+  test "Generate the expected metrics" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
     _response =
@@ -104,7 +104,13 @@ defmodule DistributedTraceTest do
       |> TestPlugApp.call([])
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
     assert TestHelper.find_metric(metrics, "DurationByCaller/Browser/190/2827902/HTTP/all")
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Supportability/DistributedTrace/AcceptPayload/Success"
+           )
 
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
