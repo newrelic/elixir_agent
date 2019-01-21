@@ -188,12 +188,5 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
-  defp join(segments) when is_list(segments) do
-    segments
-    |> Enum.filter(& &1)
-    |> Enum.map(&to_string/1)
-    |> Enum.map(&String.replace_leading(&1, "/", ""))
-    |> Enum.map(&String.replace_trailing(&1, "/", ""))
-    |> Enum.join("/")
-  end
+  defp join(segments), do: NewRelic.Util.metric_join(segments)
 end

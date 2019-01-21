@@ -13,7 +13,7 @@ defmodule NewRelic do
   in the Transaction list.
 
   ```elixir
-  NewRelic.set_transaction_name("Plug/custom/transaction/name")
+  NewRelic.set_transaction_name("/Plug/custom/transaction/name")
   ```
   """
   defdelegate set_transaction_name(name), to: NewRelic.Transaction.Reporter
@@ -29,6 +29,33 @@ defmodule NewRelic do
 
   @doc false
   defdelegate incr_attributes(attrs), to: NewRelic.Transaction.Reporter
+
+  @doc """
+  Start a new "Other" Transaction.
+
+  This will begin monitoring the current process as an "Other" Transaction
+  (ie: Not a "Web" Transaction). The first argument will be considered
+  the "category", the second is the "name".
+
+  Examples:
+
+  ```elixir
+  NewRelic.start_transaction("GenStage", "MyConsumer/EventType")
+  NewRelic.start_transaction("Task", "TaskName")
+  ```
+
+  **Notes:**
+
+  * Don't use this to track Web Transactions - for that,
+  `use NewRelic.Transaction` in your Plug pipeline so that we can properly
+  categorize as Web Transactions in the UI.
+  * Do _not_ use this for processes that live a very long time, doing so
+  will risk a memory leak tracking attributes in the transaction!
+  * You can't start a new transaction within an existing one. Any process
+  spawned inside a transaction belongs to that transaction.
+  """
+  @spec start_transaction(String.t(), String.t()) :: none()
+  defdelegate start_transaction(category, name), to: NewRelic.Transaction.Reporter
 
   @doc """
   Store information about the type of work the current span is doing.

@@ -33,7 +33,14 @@ defmodule NewRelic.Transaction.Reporter do
 
   def set_transaction_name(custom_name) do
     if tracking?(self()) do
-      AttrStore.add(__MODULE__, self(), custom_name: custom_name)
+      AttrStore.add(__MODULE__, self(), name_custom: custom_name)
+    end
+  end
+
+  def start_transaction(category, name) do
+    unless tracking?(self()) do
+      start()
+      AttrStore.add(__MODULE__, self(), name_other_transaction: "#{category}/#{name}")
     end
   end
 
@@ -68,7 +75,6 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   def stop(_conn \\ nil) do
-    add_attributes(end_time_mono: System.monotonic_time())
     complete()
   end
 
@@ -86,6 +92,8 @@ defmodule NewRelic.Transaction.Reporter do
 
   def complete(pid \\ self()) do
     if tracking?(pid) do
+      AttrStore.add(__MODULE__, pid, end_time_mono: System.monotonic_time())
+
       Task.Supervisor.start_child(NewRelic.Transaction.TaskSupervisor, fn ->
         complete_transaction(pid)
       end)
@@ -169,30 +177,31 @@ defmodule NewRelic.Transaction.Reporter do
     |> extract_transaction_info(pid)
   end
 
+  defp transform_name_attrs(%{name_custom: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{name_framework: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{framework_name: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{name_plug: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{name_other_transaction: name} = tx), do: Map.put(tx, :name, name)
+
   defp transform_time_attrs(
          %{start_time: start_time, end_time_mono: end_time_mono, start_time_mono: start_time_mono} =
            tx
-       ),
-       do:
-         tx
-         |> Map.drop([:start_time_mono, :end_time_mono])
-         |> Map.merge(%{
-           start_time: System.convert_time_unit(start_time, :native, :millisecond),
-           end_time:
-             System.convert_time_unit(
-               start_time + (end_time_mono - start_time_mono),
-               :native,
-               :millisecond
-             ),
-           duration_us:
-             System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond),
-           duration_ms:
-             System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
-         })
+       ) do
+    start_time = System.convert_time_unit(start_time, :native, :millisecond)
+    duration_us = System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond)
+    duration_ms = System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
+    duration_mono = end_time_mono - start_time_mono
+    end_time = System.convert_time_unit(start_time + duration_mono, :native, :millisecond)
 
-  defp transform_name_attrs(%{custom_name: name} = tx), do: Map.put(tx, :name, name)
-  defp transform_name_attrs(%{framework_name: name} = tx), do: Map.put(tx, :name, name)
-  defp transform_name_attrs(%{plug_name: name} = tx), do: Map.put(tx, :name, name)
+    tx
+    |> Map.drop([:start_time_mono, :end_time_mono])
+    |> Map.merge(%{
+      start_time: start_time,
+      end_time: end_time,
+      duration_us: duration_us,
+      duration_ms: duration_ms
+    })
+  end
 
   defp extract_transaction_info(tx_attrs, pid) do
     {function_segments, tx_attrs} = Map.pop(tx_attrs, :trace_function_segments, [])
@@ -238,13 +247,13 @@ defmodule NewRelic.Transaction.Reporter do
     {[top_segment], tx_attrs, tx_error, span_events}
   end
 
-  defp extract_span_events(%{transaction_type: :web} = tx_attrs, pid, spawns, names, exits) do
-    spawned_process_events(tx_attrs, spawns, names, exits)
-    |> add_cowboy_process_event(tx_attrs, pid)
+  defp extract_span_events(%{name_other_transaction: _}, _pid, _spawns, _names, _exits) do
+    []
   end
 
-  defp extract_span_events(_tx_attrs, _pid, _spawns, _names, _exits) do
-    []
+  defp extract_span_events(tx_attrs, pid, spawns, names, exits) do
+    spawned_process_events(tx_attrs, spawns, names, exits)
+    |> add_cowboy_process_event(tx_attrs, pid)
   end
 
   defp add_cowboy_process_event(spans, %{sampled: true} = tx_attrs, pid) do
@@ -306,13 +315,13 @@ defmodule NewRelic.Transaction.Reporter do
   defp transform_trace_time_attrs(
          %{start_time: start_time, end_time: end_time} = attrs,
          trace_start_time
-       ),
-       do:
-         attrs
-         |> Map.merge(%{
-           relative_start_time: start_time - trace_start_time,
-           relative_end_time: end_time - trace_start_time
-         })
+       ) do
+    attrs
+    |> Map.merge(%{
+      relative_start_time: start_time - trace_start_time,
+      relative_end_time: end_time - trace_start_time
+    })
+  end
 
   defp transform_trace_name_attrs(
          %{
@@ -337,20 +346,20 @@ defmodule NewRelic.Transaction.Reporter do
            arity: arity,
            args: args
          } = attrs
-       ),
-       do:
-         attrs
-         |> Map.merge(%{
-           class_name: "#{function}/#{arity}",
-           method_name: nil,
-           metric_name: "#{inspect(module)}.#{function}",
-           attributes: %{query: inspect(args, charlists: false)}
-         })
+       ) do
+    attrs
+    |> Map.merge(%{
+      class_name: "#{function}/#{arity}",
+      method_name: nil,
+      metric_name: "#{inspect(module)}.#{function}",
+      attributes: %{query: inspect(args, charlists: false)}
+    })
+  end
 
-  defp transform_trace_name_attrs(%{pid: pid, name: name} = attrs),
-    do:
-      attrs
-      |> Map.merge(%{class_name: name || "Process", method_name: nil, metric_name: pid})
+  defp transform_trace_name_attrs(%{pid: pid, name: name} = attrs) do
+    attrs
+    |> Map.merge(%{class_name: name || "Process", method_name: nil, metric_name: pid})
+  end
 
   defp generate_process_tree(processes, root: root) do
     parent_map = Enum.group_by(processes, & &1.parent_id)
@@ -407,7 +416,7 @@ defmodule NewRelic.Transaction.Reporter do
     Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{
       timestamp: tx_attrs.start_time,
       duration: tx_attrs.duration_ms / 1_000,
-      name: "WebTransaction#{tx_attrs.name}",
+      name: Util.metric_join(["WebTransaction", tx_attrs.name]),
       user_attributes:
         Map.merge(tx_attrs, %{
           request_url: "#{tx_attrs.host}#{tx_attrs.path}"
@@ -419,16 +428,16 @@ defmodule NewRelic.Transaction.Reporter do
     Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{
       timestamp: tx_attrs.start_time,
       duration: tx_attrs.duration_ms / 1_000,
-      name: "OtherTransaction#{tx_attrs.name}",
+      name: Util.metric_join(["OtherTransaction", tx_attrs.name]),
       user_attributes: tx_attrs
     })
   end
 
-  defp report_transaction_trace(%{transaction_type: :web} = tx_attrs, tx_segments) do
+  defp report_transaction_trace(%{name_other_transaction: _} = tx_attrs, tx_segments) do
     Collector.TransactionTrace.Harvester.report_trace(%Transaction.Trace{
       start_time: tx_attrs.start_time,
-      metric_name: "WebTransaction#{tx_attrs.name}",
-      request_url: "#{tx_attrs.host}#{tx_attrs.path}",
+      metric_name: Util.metric_join(["OtherTransaction", tx_attrs.name]),
+      request_url: "/Unknown",
       attributes: %{agentAttributes: tx_attrs},
       segments: tx_segments,
       duration: tx_attrs.duration_ms
@@ -438,8 +447,8 @@ defmodule NewRelic.Transaction.Reporter do
   defp report_transaction_trace(tx_attrs, tx_segments) do
     Collector.TransactionTrace.Harvester.report_trace(%Transaction.Trace{
       start_time: tx_attrs.start_time,
-      metric_name: "OtherTransaction#{tx_attrs.name}",
-      request_url: "/Unknown",
+      metric_name: Util.metric_join(["WebTransaction", tx_attrs.name]),
+      request_url: "#{tx_attrs.host}#{tx_attrs.path}",
       attributes: %{agentAttributes: tx_attrs},
       segments: tx_segments,
       duration: tx_attrs.duration_ms
@@ -461,7 +470,8 @@ defmodule NewRelic.Transaction.Reporter do
       exception_reason,
       expected,
       exception_stacktrace,
-      attributes
+      attributes,
+      error
     )
 
     report_error_event(
@@ -470,7 +480,8 @@ defmodule NewRelic.Transaction.Reporter do
       exception_reason,
       expected,
       exception_stacktrace,
-      attributes
+      attributes,
+      error
     )
 
     unless expected do
@@ -480,12 +491,13 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   defp report_error_trace(
-         %{transaction_type: :web} = tx_attrs,
+         %{name_other_transaction: _} = tx_attrs,
          exception_type,
          exception_reason,
          expected,
          exception_stacktrace,
-         attributes
+         attributes,
+         error
        ) do
     Collector.ErrorTrace.Harvester.report_error(%NewRelic.Error.Trace{
       timestamp: tx_attrs.start_time / 1_000,
@@ -493,10 +505,8 @@ defmodule NewRelic.Transaction.Reporter do
       message: exception_reason,
       expected: expected,
       stack_trace: exception_stacktrace,
-      transaction_name: "WebTransaction#{tx_attrs.name}",
-      agent_attributes: %{
-        request_uri: "#{tx_attrs.host}#{tx_attrs.path}"
-      },
+      transaction_name: Util.metric_join(["OtherTransaction", tx_attrs.name]),
+      agent_attributes: %{},
       user_attributes: Map.merge(attributes, %{process: error[:process]})
     })
   end
@@ -507,7 +517,8 @@ defmodule NewRelic.Transaction.Reporter do
          exception_reason,
          expected,
          exception_stacktrace,
-         attributes
+         attributes,
+         error
        ) do
     Collector.ErrorTrace.Harvester.report_error(%NewRelic.Error.Trace{
       timestamp: tx_attrs.start_time / 1_000,
@@ -515,26 +526,53 @@ defmodule NewRelic.Transaction.Reporter do
       message: exception_reason,
       expected: expected,
       stack_trace: exception_stacktrace,
-      transaction_name: "OtherTransaction#{tx_attrs.name}",
-      agent_attributes: %{},
+      transaction_name: Util.metric_join(["WebTransaction", tx_attrs.name]),
+      agent_attributes: %{
+        request_uri: "#{tx_attrs.host}#{tx_attrs.path}"
+      },
       user_attributes: Map.merge(attributes, %{process: error[:process]})
     })
   end
 
   defp report_error_event(
-         %{transaction_type: :web} = tx_attrs,
+         %{name_other_transaction: _} = tx_attrs,
          exception_type,
          exception_reason,
          expected,
          exception_stacktrace,
-         attributes
+         attributes,
+         error
        ) do
     Collector.TransactionErrorEvent.Harvester.report_error(%NewRelic.Error.Event{
       timestamp: tx_attrs.start_time / 1_000,
       error_class: inspect(exception_type),
       error_message: exception_reason,
       expected: expected,
-      transaction_name: "WebTransaction#{tx_attrs.name}",
+      transaction_name: Util.metric_join(["OtherTransaction", tx_attrs.name]),
+      agent_attributes: %{},
+      user_attributes:
+        Map.merge(attributes, %{
+          process: error[:process],
+          stacktrace: Enum.join(exception_stacktrace, "\n")
+        })
+    })
+  end
+
+  defp report_error_event(
+         tx_attrs,
+         exception_type,
+         exception_reason,
+         expected,
+         exception_stacktrace,
+         attributes,
+         error
+       ) do
+    Collector.TransactionErrorEvent.Harvester.report_error(%NewRelic.Error.Event{
+      timestamp: tx_attrs.start_time / 1_000,
+      error_class: inspect(exception_type),
+      error_message: exception_reason,
+      expected: expected,
+      transaction_name: Util.metric_join(["WebTransaction", tx_attrs.name]),
       agent_attributes: %{
         http_response_code: tx_attrs.status,
         request_method: tx_attrs.request_method
@@ -547,26 +585,11 @@ defmodule NewRelic.Transaction.Reporter do
     })
   end
 
-  defp report_error_event(
-         tx_attrs,
-         exception_type,
-         exception_reason,
-         expected,
-         exception_stacktrace,
-         attributes
-       ) do
-    Collector.TransactionErrorEvent.Harvester.report_error(%NewRelic.Error.Event{
-      timestamp: tx_attrs.start_time / 1_000,
-      error_class: inspect(exception_type),
-      error_message: exception_reason,
-      expected: expected,
-      transaction_name: "OtherTransaction#{tx_attrs.name}",
-      agent_attributes: %{},
-      user_attributes:
-        Map.merge(attributes, %{
-          process: error[:process],
-          stacktrace: Enum.join(exception_stacktrace, "\n")
-        })
+  defp report_aggregate(%{name_other_transaction: _} = tx) do
+    NewRelic.report_aggregate(%{type: :OtherTransaction, name: tx[:name]}, %{
+      duration_us: tx.duration_us,
+      duration_ms: tx.duration_ms,
+      call_count: 1
     })
   end
 
@@ -578,12 +601,12 @@ defmodule NewRelic.Transaction.Reporter do
     })
   end
 
-  def report_transaction_metric(%{transaction_type: :web} = tx) do
-    NewRelic.report_metric({:transaction, tx.name}, duration_s: tx.duration_ms / 1_000)
+  def report_transaction_metric(%{name_other_transaction: _} = tx) do
+    NewRelic.report_metric({:other_transaction, tx.name}, duration_s: tx.duration_ms / 1_000)
   end
 
   def report_transaction_metric(tx) do
-    NewRelic.report_metric({:other_transaction, tx.name}, duration_s: tx.duration_ms / 1_000)
+    NewRelic.report_metric({:transaction, tx.name}, duration_s: tx.duration_ms / 1_000)
   end
 
   defp parse_error_expected(%{expected: true}), do: true
