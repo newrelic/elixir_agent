@@ -44,6 +44,7 @@ defmodule NewRelic.Transaction.Plug do
 
   def add_start_attrs(conn) do
     [
+      transaction_type: :web,
       host: conn.host,
       path: conn.request_path,
       remote_ip: conn.remote_ip |> :inet_parse.ntoa() |> to_string(),

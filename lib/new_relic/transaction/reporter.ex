@@ -201,10 +201,6 @@ defmodule NewRelic.Transaction.Reporter do
     {process_exits, tx_attrs} = Map.pop(tx_attrs, :trace_process_exits, [])
     {tx_error, tx_attrs} = Map.pop(tx_attrs, :transaction_error, nil)
 
-    span_events =
-      spawned_process_events(tx_attrs, process_spawns, process_names, process_exits)
-      |> add_cowboy_process_event(tx_attrs, pid)
-
     function_segments =
       function_segments
       |> Enum.map(&transform_time_attrs/1)
@@ -237,7 +233,18 @@ defmodule NewRelic.Transaction.Reporter do
     top_children = List.wrap(function_segments[inspect(pid)])
     top_segment = Map.update!(top_segment, :children, &(&1 ++ top_children))
 
+    span_events = extract_span_events(tx_attrs, pid, process_spawns, process_names, process_exits)
+
     {[top_segment], tx_attrs, tx_error, span_events}
+  end
+
+  defp extract_span_events(%{transaction_type: :web} = tx_attrs, pid, spawns, names, exits) do
+    spawned_process_events(tx_attrs, spawns, names, exits)
+    |> add_cowboy_process_event(tx_attrs, pid)
+  end
+
+  defp extract_span_events(_tx_attrs, _pid, _spawns, _names, _exits) do
+    []
   end
 
   defp add_cowboy_process_event(spans, %{sampled: true} = tx_attrs, pid) do
