@@ -436,7 +436,9 @@ defmodule NewRelic.Transaction.Reporter do
       expected: expected,
       stack_trace: exception_stacktrace,
       transaction_name: "WebTransaction#{tx_attrs.name}",
-      request_uri: "#{tx_attrs.host}#{tx_attrs.path}",
+      agent_attributes: %{
+        request_uri: "#{tx_attrs.host}#{tx_attrs.path}"
+      },
       user_attributes:
         Map.merge(attributes, %{
           process: error[:process]
@@ -449,8 +451,10 @@ defmodule NewRelic.Transaction.Reporter do
       error_message: exception_reason,
       expected: expected,
       transaction_name: "WebTransaction#{tx_attrs.name}",
-      http_response_code: tx_attrs.status,
-      request_method: tx_attrs.request_method,
+      agent_attributes: %{
+        http_response_code: tx_attrs.status,
+        request_method: tx_attrs.request_method
+      },
       user_attributes:
         Map.merge(attributes, %{
           process: error[:process],
