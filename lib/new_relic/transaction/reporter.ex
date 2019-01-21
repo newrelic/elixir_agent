@@ -403,7 +403,7 @@ defmodule NewRelic.Transaction.Reporter do
     Enum.each(span_events, &Collector.SpanEvent.Harvester.report_span_event/1)
   end
 
-  defp report_transaction_event(tx_attrs) do
+  defp report_transaction_event(%{transaction_type: :web} = tx_attrs) do
     Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{
       timestamp: tx_attrs.start_time,
       duration: tx_attrs.duration_ms / 1_000,
@@ -415,7 +415,16 @@ defmodule NewRelic.Transaction.Reporter do
     })
   end
 
-  defp report_transaction_trace(tx_attrs, tx_segments) do
+  defp report_transaction_event(tx_attrs) do
+    Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{
+      timestamp: tx_attrs.start_time,
+      duration: tx_attrs.duration_ms / 1_000,
+      name: "OtherTransaction#{tx_attrs.name}",
+      user_attributes: tx_attrs
+    })
+  end
+
+  defp report_transaction_trace(%{transaction_type: :web} = tx_attrs, tx_segments) do
     Collector.TransactionTrace.Harvester.report_trace(%Transaction.Trace{
       start_time: tx_attrs.start_time,
       metric_name: "WebTransaction#{tx_attrs.name}",
@@ -426,16 +435,58 @@ defmodule NewRelic.Transaction.Reporter do
     })
   end
 
+  defp report_transaction_trace(tx_attrs, tx_segments) do
+    Collector.TransactionTrace.Harvester.report_trace(%Transaction.Trace{
+      start_time: tx_attrs.start_time,
+      metric_name: "OtherTransaction#{tx_attrs.name}",
+      request_url: "/Unknown",
+      attributes: %{agentAttributes: tx_attrs},
+      segments: tx_segments,
+      duration: tx_attrs.duration_ms
+    })
+  end
+
   defp report_transaction_error_event(_tx_attrs, nil), do: :ignore
 
   defp report_transaction_error_event(tx_attrs, {:error, error}) do
     attributes = Map.drop(tx_attrs, [:error, :error_kind, :error_reason, :error_stack])
+    expected = parse_error_expected(error.reason)
 
     {exception_type, exception_reason, exception_stacktrace} =
       Util.Error.normalize(error.reason, error.stack)
 
-    expected = parse_error_expected(error.reason)
+    report_error_trace(
+      tx_attrs,
+      exception_type,
+      exception_reason,
+      expected,
+      exception_stacktrace,
+      attributes
+    )
 
+    report_error_event(
+      tx_attrs,
+      exception_type,
+      exception_reason,
+      expected,
+      exception_stacktrace,
+      attributes
+    )
+
+    unless expected do
+      NewRelic.report_metric({:supportability, :error_event}, error_count: 1)
+      NewRelic.report_metric(:error, error_count: 1)
+    end
+  end
+
+  defp report_error_trace(
+         %{transaction_type: :web} = tx_attrs,
+         exception_type,
+         exception_reason,
+         expected,
+         exception_stacktrace,
+         attributes
+       ) do
     Collector.ErrorTrace.Harvester.report_error(%NewRelic.Error.Trace{
       timestamp: tx_attrs.start_time / 1_000,
       error_type: inspect(exception_type),
@@ -446,12 +497,38 @@ defmodule NewRelic.Transaction.Reporter do
       agent_attributes: %{
         request_uri: "#{tx_attrs.host}#{tx_attrs.path}"
       },
-      user_attributes:
-        Map.merge(attributes, %{
-          process: error[:process]
-        })
+      user_attributes: Map.merge(attributes, %{process: error[:process]})
     })
+  end
 
+  defp report_error_trace(
+         tx_attrs,
+         exception_type,
+         exception_reason,
+         expected,
+         exception_stacktrace,
+         attributes
+       ) do
+    Collector.ErrorTrace.Harvester.report_error(%NewRelic.Error.Trace{
+      timestamp: tx_attrs.start_time / 1_000,
+      error_type: inspect(exception_type),
+      message: exception_reason,
+      expected: expected,
+      stack_trace: exception_stacktrace,
+      transaction_name: "OtherTransaction#{tx_attrs.name}",
+      agent_attributes: %{},
+      user_attributes: Map.merge(attributes, %{process: error[:process]})
+    })
+  end
+
+  defp report_error_event(
+         %{transaction_type: :web} = tx_attrs,
+         exception_type,
+         exception_reason,
+         expected,
+         exception_stacktrace,
+         attributes
+       ) do
     Collector.TransactionErrorEvent.Harvester.report_error(%NewRelic.Error.Event{
       timestamp: tx_attrs.start_time / 1_000,
       error_class: inspect(exception_type),
@@ -468,11 +545,29 @@ defmodule NewRelic.Transaction.Reporter do
           stacktrace: Enum.join(exception_stacktrace, "\n")
         })
     })
+  end
 
-    unless expected do
-      NewRelic.report_metric({:supportability, :error_event}, error_count: 1)
-      NewRelic.report_metric(:error, error_count: 1)
-    end
+  defp report_error_event(
+         tx_attrs,
+         exception_type,
+         exception_reason,
+         expected,
+         exception_stacktrace,
+         attributes
+       ) do
+    Collector.TransactionErrorEvent.Harvester.report_error(%NewRelic.Error.Event{
+      timestamp: tx_attrs.start_time / 1_000,
+      error_class: inspect(exception_type),
+      error_message: exception_reason,
+      expected: expected,
+      transaction_name: "OtherTransaction#{tx_attrs.name}",
+      agent_attributes: %{},
+      user_attributes:
+        Map.merge(attributes, %{
+          process: error[:process],
+          stacktrace: Enum.join(exception_stacktrace, "\n")
+        })
+    })
   end
 
   defp report_aggregate(tx) do
