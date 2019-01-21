@@ -86,8 +86,10 @@ defmodule NewRelic.Util.AttrStore do
     end)
   end
 
+  @immutable_keys [:framework_name]
   defp collect_attr({_pid, {k, {:list, item}}}, acc), do: Map.update(acc, k, [item], &[item | &1])
   defp collect_attr({_pid, {k, {:counter, n}}}, acc), do: Map.update(acc, k, n, &(&1 + n))
+  defp collect_attr({_pid, {k, v}}, acc) when k in @immutable_keys, do: Map.put_new(acc, k, v)
   defp collect_attr({_pid, {k, v}}, acc), do: Map.put(acc, k, v)
 
   defp lookup(table, term) do

@@ -8,9 +8,11 @@ defmodule AttrStoreTest do
 
     AttrStore.track(table, :pid)
     AttrStore.add(table, :pid, name: "FOO")
+    AttrStore.add(table, :pid, framework_name: "First Framework")
+    AttrStore.add(table, :pid, framework_name: "Second Framework")
     AttrStore.add(table, :pid, route: "/foo")
-    AttrStore.add(table, :pid, bar: "baz")
-    AttrStore.add(table, :pid, bar: "baz")
+    AttrStore.add(table, :pid, bar: "baz1")
+    AttrStore.add(table, :pid, bar: "baz2")
     AttrStore.add(table, :pid, this: "this", that: "that")
 
     AttrStore.add(table, :pid, count_tag: {:counter, 1})
@@ -23,7 +25,8 @@ defmodule AttrStoreTest do
 
     attrs = AttrStore.collect(table, :pid)
 
-    assert Enum.member?(attrs, {:bar, "baz"})
+    assert Enum.member?(attrs, {:framework_name, "First Framework"})
+    assert Enum.member?(attrs, {:bar, "baz2"})
     assert Enum.member?(attrs, {:this, "this"})
     assert Enum.member?(attrs, {:that, "that"})
     assert Enum.member?(attrs, {:seven, 7.0})
