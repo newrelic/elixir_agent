@@ -33,6 +33,26 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform({:other_transaction, name}, duration_s: duration_s),
+    do: [
+      %Metric{
+        name: :OtherTransaction,
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      },
+      %Metric{
+        name: join(["OtherTransaction", name]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
+    ]
+
   def transform(
         {:caller, parent_type, parent_account_id, parent_app_id, transport_type},
         duration_s: duration_s

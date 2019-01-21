@@ -578,8 +578,12 @@ defmodule NewRelic.Transaction.Reporter do
     })
   end
 
-  def report_transaction_metric(tx) do
+  def report_transaction_metric(%{transaction_type: :web} = tx) do
     NewRelic.report_metric({:transaction, tx.name}, duration_s: tx.duration_ms / 1_000)
+  end
+
+  def report_transaction_metric(tx) do
+    NewRelic.report_metric({:other_transaction, tx.name}, duration_s: tx.duration_ms / 1_000)
   end
 
   defp parse_error_expected(%{expected: true}), do: true
