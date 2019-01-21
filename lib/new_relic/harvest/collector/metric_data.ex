@@ -36,7 +36,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
   def transform({:other_transaction, name}, duration_s: duration_s),
     do: [
       %Metric{
-        name: :OtherTransaction,
+        name: :"OtherTransaction/all",
         call_count: 1,
         total_call_time: duration_s,
         total_exclusive_time: duration_s,
