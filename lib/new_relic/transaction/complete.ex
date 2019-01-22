@@ -39,14 +39,12 @@ defmodule NewRelic.Transaction.Complete do
     start_time = System.convert_time_unit(start_time, :native, :millisecond)
     duration_us = System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond)
     duration_ms = System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
-    duration_mono = end_time_mono - start_time_mono
-    end_time = System.convert_time_unit(start_time + duration_mono, :native, :millisecond)
 
     tx
     |> Map.drop([:start_time_mono, :end_time_mono])
     |> Map.merge(%{
       start_time: start_time,
-      end_time: end_time,
+      end_time: start_time + duration_ms,
       duration_us: duration_us,
       duration_ms: duration_ms
     })

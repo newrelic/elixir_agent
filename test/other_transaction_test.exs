@@ -15,9 +15,19 @@ defmodule OtherTransactionTest do
     |> Task.await()
 
     [event] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-    [%{name: name}, %{other: "transaction"}] = event
+
+    [
+      %{name: name},
+      %{
+        other: "transaction",
+        duration_ms: duration_ms,
+        start_time: start_time,
+        end_time: end_time
+      }
+    ] = event
 
     assert name == "OtherTransaction/TransactionCategory/MyTaskName"
+    assert end_time - start_time == duration_ms
 
     [_trace] = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
 
