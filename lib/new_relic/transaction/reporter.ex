@@ -30,14 +30,14 @@ defmodule NewRelic.Transaction.Reporter do
 
   def set_transaction_name(custom_name) do
     if tracking?(self()) do
-      AttrStore.add(__MODULE__, self(), name_custom: custom_name)
+      AttrStore.add(__MODULE__, self(), custom_name: custom_name)
     end
   end
 
   def start_transaction(category, name) do
     unless tracking?(self()) do
       start()
-      AttrStore.add(__MODULE__, self(), name_other_transaction: "#{category}/#{name}")
+      AttrStore.add(__MODULE__, self(), other_transaction_name: "#{category}/#{name}")
     end
   end
 

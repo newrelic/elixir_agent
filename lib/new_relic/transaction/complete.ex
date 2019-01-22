@@ -26,11 +26,10 @@ defmodule NewRelic.Transaction.Complete do
     |> extract_transaction_info(pid)
   end
 
-  defp transform_name_attrs(%{name_custom: name} = tx), do: Map.put(tx, :name, name)
-  defp transform_name_attrs(%{name_framework: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{custom_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{framework_name: name} = tx), do: Map.put(tx, :name, name)
-  defp transform_name_attrs(%{name_plug: name} = tx), do: Map.put(tx, :name, name)
-  defp transform_name_attrs(%{name_other_transaction: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{plug_name: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{other_transaction_name: name} = tx), do: Map.put(tx, :name, name)
 
   defp transform_time_attrs(
          %{start_time: start_time, end_time_mono: end_time_mono, start_time_mono: start_time_mono} =
@@ -94,7 +93,7 @@ defmodule NewRelic.Transaction.Complete do
     {[top_segment], tx_attrs, tx_error, span_events}
   end
 
-  defp extract_span_events(%{name_other_transaction: _}, _pid, _spawns, _names, _exits) do
+  defp extract_span_events(%{other_transaction_name: _}, _pid, _spawns, _names, _exits) do
     []
   end
 
@@ -280,7 +279,7 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
-  defp report_transaction_trace(%{name_other_transaction: _} = tx_attrs, tx_segments) do
+  defp report_transaction_trace(%{other_transaction_name: _} = tx_attrs, tx_segments) do
     Collector.TransactionTrace.Harvester.report_trace(%Transaction.Trace{
       start_time: tx_attrs.start_time,
       metric_name: Util.metric_join(["OtherTransaction", tx_attrs.name]),
@@ -338,7 +337,7 @@ defmodule NewRelic.Transaction.Complete do
   end
 
   defp report_error_trace(
-         %{name_other_transaction: _} = tx_attrs,
+         %{other_transaction_name: _} = tx_attrs,
          exception_type,
          exception_reason,
          expected,
@@ -382,7 +381,7 @@ defmodule NewRelic.Transaction.Complete do
   end
 
   defp report_error_event(
-         %{name_other_transaction: _} = tx_attrs,
+         %{other_transaction_name: _} = tx_attrs,
          exception_type,
          exception_reason,
          expected,
@@ -432,7 +431,7 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
-  defp report_aggregate(%{name_other_transaction: _} = tx) do
+  defp report_aggregate(%{other_transaction_name: _} = tx) do
     NewRelic.report_aggregate(%{type: :OtherTransaction, name: tx[:name]}, %{
       duration_us: tx.duration_us,
       duration_ms: tx.duration_ms,
@@ -448,7 +447,7 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
-  def report_transaction_metric(%{name_other_transaction: _} = tx) do
+  def report_transaction_metric(%{other_transaction_name: _} = tx) do
     NewRelic.report_metric({:other_transaction, tx.name}, duration_s: tx.duration_ms / 1_000)
   end
 

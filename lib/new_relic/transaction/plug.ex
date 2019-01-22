@@ -60,7 +60,7 @@ defmodule NewRelic.Transaction.Plug do
     info = Process.info(self(), [:memory, :reductions])
 
     [
-      name_plug: plug_name(conn),
+      plug_name: plug_name(conn),
       status: conn.status,
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions]
