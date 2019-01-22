@@ -93,16 +93,12 @@ defmodule NewRelic.Transaction.Complete do
     {[top_segment], tx_attrs, tx_error, span_events}
   end
 
-  defp extract_span_events(%{other_transaction_name: _}, _pid, _spawns, _names, _exits) do
-    []
-  end
-
   defp extract_span_events(tx_attrs, pid, spawns, names, exits) do
-    spawned_process_events(tx_attrs, spawns, names, exits)
-    |> add_cowboy_process_event(tx_attrs, pid)
+    spawned_process_span_events(tx_attrs, spawns, names, exits)
+    |> add_root_process_span_event(tx_attrs, pid)
   end
 
-  defp add_cowboy_process_event(spans, %{sampled: true} = tx_attrs, pid) do
+  defp add_root_process_span_event(spans, %{sampled: true} = tx_attrs, pid) do
     [
       %NewRelic.Span.Event{
         trace_id: tx_attrs[:traceId],
@@ -110,7 +106,7 @@ defmodule NewRelic.Transaction.Complete do
         sampled: true,
         priority: tx_attrs[:priority],
         category: "generic",
-        name: "Cowboy Process #{inspect(pid)}",
+        name: "Transaction Root Process #{inspect(pid)}",
         guid: DistributedTrace.generate_guid(pid: pid),
         parent_id: tx_attrs[:parentSpanId],
         timestamp: tx_attrs[:start_time],
@@ -121,9 +117,9 @@ defmodule NewRelic.Transaction.Complete do
     ]
   end
 
-  defp add_cowboy_process_event(spans, _tx_attrs, _pid), do: spans
+  defp add_root_process_span_event(spans, _tx_attrs, _pid), do: spans
 
-  defp spawned_process_events(tx_attrs, process_spawns, process_names, process_exits) do
+  defp spawned_process_span_events(tx_attrs, process_spawns, process_names, process_exits) do
     process_spawns
     |> collect_process_segments(process_names, process_exits)
     |> Enum.map(&transform_trace_name_attrs/1)

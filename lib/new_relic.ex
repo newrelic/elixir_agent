@@ -55,7 +55,7 @@ defmodule NewRelic do
   spawned inside a transaction belongs to that transaction.
   """
   @spec start_transaction(String.t(), String.t()) :: none()
-  defdelegate start_transaction(category, name), to: NewRelic.Transaction.Reporter
+  defdelegate start_transaction(category, name), to: NewRelic.Transaction
 
   @doc """
   Store information about the type of work the current span is doing.

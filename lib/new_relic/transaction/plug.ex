@@ -38,7 +38,7 @@ defmodule NewRelic.Transaction.Plug do
 
   defp before_send(conn) do
     add_stop_attrs(conn)
-    Transaction.Reporter.stop(conn)
+    Transaction.Reporter.complete()
     conn
   end
 

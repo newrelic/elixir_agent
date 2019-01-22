@@ -34,13 +34,6 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
-  def start_transaction(category, name) do
-    unless tracking?(self()) do
-      start()
-      AttrStore.add(__MODULE__, self(), other_transaction_name: "#{category}/#{name}")
-    end
-  end
-
   # Internal Agent API
   #
 
@@ -53,6 +46,13 @@ defmodule NewRelic.Transaction.Reporter do
       start_time: System.system_time(),
       start_time_mono: System.monotonic_time()
     )
+  end
+
+  def start_other_transaction(category, name) do
+    unless tracking?(self()) do
+      start()
+      AttrStore.add(__MODULE__, self(), other_transaction_name: "#{category}/#{name}")
+    end
   end
 
   def fail(%{kind: kind, reason: reason, stack: stack} = error) do
@@ -69,10 +69,6 @@ defmodule NewRelic.Transaction.Reporter do
         add_attributes(error: true)
       end
     end
-  end
-
-  def stop(_conn \\ nil) do
-    complete()
   end
 
   def add_trace_segment(segment) do

@@ -2,15 +2,33 @@ defmodule OtherTransactionTest do
   use ExUnit.Case
   alias NewRelic.Harvest.Collector
 
+  setup do
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
+    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    send(NewRelic.DistributedTrace.BackoffSampler, :reset)
+
+    on_exit(fn ->
+      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+      System.delete_env("NEW_RELIC_LICENSE_KEY")
+    end)
+
+    :ok
+  end
+
   test "reports Other Transactions" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
-    TestHelper.restart_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
 
     Task.async(fn ->
       NewRelic.start_transaction("TransactionCategory", "MyTaskName")
       NewRelic.add_attributes(other: "transaction")
-      Process.sleep(100)
+
+      Task.async(fn ->
+        Process.sleep(100)
+      end)
+      |> Task.await()
     end)
     |> Task.await()
 
@@ -22,7 +40,9 @@ defmodule OtherTransactionTest do
         other: "transaction",
         duration_ms: duration_ms,
         start_time: start_time,
-        end_time: end_time
+        end_time: end_time,
+        traceId: _,
+        guid: _
       }
     ] = event
 
@@ -32,13 +52,16 @@ defmodule OtherTransactionTest do
     [_trace] = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
-
     assert TestHelper.find_metric(metrics, "OtherTransaction/all")
     assert TestHelper.find_metric(metrics, "OtherTransaction/TransactionCategory/MyTaskName")
 
+    span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+    assert length(span_events) == 2
+
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
-    TestHelper.pause_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
   @tag :capture_log
