@@ -81,12 +81,14 @@ defmodule OtherTransactionTest do
 
     assert [
              _ts,
-             "OtherTransaction/Task/FailingTask",
+             name,
              "(RuntimeError) FAIL",
              _,
              _,
              _
            ] = trace
+
+    assert name =~ "OtherTransaction"
 
     TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
   end
