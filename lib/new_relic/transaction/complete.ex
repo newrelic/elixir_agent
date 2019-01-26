@@ -7,8 +7,7 @@ defmodule NewRelic.Transaction.Complete do
   alias NewRelic.Transaction
 
   def run(tx_attrs, pid) do
-    {tx_segments, tx_attrs, tx_error, span_events} = gather_transaction_info(tx_attrs, pid)
-    tx_attrs = Map.merge(tx_attrs, NewRelic.Config.automatic_attributes())
+    {tx_segments, tx_attrs, tx_error, span_events, apdex} = gather_transaction_info(tx_attrs, pid)
 
     report_transaction_event(tx_attrs)
     report_transaction_trace(tx_attrs, tx_segments)
@@ -16,6 +15,7 @@ defmodule NewRelic.Transaction.Complete do
     report_transaction_metric(tx_attrs)
     report_aggregate(tx_attrs)
     report_caller_metric(tx_attrs)
+    report_apdex_metric(apdex)
     report_span_events(span_events)
   end
 
@@ -45,7 +45,8 @@ defmodule NewRelic.Transaction.Complete do
       start_time: start_time,
       end_time: start_time + duration_ms,
       duration_us: duration_us,
-      duration_ms: duration_ms
+      duration_ms: duration_ms,
+      duration_s: duration_ms / 1000
     })
   end
 
@@ -55,6 +56,13 @@ defmodule NewRelic.Transaction.Complete do
     {process_names, tx_attrs} = Map.pop(tx_attrs, :trace_process_names, [])
     {process_exits, tx_attrs} = Map.pop(tx_attrs, :trace_process_exits, [])
     {tx_error, tx_attrs} = Map.pop(tx_attrs, :transaction_error, nil)
+
+    apdex = calculate_apdex(tx_attrs, tx_error)
+
+    tx_attrs =
+      tx_attrs
+      |> Map.merge(NewRelic.Config.automatic_attributes())
+      |> Map.put(:"nr.apdexPerfZone", Util.Apdex.label(apdex))
 
     function_segments =
       function_segments
@@ -90,12 +98,24 @@ defmodule NewRelic.Transaction.Complete do
 
     span_events = extract_span_events(tx_attrs, pid, process_spawns, process_names, process_exits)
 
-    {[top_segment], tx_attrs, tx_error, span_events}
+    {[top_segment], tx_attrs, tx_error, span_events, apdex}
   end
 
   defp extract_span_events(tx_attrs, pid, spawns, names, exits) do
     spawned_process_span_events(tx_attrs, spawns, names, exits)
     |> add_root_process_span_event(tx_attrs, pid)
+  end
+
+  defp calculate_apdex(%{other_transaction_name: _}, _error) do
+    :ignore
+  end
+
+  defp calculate_apdex(_tx_attrs, {:error, _error}) do
+    :frustrating
+  end
+
+  defp calculate_apdex(%{duration_s: duration_s}, nil) do
+    Util.Apdex.calculate(duration_s, apdex_t())
   end
 
   defp add_root_process_span_event(spans, %{sampled: true} = tx_attrs, pid) do
@@ -110,7 +130,7 @@ defmodule NewRelic.Transaction.Complete do
         guid: DistributedTrace.generate_guid(pid: pid),
         parent_id: tx_attrs[:parentSpanId],
         timestamp: tx_attrs[:start_time],
-        duration: tx_attrs[:duration_ms] / 1000,
+        duration: tx_attrs[:duration_s],
         entry_point: true
       }
       | spans
@@ -239,14 +259,14 @@ defmodule NewRelic.Transaction.Complete do
        ) do
     NewRelic.report_metric(
       {:caller, parent_type, parent_account_id, parent_app_id, transport_type},
-      duration_s: tx_attrs[:duration_ms] / 1000
+      duration_s: tx_attrs.duration_s
     )
   end
 
   defp report_caller_metric(tx_attrs) do
     NewRelic.report_metric(
       {:caller, "Unknown", "Unknown", "Unknown", "Unknown"},
-      duration_s: tx_attrs[:duration_ms] / 1000
+      duration_s: tx_attrs.duration_s
     )
   end
 
@@ -257,7 +277,7 @@ defmodule NewRelic.Transaction.Complete do
   defp report_transaction_event(%{transaction_type: :web} = tx_attrs) do
     Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{
       timestamp: tx_attrs.start_time,
-      duration: tx_attrs.duration_ms / 1_000,
+      duration: tx_attrs.duration_s,
       name: Util.metric_join(["WebTransaction", tx_attrs.name]),
       user_attributes:
         Map.merge(tx_attrs, %{
@@ -269,7 +289,7 @@ defmodule NewRelic.Transaction.Complete do
   defp report_transaction_event(tx_attrs) do
     Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{
       timestamp: tx_attrs.start_time,
-      duration: tx_attrs.duration_ms / 1_000,
+      duration: tx_attrs.duration_s,
       name: Util.metric_join(["OtherTransaction", tx_attrs.name]),
       user_attributes: tx_attrs
     })
@@ -444,12 +464,20 @@ defmodule NewRelic.Transaction.Complete do
   end
 
   def report_transaction_metric(%{other_transaction_name: _} = tx) do
-    NewRelic.report_metric({:other_transaction, tx.name}, duration_s: tx.duration_ms / 1_000)
+    NewRelic.report_metric({:other_transaction, tx.name}, duration_s: tx.duration_s)
   end
 
   def report_transaction_metric(tx) do
-    NewRelic.report_metric({:transaction, tx.name}, duration_s: tx.duration_ms / 1_000)
+    NewRelic.report_metric({:transaction, tx.name}, duration_s: tx.duration_s)
   end
+
+  def report_apdex_metric(:ignore), do: :ignore
+
+  def report_apdex_metric(apdex) do
+    NewRelic.report_metric(:apdex, apdex: apdex, threshold: apdex_t())
+  end
+
+  def apdex_t, do: Collector.AgentRun.lookup(:apdex_t)
 
   defp parse_error_expected(%{expected: true}), do: true
   defp parse_error_expected(_), do: false

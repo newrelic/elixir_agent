@@ -144,13 +144,13 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       total_call_time: utilization
     }
 
-  def transform(:apdex, {:satisfying, t}),
+  def transform(:apdex, apdex: :satisfying, threshold: t),
     do: %Metric{name: :Apdex, call_count: 1, min_call_time: t, max_call_time: t}
 
-  def transform(:apdex, {:tolerating, t}),
+  def transform(:apdex, apdex: :tolerating, threshold: t),
     do: %Metric{name: :Apdex, total_call_time: 1, min_call_time: t, max_call_time: t}
 
-  def transform(:apdex, {:frustrating, t}),
+  def transform(:apdex, apdex: :frustrating, threshold: t),
     do: %Metric{name: :Apdex, total_exclusive_time: 1, min_call_time: t, max_call_time: t}
 
   def transform({:supportability, :error_event}, error_count: error_count),

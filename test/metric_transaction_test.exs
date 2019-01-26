@@ -26,6 +26,11 @@ defmodule TestPlugApp do
     send_resp(conn, 200, blah)
   end
 
+  get "/fail" do
+    raise "FAIL"
+    send_resp(conn, 200, "won't get here")
+  end
+
   get "/ordering/:one/test/:two/ok/:three" do
     send_resp(conn, 200, "ok")
   end
@@ -72,6 +77,21 @@ defmodule MetricTransactionTest do
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
     assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
+
+    apdex = TestHelper.find_metric(metrics, "Apdex")
+
+    assert [_, [1, _, _, _, _, _]] = apdex
+  end
+
+  test "Failed transaction" do
+    TestHelper.request(TestPlugApp, conn(:get, "/fail"))
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestHelper.find_metric(metrics, "Errors/all")
+    apdex = TestHelper.find_metric(metrics, "Apdex", 0)
+
+    assert [_, [_, _, 1, _, _, _]] = apdex
   end
 
   test "Custom transaction names" do
