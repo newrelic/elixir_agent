@@ -8,9 +8,8 @@ defmodule NewRelic.Error.Event do
             duration: nil,
             queue_duration: nil,
             database_duration: nil,
-            http_response_code: nil,
-            request_method: nil,
-            user_attributes: %{}
+            user_attributes: %{},
+            agent_attributes: %{}
 
   @moduledoc false
 
@@ -32,10 +31,21 @@ defmodule NewRelic.Error.Event do
         databaseDuration: error.database_duration
       },
       NewRelic.Util.Event.process_event(error.user_attributes),
-      _agent_attributes = %{
-        httpResponseCode: error.http_response_code,
-        "request.headers.method": error.request_method
-      }
+      format_agent_attributes(error.agent_attributes)
     ]
+  end
+
+  def format_agent_attributes(%{
+        http_response_code: http_response_code,
+        request_method: request_method
+      }) do
+    %{
+      httpResponseCode: http_response_code,
+      "request.headers.method": request_method
+    }
+  end
+
+  def format_agent_attributes(_agent_attributes) do
+    %{}
   end
 end

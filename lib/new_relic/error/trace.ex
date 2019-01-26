@@ -6,7 +6,7 @@ defmodule NewRelic.Error.Trace do
             error_type: nil,
             cat_guid: "",
             stack_trace: nil,
-            request_uri: nil,
+            agent_attributes: %{},
             user_attributes: %{}
 
   @moduledoc false
@@ -23,13 +23,20 @@ defmodule NewRelic.Error.Trace do
       error.error_type,
       %{
         stack_trace: error.stack_trace,
-        request_uri: error.request_uri,
-        agentAttributes: %{},
+        agentAttributes: format_agent_attributes(error.agent_attributes),
         userAttributes: format_user_attributes(error.user_attributes),
         intrinsics: %{"error.expected": error.expected}
       },
       error.cat_guid
     ]
+  end
+
+  defp format_agent_attributes(%{request_uri: request_uri}) do
+    %{request_uri: request_uri}
+  end
+
+  defp format_agent_attributes(_agent_attributes) do
+    %{}
   end
 
   defp format_user_attributes(attrs) do

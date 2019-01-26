@@ -45,6 +45,14 @@ defmodule NewRelic.Transaction do
     NewRelic.DistributedTrace.Tracker.cleanup(self())
     NewRelic.Transaction.Plug.add_stop_attrs(conn)
     NewRelic.Transaction.Reporter.fail(error)
-    NewRelic.Transaction.Reporter.stop(conn)
+    NewRelic.Transaction.Reporter.complete()
+  end
+
+  @doc false
+  def start_transaction(category, name) do
+    NewRelic.Transaction.Reporter.start_other_transaction(category, name)
+
+    NewRelic.DistributedTrace.generate_new_context()
+    |> NewRelic.DistributedTrace.track_transaction(transport_type: "Other")
   end
 end

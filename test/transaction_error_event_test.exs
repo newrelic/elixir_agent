@@ -54,8 +54,10 @@ defmodule TransactionErrorEventTest do
       queue_duration: 0.010,
       database_duration: 0.010,
       duration: 0.010,
-      request_method: "GET",
-      http_response_code: 500,
+      agent_attributes: %{
+        request_method: "GET",
+        http_response_code: 500
+      },
       user_attributes: %{
         foo: "bar"
       }

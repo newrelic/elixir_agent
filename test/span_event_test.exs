@@ -92,7 +92,7 @@ defmodule SpanEventTest do
     assert attrs[:type] == "Span"
     assert attrs[:category] == "generic"
 
-    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
   defmodule Traced do
@@ -145,7 +145,7 @@ defmodule SpanEventTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    [cowboy_event, _, _] =
+    [tx_root_process_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] -> ev[:"nr.entryPoint"] == true end)
 
     [function_event, _, _] =
@@ -165,27 +165,27 @@ defmodule SpanEventTest do
     assert tx_event[:parentId] == "7d3efb1b173fecfa"
 
     assert tx_event[:traceId] == "d6b4ba0c3a712ca"
-    assert cowboy_event[:traceId] == "d6b4ba0c3a712ca"
+    assert tx_root_process_event[:traceId] == "d6b4ba0c3a712ca"
     assert function_event[:traceId] == "d6b4ba0c3a712ca"
     assert nested_function_event[:traceId] == "d6b4ba0c3a712ca"
     assert task_event[:traceId] == "d6b4ba0c3a712ca"
     assert nested_event[:traceId] == "d6b4ba0c3a712ca"
 
-    assert cowboy_event[:transactionId] == tx_event[:guid]
+    assert tx_root_process_event[:transactionId] == tx_event[:guid]
     assert function_event[:transactionId] == tx_event[:guid]
     assert nested_function_event[:transactionId] == tx_event[:guid]
     assert task_event[:transactionId] == tx_event[:guid]
     assert nested_event[:transactionId] == tx_event[:guid]
 
     assert tx_event[:sampled] == true
-    assert cowboy_event[:sampled] == true
+    assert tx_root_process_event[:sampled] == true
     assert function_event[:sampled] == true
     assert nested_function_event[:sampled] == true
     assert task_event[:sampled] == true
     assert nested_event[:sampled] == true
 
     assert tx_event[:priority] == 0.987654
-    assert cowboy_event[:priority] == 0.987654
+    assert tx_root_process_event[:priority] == 0.987654
     assert function_event[:priority] == 0.987654
     assert nested_function_event[:priority] == 0.987654
     assert task_event[:priority] == 0.987654
@@ -194,10 +194,10 @@ defmodule SpanEventTest do
     assert function_event[:duration] > 0.009
     assert function_event[:duration] < 0.020
 
-    assert cowboy_event[:parentId] == "5f474d64b9cc9b2a"
-    assert function_event[:parentId] == cowboy_event[:guid]
+    assert tx_root_process_event[:parentId] == "5f474d64b9cc9b2a"
+    assert function_event[:parentId] == tx_root_process_event[:guid]
     assert nested_function_event[:parentId] == function_event[:guid]
-    assert task_event[:parentId] == cowboy_event[:guid]
+    assert task_event[:parentId] == tx_root_process_event[:guid]
     assert nested_event[:parentId] == task_event[:guid]
 
     assert function_event[:duration] > 0
@@ -218,7 +218,7 @@ defmodule SpanEventTest do
     Jason.encode!(tx_event)
     Jason.encode!(span_events)
 
-    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 

@@ -10,10 +10,12 @@ defmodule ErrorTraceTest do
     er_1 = %Trace{
       timestamp: System.system_time(:millisecond) / 1_000,
       transaction_name: "WebTransaction/AgentTest/Transaction/name",
-      request_uri: "http://google.com",
       message: "Error: message",
       error_type: "ErrorClass",
       stack_trace: ["line1", "line2", "line3"],
+      agent_attributes: %{
+        request_uri: "http://google.com"
+      },
       user_attributes: %{
         foo: "bar"
       }
