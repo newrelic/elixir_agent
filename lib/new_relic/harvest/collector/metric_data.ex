@@ -33,6 +33,26 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform({:other_transaction, name}, duration_s: duration_s),
+    do: [
+      %Metric{
+        name: :"OtherTransaction/all",
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      },
+      %Metric{
+        name: join(["OtherTransaction", name]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
+    ]
+
   def transform(
         {:caller, parent_type, parent_account_id, parent_app_id, transport_type},
         duration_s: duration_s
@@ -124,6 +144,15 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       total_call_time: utilization
     }
 
+  def transform(:apdex, {:satisfying, t}),
+    do: %Metric{name: :Apdex, call_count: 1, min_call_time: t, max_call_time: t}
+
+  def transform(:apdex, {:tolerating, t}),
+    do: %Metric{name: :Apdex, total_call_time: 1, min_call_time: t, max_call_time: t}
+
+  def transform(:apdex, {:frustrating, t}),
+    do: %Metric{name: :Apdex, total_exclusive_time: 1, min_call_time: t, max_call_time: t}
+
   def transform({:supportability, :error_event}, error_count: error_count),
     do: [
       %Metric{
@@ -168,12 +197,5 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
-  defp join(segments) when is_list(segments) do
-    segments
-    |> Enum.filter(& &1)
-    |> Enum.map(&to_string/1)
-    |> Enum.map(&String.replace_leading(&1, "/", ""))
-    |> Enum.map(&String.replace_trailing(&1, "/", ""))
-    |> Enum.join("/")
-  end
+  defp join(segments), do: NewRelic.Util.metric_join(segments)
 end

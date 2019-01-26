@@ -1,6 +1,7 @@
 defmodule NewRelic.Transaction.Monitor do
   use GenServer
   alias NewRelic.Transaction
+  alias NewRelic.DistributedTrace
 
   # This GenServer watches transaction processes for
   #  - :trace messages
@@ -72,6 +73,8 @@ defmodule NewRelic.Transaction.Monitor do
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     Transaction.Reporter.ensure_purge(pid)
+    Transaction.Reporter.complete(pid)
+    DistributedTrace.Tracker.cleanup(pid)
     {:noreply, %{state | pids: Map.delete(state.pids, pid)}}
   end
 

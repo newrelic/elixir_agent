@@ -30,7 +30,7 @@ defmodule NewRelic.Error.Reporter do
       message: exception_reason,
       expected: expected,
       stack_trace: exception_stacktrace,
-      transaction_name: "WebTransaction/Elixir/ElixirProcess//#{process_name}",
+      transaction_name: "OtherTransaction/Elixir/ElixirProcess//#{process_name}",
       user_attributes:
         Map.merge(automatic_attributes, %{
           process: process_name
@@ -42,7 +42,7 @@ defmodule NewRelic.Error.Reporter do
       error_class: inspect(exception_type),
       error_message: exception_reason,
       expected: expected,
-      transaction_name: "WebTransaction/Elixir/ElixirProcess//#{process_name}",
+      transaction_name: "OtherTransaction/Elixir/ElixirProcess//#{process_name}",
       user_attributes:
         Map.merge(automatic_attributes, %{
           process: process_name,
