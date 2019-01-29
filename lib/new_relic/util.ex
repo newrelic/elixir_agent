@@ -104,6 +104,8 @@ defmodule NewRelic.Util do
       _error ->
         nil
     end
+  rescue
+    _exception -> nil
   end
 
   defp get_hostname do
