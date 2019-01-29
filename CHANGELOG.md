@@ -1,5 +1,13 @@
 ## CHANGELOG
 
+
+### `v1.7.0`
+
+* Support for "Other" (non-web) Transactions. [#84](https://github.com/newrelic/elixir_agent/pull/84)
+* Calculate and report Apdex metric. [#87](https://github.com/newrelic/elixir_agent/pull/87)
+
+-------
+
 ### `v1.6.2`
 
 * Improve error logging when encountering a bad DT payload
