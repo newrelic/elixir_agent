@@ -225,7 +225,7 @@ defmodule TransactionTest do
     assert Enum.find(events, fn [_, event] ->
              event[:path] == "/spawn" && event[:inside] == "spawned" && event[:nested] == "spawn" &&
                event[:not_linked] == "still_tracked" && event[:nested_inside] == "nolink" &&
-               event[:rabbit] == "hole" && event[:status] == 200
+               event[:rabbit] == "hole" && event[:process_spawns] == 5 && event[:status] == 200
            end)
   end
 
