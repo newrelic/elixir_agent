@@ -107,6 +107,8 @@ defmodule NewRelic.Transaction.Reporter do
         trace_process_spawns: {:list, {pid, timestamp, original}},
         trace_process_names: {:list, {pid, NewRelic.Util.process_name(pid)}}
       )
+
+      AttrStore.incr(__MODULE__, original, process_spawns: 1)
     end
   end
 
