@@ -78,6 +78,8 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     store(:span_event_harvest_cycle, span_event["report_period_in_seconds"] * 1000)
 
     store(:data_report_period, state["data_report_period"] * 1000)
+
+    store(:apdex_t, state["apdex_t"])
   end
 
   defp store_agent_run(_error), do: :ignore

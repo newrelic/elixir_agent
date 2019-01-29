@@ -19,7 +19,7 @@ defmodule AgentRunIntegrationTest do
   end
 
   test "has util data in connect payload" do
-    payload = Collector.AgentRun.connect_payload()
+    payload = Collector.Connect.payload()
     ram = get_in(payload, [Access.at(0), :utilization, :total_ram_mib])
     assert is_integer(ram)
   end
