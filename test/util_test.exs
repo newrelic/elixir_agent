@@ -55,14 +55,21 @@ defmodule UtilTest do
     end
   end
 
+  test "minimal utilization check" do
+    assert %{metadata_version: 3} = NewRelic.Util.utilization()
+  end
+
   test "AWS utilization fast timeout" do
-    assert %{} == NewRelic.Util.maybe_add_vendors(%{}, aws_url: "http://httpbin.org/delay/10")
+    assert %{} ==
+             NewRelic.Util.Vendor.maybe_add_cloud_vendors(%{},
+               aws_url: "http://httpbin.org/delay/10"
+             )
   end
 
   test "AWS utilization info" do
     {:ok, _} = Plug.Cowboy.http(FakeAwsPlug, [], port: 8883)
 
-    util = NewRelic.Util.maybe_add_vendors(%{}, aws_url: "http://localhost:8883")
+    util = NewRelic.Util.Vendor.maybe_add_cloud_vendors(%{}, aws_url: "http://localhost:8883")
     assert get_in(util, [:vendors, :aws, "instanceId"]) == "test.id"
   end
 
