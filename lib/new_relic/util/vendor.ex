@@ -39,6 +39,8 @@ defmodule NewRelic.Util.Vendor do
         nil
     end
   rescue
-    _exception -> nil
+    exception ->
+      NewRelic.log(:error, "Failed to fetch AWS metadata. #{inspect(exception)}")
+      nil
   end
 end
