@@ -60,5 +60,19 @@ defmodule NewRelic.Tracer.MacroTest do
 
       assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
     end
+
+    test "ignore variables on the left side of a pattern match" do
+      ast =
+        quote do
+          [data = %{foo: :bar}]
+        end
+
+      expected =
+        quote do
+          [_data = %{foo: :bar}]
+        end
+
+      assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
+    end
   end
 end

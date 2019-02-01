@@ -50,6 +50,9 @@ defmodule TracerTest do
     def default_multiclause(:case_1), do: :case_1_return
     def default_multiclause(value), do: value
 
+    @trace :left_side
+    def left_side(map = %{}), do: map
+
     @trace :rescuer
     def rescuer() do
       :do_something
@@ -205,5 +208,9 @@ defmodule TracerTest do
     assert Enum.empty?(attrs)
 
     Application.delete_env(:new_relic_agent, :tx_attr_expire)
+  end
+
+  test "Don't warn when dealing with variables on the left side of a pattern" do
+    assert %{foo: :bar} == Traced.left_side(%{foo: :bar})
   end
 end
