@@ -58,6 +58,11 @@ defmodule NewRelic do
   defdelegate start_transaction(category, name), to: NewRelic.Transaction
 
   @doc """
+  Call within a transaction to prevent it from reporting.
+  """
+  defdelegate ignore_transaction(), to: NewRelic.Transaction
+
+  @doc """
   Store information about the type of work the current span is doing.
 
   Options:

@@ -55,4 +55,10 @@ defmodule NewRelic.Transaction do
     NewRelic.DistributedTrace.generate_new_context()
     |> NewRelic.DistributedTrace.track_transaction(transport_type: "Other")
   end
+
+  @doc false
+  def ignore_transaction() do
+    NewRelic.Transaction.Reporter.ignore_transaction()
+    NewRelic.DistributedTrace.Tracker.cleanup(self())
+  end
 end
