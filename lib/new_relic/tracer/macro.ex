@@ -193,8 +193,7 @@ defmodule NewRelic.Tracer.Macro do
   # Search for variables on the left side of a pattern match
   # and prefix them with an underscore so they don't end up as
   # unused variables
-  def rewrite_call_term({:=, metadata, [{name, _, context} = pattern, value]})
-      when is_variable(name, context) do
+  def rewrite_call_term({:=, metadata, [pattern, value]}) do
     ignored_pattern = Macro.postwalk(pattern, &rewrite_match_pattern/1)
     {:=, metadata, [ignored_pattern, value]}
   end

@@ -1,6 +1,11 @@
 defmodule NewRelic.Tracer.MacroTest do
   use ExUnit.Case
 
+  @doc """
+  We re-inject the function args into the call to the Tracer reporter
+  To do this w/o generating a bunch of warnings, we need to mark various
+  pattern matching captures as ignored.
+  """
   describe "build_call_args/1" do
     test "do nothing to simple argument lists" do
       ast =
@@ -64,12 +69,12 @@ defmodule NewRelic.Tracer.MacroTest do
     test "ignore variables on the left side of a pattern match" do
       ast =
         quote do
-          [data = %{foo: :bar}]
+          [data = %{foo: %{baz: "qux"} = map}]
         end
 
       expected =
         quote do
-          [_data = %{foo: :bar}]
+          [_data = %{foo: %{baz: "qux"} = map}]
         end
 
       assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
