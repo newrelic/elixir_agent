@@ -2,16 +2,12 @@ defmodule NewRelic.Util.HTTP do
   @moduledoc false
 
   def post(url, body, headers) when is_binary(body) do
-    %{host: host} = URI.parse(url)
     headers = Enum.map(headers, fn {k, v} -> {'#{k}', '#{v}'} end)
+    request = {'#{url}', headers, 'application/json', body}
+    %{host: host} = URI.parse(url)
 
     with {:ok, {{_, status_code, _}, _headers, body}} <-
-           :httpc.request(
-             :post,
-             {'#{url}', headers, 'application/json', body},
-             ssl_options(host),
-             []
-           ) do
+           :httpc.request(:post, request, ssl_options(host), []) do
       {:ok, %{status_code: status_code, body: to_string(body)}}
     end
   end
