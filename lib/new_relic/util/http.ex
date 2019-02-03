@@ -5,15 +5,15 @@ defmodule NewRelic.Util.HTTP do
     %{host: host} = URI.parse(url)
     headers = Enum.map(headers, fn {k, v} -> {'#{k}', '#{v}'} end)
 
-    {:ok, {{_, status_code, _}, _headers, body}} =
-      :httpc.request(
-        :post,
-        {'#{url}', headers, 'application/json', body},
-        ssl_options(host),
-        []
-      )
-
-    {:ok, %{status_code: status_code, body: to_string(body)}}
+    with {:ok, {{_, status_code, _}, _headers, body}} <-
+           :httpc.request(
+             :post,
+             {'#{url}', headers, 'application/json', body},
+             ssl_options(host),
+             []
+           ) do
+      {:ok, %{status_code: status_code, body: to_string(body)}}
+    end
   end
 
   def post(url, body, headers),
