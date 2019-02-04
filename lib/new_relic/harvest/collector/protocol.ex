@@ -106,10 +106,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
   defp handle_exception(exception), do: exception
 
   defp collector_headers,
-    do: [
-      "content-encoding": "identity",
-      "user-agent": "NewRelic-ElixirAgent/#{NewRelic.Config.agent_version()}"
-    ]
+    do: ["user-agent": "NewRelic-ElixirAgent/#{NewRelic.Config.agent_version()}"]
 
   defp default_collector_params,
     do: %{

@@ -1,9 +1,11 @@
 defmodule NewRelic.Util.HTTP do
   @moduledoc false
 
+  @gzip {'content-encoding', 'gzip'}
+
   def post(url, body, headers) when is_binary(body) do
-    headers = Enum.map(headers, fn {k, v} -> {'#{k}', '#{v}'} end)
-    request = {'#{url}', headers, 'application/json', body}
+    headers = [@gzip | Enum.map(headers, fn {k, v} -> {'#{k}', '#{v}'} end)]
+    request = {'#{url}', headers, 'application/json', :zlib.gzip(body)}
     %{host: host} = URI.parse(url)
 
     with {:ok, {{_, status_code, _}, _headers, body}} <-
