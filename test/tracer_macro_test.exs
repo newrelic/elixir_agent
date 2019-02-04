@@ -1,6 +1,10 @@
 defmodule NewRelic.Tracer.MacroTest do
   use ExUnit.Case
 
+  @doc """
+  We re-inject the function args into the call to the Tracer reporter
+  without generating a bunch of unused variable warnings.
+  """
   describe "build_call_args/1" do
     test "do nothing to simple argument lists" do
       ast =
@@ -39,7 +43,7 @@ defmodule NewRelic.Tracer.MacroTest do
       assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
     end
 
-    test "ignore variables in function argument pattern match" do
+    test "Drop the de-structuring in favor of the variable" do
       ast =
         quote do
           [
@@ -52,10 +56,38 @@ defmodule NewRelic.Tracer.MacroTest do
       expected =
         quote do
           [
-            %{v1: _v1, v2: _v2, v3: %{foo: _bar} = _v3} = data,
-            _x = y,
-            [[_hh, _hhh] = _h | _tail] = lst
+            data,
+            y,
+            lst
           ]
+        end
+
+      assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
+    end
+
+    test "Find variable on the left of a pattern match" do
+      ast =
+        quote do
+          [data = %{foo: %{baz: "qux"}}]
+        end
+
+      expected =
+        quote do
+          [data]
+        end
+
+      assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
+    end
+
+    test "Handle a strange double-sided pattern match" do
+      ast =
+        quote do
+          [data = %{foo: %{baz: "qux"}} = map]
+        end
+
+      expected =
+        quote do
+          [map]
         end
 
       assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
