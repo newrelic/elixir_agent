@@ -17,6 +17,10 @@ defmodule NewRelic.Util.HTTP do
   def post(url, body, headers),
     do: post(url, Jason.encode!(body), headers)
 
+  @doc """
+  Certs are pulled from Mozilla exactly as Hex does:
+  https://github.com/hexpm/hex/blob/master/README.md#bundled-ca-certs
+  """
   def ssl_options(host) do
     [
       ssl: [

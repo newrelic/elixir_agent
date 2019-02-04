@@ -98,7 +98,7 @@ defmodule UtilTest do
               {:failed_connect,
                [
                  {:to_address, {'expired.badssl.com', 443}},
-                 {:inet, [:inet], {:tls_alert, 'unknown ca'}}
+                 {:inet, [:inet], {:tls_alert, 'handshake failure'}}
                ]}} = NewRelic.Util.HTTP.post("https://expired.badssl.com/", "", [])
 
       assert {:error,
