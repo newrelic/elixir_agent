@@ -55,6 +55,14 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
+  def ignore_transaction() do
+    if tracking?(self()) do
+      AttrStore.untrack(__MODULE__, self())
+      AttrStore.purge(__MODULE__, self())
+      ensure_purge(self())
+    end
+  end
+
   def fail(%{kind: kind, reason: reason, stack: stack} = error) do
     if tracking?(self()) do
       if NewRelic.Config.feature?(:error_collector) do

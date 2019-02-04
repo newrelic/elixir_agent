@@ -92,6 +92,11 @@ defmodule TransactionTest do
       Process.sleep(100)
       send_resp(conn, 200, "spawn")
     end
+
+    get "/ignored" do
+      NewRelic.ignore_transaction()
+      send_resp(conn, 200, "ignored")
+    end
   end
 
   test "Basic transaction" do
@@ -240,5 +245,16 @@ defmodule TransactionTest do
              event[:path] == "/map" && event[:plain] == "attr" && event["deep.foo.bar"] == "baz" &&
                event["deep.foo.baz"] == "bar"
            end)
+  end
+
+  test "Allow a transaction to be ignored" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    Task.Supervisor.start_link(name: TestTaskSup)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/ignored"))
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert events == []
   end
 end
