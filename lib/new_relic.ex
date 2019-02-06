@@ -140,16 +140,6 @@ defmodule NewRelic do
   @doc false
   defdelegate log(level, message), to: NewRelic.Logger
 
-  @doc """
-  Will gracefully complete and shut down the agent harvest cycle.
-
-  To ensure a harvest at shutdown, you can add a hook to your application:
-
-  ```elixir
-  System.at_exit(fn(_) ->
-    NewRelic.manual_shutdown()
-  end)
-  ```
-  """
+  @doc false
   defdelegate manual_shutdown(), to: NewRelic.Harvest.Supervisor
 end

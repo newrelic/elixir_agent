@@ -38,9 +38,8 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
     GenServer.call(name, :pause)
 
     receive do
-      {:DOWN, _ref, _, ^harvester, _reason} -> :ok
-    after
-      1000 -> NewRelic.log(:error, "Failed to shut down #{name}")
+      {:DOWN, _ref, _, ^harvester, _reason} ->
+        NewRelic.log(:warn, "Completed shutdown #{inspect(name)}")
     end
   end
 
