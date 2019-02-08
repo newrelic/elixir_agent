@@ -1,6 +1,21 @@
 ## CHANGELOG
 
 
+### `v1.8.0`
+
+Features
+
+* Enable ignoring a Transaction. [#93](https://github.com/newrelic/elixir_agent/pull/93)
+* Track the number of processes spawned during a Transaction. [#88](https://github.com/newrelic/elixir_agent/pull/88)
+
+Fixes
+
+* Handle error fetching AWS fargate metadata. [#89](https://github.com/newrelic/elixir_agent/pull/89)
+* Avoid a compiler warning for some traced functions. [#92](https://github.com/newrelic/elixir_agent/pull/92)
+* Prevent nested spans from duplicating attributes. [#97](https://github.com/newrelic/elixir_agent/pull/97)
+
+-------
+
 ### `v1.7.0`
 
 * Support for "Other" (non-web) Transactions. [#84](https://github.com/newrelic/elixir_agent/pull/84)
