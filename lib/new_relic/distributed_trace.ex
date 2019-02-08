@@ -122,7 +122,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def set_span(:generic, attrs) do
-    Process.put(:nr_current_span_attrs, attrs)
+    Process.put(:nr_current_span_attrs, Enum.into(attrs, %{}))
   end
 
   def set_span(:http, url: url, method: method, component: component) do
@@ -152,9 +152,10 @@ defmodule NewRelic.DistributedTrace do
 
   def set_current_span(label: label, ref: ref) do
     current = {label, ref}
-    previous = Process.get(:nr_current_span)
+    previous_span = Process.get(:nr_current_span)
+    previous_span_attrs = Process.get(:nr_current_span_attrs)
     Process.put(:nr_current_span, current)
-    {current, previous}
+    {current, previous_span, previous_span_attrs}
   end
 
   def get_current_span_guid() do
@@ -164,8 +165,9 @@ defmodule NewRelic.DistributedTrace do
     end
   end
 
-  def reset_span(previous: previous) do
-    Process.put(:nr_current_span, previous)
+  def reset_span(previous_span: previous_span, previous_span_attrs: previous_span_attrs) do
+    Process.put(:nr_current_span, previous_span)
+    Process.put(:nr_current_span_attrs, previous_span_attrs)
   end
 
   defp generate_sampling() do
