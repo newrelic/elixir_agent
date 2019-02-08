@@ -108,9 +108,16 @@ defmodule SpanEventTest do
       "world"
     end
 
-    @trace {:foo, category: :external}
-    def foo do
-      Process.sleep(15)
+    @trace :function
+    def function do
+      Process.sleep(10)
+      NewRelic.set_span(:generic, some: "attribute")
+      http_request()
+    end
+
+    @trace {:http_request, category: :external}
+    def http_request do
+      Process.sleep(10)
       NewRelic.set_span(:http, url: "http://example.com", method: "GET", component: "HTTPoison")
       "bar"
     end
@@ -126,12 +133,46 @@ defmodule SpanEventTest do
     get "/hello" do
       Task.async(fn ->
         Process.sleep(5)
-        Traced.foo()
+        Traced.http_request()
       end)
       |> Task.await()
 
       send_resp(conn, 200, Traced.hello())
     end
+
+    get "/reset_span" do
+      Traced.function()
+      send_resp(conn, 200, "Yo.")
+    end
+  end
+
+  test "Reset span attributes at the end" do
+    TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+
+    TestHelper.request(
+      TestPlugApp,
+      conn(:get, "/reset_span") |> put_req_header(@dt_header, generate_inbound_payload())
+    )
+
+    span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+
+    [function, _, _] =
+      Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.function/0" end)
+
+    [http_request, _, _] =
+      Enum.find(span_events, fn [ev, _, _] ->
+        ev[:name] == "SpanEventTest.Traced.http_request/0"
+      end)
+
+    assert function[:category] == "generic"
+    assert function[:some] == "attribute"
+    refute function[:url]
+
+    assert http_request[:category] == "http"
+    assert http_request[:"http.url"]
+
+    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   test "report span events via function tracer inside transaction inside a DT" do
@@ -158,7 +199,9 @@ defmodule SpanEventTest do
       Enum.find(span_events, fn [ev, _, _] -> String.starts_with?(ev[:name], "Process #PID") end)
 
     [nested_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.foo/0" end)
+      Enum.find(span_events, fn [ev, _, _] ->
+        ev[:name] == "SpanEventTest.Traced.http_request/0"
+      end)
 
     [[_intrinsics, tx_event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
