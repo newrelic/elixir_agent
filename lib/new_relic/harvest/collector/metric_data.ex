@@ -5,7 +5,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
 
   alias NewRelic.Metric
 
-  def transform({:transaction, name}, duration_s: duration_s),
+  def transform({:transaction, name}, duration_s: duration_s, total_time_s: total_time_s),
     do: [
       %Metric{
         name: :HttpDispatcher,
@@ -30,10 +30,26 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         total_exclusive_time: duration_s,
         min_call_time: duration_s,
         max_call_time: duration_s
+      },
+      %Metric{
+        name: :WebTransactionTotalTime,
+        call_count: 1,
+        total_call_time: total_time_s,
+        total_exclusive_time: total_time_s,
+        min_call_time: total_time_s,
+        max_call_time: total_time_s
+      },
+      %Metric{
+        name: join(["WebTransactionTotalTime", name]),
+        call_count: 1,
+        total_call_time: total_time_s,
+        total_exclusive_time: total_time_s,
+        min_call_time: total_time_s,
+        max_call_time: total_time_s
       }
     ]
 
-  def transform({:other_transaction, name}, duration_s: duration_s),
+  def transform({:other_transaction, name}, duration_s: duration_s, total_time_s: total_time_s),
     do: [
       %Metric{
         name: :"OtherTransaction/all",
@@ -50,6 +66,22 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         total_exclusive_time: duration_s,
         min_call_time: duration_s,
         max_call_time: duration_s
+      },
+      %Metric{
+        name: :OtherTransactionTotalTime,
+        call_count: 1,
+        total_call_time: total_time_s,
+        total_exclusive_time: total_time_s,
+        min_call_time: total_time_s,
+        max_call_time: total_time_s
+      },
+      %Metric{
+        name: join(["OtherTransactionTotalTime", name]),
+        call_count: 1,
+        total_call_time: total_time_s,
+        total_exclusive_time: total_time_s,
+        min_call_time: total_time_s,
+        max_call_time: total_time_s
       }
     ]
 

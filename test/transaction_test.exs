@@ -97,6 +97,13 @@ defmodule TransactionTest do
       NewRelic.ignore_transaction()
       send_resp(conn, 200, "ignored")
     end
+
+    get "/total_time" do
+      t1 = Task.async(fn -> ExternalService.query(200) end)
+      ExternalService.query(200)
+      Task.await(t1)
+      send_resp(conn, 200, "ok")
+    end
   end
 
   test "Basic transaction" do
@@ -256,5 +263,19 @@ defmodule TransactionTest do
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
     assert events == []
+  end
+
+  test "Calculate total time" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/total_time"))
+
+    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert event[:duration_s] >= 0.2
+    assert event[:duration_s] < 0.3
+
+    assert event[:total_time_s] > 0.3
+    assert event[:total_time_s] < 0.5
   end
 end

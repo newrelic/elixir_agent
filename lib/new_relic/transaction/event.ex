@@ -5,6 +5,7 @@ defmodule NewRelic.Transaction.Event do
             timestamp: nil,
             name: nil,
             duration: nil,
+            total_time: nil,
             user_attributes: %{}
 
   @moduledoc false
@@ -17,6 +18,7 @@ defmodule NewRelic.Transaction.Event do
     [
       %{
         webDuration: transaction.web_duration,
+        totalTime: transaction.total_time,
         databaseDuration: transaction.database_duration,
         timestamp: transaction.timestamp,
         name: transaction.name,
