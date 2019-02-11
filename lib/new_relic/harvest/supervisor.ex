@@ -4,6 +4,16 @@ defmodule NewRelic.Harvest.Supervisor do
 
   @moduledoc false
 
+  @all_harvesters [
+    Collector.Metric.HarvestCycle,
+    Collector.TransactionTrace.HarvestCycle,
+    Collector.TransactionEvent.HarvestCycle,
+    Collector.SpanEvent.HarvestCycle,
+    Collector.TransactionErrorEvent.HarvestCycle,
+    Collector.CustomEvent.HarvestCycle,
+    Collector.ErrorTrace.HarvestCycle
+  ]
+
   def start_link do
     Supervisor.start_link(__MODULE__, [])
   end
@@ -20,16 +30,13 @@ defmodule NewRelic.Harvest.Supervisor do
 
   def manual_shutdown do
     if NewRelic.Config.enabled?() do
-      [
-        Collector.Metric.HarvestCycle,
-        Collector.TransactionTrace.HarvestCycle,
-        Collector.TransactionEvent.HarvestCycle,
-        Collector.SpanEvent.HarvestCycle,
-        Collector.TransactionErrorEvent.HarvestCycle,
-        Collector.CustomEvent.HarvestCycle,
-        Collector.ErrorTrace.HarvestCycle
-      ]
-      |> Enum.map(&Collector.HarvestCycle.manual_shutdown/1)
+      @all_harvesters
+      |> Enum.map(
+        &Task.async(fn ->
+          Collector.HarvestCycle.manual_shutdown(&1)
+        end)
+      )
+      |> Enum.map(&Task.await/1)
     end
   end
 end

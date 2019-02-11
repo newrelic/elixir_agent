@@ -35,13 +35,12 @@ defmodule AgentRunIntegrationTest do
     assert is_integer(NewRelic.Harvest.Collector.AgentRun.lookup(:span_event_harvest_cycle))
   end
 
-  test "Agent restart ability" do
+  test "Agent re-connect ability" do
     original_agent_run_id = Collector.AgentRun.agent_run_id()
 
-    Application.stop(:new_relic_agent)
-    Application.start(:new_relic_agent)
-
+    Collector.AgentRun.reconnect()
     GenServer.call(Collector.AgentRun, :connected)
+
     new_agent_run_id = Collector.AgentRun.agent_run_id()
 
     assert original_agent_run_id != new_agent_run_id
