@@ -45,7 +45,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     do:
       params
       |> collector_method_url
-      |> NewRelic.Util.post(payload, collector_headers())
+      |> NewRelic.Util.HTTP.post(payload, collector_headers())
       |> parse_http_response(params)
 
   defp retry_call({:ok, response}, _params, _payload), do: {:ok, response}
@@ -106,10 +106,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
   defp handle_exception(exception), do: exception
 
   defp collector_headers,
-    do: [
-      "content-encoding": "identity",
-      "user-agent": "NewRelic-ElixirAgent/#{NewRelic.Config.agent_version()}"
-    ]
+    do: ["user-agent": "NewRelic-ElixirAgent/#{NewRelic.Config.agent_version()}"]
 
   defp default_collector_params,
     do: %{

@@ -28,8 +28,8 @@ defmodule NewRelic.Util.Vendor do
 
   @aws_vendor_data ["availabilityZone", "instanceId", "instanceType"]
   def aws_vendor_hash(url) do
-    case HTTPoison.get(url, [], timeout: 100) do
-      {:ok, %{status_code: 200, body: body}} ->
+    case :httpc.request(:get, {~c(#{url}), []}, [{:timeout, 100}], []) do
+      {:ok, {{_, 200, 'OK'}, _headers, body}} ->
         case Jason.decode(body) do
           {:ok, data} -> Map.take(data, @aws_vendor_data)
           _ -> nil

@@ -26,7 +26,7 @@ defmodule NewRelic.Mixfile do
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README.md", "CHANGELOG.md", "VERSION"],
+      files: ["lib", "priv", "mix.exs", "README.md", "CHANGELOG.md", "VERSION"],
       maintainers: ["Vince Foley"],
       licenses: ["Apache 2.0"],
       links: %{"GitHub" => "https://github.com/newrelic/elixir_agent"}
@@ -38,7 +38,7 @@ defmodule NewRelic.Mixfile do
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:httpoison, "~> 1.0"}
+      {:ssl_verify_fun, "~> 1.1"}
     ]
   end
 
