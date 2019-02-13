@@ -85,6 +85,12 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
+  def track_metric(metric) do
+    if tracking?(self()) do
+      AttrStore.add(__MODULE__, self(), transaction_metrics: {:list, metric})
+    end
+  end
+
   def set_transaction_error(pid, error) do
     if tracking?(pid) do
       AttrStore.add(__MODULE__, pid, transaction_error: {:error, error})

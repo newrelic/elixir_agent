@@ -7,7 +7,7 @@ defmodule NewRelic.Transaction.Complete do
   alias NewRelic.Transaction
 
   def run(tx_attrs, pid) do
-    {tx_segments, tx_attrs, tx_error, span_events, apdex} =
+    {tx_segments, tx_attrs, tx_error, span_events, apdex, tx_metrics} =
       tx_attrs
       |> transform_name_attrs
       |> transform_time_attrs
@@ -17,6 +17,7 @@ defmodule NewRelic.Transaction.Complete do
     report_transaction_trace(tx_attrs, tx_segments)
     report_transaction_error_event(tx_attrs, tx_error)
     report_transaction_metric(tx_attrs)
+    report_transaction_metrics(tx_attrs, tx_metrics)
     report_aggregate(tx_attrs)
     report_caller_metric(tx_attrs)
     report_apdex_metric(apdex)
@@ -53,6 +54,7 @@ defmodule NewRelic.Transaction.Complete do
     {process_names, tx_attrs} = Map.pop(tx_attrs, :trace_process_names, [])
     {process_exits, tx_attrs} = Map.pop(tx_attrs, :trace_process_exits, [])
     {tx_error, tx_attrs} = Map.pop(tx_attrs, :transaction_error, nil)
+    {tx_metrics, tx_attrs} = Map.pop(tx_attrs, :transaction_metrics, [])
 
     function_segments =
       function_segments
@@ -104,7 +106,7 @@ defmodule NewRelic.Transaction.Complete do
       |> Map.put(:"nr.apdexPerfZone", Util.Apdex.label(apdex))
       |> Map.put(:total_time_s, tx_attrs.duration_s + total_time / 1000)
 
-    {[segment_tree], tx_attrs, tx_error, span_events, apdex}
+    {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
   end
 
   defp extract_span_events(tx_attrs, pid, spawns, names, exits) do
@@ -483,6 +485,18 @@ defmodule NewRelic.Transaction.Complete do
       duration_s: tx.duration_s,
       total_time_s: tx.total_time_s
     )
+  end
+
+  def report_transaction_metrics(tx, tx_metrics) when is_list(tx_metrics) do
+    Enum.each(tx_metrics, &report_transaction_metrics(tx, &1))
+  end
+
+  def report_transaction_metrics(%{other_transaction_name: _}, {:external, duration_s}) do
+    NewRelic.report_metric(:external_other, duration_s: duration_s)
+  end
+
+  def report_transaction_metrics(_tx, {:external, duration_s}) do
+    NewRelic.report_metric(:external_web, duration_s: duration_s)
   end
 
   def report_apdex_metric(:ignore), do: :ignore

@@ -1,67 +1,74 @@
-defmodule TestPlugAppForward do
-  import Plug.Conn
-
-  def init(opts), do: opts
-  def call(conn, _opts), do: send_resp(conn, 200, "ok")
-end
-
-defmodule Status do
-  use Plug.Router
-
-  plug(:match)
-  plug(:dispatch)
-
-  get("/check", do: send_resp(conn, 200, "ok"))
-  get("/info", do: send_resp(conn, 200, "ok"))
-end
-
-defmodule TestPlugApp do
-  use Plug.Router
-  use NewRelic.Transaction
-
-  plug(:match)
-  plug(:dispatch)
-
-  get "/foo/:blah" do
-    send_resp(conn, 200, blah)
-  end
-
-  get "/fail" do
-    raise "FAIL"
-    send_resp(conn, 200, "won't get here")
-  end
-
-  get "/ordering/:one/test/:two/ok/:three" do
-    send_resp(conn, 200, "ok")
-  end
-
-  get "/custom_name" do
-    NewRelic.set_transaction_name("/very/unique/name")
-    send_resp(conn, 200, "ok")
-  end
-
-  get "/named_wildcard/*public_variable_name" do
-    send_resp(conn, 200, "ok")
-  end
-
-  get "/unnamed_wildcard/*_secret_variable_name" do
-    send_resp(conn, 200, "ok")
-  end
-
-  get "/fancy/:transaction/:_names/*supported" do
-    send_resp(conn, 200, "hello")
-  end
-
-  forward("/forward/a", to: TestPlugAppForward)
-  forward("/forward/b", to: TestPlugAppForward)
-  forward("/status", to: Status)
-end
-
 defmodule MetricTransactionTest do
   use ExUnit.Case
   use Plug.Test
 
   alias NewRelic.Harvest.Collector
+
+  defmodule TestPlugAppForward do
+    import Plug.Conn
+
+    def init(opts), do: opts
+    def call(conn, _opts), do: send_resp(conn, 200, "ok")
+  end
+
+  defmodule Status do
+    use Plug.Router
+
+    plug(:match)
+    plug(:dispatch)
+
+    get("/check", do: send_resp(conn, 200, "ok"))
+    get("/info", do: send_resp(conn, 200, "ok"))
+  end
+
+  defmodule External do
+    use NewRelic.Tracer
+    @trace {:call, category: :external}
+    def call, do: :make_request
+  end
+
+  defmodule TestPlugApp do
+    use Plug.Router
+    use NewRelic.Transaction
+
+    plug(:match)
+    plug(:dispatch)
+
+    get "/foo/:blah" do
+      External.call()
+      send_resp(conn, 200, blah)
+    end
+
+    get "/fail" do
+      raise "FAIL"
+      send_resp(conn, 200, "won't get here")
+    end
+
+    get "/ordering/:one/test/:two/ok/:three" do
+      send_resp(conn, 200, "ok")
+    end
+
+    get "/custom_name" do
+      NewRelic.set_transaction_name("/very/unique/name")
+      send_resp(conn, 200, "ok")
+    end
+
+    get "/named_wildcard/*public_variable_name" do
+      send_resp(conn, 200, "ok")
+    end
+
+    get "/unnamed_wildcard/*_secret_variable_name" do
+      send_resp(conn, 200, "ok")
+    end
+
+    get "/fancy/:transaction/:_names/*supported" do
+      send_resp(conn, 200, "hello")
+    end
+
+    forward("/forward/a", to: TestPlugAppForward)
+    forward("/forward/b", to: TestPlugAppForward)
+    forward("/status", to: Status)
+  end
 
   setup do
     TestHelper.restart_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
@@ -81,6 +88,9 @@ defmodule MetricTransactionTest do
     apdex = TestHelper.find_metric(metrics, "Apdex")
 
     assert [_, [1, _, _, _, _, _]] = apdex
+
+    assert TestHelper.find_metric(metrics, "External/MetricTransactionTest.External.call/all")
+    assert TestHelper.find_metric(metrics, "External/allWeb")
   end
 
   test "Failed transaction" do
