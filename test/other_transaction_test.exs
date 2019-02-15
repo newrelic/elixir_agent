@@ -15,6 +15,12 @@ defmodule OtherTransactionTest do
     :ok
   end
 
+  defmodule External do
+    use NewRelic.Tracer
+    @trace {:call, category: :external}
+    def call, do: :make_request
+  end
+
   test "reports Other Transactions" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
@@ -24,6 +30,7 @@ defmodule OtherTransactionTest do
     Task.async(fn ->
       NewRelic.start_transaction("TransactionCategory", "MyTaskName")
       NewRelic.add_attributes(other: "transaction")
+      External.call()
 
       Task.async(fn ->
         Process.sleep(100)
@@ -55,8 +62,11 @@ defmodule OtherTransactionTest do
     assert TestHelper.find_metric(metrics, "OtherTransaction/all")
     assert TestHelper.find_metric(metrics, "OtherTransaction/TransactionCategory/MyTaskName")
 
+    assert TestHelper.find_metric(metrics, "External/OtherTransactionTest.External.call/all")
+    assert TestHelper.find_metric(metrics, "External/allOther")
+
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-    assert length(span_events) == 2
+    assert length(span_events) == 3
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)

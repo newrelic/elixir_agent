@@ -145,9 +145,25 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         total_exclusive_time: duration_s,
         min_call_time: duration_s,
         max_call_time: duration_s
-      },
+      }
+    ]
+
+  def transform(:external_web, duration_s: duration_s),
+    do: [
       %Metric{
         name: :"External/allWeb",
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
+    ]
+
+  def transform(:external_other, duration_s: duration_s),
+    do: [
+      %Metric{
+        name: :"External/allOther",
         call_count: 1,
         total_call_time: duration_s,
         total_exclusive_time: duration_s,

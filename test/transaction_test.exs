@@ -171,6 +171,7 @@ defmodule TransactionTest do
   end
 
   test "Transaction with traced external service call" do
+    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
