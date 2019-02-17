@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.0`
+
+* Calculate and report the Total Time in a Transaction. [#98](https://github.com/newrelic/elixir_agent/pull/98)
+* Report External metrics based on transaction type. [#99](https://github.com/newrelic/elixir_agent/pull/99)
+
+-------
 
 ### `v1.8.0`
 
