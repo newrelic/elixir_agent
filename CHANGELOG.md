@@ -2,7 +2,14 @@
 
 ### `v1.9.0`
 
+Features
+
+* Use erlang's `httpc` client. [#70](https://github.com/newrelic/elixir_agent/pull/70)
 * Calculate and report the Total Time in a Transaction. [#98](https://github.com/newrelic/elixir_agent/pull/98)
+
+Fixes
+
+* Attempt to flush each harvester upon graceful shutdown. [#94](https://github.com/newrelic/elixir_agent/pull/94)
 * Report External metrics based on transaction type. [#99](https://github.com/newrelic/elixir_agent/pull/99)
 
 -------
