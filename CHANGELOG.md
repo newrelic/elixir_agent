@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.1`
+
+Fixes
+
+* Fix the transaction event name attribute. [#100](https://github.com/newrelic/elixir_agent/pull/100)
+
 ### `v1.9.0`
 
 Features
