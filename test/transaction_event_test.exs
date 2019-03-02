@@ -115,8 +115,10 @@ defmodule TransactionEventTest do
     TestPlugApp.call(conn(:get, "/"), [])
     TestPlugApp.call(conn(:get, "/"), [])
 
-    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    [event | _] = events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
     assert length(events) == 2
+    assert [%{name: "WebTransaction/Plug/GET"}, _] = event
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end

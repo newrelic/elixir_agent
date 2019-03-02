@@ -282,7 +282,17 @@ defmodule NewRelic.Transaction.Complete do
     Enum.each(span_events, &Collector.SpanEvent.Harvester.report_span_event/1)
   end
 
-  defp report_transaction_event(%{transaction_type: :web} = tx_attrs) do
+  defp report_transaction_event(%{other_transaction_name: _} = tx_attrs) do
+    Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{
+      timestamp: tx_attrs.start_time,
+      duration: tx_attrs.duration_s,
+      total_time: tx_attrs.total_time_s,
+      name: Util.metric_join(["OtherTransaction", tx_attrs.name]),
+      user_attributes: tx_attrs
+    })
+  end
+
+  defp report_transaction_event(tx_attrs) do
     Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{
       timestamp: tx_attrs.start_time,
       duration: tx_attrs.duration_s,
@@ -292,16 +302,6 @@ defmodule NewRelic.Transaction.Complete do
         Map.merge(tx_attrs, %{
           request_url: "#{tx_attrs.host}#{tx_attrs.path}"
         })
-    })
-  end
-
-  defp report_transaction_event(tx_attrs) do
-    Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{
-      timestamp: tx_attrs.start_time,
-      duration: tx_attrs.duration_s,
-      total_time: tx_attrs.total_time_s,
-      name: Util.metric_join(["OtherTransaction", tx_attrs.name]),
-      user_attributes: tx_attrs
     })
   end
 
