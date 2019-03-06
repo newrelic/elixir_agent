@@ -245,5 +245,13 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform(:supportability, [:transaction, :missing_attributes]),
+    do: [
+      %Metric{
+        name: :"Supportability/Transaction/MissingAttributes",
+        call_count: 1
+      }
+    ]
+
   defp join(segments), do: NewRelic.Util.metric_join(segments)
 end

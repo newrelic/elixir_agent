@@ -6,7 +6,10 @@ defmodule NewRelic.Transaction.Complete do
   alias NewRelic.DistributedTrace
   alias NewRelic.Transaction
 
-  def run(tx_attrs, pid) do
+  def run(
+        %{start_time: _, start_time_mono: _, end_time_mono: _} = tx_attrs,
+        pid
+      ) do
     {tx_segments, tx_attrs, tx_error, span_events, apdex, tx_metrics} =
       tx_attrs
       |> transform_name_attrs
@@ -24,10 +27,16 @@ defmodule NewRelic.Transaction.Complete do
     report_span_events(span_events)
   end
 
+  def run(tx_attrs, _pid) do
+    NewRelic.report_metric(:supportability, [:transaction, :missing_attributes])
+    NewRelic.log(:debug, "Missing required transaction attributes. #{inspect(tx_attrs)}")
+  end
+
   defp transform_name_attrs(%{custom_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{framework_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{plug_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{other_transaction_name: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(tx), do: Map.put(tx, :name, "Unknown")
 
   defp transform_time_attrs(
          %{start_time: start_time, end_time_mono: end_time_mono, start_time_mono: start_time_mono} =
