@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.2`
+
+Fixes
+
+* Fix a error that can happen if required attributes aren't captured. [#103](https://github.com/newrelic/elixir_agent/pull/103)
+
 ### `v1.9.1`
 
 Fixes
