@@ -81,7 +81,7 @@ defmodule NewRelic.Harvest.Collector.TransactionErrorEvent.Harvester do
 
   def log_harvest(harvest_size) do
     NewRelic.report_metric({:supportability, TransactionErrorEvent}, harvest_size: harvest_size)
-    NewRelic.log(:info, "Completed Error Event harvest - size: #{harvest_size}")
+    NewRelic.log(:debug, "Completed Error Event harvest - size: #{harvest_size}")
   end
 
   def build_payload(state), do: Event.format_events(state.error_events)

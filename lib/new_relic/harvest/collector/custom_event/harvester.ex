@@ -95,7 +95,7 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
 
   def log_harvest(harvest_size) do
     NewRelic.report_metric({:supportability, CustomEvent}, harvest_size: harvest_size)
-    NewRelic.log(:info, "Completed Custom Event harvest - size: #{harvest_size}")
+    NewRelic.log(:debug, "Completed Custom Event harvest - size: #{harvest_size}")
   end
 
   def build_payload(state), do: Event.format_events(state.custom_events)

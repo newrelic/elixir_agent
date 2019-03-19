@@ -141,7 +141,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
 
   def log_harvest(harvest_size) do
     NewRelic.report_metric({:supportability, SpanEvent}, harvest_size: harvest_size)
-    NewRelic.log(:info, "Completed Span Event harvest - size: #{harvest_size}")
+    NewRelic.log(:debug, "Completed Span Event harvest - size: #{harvest_size}")
   end
 
   def build_payload(state) do

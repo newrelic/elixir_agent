@@ -77,7 +77,7 @@ defmodule NewRelic.Harvest.Collector.ErrorTrace.Harvester do
 
   def log_harvest(harvest_size) do
     NewRelic.report_metric({:supportability, ErrorTrace}, harvest_size: harvest_size)
-    NewRelic.log(:info, "Completed Error Trace harvest - size: #{harvest_size}")
+    NewRelic.log(:debug, "Completed Error Trace harvest - size: #{harvest_size}")
   end
 
   def build_payload(state), do: state.error_traces |> Enum.uniq() |> Trace.format_errors()
