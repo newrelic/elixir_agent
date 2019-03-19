@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.3`
+
+Tweaks
+
+* Lowers the log level for harvester output. [#105](https://github.com/newrelic/elixir_agent/pull/105)
+
 ### `v1.9.2`
 
 Fixes
