@@ -105,7 +105,7 @@ defmodule NewRelic.Harvest.Collector.TransactionTrace.Harvester do
 
   def log_harvest(harvest_size) do
     NewRelic.report_metric({:supportability, TransactionTrace}, harvest_size: harvest_size)
-    NewRelic.log(:info, "Completed Transaction Trace harvest - size: #{harvest_size}")
+    NewRelic.log(:debug, "Completed Transaction Trace harvest - size: #{harvest_size}")
   end
 
   def build_trace_payload(state), do: state |> collect_traces |> Trace.format_traces()

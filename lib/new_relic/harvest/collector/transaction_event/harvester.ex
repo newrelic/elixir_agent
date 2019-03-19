@@ -87,7 +87,7 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
 
   def log_harvest(harvest_size) do
     NewRelic.report_metric({:supportability, TransactionEvent}, harvest_size: harvest_size)
-    NewRelic.log(:info, "Completed Transaction Event harvest - size: #{harvest_size}")
+    NewRelic.log(:debug, "Completed Transaction Event harvest - size: #{harvest_size}")
   end
 
   def build_payload(state) do
