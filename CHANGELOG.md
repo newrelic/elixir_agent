@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.4`
+
+Fixes
+
+* Fix a bug in `PriorityQueue`. [#109](https://github.com/newrelic/elixir_agent/pull/109) Thanks @jasondew!
+
 ### `v1.9.3`
 
 Tweaks
