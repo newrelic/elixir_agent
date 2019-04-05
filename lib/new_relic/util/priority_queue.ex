@@ -10,7 +10,7 @@ defmodule NewRelic.Util.PriorityQueue do
 
   def insert({size, _} = tree, max_size, key, value) when size >= max_size do
     {_k, _v, tree} =
-      {key, System.system_time()}
+      {key, differentiator()}
       |> :gb_trees.insert(value, tree)
       |> :gb_trees.take_smallest()
 
@@ -18,7 +18,7 @@ defmodule NewRelic.Util.PriorityQueue do
   end
 
   def insert(tree, _max_size, key, value) do
-    {key, System.system_time()}
+    {key, differentiator()}
     |> :gb_trees.insert(value, tree)
   end
 
@@ -28,5 +28,9 @@ defmodule NewRelic.Util.PriorityQueue do
 
   def list(tree) do
     :gb_trees.to_list(tree)
+  end
+
+  defp differentiator() do
+    :erlang.unique_integer()
   end
 end
