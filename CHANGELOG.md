@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.5`
+
+Tweaks
+
+* Track CPU count. [#110](https://github.com/newrelic/elixir_agent/pull/110)
+
 ### `v1.9.4`
 
 Fixes
