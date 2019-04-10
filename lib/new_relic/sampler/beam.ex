@@ -76,6 +76,7 @@ defmodule NewRelic.Sampler.Beam do
       process_limit: :erlang.system_info(:process_limit),
       schedulers: :erlang.system_info(:schedulers),
       scheduler_utilization: safe_check(:scheduler, :sample, []),
+      cpu_count: :erlang.system_info(:logical_processors),
       cpu_utilization: :cpu_sup.util()
     }
   end
