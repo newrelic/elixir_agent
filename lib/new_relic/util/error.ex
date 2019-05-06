@@ -3,21 +3,29 @@ defmodule NewRelic.Util.Error do
 
   @moduledoc false
 
-  def normalize(exception, stacktrace, initial_call \\ nil) do
-    normalized_error = Exception.normalize(:error, exception, stacktrace)
+  def normalize(kind, exception, stacktrace, initial_call) do
+    normalized_error = Exception.normalize(kind, exception, stacktrace)
 
-    exception_type = normalized_error.__struct__
-    exception_reason = format_reason(normalized_error)
+    exception_type = format_type(kind, normalized_error)
+    exception_reason = format_reason(kind, normalized_error)
     exception_stacktrace = format_stacktrace(stacktrace, initial_call)
 
     {exception_type, exception_reason, exception_stacktrace}
   end
 
-  def format_reason(error),
+  def format_type(:error, %{__struct__: struct}), do: struct
+  def format_type(:exit, reason), do: EXIT
+
+  def format_reason(:error, error),
     do:
       :error
       |> Exception.format_banner(error)
       |> String.replace("** ", "")
+
+  def format_reason(:exit, {reason, {module, function, args}}),
+    do: "EXIT " <> inspect(reason) <> " in " <> Exception.format_mfa(module, function, args)
+
+  def format_reason(:exit, reason), do: inspect(reason)
 
   def format_stacktrace(stacktrace, initial_call),
     do:

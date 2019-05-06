@@ -15,10 +15,10 @@ defmodule NewRelic.Error.Reporter do
   end
 
   def report_process_error(report) do
-    {_kind, exception, stacktrace} = parse_error_info(report[:error_info])
+    {kind, exception, stacktrace} = parse_error_info(report[:error_info])
 
     {exception_type, exception_reason, exception_stacktrace} =
-      Util.Error.normalize(exception, stacktrace, report[:initial_call])
+      Util.Error.normalize(kind, exception, stacktrace, report[:initial_call])
 
     process_name = parse_process_name(report[:registered_name], stacktrace)
     expected = parse_error_expected(exception)
