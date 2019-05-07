@@ -26,7 +26,7 @@ defmodule NewRelic.Error.Reporter do
 
     Collector.ErrorTrace.Harvester.report_error(%NewRelic.Error.Trace{
       timestamp: System.system_time(:millisecond) / 1_000,
-      error_type: inspect(exception_type),
+      error_type: exception_type,
       message: exception_reason,
       expected: expected,
       stack_trace: exception_stacktrace,
@@ -39,7 +39,7 @@ defmodule NewRelic.Error.Reporter do
 
     Collector.TransactionErrorEvent.Harvester.report_error(%NewRelic.Error.Event{
       timestamp: System.system_time(:millisecond) / 1_000,
-      error_class: inspect(exception_type),
+      error_class: exception_type,
       error_message: exception_reason,
       expected: expected,
       transaction_name: "OtherTransaction/Elixir/ElixirProcess//#{process_name}",

@@ -3,6 +3,8 @@ defmodule NewRelic.Util.Error do
 
   @moduledoc false
 
+  def normalize(kind, exception, stacktrace, initial_call \\ nil)
+
   def normalize(kind, exception, stacktrace, initial_call) do
     normalized_error = Exception.normalize(kind, exception, stacktrace)
 
@@ -13,8 +15,8 @@ defmodule NewRelic.Util.Error do
     {exception_type, exception_reason, exception_stacktrace}
   end
 
-  def format_type(:error, %{__struct__: struct}), do: struct
-  def format_type(:exit, reason), do: EXIT
+  def format_type(:error, %{__struct__: struct}), do: inspect(struct)
+  def format_type(:exit, _reason), do: "EXIT"
 
   def format_reason(:error, error),
     do:
