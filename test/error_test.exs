@@ -61,7 +61,8 @@ defmodule ErrorTest do
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
     assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.message"] =~ ":timeout"
+             intrinsic[:"error.class"] == "EXIT" &&
+               intrinsic[:"error.message"] == "(GenServer.call/3) :timeout"
            end)
   end
 
@@ -94,6 +95,23 @@ defmodule ErrorTest do
 
     assert Enum.find(events, fn [intrinsic, _, _] ->
              intrinsic[:"error.message"] =~ "RAISE"
+           end)
+  end
+
+  test "Nicely format EXIT when it's an exception struct" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
+
+    :proc_lib.spawn(fn ->
+      exit(%RuntimeError{message: "foo"})
+    end)
+
+    :timer.sleep(100)
+
+    events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
+
+    assert Enum.find(events, fn [intrinsic, _, _] ->
+             intrinsic[:"error.class"] == "EXIT" &&
+               intrinsic[:"error.message"] == "(RuntimeError) foo"
            end)
   end
 

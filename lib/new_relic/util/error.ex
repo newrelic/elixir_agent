@@ -25,8 +25,9 @@ defmodule NewRelic.Util.Error do
       |> String.replace("** ", "")
 
   def format_reason(:exit, {reason, {module, function, args}}),
-    do: "EXIT " <> inspect(reason) <> " in " <> Exception.format_mfa(module, function, args)
+    do: "(" <> Exception.format_mfa(module, function, length(args)) <> ") " <> inspect(reason)
 
+  def format_reason(:exit, %{__exception__: true} = error), do: format_reason(:error, error)
   def format_reason(:exit, reason), do: inspect(reason)
 
   def format_stacktrace(stacktrace, initial_call),
