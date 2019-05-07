@@ -1,10 +1,12 @@
 ## CHANGELOG
 
-### `v1.9.6`
+### `v1.9.7`
 
 Tweaks
 
-* Improve formatting for `EXIT` errors [#112](https://github.com/newrelic/elixir_agent/pull/112)
+* Improve formatting for `EXIT` errors
+  - [#112](https://github.com/newrelic/elixir_agent/pull/112)
+  - [#113](https://github.com/newrelic/elixir_agent/pull/113)
 
 ### `v1.9.5`
 
