@@ -343,7 +343,7 @@ defmodule NewRelic.Transaction.Complete do
     expected = parse_error_expected(error.reason)
 
     {exception_type, exception_reason, exception_stacktrace} =
-      Util.Error.normalize(error.reason, error.stack)
+      Util.Error.normalize(:error, error.reason, error.stack)
 
     report_error_trace(
       tx_attrs,
@@ -382,7 +382,7 @@ defmodule NewRelic.Transaction.Complete do
        ) do
     Collector.ErrorTrace.Harvester.report_error(%NewRelic.Error.Trace{
       timestamp: tx_attrs.start_time / 1_000,
-      error_type: inspect(exception_type),
+      error_type: exception_type,
       message: exception_reason,
       expected: expected,
       stack_trace: exception_stacktrace,
@@ -403,7 +403,7 @@ defmodule NewRelic.Transaction.Complete do
        ) do
     Collector.ErrorTrace.Harvester.report_error(%NewRelic.Error.Trace{
       timestamp: tx_attrs.start_time / 1_000,
-      error_type: inspect(exception_type),
+      error_type: exception_type,
       message: exception_reason,
       expected: expected,
       stack_trace: exception_stacktrace,
@@ -426,7 +426,7 @@ defmodule NewRelic.Transaction.Complete do
        ) do
     Collector.TransactionErrorEvent.Harvester.report_error(%NewRelic.Error.Event{
       timestamp: tx_attrs.start_time / 1_000,
-      error_class: inspect(exception_type),
+      error_class: exception_type,
       error_message: exception_reason,
       expected: expected,
       transaction_name: Util.metric_join(["OtherTransaction", tx_attrs.name]),
@@ -450,7 +450,7 @@ defmodule NewRelic.Transaction.Complete do
        ) do
     Collector.TransactionErrorEvent.Harvester.report_error(%NewRelic.Error.Event{
       timestamp: tx_attrs.start_time / 1_000,
-      error_class: inspect(exception_type),
+      error_class: exception_type,
       error_message: exception_reason,
       expected: expected,
       transaction_name: Util.metric_join(["WebTransaction", tx_attrs.name]),
