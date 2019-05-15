@@ -156,7 +156,12 @@ defmodule NewRelic.Transaction.Complete do
 
   defp add_root_process_span_event(spans, _tx_attrs, _pid), do: spans
 
-  defp spawned_process_span_events(tx_attrs, process_spawns, process_names, process_exits) do
+  defp spawned_process_span_events(
+         %{sampled: true} = tx_attrs,
+         process_spawns,
+         process_names,
+         process_exits
+       ) do
     process_spawns
     |> collect_process_segments(process_names, process_exits)
     |> Enum.map(&transform_trace_name_attrs/1)
@@ -164,7 +169,7 @@ defmodule NewRelic.Transaction.Complete do
       %NewRelic.Span.Event{
         trace_id: tx_attrs[:traceId],
         transaction_id: tx_attrs[:guid],
-        sampled: tx_attrs[:sampled],
+        sampled: true,
         priority: tx_attrs[:priority],
         category: "generic",
         name: "Process #{proc.name || proc.pid}",
@@ -174,6 +179,10 @@ defmodule NewRelic.Transaction.Complete do
         duration: (proc[:end_time] - proc[:start_time]) / 1000
       }
     end)
+  end
+
+  defp spawned_process_span_events(_tx_attrs, _spawns, _names, _exits) do
+    []
   end
 
   defp collect_process_segments(spawns, names, exits) do
