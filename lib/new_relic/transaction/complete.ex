@@ -118,9 +118,13 @@ defmodule NewRelic.Transaction.Complete do
     {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
   end
 
-  defp extract_span_events(tx_attrs, pid, spawns, names, exits) do
+  defp extract_span_events(%{sampled: true} = tx_attrs, pid, spawns, names, exits) do
     spawned_process_span_events(tx_attrs, spawns, names, exits)
     |> add_root_process_span_event(tx_attrs, pid)
+  end
+
+  defp extract_span_events(tx_attrs, pid, spawns, names, exits) do
+    []
   end
 
   defp calculate_apdex(%{other_transaction_name: _}, _error) do
@@ -135,12 +139,12 @@ defmodule NewRelic.Transaction.Complete do
     Util.Apdex.calculate(duration_s, apdex_t())
   end
 
-  defp add_root_process_span_event(spans, %{sampled: true} = tx_attrs, pid) do
+  defp add_root_process_span_event(spans, tx_attrs, pid) do
     [
       %NewRelic.Span.Event{
         trace_id: tx_attrs[:traceId],
         transaction_id: tx_attrs[:guid],
-        sampled: true,
+        sampled: tx_attrs[:sampled],
         priority: tx_attrs[:priority],
         category: "generic",
         name: "Transaction Root Process #{inspect(pid)}",
@@ -153,8 +157,6 @@ defmodule NewRelic.Transaction.Complete do
       | spans
     ]
   end
-
-  defp add_root_process_span_event(spans, _tx_attrs, _pid), do: spans
 
   defp spawned_process_span_events(tx_attrs, process_spawns, process_names, process_exits) do
     process_spawns
