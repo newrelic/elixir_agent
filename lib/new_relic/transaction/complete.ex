@@ -123,7 +123,7 @@ defmodule NewRelic.Transaction.Complete do
     |> add_root_process_span_event(tx_attrs, pid)
   end
 
-  defp extract_span_events(tx_attrs, pid, spawns, names, exits) do
+  defp extract_span_events(_tx_attrs, _pid, _spawns, _names, _exits) do
     []
   end
 
