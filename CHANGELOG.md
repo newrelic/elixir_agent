@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.8`
+
+Fixes
+
+* Fix a bug causing extra spans to be reported [#116](https://github.com/newrelic/elixir_agent/pull/116)
+
 ### `v1.9.7`
 
 Tweaks
