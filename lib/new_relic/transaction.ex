@@ -16,6 +16,11 @@ defmodule NewRelic.Transaction do
     # ...
   end
   ```
+
+  To ignore reporting the transaction use:
+  ```elixir
+  NewRelic.ignore_transaction()
+  ```
   """
 
   defmacro __using__(_) do

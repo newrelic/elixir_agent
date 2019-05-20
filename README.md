@@ -13,7 +13,7 @@ New Relic has open-sourced this project to enable monitoring of `Elixir` applica
 
 ### Contributing
 
-We'd love to get your contributions to improve the elixir agent! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. If you'd like to execute our corporate CLA, or if you have any questions, please drop us an email at [open-source@newrelic.com](mailto:open-source@newrelic.com). 
+We'd love to get your contributions to improve the elixir agent! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. If you'd like to execute our corporate CLA, or if you have any questions, please drop us an email at [open-source@newrelic.com](mailto:open-source@newrelic.com).
 
 ## Installation
 
@@ -94,4 +94,14 @@ end
 ```elixir
 alias NewRelic.Instrumented.HTTPoison
 HTTPoison.get("http://www.example.com")
+```
+
+#### Ignore transactions
+* Use `NewRelic.ignore_transaction()` to prevent reporting about transaction.
+
+```elixir
+def index(conn, %{}) do
+  NewRelic.ignore_transaction()
+  send_resp(conn, :ok, '')
+end
 ```
