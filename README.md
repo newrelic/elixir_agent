@@ -95,13 +95,3 @@ end
 alias NewRelic.Instrumented.HTTPoison
 HTTPoison.get("http://www.example.com")
 ```
-
-#### Ignore transactions
-* Use `NewRelic.ignore_transaction()` to prevent reporting about transaction.
-
-```elixir
-def index(conn, %{}) do
-  NewRelic.ignore_transaction()
-  send_resp(conn, :ok, '')
-end
-```
