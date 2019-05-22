@@ -59,6 +59,13 @@ defmodule NewRelic do
 
   @doc """
   Call within a transaction to prevent it from reporting.
+
+  ```elixir
+  def index(conn, %{}) do
+    NewRelic.ignore_transaction()
+    send_resp(conn, :ok, '')
+  end
+  ```
   """
   defdelegate ignore_transaction(), to: NewRelic.Transaction
 
