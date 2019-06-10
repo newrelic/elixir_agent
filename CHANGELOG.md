@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.9`
+
+Fixes
+
+* Fix a race condition around error reporting and `async_nolink` [#118](https://github.com/newrelic/elixir_agent/pull/118). Thanks @zoevkay!
+
 ### `v1.9.8`
 
 Fixes
