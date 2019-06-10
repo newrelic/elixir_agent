@@ -18,13 +18,19 @@ defmodule TransactionErrorEventTest do
     end
 
     get "/caught/error" do
-      Task.Supervisor.async_nolink(TestSup, fn ->
+      Process.flag(:trap_exit, true)
+
+      Task.async(fn ->
         Process.sleep(5)
         NewRelic.add_attributes(nested: "process")
         raise "NestedTaskError"
       end)
 
-      Process.sleep(50)
+      receive do
+        {:EXIT, _pid, {%RuntimeError{message: "NestedTaskError"}, _}} -> :ignore
+      end
+
+      Process.sleep(500)
       send_resp(conn, 200, "ok, fine")
     end
   end
