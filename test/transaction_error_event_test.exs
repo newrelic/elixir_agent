@@ -30,6 +30,7 @@ defmodule TransactionErrorEventTest do
         {:EXIT, _pid, {%RuntimeError{message: "NestedTaskError"}, _}} -> :ignore
       end
 
+      Process.sleep(500)
       send_resp(conn, 200, "ok, fine")
     end
   end
