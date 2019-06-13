@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.10`
+
+Fixes
+
+* Revert `async_nolink` change. [#119](https://github.com/newrelic/elixir_agent/pull/119)
+
 ### `v1.9.9`
 
 Fixes
