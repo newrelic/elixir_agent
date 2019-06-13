@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.11`
+
+Fixes
+
+* Protect against missing attribute under race condition. [#120](https://github.com/newrelic/elixir_agent/pull/120)
+
 ### `v1.9.10`
 
 Fixes
