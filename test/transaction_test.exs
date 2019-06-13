@@ -72,7 +72,7 @@ defmodule TransactionTest do
           Process.sleep(20)
           NewRelic.add_attributes(nested: "spawn")
 
-          Task.async(fn ->
+          Task.Supervisor.async_nolink(TestTaskSup, fn ->
             Process.sleep(20)
             NewRelic.add_attributes(not_linked: "still_tracked")
 
@@ -229,6 +229,7 @@ defmodule TransactionTest do
 
   test "Track attrs inside proccesses spawned by the transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    Task.Supervisor.start_link(name: TestTaskSup)
 
     TestHelper.request(TestPlugApp, conn(:get, "/spawn"))
 
