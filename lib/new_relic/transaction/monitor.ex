@@ -54,6 +54,16 @@ defmodule NewRelic.Transaction.Monitor do
   end
 
   def handle_info(
+        {:trace_ts, source, :return_from, {Task.Supervisor, :async_nolink, _}, %Task{pid: pid},
+         timestamp},
+        state
+      ) do
+    enable_trace_flags(pid)
+    Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
+    {:noreply, state}
+  end
+
+  def handle_info(
         {:trace_ts, source, :return_from, {:poolboy, :checkout, _}, pid, timestamp},
         state
       ) do
@@ -100,7 +110,12 @@ defmodule NewRelic.Transaction.Monitor do
     # Use function tracers to notice when Async work has been kicked off
     #   http://erlang.org/doc/man/erlang.html#trace_3_trace_messages_return_from
     #   http://erlang.org/doc/apps/erts/match_spec.html
+    trace_task_async_nolink()
     trace_poolboy_checkout()
+  end
+
+  defp trace_task_async_nolink do
+    :erlang.trace_pattern({Task.Supervisor, :async_nolink, :_}, [{:_, [], [{:return_trace}]}], [])
   end
 
   defp trace_poolboy_checkout do
