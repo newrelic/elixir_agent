@@ -17,9 +17,22 @@ defmodule NewRelic.Transaction do
   end
   ```
 
-  To ignore reporting the transaction use:
+  To ignore reporting the current transaction, call:
   ```elixir
   NewRelic.ignore_transaction()
+  ```
+
+  Inside a Transaction, the agent will track work across processes that are spawned as
+  well as work done inside a Task Supervisor. When using `Task.Supervisor.async_nolink`
+  you can signal to the agent not to track the work done inside the Task, which will
+  exclude it from the current Transaction. To do this, send in an additional option:
+
+  ```elixir
+  Task.Supervisor.async_nolink(
+    MyTaskSupervisor,
+    fn -> do_work() end,
+    new_relic: :no_track
+  )
   ```
   """
 
