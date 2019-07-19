@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.9.12`
+
+Fixes
+
+* Prevent a rare harvester leak. [#124](https://github.com/newrelic/elixir_agent/pull/124)
+
 ### `v1.9.11`
 
 Fixes
