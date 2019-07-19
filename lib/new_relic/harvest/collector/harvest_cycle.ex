@@ -105,8 +105,14 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
     Task.Supervisor.start_child(
       Collector.TaskSupervisor,
       fn ->
-        GenServer.call(harvester, :send_harvest, @harvest_timeout)
-        Supervisor.terminate_child(supervisor, harvester)
+        try do
+          GenServer.call(harvester, :send_harvest, @harvest_timeout)
+        catch
+          :exit, _exit ->
+            NewRelic.log(:error, "Failed to send harvest from #{inspect(supervisor)}")
+        after
+          Supervisor.terminate_child(supervisor, harvester)
+        end
       end,
       shutdown: @harvest_timeout
     )
