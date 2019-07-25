@@ -1,4 +1,6 @@
 defmodule NewRelic.Harvest.Collector.Connect do
+  @moduledoc false
+
   def payload do
     [
       %{

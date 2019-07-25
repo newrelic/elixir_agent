@@ -1,4 +1,5 @@
 defmodule NewRelic.GracefulShutdown do
+  @moduledoc false
   use GenServer
 
   def start_link() do

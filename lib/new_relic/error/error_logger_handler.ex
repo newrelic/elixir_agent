@@ -31,10 +31,10 @@ defmodule NewRelic.Error.ErrorLoggerHandler do
   def handle_event({:error_report, _gl, {pid, :crash_report, [report | _]}}, state)
       when is_list(report) do
     if NewRelic.Transaction.Reporter.tracking?(pid) do
-      NewRelic.Error.Reporter.report_transaction_error(report)
+      NewRelic.Error.Reporter.report_error(:transaction, report)
     else
       Task.Supervisor.start_child(NewRelic.Error.TaskSupervisor, fn ->
-        NewRelic.Error.Reporter.report_process_error(report)
+        NewRelic.Error.Reporter.report_error(:process, report)
       end)
     end
 

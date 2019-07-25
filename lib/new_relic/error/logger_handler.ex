@@ -20,9 +20,9 @@ defmodule NewRelic.Error.LoggerHandler do
         _config
       ) do
     if NewRelic.Transaction.Reporter.tracking?(self()) do
-      NewRelic.Error.Reporter.report_transaction_error(report)
+      NewRelic.Error.Reporter.report_error(:transaction, report)
     else
-      NewRelic.Error.Reporter.report_process_error(report)
+      NewRelic.Error.Reporter.report_error(:process, report)
     end
   end
 
