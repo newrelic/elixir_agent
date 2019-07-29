@@ -23,7 +23,7 @@ defmodule NewRelic.Transaction.Monitor do
   def init(:ok) do
     NewRelic.sample_process()
     enable_trace_patterns()
-    {:ok, %{pids: %{}}}
+    {:ok, %{pids: %{}, tasks: %{}}}
   end
 
   # API
@@ -54,13 +54,32 @@ defmodule NewRelic.Transaction.Monitor do
   end
 
   def handle_info(
-        {:trace_ts, source, :return_from, {Task.Supervisor, :async_nolink, _}, %Task{pid: pid},
-         timestamp},
+        {:trace_ts, owner, :call, {Task.Supervisor, :async_nolink, [_, _, args]}, _},
         state
       ) do
-    enable_trace_flags(pid)
-    Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
+    state =
+      if {:new_relic, :no_track} in args do
+        %{state | tasks: Map.put(state.tasks, owner, :no_track)}
+      else
+        state
+      end
+
     {:noreply, state}
+  end
+
+  def handle_info(
+        {:trace_ts, source, :return_from, {Task.Supervisor, :async_nolink, _arity},
+         %Task{pid: pid, owner: owner}, timestamp},
+        state
+      ) do
+    if state.tasks[owner] == :no_track do
+      :no_track
+    else
+      enable_trace_flags(pid)
+      Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
+    end
+
+    {:noreply, %{state | tasks: Map.delete(state.tasks, owner)}}
   end
 
   def handle_info(
