@@ -2,7 +2,7 @@ defmodule NewRelic.Config do
   @moduledoc """
   New Relic Agent Configuration
 
-  All configuration items can be set via ENV variable _or_ via Application config
+  All configuration items can be set via `ENV` variable _or_ via `Application` config
   """
 
   @doc """

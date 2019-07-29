@@ -1,8 +1,21 @@
 defmodule NewRelic.Error.Reporter do
+  @moduledoc false
+
   alias NewRelic.Util
   alias NewRelic.Harvest.Collector
 
-  def report_transaction_error(report) do
+  def report_error(_, [
+        {:initial_call, _},
+        {:pid, _},
+        {:registered_name, _},
+        {:error_info, {:exit, {{{%{plug_status: plug_status}, _plug_stack}, _init_call}, _}, _}}
+        | _
+      ])
+      when plug_status < 500 do
+    :ignore
+  end
+
+  def report_error(:transaction, report) do
     {kind, exception, stacktrace} = parse_error_info(report[:error_info])
     process_name = parse_process_name(report[:registered_name], stacktrace)
 
@@ -14,7 +27,7 @@ defmodule NewRelic.Error.Reporter do
     })
   end
 
-  def report_process_error(report) do
+  def report_error(:process, report) do
     {kind, exception, stacktrace} = parse_error_info(report[:error_info])
 
     {exception_type, exception_reason, exception_stacktrace} =

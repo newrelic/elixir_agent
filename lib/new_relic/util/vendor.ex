@@ -1,4 +1,6 @@
 defmodule NewRelic.Util.Vendor do
+  @moduledoc false
+
   def maybe_add_linux_boot_id(util) do
     case File.read("/proc/sys/kernel/random/boot_id") do
       {:ok, boot_id} -> Map.put(util, "boot_id", boot_id)
