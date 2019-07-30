@@ -1,5 +1,16 @@
 ## CHANGELOG
 
+### `v1.10.0`
+
+Features
+
+* Add an option to not track `async_nolink` task as part of the Transaction. [#123](https://github.com/newrelic/elixir_agent/pull/123)
+* Ignore extraneous Plug errors (ie: 400s). [#125](https://github.com/newrelic/elixir_agent/pull/125)
+
+Tweaks
+
+* Improve formatting of ErlangError. [#126](https://github.com/newrelic/elixir_agent/pull/126)
+
 ### `v1.9.12`
 
 Fixes
