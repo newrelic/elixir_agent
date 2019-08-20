@@ -76,6 +76,16 @@ defmodule NewRelic.Tracer.Report do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
     arity = length(args)
+    span_attrs = NewRelic.DistributedTrace.get_span_attrs()
+
+    metric_name =
+      case span_attrs do
+        %{url: url, component: component, method: method} ->
+          metric_name(url, component, method)
+
+        _ ->
+          function_name({module, function}, name)
+      end
 
     Transaction.Reporter.add_trace_segment(%{
       module: module,
@@ -97,7 +107,7 @@ defmodule NewRelic.Tracer.Report do
       name: function_name({module, function, arity}, name),
       edge: [span: id, parent: parent_id],
       category: "http",
-      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args))
+      attributes: Map.put(span_attrs, :args, inspect(args))
     )
 
     NewRelic.incr_attributes(
@@ -119,7 +129,7 @@ defmodule NewRelic.Tracer.Report do
     Transaction.Reporter.track_metric({:external, duration_s})
 
     NewRelic.report_metric(
-      {:external, function_name({module, function}, name)},
+      {:external, metric_name},
       duration_s: duration_s
     )
   end
@@ -167,6 +177,12 @@ defmodule NewRelic.Tracer.Report do
 
   def duration_ms(start_time_mono, end_time_mono),
     do: System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
+
+  def metric_name(url, component, method) do
+    host = NewRelic.Util.get_host(url)
+    method = method |> to_string() |> String.upcase()
+    "#{host}/#{component}/#{method}"
+  end
 
   defp function_name({m, f}, f), do: "#{inspect(m)}.#{f}"
   defp function_name({m, f}, i), do: "#{inspect(m)}.#{f}:#{i}"
