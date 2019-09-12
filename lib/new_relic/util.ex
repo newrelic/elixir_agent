@@ -33,6 +33,11 @@ defmodule NewRelic.Util do
     Enum.flat_map(attrs, &deep_flatten/1)
   end
 
+  def deep_flatten({key, value}) when is_list(value) do
+    Enum.with_index(value)
+    |> Enum.flat_map(fn {v, index} -> deep_flatten({"#{key}.#{index}", v}) end)
+  end
+
   def deep_flatten({key, value}) when is_map(value) do
     Enum.flat_map(value, fn {k, v} -> deep_flatten({"#{key}.#{k}", v}) end)
   end
