@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.10.1`
+
+Tweaks
+
+* Handle lists inside objects passed to `add_attributes` [#135](https://github.com/newrelic/elixir_agent/pull/135) Thanks @emeryotopalik!
+
 ### `v1.10.0`
 
 Features
@@ -10,6 +16,8 @@ Features
 Tweaks
 
 * Improve formatting of ErlangError. [#126](https://github.com/newrelic/elixir_agent/pull/126)
+
+------
 
 ### `v1.9.12`
 
