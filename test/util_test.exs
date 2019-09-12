@@ -26,10 +26,18 @@ defmodule UtilTest do
 
   test "flatten deeply nested map attributes" do
     flattened =
-      NewRelic.Util.deep_flatten(not_nested: "value", nested: %{foo: %{bar: %{baz: "qux"}}})
+      NewRelic.Util.deep_flatten(
+        not_nested: "value",
+        nested: %{foo: %{bar: %{baz: "qux"}}},
+        nested_list: [%{one: %{two: "three"}}, %{four: "five"}, %{}, "string", ["nested string"]]
+      )
 
     assert {"nested.foo.bar.baz", "qux"} in flattened
     assert {:not_nested, "value"} in flattened
+    assert {"nested_list.0.one.two", "three"} in flattened
+    assert {"nested_list.1.four", "five"} in flattened
+    assert {"nested_list.3", "string"} in flattened
+    assert {"nested_list.4.0", "nested string"} in flattened
   end
 
   test "Truncates unicode strings correctly" do
