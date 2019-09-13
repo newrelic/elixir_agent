@@ -19,6 +19,12 @@ defmodule TransactionTraceTest do
     use NewRelic.Tracer
     @trace :function
     def function(n), do: Process.sleep(n)
+
+    @trace :do_work
+    def do_work(args) do
+      args
+      Process.sleep(200)
+    end
   end
 
   defmodule ExternalService do
@@ -62,6 +68,13 @@ defmodule TransactionTraceTest do
 
     get "/supremely_custom_name" do
       NewRelic.set_transaction_name("/supremely/unique/name")
+      send_resp(conn, 200, "ok")
+    end
+
+    get "/huge_args" do
+      Enum.into(1..10000, %{}, &{&1, &1})
+      |> HelperModule.do_work()
+
       send_resp(conn, 200, "ok")
     end
   end
@@ -276,5 +289,16 @@ defmodule TransactionTraceTest do
                trace,
                max_named_traces
              )
+  end
+
+  test "Ensure that huge argument terms don't blow out memory" do
+    TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
+
+    [[span, _, _] | _] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+
+    span
+    |> IO.inspect()
+
+    assert String.length(span[:args]) < 500
   end
 end
