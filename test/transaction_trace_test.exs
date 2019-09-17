@@ -8,10 +8,12 @@ defmodule TransactionTraceTest do
   setup do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
 
     on_exit(fn ->
       TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
       TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
+      TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
     end)
   end
 
@@ -22,8 +24,8 @@ defmodule TransactionTraceTest do
 
     @trace :do_work
     def do_work(args) do
-      args
       Process.sleep(200)
+      args
     end
   end
 
@@ -292,13 +294,16 @@ defmodule TransactionTraceTest do
   end
 
   test "Ensure that huge argument terms don't blow out memory" do
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
+    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
     [[span, _, _] | _] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    span
-    |> IO.inspect()
-
     assert String.length(span[:args]) < 500
+
+    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+    System.delete_env("NEW_RELIC_LICENSE_KEY")
   end
 end
