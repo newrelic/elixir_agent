@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.10.2`
+
+Fixes
+
+* Protect against huge arguments blowing out memory [#136](https://github.com/newrelic/elixir_agent/pull/136)
+
 ### `v1.10.1`
 
 Tweaks
