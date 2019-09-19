@@ -11,7 +11,7 @@ defmodule NewRelic.Tracer.Report do
   @moduledoc false
 
   def call(
-        {module, function, args},
+        {module, function, arguments},
         {name, category: :datastore},
         pid,
         {id, parent_id},
@@ -19,7 +19,8 @@ defmodule NewRelic.Tracer.Report do
       ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
-    arity = length(args)
+    arity = length(arguments)
+    args = inspect_args(arguments)
 
     Transaction.Reporter.add_trace_segment(%{
       module: module,
@@ -41,7 +42,7 @@ defmodule NewRelic.Tracer.Report do
       name: function_name({module, function, arity}, name),
       edge: [span: id, parent: parent_id],
       category: "datastore",
-      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args))
+      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, args)
     )
 
     NewRelic.incr_attributes(
@@ -67,7 +68,7 @@ defmodule NewRelic.Tracer.Report do
   end
 
   def call(
-        {module, function, args},
+        {module, function, arguments},
         {name, category: :external},
         pid,
         {id, parent_id},
@@ -75,7 +76,8 @@ defmodule NewRelic.Tracer.Report do
       ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
-    arity = length(args)
+    arity = length(arguments)
+    args = inspect_args(arguments)
 
     Transaction.Reporter.add_trace_segment(%{
       module: module,
@@ -97,7 +99,7 @@ defmodule NewRelic.Tracer.Report do
       name: function_name({module, function, arity}, name),
       edge: [span: id, parent: parent_id],
       category: "http",
-      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args))
+      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, args)
     )
 
     NewRelic.incr_attributes(
@@ -125,7 +127,7 @@ defmodule NewRelic.Tracer.Report do
   end
 
   def call(
-        {module, function, args},
+        {module, function, arguments},
         name,
         pid,
         {id, parent_id},
@@ -134,7 +136,8 @@ defmodule NewRelic.Tracer.Report do
       when is_atom(name) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
-    arity = length(args)
+    arity = length(arguments)
+    args = inspect_args(arguments)
 
     Transaction.Reporter.add_trace_segment(%{
       module: module,
@@ -156,13 +159,17 @@ defmodule NewRelic.Tracer.Report do
       name: function_name({module, function, arity}, name),
       edge: [span: id, parent: parent_id],
       category: "generic",
-      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, inspect(args))
+      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, args)
     )
 
     NewRelic.report_aggregate(
       %{name: :FunctionTrace, mfa: function_name({module, function, arity}, name)},
       %{duration_ms: duration_ms, call_count: 1}
     )
+  end
+
+  def inspect_args(arguments) do
+    inspect(arguments, charlists: :as_lists, limit: 20, printable_limit: 100)
   end
 
   def duration_ms(start_time_mono, end_time_mono),

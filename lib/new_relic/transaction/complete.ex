@@ -233,7 +233,7 @@ defmodule NewRelic.Transaction.Complete do
       class_name: "#{function}/#{arity}",
       method_name: nil,
       metric_name: "#{inspect(module)}.#{function}",
-      attributes: %{query: inspect(args, charlists: false)}
+      attributes: %{query: args}
     })
   end
 
