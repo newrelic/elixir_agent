@@ -299,7 +299,11 @@ defmodule TransactionTraceTest do
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
-    [[span, _, _] | _] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+    [span, _, _] =
+      TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+      |> Enum.find(fn [sp, _, _] ->
+        sp.name == "TransactionTraceTest.HelperModule.do_work/1"
+      end)
 
     assert String.length(span[:args]) < 500
 
