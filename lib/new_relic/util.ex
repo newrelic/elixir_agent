@@ -57,6 +57,13 @@ defmodule NewRelic.Util do
     ]
   end
 
+  @nr_metadata_prefix "NEW_RELIC_METADATA_"
+  def metadata() do
+    System.get_env()
+    |> Enum.filter(fn {key, _} -> String.starts_with?(key, @nr_metadata_prefix) end)
+    |> Enum.into(%{})
+  end
+
   def utilization() do
     %{
       metadata_version: 5,

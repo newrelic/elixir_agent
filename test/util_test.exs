@@ -93,6 +93,14 @@ defmodule UtilTest do
     System.delete_env("KUBERNETES_SERVICE_HOST")
   end
 
+  test "New Relic metadata detection" do
+    System.put_env("NEW_RELIC_METADATA_TEST", "value")
+
+    assert NewRelic.Util.metadata() == %{"NEW_RELIC_METADATA_TEST" => "value"}
+
+    System.delete_env("NEW_RELIC_METADATA_TEST")
+  end
+
   test "hostname detection" do
     System.put_env("DYNO", "foobar")
     assert NewRelic.Util.hostname() == "foobar"
