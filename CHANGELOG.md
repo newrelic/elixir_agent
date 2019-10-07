@@ -1,5 +1,14 @@
 ## CHANGELOG
 
+
+### `v1.11.0`
+
+Features
+
+* Add support for detecting if the app is running inside Kubernetes. [#140](https://github.com/newrelic/elixir_agent/pull/140)
+
+------
+
 ### `v1.10.2`
 
 Fixes
