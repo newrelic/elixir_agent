@@ -64,12 +64,15 @@ defmodule UtilTest do
   end
 
   test "minimal utilization check" do
-    assert %{metadata_version: 3} = NewRelic.Util.utilization()
+    assert %{metadata_version: 5} = util = NewRelic.Util.utilization()
+
+    assert util[:ip_address] |> is_list
+    assert util[:full_hostname] |> is_binary
   end
 
   test "AWS utilization fast timeout" do
     assert %{} ==
-             NewRelic.Util.Vendor.maybe_add_cloud_vendors(%{},
+             NewRelic.Util.Vendor.maybe_add_vendors(%{},
                aws_url: "http://httpbin.org/delay/10"
              )
   end
@@ -77,8 +80,25 @@ defmodule UtilTest do
   test "AWS utilization info" do
     {:ok, _} = Plug.Cowboy.http(FakeAwsPlug, [], port: 8883)
 
-    util = NewRelic.Util.Vendor.maybe_add_cloud_vendors(%{}, aws_url: "http://localhost:8883")
+    util = NewRelic.Util.Vendor.maybe_add_vendors(%{}, aws_url: "http://localhost:8883")
     assert get_in(util, [:vendors, :aws, "instanceId"]) == "test.id"
+  end
+
+  test "Kubernetes utilization info" do
+    System.put_env("KUBERNETES_SERVICE_HOST", "k8s-host")
+
+    util = NewRelic.Util.utilization()
+    assert get_in(util, [:vendors, :kubernetes, :kubernetes_service_host]) == "k8s-host"
+
+    System.delete_env("KUBERNETES_SERVICE_HOST")
+  end
+
+  test "New Relic metadata detection" do
+    System.put_env("NEW_RELIC_METADATA_TEST", "value")
+
+    assert NewRelic.Util.metadata() == %{"NEW_RELIC_METADATA_TEST" => "value"}
+
+    System.delete_env("NEW_RELIC_METADATA_TEST")
   end
 
   test "hostname detection" do
