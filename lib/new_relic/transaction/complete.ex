@@ -62,7 +62,11 @@ defmodule NewRelic.Transaction.Complete do
     start_time_us = System.convert_time_unit(start_time, :native, :microsecond)
     queue_duration_us = max(0, start_time_us - queue_start_us)
 
-    Map.put(tx, :queue_duration_us, queue_duration_us)
+    tx
+    |> Map.merge(%{
+      queue_duration_us: queue_duration_us,
+      queue_duration_s: queue_duration_us / 1_000_000
+    })
   end
 
   defp derive_queue_duration(tx), do: tx

@@ -314,6 +314,7 @@ defmodule TransactionTest do
 
         assert event[:queue_start_us] == qd_us
         assert event[:queue_duration_us] > 0 and event[:queue_duration_us] < 20_000
+        assert event[:queue_duration_s] > 0 and event[:queue_duration_s] < 0.02
       end)
     end
 
@@ -329,6 +330,7 @@ defmodule TransactionTest do
       [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
       assert event[:queue_duration_us] == 0
+      assert event[:queue_duration_s] == 0
     end
   end
 end
