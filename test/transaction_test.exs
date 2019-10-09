@@ -318,6 +318,21 @@ defmodule TransactionTest do
       end)
     end
 
+    test "request queueing is reported as `queueDuration` in seconds" do
+      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+      qd_us = :os.system_time(:microsecond) - 1_000_000
+      conn =
+        conn(:get, "/total_time")
+        |> Plug.Conn.put_req_header("x-request-start", "t=#{qd_us}" )
+
+      TestHelper.request(TestPlugApp, conn)
+
+      [[complete_event, _]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+      assert complete_event[:queueDuration] > 1 && complete_event[:queueDuration] < 1.02
+    end
+
     test "accounts for clock skew" do
       TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 

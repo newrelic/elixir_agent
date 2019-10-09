@@ -323,7 +323,7 @@ defmodule NewRelic.Transaction.Complete do
       duration: tx_attrs.duration_s,
       total_time: tx_attrs.total_time_s,
       name: Util.metric_join(["WebTransaction", tx_attrs.name]),
-      queue_duration: Map.get(tx_attrs, :queue_duration_us, nil),
+      queue_duration: Map.get(tx_attrs, :queue_duration_s, nil),
       user_attributes:
         Map.merge(tx_attrs, %{
           request_url: "#{tx_attrs.host}#{tx_attrs.path}"
