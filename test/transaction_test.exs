@@ -297,4 +297,21 @@ defmodule TransactionTest do
     assert event[:total_time_s] > 0.3
     assert event[:total_time_s] < 0.5
   end
+
+  test "Request queueing start time is included in the transaction (in us)" do
+    Enum.each(["x-request-start", "x-queue-start"], fn header ->
+      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+      qd_us = :rand.uniform(1_000_000_000)
+      conn =
+        conn(:get, "/total_time")
+        |> Plug.Conn.put_req_header(header, "t=#{qd_us}" )
+
+      TestHelper.request(TestPlugApp, conn)
+
+      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+      assert event[:queue_start_us] == qd_us
+    end)
+  end
 end
