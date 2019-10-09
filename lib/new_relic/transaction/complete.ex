@@ -509,7 +509,8 @@ defmodule NewRelic.Transaction.Complete do
   def report_transaction_metric(tx) do
     NewRelic.report_metric({:transaction, tx.name},
       duration_s: tx.duration_s,
-      total_time_s: tx.total_time_s
+      total_time_s: tx.total_time_s,
+      queue_duration_s: Map.get(tx, :queue_duration_s, nil)
     )
   end
 
