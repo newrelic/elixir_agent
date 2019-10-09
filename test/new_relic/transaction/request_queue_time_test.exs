@@ -36,7 +36,8 @@ defmodule NewRelic.Transaction.RequestQueueTimeTest do
     end
 
     test "an invalid format is an error" do
-      assert RequestQueueTime.timestamp_to_us("nope") == {:error, "invalid request queueing format, expected `t=\d+`"}
+      assert RequestQueueTime.timestamp_to_us("nope") ==
+               {:error, "invalid request queueing format, expected `t=\d+`"}
     end
 
     test "an early time is an error" do

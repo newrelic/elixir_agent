@@ -14,21 +14,23 @@ defmodule NewRelic.Transaction.RequestQueueTime do
     end
   end
 
-  def timestamp_to_us(_), do:
-    {:error, "invalid request queueing format, expected `t=\d+`"}
+  def timestamp_to_us(_), do: {:error, "invalid request queueing format, expected `t=\d+`"}
 
   defp time_to_microseconds(numeric),
     do:
-      Enum.reduce_while(@multipliers, {:error, "timestamp '#{numeric}' is not valid"}, fn multiplier,
-                                                                                       acc ->
-        time = numeric * multiplier
+      Enum.reduce_while(
+        @multipliers,
+        {:error, "timestamp '#{numeric}' is not valid"},
+        fn multiplier, acc ->
+          time = numeric * multiplier
 
-        if time > @earliest_acceptable_time do
-          {:halt, {:ok, time}}
-        else
-          {:cont, acc}
+          if time > @earliest_acceptable_time do
+            {:halt, {:ok, time}}
+          else
+            {:cont, acc}
+          end
         end
-      end)
+      )
 
   defp time_to_numeric(time) do
     try do

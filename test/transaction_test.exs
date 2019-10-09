@@ -304,9 +304,10 @@ defmodule TransactionTest do
         TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
         qd_us = :os.system_time(:microsecond)
+
         conn =
           conn(:get, "/total_time")
-          |> Plug.Conn.put_req_header(header, "t=#{qd_us}" )
+          |> Plug.Conn.put_req_header(header, "t=#{qd_us}")
 
         TestHelper.request(TestPlugApp, conn)
 
@@ -322,9 +323,10 @@ defmodule TransactionTest do
       TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
       qd_us = :os.system_time(:microsecond) - 1_000_000
+
       conn =
         conn(:get, "/total_time")
-        |> Plug.Conn.put_req_header("x-request-start", "t=#{qd_us}" )
+        |> Plug.Conn.put_req_header("x-request-start", "t=#{qd_us}")
 
       TestHelper.request(TestPlugApp, conn)
 
@@ -338,7 +340,10 @@ defmodule TransactionTest do
 
       conn =
         conn(:get, "/total_time")
-        |> Plug.Conn.put_req_header("x-request-start", "t=#{:os.system_time(:microsecond) + 100_000}" )
+        |> Plug.Conn.put_req_header(
+          "x-request-start",
+          "t=#{:os.system_time(:microsecond) + 100_000}"
+        )
 
       TestHelper.request(TestPlugApp, conn)
 

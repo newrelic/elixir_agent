@@ -58,7 +58,8 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
-  defp derive_queue_duration(%{start_time: start_time, queue_start_us: queue_start_us} = tx) when not is_nil(queue_start_us) do
+  defp derive_queue_duration(%{start_time: start_time, queue_start_us: queue_start_us} = tx)
+       when not is_nil(queue_start_us) do
     start_time_us = System.convert_time_unit(start_time, :native, :microsecond)
     queue_duration_us = max(0, start_time_us - queue_start_us)
 

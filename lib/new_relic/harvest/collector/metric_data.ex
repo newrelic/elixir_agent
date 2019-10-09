@@ -10,49 +10,50 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         total_time_s: total_time_s,
         queue_duration_s: queue_duration_s
       ),
-      do: [
-        %Metric{
-          name: :HttpDispatcher,
-          call_count: 1,
-          total_call_time: duration_s,
-          total_exclusive_time: duration_s,
-          min_call_time: duration_s,
-          max_call_time: duration_s
-        },
-        %Metric{
-          name: :WebTransaction,
-          call_count: 1,
-          total_call_time: duration_s,
-          total_exclusive_time: duration_s,
-          min_call_time: duration_s,
-          max_call_time: duration_s
-        },
-        %Metric{
-          name: join(["WebTransaction", name]),
-          call_count: 1,
-          total_call_time: duration_s,
-          total_exclusive_time: duration_s,
-          min_call_time: duration_s,
-          max_call_time: duration_s
-        },
-        %Metric{
-          name: :WebTransactionTotalTime,
-          call_count: 1,
-          total_call_time: total_time_s,
-          total_exclusive_time: total_time_s,
-          min_call_time: total_time_s,
-          max_call_time: total_time_s
-        },
-        %Metric{
-          name: join(["WebTransactionTotalTime", name]),
-          call_count: 1,
-          total_call_time: total_time_s,
-          total_exclusive_time: total_time_s,
-          min_call_time: total_time_s,
-          max_call_time: total_time_s
-        }
-      ]
-      |> queue_duration_metric(queue_duration_s)
+      do:
+        [
+          %Metric{
+            name: :HttpDispatcher,
+            call_count: 1,
+            total_call_time: duration_s,
+            total_exclusive_time: duration_s,
+            min_call_time: duration_s,
+            max_call_time: duration_s
+          },
+          %Metric{
+            name: :WebTransaction,
+            call_count: 1,
+            total_call_time: duration_s,
+            total_exclusive_time: duration_s,
+            min_call_time: duration_s,
+            max_call_time: duration_s
+          },
+          %Metric{
+            name: join(["WebTransaction", name]),
+            call_count: 1,
+            total_call_time: duration_s,
+            total_exclusive_time: duration_s,
+            min_call_time: duration_s,
+            max_call_time: duration_s
+          },
+          %Metric{
+            name: :WebTransactionTotalTime,
+            call_count: 1,
+            total_call_time: total_time_s,
+            total_exclusive_time: total_time_s,
+            min_call_time: total_time_s,
+            max_call_time: total_time_s
+          },
+          %Metric{
+            name: join(["WebTransactionTotalTime", name]),
+            call_count: 1,
+            total_call_time: total_time_s,
+            total_exclusive_time: total_time_s,
+            min_call_time: total_time_s,
+            max_call_time: total_time_s
+          }
+        ]
+        |> queue_duration_metric(queue_duration_s)
 
   def transform({:other_transaction, name}, duration_s: duration_s, total_time_s: total_time_s),
     do: [
