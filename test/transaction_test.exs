@@ -300,7 +300,7 @@ defmodule TransactionTest do
 
   describe "Request queueing" do
     test "start time is included in the transaction (in us)" do
-      Enum.each(["x-request-start", "x-queue-start"], fn header ->
+      Enum.each(["x-request-start", "x-queue-start", "x-middleware-start"], fn header ->
         TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
         qd_us = :os.system_time(:microsecond)
