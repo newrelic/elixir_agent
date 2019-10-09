@@ -47,6 +47,7 @@ defmodule NewRelic.Transaction.Complete do
     duration_ms = System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
 
     tx
+    |> derive_queue_duration()
     |> Map.drop([:start_time_mono, :end_time_mono])
     |> Map.merge(%{
       start_time: start_time,
@@ -56,6 +57,15 @@ defmodule NewRelic.Transaction.Complete do
       duration_s: duration_ms / 1000
     })
   end
+
+  defp derive_queue_duration(%{start_time: start_time, queue_start_us: queue_start_us} = tx) do
+    start_time_us = System.convert_time_unit(start_time, :native, :microsecond)
+    queue_duration_us = max(0, start_time_us - queue_start_us)
+
+    Map.put(tx, :queue_duration_us, queue_duration_us)
+  end
+
+  defp derive_queue_duration(tx), do: tx
 
   defp extract_transaction_info(tx_attrs, pid) do
     {function_segments, tx_attrs} = Map.pop(tx_attrs, :trace_function_segments, [])

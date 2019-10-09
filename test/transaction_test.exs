@@ -298,20 +298,37 @@ defmodule TransactionTest do
     assert event[:total_time_s] < 0.5
   end
 
-  test "Request queueing start time is included in the transaction (in us)" do
-    Enum.each(["x-request-start", "x-queue-start"], fn header ->
+  describe "Request queueing" do
+    test "start time is included in the transaction (in us)" do
+      Enum.each(["x-request-start", "x-queue-start"], fn header ->
+        TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+        qd_us = :os.system_time(:microsecond)
+        conn =
+          conn(:get, "/total_time")
+          |> Plug.Conn.put_req_header(header, "t=#{qd_us}" )
+
+        TestHelper.request(TestPlugApp, conn)
+
+        [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+        assert event[:queue_start_us] == qd_us
+        assert event[:queue_duration_us] > 0 and event[:queue_duration_us] < 20_000
+      end)
+    end
+
+    test "accounts for clock skew" do
       TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-      qd_us = :rand.uniform(1_000_000_000)
       conn =
         conn(:get, "/total_time")
-        |> Plug.Conn.put_req_header(header, "t=#{qd_us}" )
+        |> Plug.Conn.put_req_header("x-request-start", "t=#{:os.system_time(:microsecond) + 100_000}" )
 
       TestHelper.request(TestPlugApp, conn)
 
       [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-      assert event[:queue_start_us] == qd_us
-    end)
+      assert event[:queue_duration_us] == 0
+    end
   end
 end
