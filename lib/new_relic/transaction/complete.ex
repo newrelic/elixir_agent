@@ -20,6 +20,7 @@ defmodule NewRelic.Transaction.Complete do
     report_transaction_trace(tx_attrs, tx_segments)
     report_transaction_error_event(tx_attrs, tx_error)
     report_transaction_metric(tx_attrs)
+    report_queue_time_metric(tx_attrs)
     report_transaction_metrics(tx_attrs, tx_metrics)
     report_aggregate(tx_attrs)
     report_caller_metric(tx_attrs)
@@ -64,10 +65,8 @@ defmodule NewRelic.Transaction.Complete do
     queue_duration_us = max(0, start_time_us - queue_start_us)
 
     tx
-    |> Map.merge(%{
-      queue_duration_us: queue_duration_us,
-      queue_duration_s: queue_duration_us / 1_000_000
-    })
+    |> Map.drop([:queue_start_us])
+    |> Map.put(:queueDuration, queue_duration_us / 1_000_000)
   end
 
   defp derive_queue_duration(tx), do: tx
@@ -324,7 +323,6 @@ defmodule NewRelic.Transaction.Complete do
       duration: tx_attrs.duration_s,
       total_time: tx_attrs.total_time_s,
       name: Util.metric_join(["WebTransaction", tx_attrs.name]),
-      queue_duration: Map.get(tx_attrs, :queue_duration_s, nil),
       user_attributes:
         Map.merge(tx_attrs, %{
           request_url: "#{tx_attrs.host}#{tx_attrs.path}"
@@ -510,10 +508,17 @@ defmodule NewRelic.Transaction.Complete do
   def report_transaction_metric(tx) do
     NewRelic.report_metric({:transaction, tx.name},
       duration_s: tx.duration_s,
-      total_time_s: tx.total_time_s,
-      queue_duration_s: Map.get(tx, :queue_duration_s, nil)
+      total_time_s: tx.total_time_s
     )
   end
+
+  def report_queue_time_metric(%{queue_duration_s: duration_s}) when not is_nil(duration_s) do
+    NewRelic.report_metric(:queue_time,
+      duration_s: duration_s
+    )
+  end
+
+  def report_queue_time_metric(_), do: nil
 
   def report_transaction_metrics(tx, tx_metrics) when is_list(tx_metrics) do
     Enum.each(tx_metrics, &report_transaction_metrics(tx, &1))

@@ -90,18 +90,15 @@ defmodule NewRelic.Transaction.Plug do
     |> NewRelic.add_attributes()
   end
 
-  @queue_duration_headers ["x-request-start", "x-queue-start", "x-middleware-start"]
-
   defp extract_queue_start_us(%{req_headers: headers}),
     do:
       Enum.reduce_while(headers, nil, fn
-        {header, timestamp}, acc when header in @queue_duration_headers ->
+        {"x-request-start", timestamp}, acc ->
           case RequestQueueTime.timestamp_to_us(timestamp) do
             {:ok, us} ->
               {:halt, us}
 
-            {:error, reason} ->
-              Logger.debug(reason)
+            _ ->
               {:cont, acc}
           end
 

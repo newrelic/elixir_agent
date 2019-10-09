@@ -6,8 +6,7 @@ defmodule NewRelic.Transaction.Event do
             name: nil,
             duration: nil,
             total_time: nil,
-            user_attributes: %{},
-            queue_duration: nil
+            user_attributes: %{}
 
   @moduledoc false
 
@@ -24,8 +23,7 @@ defmodule NewRelic.Transaction.Event do
         timestamp: transaction.timestamp,
         name: transaction.name,
         duration: transaction.duration,
-        type: transaction.type,
-        queueDuration: transaction.queue_duration
+        type: transaction.type
       },
       NewRelic.Util.Event.process_event(transaction.user_attributes)
     ]
