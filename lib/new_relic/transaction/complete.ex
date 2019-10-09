@@ -58,7 +58,7 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
-  defp derive_queue_duration(%{start_time: start_time, queue_start_us: queue_start_us} = tx) do
+  defp derive_queue_duration(%{start_time: start_time, queue_start_us: queue_start_us} = tx) when not is_nil(queue_start_us) do
     start_time_us = System.convert_time_unit(start_time, :native, :microsecond)
     queue_duration_us = max(0, start_time_us - queue_start_us)
 
@@ -319,6 +319,7 @@ defmodule NewRelic.Transaction.Complete do
       duration: tx_attrs.duration_s,
       total_time: tx_attrs.total_time_s,
       name: Util.metric_join(["WebTransaction", tx_attrs.name]),
+      queue_duration: Map.get(tx_attrs, :queue_duration_us, nil),
       user_attributes:
         Map.merge(tx_attrs, %{
           request_url: "#{tx_attrs.host}#{tx_attrs.path}"
