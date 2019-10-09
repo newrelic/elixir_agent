@@ -512,7 +512,7 @@ defmodule NewRelic.Transaction.Complete do
     )
   end
 
-  def report_queue_time_metric(%{queue_duration_s: duration_s}) when not is_nil(duration_s) do
+  def report_queue_time_metric(%{queueDuration: duration_s}) when not is_nil(duration_s) do
     NewRelic.report_metric(:queue_time,
       duration_s: duration_s
     )
