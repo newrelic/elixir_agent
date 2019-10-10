@@ -59,12 +59,12 @@ defmodule NewRelic.Transaction.Complete do
     |> add_queue_duration(start_time)
   end
 
-  defp add_queue_duration(%{queue_start_s: queue_start_s} = tx, start_time) do
+  defp add_queue_duration(%{request_start_s: request_start_s} = tx, start_time) do
     start_time_s = System.convert_time_unit(start_time, :native, :microsecond) / 1_000_000
-    queue_duration = max(0, start_time_s - queue_start_s)
+    queue_duration = max(0, start_time_s - request_start_s)
 
     tx
-    |> Map.drop([:queue_start_s])
+    |> Map.drop([:request_start_s])
     |> Map.put(:queueDuration, queue_duration)
   end
 
