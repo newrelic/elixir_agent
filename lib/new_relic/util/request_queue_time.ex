@@ -1,4 +1,4 @@
-defmodule NewRelic.Transaction.RequestQueueTime do
+defmodule Util.RequestQueueTime do
   @moduledoc false
 
   # Any timestamps before this are thrown out and the parser
@@ -7,14 +7,14 @@ defmodule NewRelic.Transaction.RequestQueueTime do
   @multipliers [1, 1_000, 1_000_000]
 
   # Return in seconds?
-  def timestamp_to_us("t=" <> time) do
+  def parse("t=" <> time) do
     with {:ok, numeric} <- time_to_numeric(time),
          {:ok, microseconds} <- time_to_microseconds(numeric) do
       {:ok, min(microseconds, now_us())}
     end
   end
 
-  def timestamp_to_us(_), do: {:error, "invalid request queueing format, expected `t=\d+`"}
+  def parse(_), do: {:error, "invalid request queueing format, expected `t=\d+`"}
 
   defp time_to_microseconds(numeric),
     do:
@@ -46,7 +46,7 @@ defmodule NewRelic.Transaction.RequestQueueTime do
       {:ok, String.to_float(time)}
     rescue
       ArgumentError ->
-        {:error, @invalid_format}
+        {:error, "invalid"}
     end
   end
 

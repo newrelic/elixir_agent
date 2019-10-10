@@ -253,8 +253,6 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
-  def transform(:queue_time, duration_s: nil), do: []
-
   def transform(:queue_time, duration_s: duration_s) do
     [
       %Metric{
