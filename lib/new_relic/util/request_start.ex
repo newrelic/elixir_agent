@@ -15,7 +15,10 @@ defmodule NewRelic.Util.RequestStart do
     end
   end
 
-  @earliest ~U[2000-01-01 00:00:00Z] |> DateTime.to_unix()
+  @earliest ~N[2000-01-01 00:00:00]
+            |> DateTime.from_naive!("Etc/UTC")
+            |> DateTime.to_unix()
+
   defp check_time_unit(time) do
     (time > @earliest && {:ok, time}) || :next
   end
