@@ -68,7 +68,7 @@ defmodule NewRelic.Transaction.Complete do
     |> Map.put(:queueDuration, queue_duration)
   end
 
-  defp add_queue_duration(tx , _), do: tx
+  defp add_queue_duration(tx, _), do: tx
 
   defp extract_transaction_info(tx_attrs, pid) do
     {function_segments, tx_attrs} = Map.pop(tx_attrs, :trace_function_segments, [])
