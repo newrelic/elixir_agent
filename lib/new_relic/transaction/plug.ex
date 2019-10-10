@@ -10,6 +10,7 @@ defmodule NewRelic.Transaction.Plug do
   @moduledoc false
 
   alias NewRelic.Transaction
+  alias NewRelic.Transaction.RequestQueueTime
 
   @impl Plug
   def init(opts), do: opts
@@ -33,6 +34,7 @@ defmodule NewRelic.Transaction.Plug do
   defp on_call(conn) do
     Transaction.Reporter.start()
     add_start_attrs(conn)
+    maybe_report_queueing(conn)
     conn
   end
 
@@ -80,4 +82,27 @@ defmodule NewRelic.Transaction.Plug do
       _ -> nil
     end
   end
+
+  defp maybe_report_queueing(conn) do
+    [
+      queue_start_us: extract_queue_start_us(conn)
+    ]
+    |> NewRelic.add_attributes()
+  end
+
+  defp extract_queue_start_us(%{req_headers: headers}),
+    do:
+      Enum.reduce_while(headers, nil, fn
+        {"x-request-start", timestamp}, acc ->
+          case RequestQueueTime.timestamp_to_us(timestamp) do
+            {:ok, us} ->
+              {:halt, us}
+
+            _ ->
+              {:cont, acc}
+          end
+
+        _, acc ->
+          {:cont, acc}
+      end)
 end

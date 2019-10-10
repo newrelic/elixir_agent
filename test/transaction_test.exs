@@ -297,4 +297,39 @@ defmodule TransactionTest do
     assert event[:total_time_s] > 0.3
     assert event[:total_time_s] < 0.5
   end
+
+  describe "Request queueing" do
+    test "queueDuration is included in the transaction (in us)" do
+      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+      qd_us = :os.system_time(:microsecond) - 1_000_000
+
+      conn =
+        conn(:get, "/total_time")
+        |> Plug.Conn.put_req_header("x-request-start", "t=#{qd_us}")
+
+      TestHelper.request(TestPlugApp, conn)
+
+      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+      assert_in_delta event[:queueDuration], 1.02, 0.02
+    end
+
+    test "accounts for clock skew" do
+      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+      conn =
+        conn(:get, "/total_time")
+        |> Plug.Conn.put_req_header(
+          "x-request-start",
+          "t=#{:os.system_time(:microsecond) + 100_000}"
+        )
+
+      TestHelper.request(TestPlugApp, conn)
+
+      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+      assert event[:queueDuration] == 0
+    end
+  end
 end

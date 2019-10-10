@@ -20,6 +20,7 @@ defmodule NewRelic.Transaction.Complete do
     report_transaction_trace(tx_attrs, tx_segments)
     report_transaction_error_event(tx_attrs, tx_error)
     report_transaction_metric(tx_attrs)
+    report_queue_time_metric(tx_attrs)
     report_transaction_metrics(tx_attrs, tx_metrics)
     report_aggregate(tx_attrs)
     report_caller_metric(tx_attrs)
@@ -47,6 +48,7 @@ defmodule NewRelic.Transaction.Complete do
     duration_ms = System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
 
     tx
+    |> derive_queue_duration()
     |> Map.drop([:start_time_mono, :end_time_mono])
     |> Map.merge(%{
       start_time: start_time,
@@ -56,6 +58,18 @@ defmodule NewRelic.Transaction.Complete do
       duration_s: duration_ms / 1000
     })
   end
+
+  defp derive_queue_duration(%{start_time: start_time, queue_start_us: queue_start_us} = tx)
+       when not is_nil(queue_start_us) do
+    start_time_us = System.convert_time_unit(start_time, :native, :microsecond)
+    queue_duration_us = max(0, start_time_us - queue_start_us)
+
+    tx
+    |> Map.drop([:queue_start_us])
+    |> Map.put(:queueDuration, queue_duration_us / 1_000_000)
+  end
+
+  defp derive_queue_duration(tx), do: tx
 
   defp extract_transaction_info(tx_attrs, pid) do
     {function_segments, tx_attrs} = Map.pop(tx_attrs, :trace_function_segments, [])
@@ -497,6 +511,14 @@ defmodule NewRelic.Transaction.Complete do
       total_time_s: tx.total_time_s
     )
   end
+
+  def report_queue_time_metric(%{queueDuration: duration_s}) when not is_nil(duration_s) do
+    NewRelic.report_metric(:queue_time,
+      duration_s: duration_s
+    )
+  end
+
+  def report_queue_time_metric(_), do: nil
 
   def report_transaction_metrics(tx, tx_metrics) when is_list(tx_metrics) do
     Enum.each(tx_metrics, &report_transaction_metrics(tx, &1))
