@@ -43,33 +43,32 @@ defmodule NewRelic.Transaction.Complete do
          %{start_time: start_time, end_time_mono: end_time_mono, start_time_mono: start_time_mono} =
            tx
        ) do
-    start_time = System.convert_time_unit(start_time, :native, :millisecond)
+    start_time_ms = System.convert_time_unit(start_time, :native, :millisecond)
     duration_us = System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond)
     duration_ms = System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
 
     tx
-    |> derive_queue_duration()
     |> Map.drop([:start_time_mono, :end_time_mono])
     |> Map.merge(%{
-      start_time: start_time,
-      end_time: start_time + duration_ms,
+      start_time: start_time_ms,
+      end_time: start_time_ms + duration_ms,
       duration_us: duration_us,
       duration_ms: duration_ms,
       duration_s: duration_ms / 1000
     })
+    |> add_queue_duration(start_time)
   end
 
-  defp derive_queue_duration(%{start_time: start_time, queue_start_us: queue_start_us} = tx)
-       when not is_nil(queue_start_us) do
-    start_time_us = System.convert_time_unit(start_time, :native, :microsecond)
-    queue_duration_us = max(0, start_time_us - queue_start_us)
+  defp add_queue_duration(%{queue_start_s: queue_start_s} = tx, start_time) do
+    start_time_s = System.convert_time_unit(start_time, :native, :microsecond) / 1_000_000
+    queue_duration = max(0, start_time_s - queue_start_s)
 
     tx
-    |> Map.drop([:queue_start_us])
-    |> Map.put(:queueDuration, queue_duration_us / 1_000_000)
+    |> Map.drop([:queue_start_s])
+    |> Map.put(:queueDuration, queue_duration)
   end
 
-  defp derive_queue_duration(tx), do: tx
+  defp add_queue_duration(tx , _), do: tx
 
   defp extract_transaction_info(tx_attrs, pid) do
     {function_segments, tx_attrs} = Map.pop(tx_attrs, :trace_function_segments, [])
@@ -512,10 +511,8 @@ defmodule NewRelic.Transaction.Complete do
     )
   end
 
-  def report_queue_time_metric(%{queueDuration: duration_s}) when not is_nil(duration_s) do
-    NewRelic.report_metric(:queue_time,
-      duration_s: duration_s
-    )
+  def report_queue_time_metric(%{queueDuration: duration_s}) do
+    NewRelic.report_metric(:queue_time, duration_s: duration_s)
   end
 
   def report_queue_time_metric(_), do: nil

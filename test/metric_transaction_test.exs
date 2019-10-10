@@ -95,12 +95,11 @@ defmodule MetricTransactionTest do
   end
 
   test "Request queueing transaction" do
+    request_start = "t=#{System.system_time(:millisecond) - 100}"
+
     conn =
       conn(:get, "/foo/1")
-      |> Plug.Conn.put_req_header(
-        "x-request-start",
-        "t=#{:os.system_time(:microsecond) - 100_000}"
-      )
+      |> put_req_header("x-request-start", request_start)
 
     TestPlugApp.call(conn, [])
 
@@ -109,7 +108,8 @@ defmodule MetricTransactionTest do
     assert [_, [1, time, time, time, time, 0]] =
              TestHelper.find_metric(metrics, "WebFrontend/QueueTime")
 
-    assert_in_delta time, 0.1, 0.05
+    assert time > 0.100
+    assert time < 0.110
   end
 
   test "Failed transaction" do

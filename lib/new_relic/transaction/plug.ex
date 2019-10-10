@@ -85,10 +85,10 @@ defmodule NewRelic.Transaction.Plug do
   @queue_header "x-request-start"
   def maybe_report_queueing(conn) do
     with [queue_start | _] <- get_req_header(conn, @queue_header),
-         {:ok, queue_start_us} <- Util.RequestQueueTime.parse(queue_start) do
-      NewRelic.add_attributes(queue_start_us: queue_start_us)
+         {:ok, queue_start_s} <- Util.RequestQueueTime.parse(queue_start) do
+      NewRelic.add_attributes(queue_start_s: queue_start_s)
     else
-      _ -> :no_queue_start
+      _ -> :ignore
     end
   end
 end

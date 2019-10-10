@@ -6,7 +6,6 @@ defmodule NewRelic.Error.Event do
             expected: false,
             transaction_name: nil,
             duration: nil,
-            queue_duration: nil,
             database_duration: nil,
             user_attributes: %{},
             agent_attributes: %{}
@@ -27,7 +26,6 @@ defmodule NewRelic.Error.Event do
         "error.expected": error.expected,
         transactionName: error.transaction_name,
         duration: error.duration,
-        queueDuration: error.queue_duration,
         databaseDuration: error.database_duration
       },
       NewRelic.Util.Event.process_event(error.user_attributes),

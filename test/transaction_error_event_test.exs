@@ -51,7 +51,6 @@ defmodule TransactionErrorEventTest do
       error_message: "Error: message",
       timestamp: System.system_time(:millisecond) / 1_000,
       transaction_name: "WebTransaction/AgentTest/Transaction/name",
-      queue_duration: 0.010,
       database_duration: 0.010,
       duration: 0.010,
       agent_attributes: %{
