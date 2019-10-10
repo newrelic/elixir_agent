@@ -1,6 +1,15 @@
 ## CHANGELOG
 
 
+### `v1.12.0`
+
+Features
+
+* Add support for detecting request queuing via `x-request-start`. [#143](https://github.com/newrelic/elixir_agent/pull/143) Thanks @sb8244!
+  - https://docs.newrelic.com/docs/apm/applications-menu/features/configure-request-queue-reporting
+
+------
+
 ### `v1.11.0`
 
 Features
