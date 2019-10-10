@@ -10,6 +10,7 @@ defmodule NewRelic.Transaction.Plug do
   @moduledoc false
 
   alias NewRelic.Transaction
+  alias NewRelic.Util
 
   @impl Plug
   def init(opts), do: opts
@@ -33,6 +34,7 @@ defmodule NewRelic.Transaction.Plug do
   defp on_call(conn) do
     Transaction.Reporter.start()
     add_start_attrs(conn)
+    maybe_report_queueing(conn)
     conn
   end
 
@@ -78,6 +80,16 @@ defmodule NewRelic.Transaction.Plug do
     case conn.private[:plug_route] do
       {match_path, _fun} -> match_path
       _ -> nil
+    end
+  end
+
+  @request_start_header "x-request-start"
+  def maybe_report_queueing(conn) do
+    with [request_start | _] <- get_req_header(conn, @request_start_header),
+         {:ok, request_start_s} <- Util.RequestStart.parse(request_start) do
+      NewRelic.add_attributes(request_start_s: request_start_s)
+    else
+      _ -> :ignore
     end
   end
 end

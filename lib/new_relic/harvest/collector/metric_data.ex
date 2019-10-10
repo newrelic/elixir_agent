@@ -253,5 +253,18 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform(:queue_time, duration_s: duration_s) do
+    [
+      %Metric{
+        name: "WebFrontend/QueueTime",
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
+    ]
+  end
+
   defp join(segments), do: NewRelic.Util.metric_join(segments)
 end

@@ -84,6 +84,7 @@ defmodule MetricTransactionTest do
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
     assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
+    refute TestHelper.find_metric(metrics, "WebFrontend/QueueTime")
 
     apdex = TestHelper.find_metric(metrics, "Apdex")
 
@@ -91,6 +92,24 @@ defmodule MetricTransactionTest do
 
     assert TestHelper.find_metric(metrics, "External/MetricTransactionTest.External.call/all")
     assert TestHelper.find_metric(metrics, "External/allWeb")
+  end
+
+  test "Request queueing transaction" do
+    request_start = "t=#{System.system_time(:millisecond) - 100}"
+
+    conn =
+      conn(:get, "/foo/1")
+      |> put_req_header("x-request-start", request_start)
+
+    TestPlugApp.call(conn, [])
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert [_, [1, time, time, time, time, 0]] =
+             TestHelper.find_metric(metrics, "WebFrontend/QueueTime")
+
+    assert time > 0.100
+    assert time < 0.110
   end
 
   test "Failed transaction" do
