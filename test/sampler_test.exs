@@ -48,8 +48,9 @@ defmodule SamplerTest do
 
   test "Process Sampler" do
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-    TestProcess.start_link()
+    {:ok, process} = TestProcess.start_link()
 
+    TestHelper.dispatch_sample_process(NewRelic.Sampler.Process, process)
     TestHelper.trigger_report(NewRelic.Sampler.Process)
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
@@ -66,6 +67,7 @@ defmodule SamplerTest do
 
     spawn(fn ->
       NewRelic.sample_process()
+      TestHelper.dispatch_sample_process(NewRelic.Sampler.Process, self())
       TestHelper.trigger_report(NewRelic.Sampler.Process)
       send(parent, :continue)
     end)
@@ -81,7 +83,9 @@ defmodule SamplerTest do
   end
 
   test "Process Sampler - count work between samplings" do
-    TestProcess.start_link()
+    {:ok, process} = TestProcess.start_link()
+
+    TestHelper.dispatch_sample_process(NewRelic.Sampler.Process, process)
 
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
     TestHelper.trigger_report(NewRelic.Sampler.Process)

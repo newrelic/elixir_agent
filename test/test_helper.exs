@@ -34,6 +34,10 @@ defmodule TestHelper do
       _ -> false
     end)
   end
+
+  def dispatch_sample_process(module, pid) do
+    GenServer.cast(module, {:sample_process, pid})
+  end
 end
 
 ExUnit.start()

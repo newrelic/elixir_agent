@@ -18,7 +18,11 @@ defmodule NewRelic.Sampler.Process do
     {:ok, %{pids: %{}, previous: %{}}}
   end
 
-  def sample_process, do: GenServer.cast(__MODULE__, {:sample_process, self()})
+  def sample_process do
+    if NewRelic.Config.enabled?(),
+      do: GenServer.cast(__MODULE__, {:sample_process, self()}),
+      else: :ok
+  end
 
   def handle_cast({:sample_process, pid}, state) do
     state = store_pid(state.pids[pid], state, pid)
