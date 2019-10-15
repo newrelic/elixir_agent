@@ -11,7 +11,6 @@ defmodule NewRelic.Harvest.Collector.Supervisor do
 
   def init(_) do
     children = [
-      worker(Collector.AgentRun, []),
       data_supervisor(Collector.Metric, :data_report_period),
       data_supervisor(Collector.TransactionTrace, :data_report_period),
       data_supervisor(Collector.ErrorTrace, :data_report_period),
