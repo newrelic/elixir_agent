@@ -112,6 +112,13 @@ defmodule NewRelic.Util do
     end
   end
 
+  def get_host(url) do
+    case URI.parse(url) do
+      %{host: nil} -> url
+      %{host: host} -> host
+    end
+  end
+
   @mb 1024 * 1024
   defp get_system_memory() do
     case :memsup.get_system_memory_data()[:system_total_memory] do
