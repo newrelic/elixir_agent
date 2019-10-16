@@ -4,7 +4,7 @@ defmodule NewRelic.Util do
   alias NewRelic.Util.Vendor
 
   def hostname do
-    Vendor.maybe_heroku_dyno_hostname() || get_hostname()
+    maybe_heroku_dyno_hostname() || get_hostname()
   end
 
   def pid, do: System.get_pid() |> String.to_integer()
@@ -33,6 +33,11 @@ defmodule NewRelic.Util do
     Enum.flat_map(attrs, &deep_flatten/1)
   end
 
+  def deep_flatten({key, value}) when is_list(value) do
+    Enum.with_index(value)
+    |> Enum.flat_map(fn {v, index} -> deep_flatten({"#{key}.#{index}", v}) end)
+  end
+
   def deep_flatten({key, value}) when is_map(value) do
     Enum.flat_map(value, fn {k, v} -> deep_flatten({"#{key}.#{k}", v}) end)
   end
@@ -52,15 +57,59 @@ defmodule NewRelic.Util do
     ]
   end
 
+  @nr_metadata_prefix "NEW_RELIC_METADATA_"
+  def metadata() do
+    System.get_env()
+    |> Enum.filter(fn {key, _} -> String.starts_with?(key, @nr_metadata_prefix) end)
+    |> Enum.into(%{})
+  end
+
   def utilization() do
     %{
-      metadata_version: 3,
+      metadata_version: 5,
       logical_processors: :erlang.system_info(:logical_processors),
       total_ram_mib: get_system_memory(),
       hostname: hostname()
     }
-    |> Vendor.maybe_add_linux_boot_id()
-    |> Vendor.maybe_add_cloud_vendors()
+    |> maybe_add_ip_addresses
+    |> maybe_add_fqdn
+    |> maybe_add_linux_boot_id()
+    |> Vendor.maybe_add_vendors()
+  end
+
+  def maybe_heroku_dyno_hostname do
+    System.get_env("DYNO")
+    |> case do
+      nil -> nil
+      "scheduler." <> _ -> "scheduler.*"
+      "run." <> _ -> "run.*"
+      name -> name
+    end
+  end
+
+  def maybe_add_linux_boot_id(util) do
+    case File.read("/proc/sys/kernel/random/boot_id") do
+      {:ok, boot_id} -> Map.put(util, "boot_id", boot_id)
+      _ -> util
+    end
+  end
+
+  def maybe_add_ip_addresses(util) do
+    case :inet.getif() do
+      {:ok, addrs} ->
+        ip_address = Enum.map(addrs, fn {ip, _, _} -> to_string(:inet.ntoa(ip)) end)
+        Map.put(util, :ip_address, ip_address)
+
+      _ ->
+        util
+    end
+  end
+
+  def maybe_add_fqdn(util) do
+    case :net_adm.dns_hostname(:net_adm.localhost()) do
+      {:ok, fqdn} -> Map.put(util, :full_hostname, to_string(fqdn))
+      _ -> util
+    end
   end
 
   def get_host(url) do

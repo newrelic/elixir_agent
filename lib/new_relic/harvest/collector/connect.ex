@@ -14,9 +14,32 @@ defmodule NewRelic.Harvest.Collector.Connect do
             %{label_type: key, label_value: value}
           end),
         utilization: NewRelic.Util.utilization(),
+        metadata: NewRelic.Util.metadata(),
         environment: NewRelic.Util.elixir_environment(),
         agent_version: NewRelic.Config.agent_version()
       }
     ]
+  end
+
+  def parse_connect(
+        %{"agent_run_id" => _, "messages" => [%{"message" => message}]} = connect_response
+      ) do
+    NewRelic.log(:info, message)
+    connect_response
+  end
+
+  def parse_connect(%{"error_type" => _, "message" => message}) do
+    NewRelic.log(:error, message)
+    :error
+  end
+
+  def parse_connect({:error, reason}) do
+    NewRelic.log(:error, "Failed connect #{inspect(reason)}")
+    :error
+  end
+
+  def parse_connect(503) do
+    NewRelic.log(:error, "Collector unavailable")
+    :error
   end
 end

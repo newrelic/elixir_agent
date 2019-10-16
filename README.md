@@ -87,6 +87,22 @@ defmodule MyModule do
 end
 ```
 
+#### `Mix.Task`
+
+To enable the agent during a `Mix.Task`, you simply need to start and stop it.
+
+```elixir
+defmodule Mix.Tasks.Example do
+  use Mix.Task
+
+  def run(args) do
+    Application.ensure_all_started(:new_relic_agent)
+    # ...
+    Application.stop(:new_relic_agent)
+  end
+end
+```
+
 #### Pre-Instrumented Modules
 
 * `NewRelic.Instrumented.HTTPoison` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace.

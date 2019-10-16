@@ -20,6 +20,7 @@ defmodule NewRelic.Transaction.Complete do
     report_transaction_trace(tx_attrs, tx_segments)
     report_transaction_error_event(tx_attrs, tx_error)
     report_transaction_metric(tx_attrs)
+    report_queue_time_metric(tx_attrs)
     report_transaction_metrics(tx_attrs, tx_metrics)
     report_aggregate(tx_attrs)
     report_caller_metric(tx_attrs)
@@ -42,20 +43,32 @@ defmodule NewRelic.Transaction.Complete do
          %{start_time: start_time, end_time_mono: end_time_mono, start_time_mono: start_time_mono} =
            tx
        ) do
-    start_time = System.convert_time_unit(start_time, :native, :millisecond)
+    start_time_ms = System.convert_time_unit(start_time, :native, :millisecond)
     duration_us = System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond)
     duration_ms = System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
 
     tx
     |> Map.drop([:start_time_mono, :end_time_mono])
     |> Map.merge(%{
-      start_time: start_time,
-      end_time: start_time + duration_ms,
+      start_time: start_time_ms,
+      end_time: start_time_ms + duration_ms,
       duration_us: duration_us,
       duration_ms: duration_ms,
       duration_s: duration_ms / 1000
     })
+    |> add_queue_duration(start_time)
   end
+
+  defp add_queue_duration(%{request_start_s: request_start_s} = tx, start_time) do
+    start_time_s = System.convert_time_unit(start_time, :native, :microsecond) / 1_000_000
+    queue_duration = max(0, start_time_s - request_start_s)
+
+    tx
+    |> Map.drop([:request_start_s])
+    |> Map.put(:queueDuration, queue_duration)
+  end
+
+  defp add_queue_duration(tx, _), do: tx
 
   defp extract_transaction_info(tx_attrs, pid) do
     {function_segments, tx_attrs} = Map.pop(tx_attrs, :trace_function_segments, [])
@@ -233,7 +246,7 @@ defmodule NewRelic.Transaction.Complete do
       class_name: "#{function}/#{arity}",
       method_name: nil,
       metric_name: "#{inspect(module)}.#{function}",
-      attributes: %{query: inspect(args, charlists: false)}
+      attributes: %{query: args}
     })
   end
 
@@ -497,6 +510,12 @@ defmodule NewRelic.Transaction.Complete do
       total_time_s: tx.total_time_s
     )
   end
+
+  def report_queue_time_metric(%{queueDuration: duration_s}) do
+    NewRelic.report_metric(:queue_time, duration_s: duration_s)
+  end
+
+  def report_queue_time_metric(_), do: nil
 
   def report_transaction_metrics(tx, tx_metrics) when is_list(tx_metrics) do
     Enum.each(tx_metrics, &report_transaction_metrics(tx, &1))

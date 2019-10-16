@@ -18,10 +18,14 @@ defmodule AgentRunIntegrationTest do
     :ok
   end
 
-  test "has util data in connect payload" do
-    payload = Collector.Connect.payload()
-    ram = get_in(payload, [Access.at(0), :utilization, :total_ram_mib])
-    assert is_integer(ram)
+  test "Connect payload" do
+    [payload] = Collector.Connect.payload()
+
+    assert get_in(payload, [:utilization, :total_ram_mib])
+           |> is_integer
+
+    assert get_in(payload, [:metadata])
+           |> is_map
   end
 
   test "Stores needed connect data" do

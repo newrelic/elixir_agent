@@ -1,30 +1,31 @@
 defmodule NewRelic.Util.Vendor do
   @moduledoc false
 
-  def maybe_add_linux_boot_id(util) do
-    case File.read("/proc/sys/kernel/random/boot_id") do
-      {:ok, boot_id} -> Map.put(util, "boot_id", boot_id)
-      _ -> util
-    end
-  end
-
-  def maybe_heroku_dyno_hostname do
-    System.get_env("DYNO")
+  def maybe_add_vendors(util, options \\ []) do
+    %{}
+    |> maybe_add_aws(options)
+    |> maybe_add_kubernetes()
     |> case do
-      nil -> nil
-      "scheduler." <> _ -> "scheduler.*"
-      "run." <> _ -> "run.*"
-      name -> name
+      vendors when map_size(vendors) == 0 -> util
+      vendors -> Map.put(util, :vendors, vendors)
     end
   end
 
   @aws_url "http://169.254.169.254/2016-09-02/dynamic/instance-identity/document"
-  def maybe_add_cloud_vendors(util, options \\ []) do
+  def maybe_add_aws(vendors, options \\ []) do
     Keyword.get(options, :aws_url, @aws_url)
     |> aws_vendor_hash()
     |> case do
-      nil -> util
-      aws_hash -> Map.put(util, :vendors, %{aws: aws_hash})
+      nil -> vendors
+      aws_hash -> Map.put(vendors, :aws, aws_hash)
+    end
+  end
+
+  def maybe_add_kubernetes(vendors) do
+    System.get_env("KUBERNETES_SERVICE_HOST")
+    |> case do
+      nil -> vendors
+      value -> Map.put(vendors, :kubernetes, %{kubernetes_service_host: value})
     end
   end
 

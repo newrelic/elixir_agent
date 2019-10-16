@@ -1,5 +1,35 @@
 ## CHANGELOG
 
+
+### `v1.12.0`
+
+Features
+
+* Add support for detecting request queuing via `x-request-start`. [#143](https://github.com/newrelic/elixir_agent/pull/143) Thanks @sb8244!
+  - https://docs.newrelic.com/docs/apm/applications-menu/features/configure-request-queue-reporting
+
+------
+
+### `v1.11.0`
+
+Features
+
+* Add support for detecting if the app is running inside Kubernetes. [#140](https://github.com/newrelic/elixir_agent/pull/140)
+
+------
+
+### `v1.10.2`
+
+Fixes
+
+* Protect against huge arguments blowing out memory [#136](https://github.com/newrelic/elixir_agent/pull/136)
+
+### `v1.10.1`
+
+Tweaks
+
+* Handle lists inside objects passed to `add_attributes` [#135](https://github.com/newrelic/elixir_agent/pull/135) Thanks @emeryotopalik!
+
 ### `v1.10.0`
 
 Features
@@ -10,6 +40,8 @@ Features
 Tweaks
 
 * Improve formatting of ErlangError. [#126](https://github.com/newrelic/elixir_agent/pull/126)
+
+------
 
 ### `v1.9.12`
 
