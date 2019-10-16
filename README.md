@@ -72,9 +72,10 @@ defmodule MyPlug do
 end
 ```
 
-#### Function Tracing
+#### Tracing
 
-* `NewRelic.Tracer` enables detailed Function Tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it. Install it by adding `use NewRelic.Tracer` to any module, and annotating any function with `@trace` module attribute
+* `NewRelic.Tracer` enables detailed Function tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it. Install it by adding `use NewRelic.Tracer` to any module, and annotating any function with `@trace` module attribute
+
 
 ```elixir
 defmodule MyModule do
@@ -83,6 +84,21 @@ defmodule MyModule do
   @trace :func
   def func do
     # Will report as `MyModule.func/0`
+  end
+end
+```
+
+* `NewRelic.Tracer` also enables detailed External request tracing. A little more instrumentation is required to pass the trace context forward with Distributed Tracing.
+
+```elixir
+defmodule MyExternalService do
+  use NewRelic.Tracer
+
+  @trace {:request, category: :external}
+  def request(method, url, headers) do
+    NewRelic.set_span(:http, url: url, method: method, component: "HttpClient")
+    headers ++ NewRelic.create_distributed_trace_payload(:http)
+    HttpClient.request(method, url, headers)
   end
 end
 ```
