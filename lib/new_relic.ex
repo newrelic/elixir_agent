@@ -9,6 +9,9 @@ defmodule NewRelic do
   The first segment will be treated as the Transaction namespace,
   and commonly contains the name of the framework.
 
+  **Notes:**
+  * At least 2 segments are required to light up the Transactions UI in APM
+
   In the following example, you will see `/custom/transaction/name`
   in the Transaction list.
 
