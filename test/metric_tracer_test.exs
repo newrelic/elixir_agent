@@ -25,7 +25,7 @@ defmodule MetricTracerTest do
 
     @trace {:query, category: :external}
     def external_call do
-      NewRelic.set_span(:http, url: "http://domain.net", method: "GET", component: "MetricTraced")
+      NewRelic.set_span(:http, url: "http://domain.net", method: "GET", component: "HttpClient")
     end
 
     @trace {:db_query, category: :datastore}
@@ -62,7 +62,7 @@ defmodule MetricTracerTest do
 
     assert TestHelper.find_metric(metrics, "External/all", 2)
     assert TestHelper.find_metric(metrics, "External/domain.net/all", 2)
-    assert TestHelper.find_metric(metrics, "External/domain.net/MetricTraced/GET", 2)
+    assert TestHelper.find_metric(metrics, "External/domain.net/HttpClient/GET", 2)
   end
 
   test "Datastore metrics" do
