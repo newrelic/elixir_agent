@@ -36,6 +36,8 @@ defmodule TestHelper do
   end
 end
 
+{:ok, _} = NewRelic.EnabledSupervisor.start_link(enabled: true)
+
 ExUnit.start()
 
 System.at_exit(fn _ ->

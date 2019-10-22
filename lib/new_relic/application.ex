@@ -10,12 +10,8 @@ defmodule NewRelic.Application do
 
     children = [
       worker(NewRelic.Logger, []),
-      supervisor(NewRelic.Harvest.Supervisor, []),
-      supervisor(NewRelic.Sampler.Supervisor, []),
-      supervisor(NewRelic.Error.Supervisor, []),
-      supervisor(NewRelic.Transaction.Supervisor, []),
-      supervisor(NewRelic.DistributedTrace.Supervisor, []),
-      supervisor(NewRelic.Aggregate.Supervisor, []),
+      supervisor(NewRelic.AlwaysOnSupervisor, []),
+      supervisor(NewRelic.EnabledSupervisor, [[enabled: NewRelic.Config.enabled?()]]),
       worker(NewRelic.GracefulShutdown, [], shutdown: 30_000)
     ]
 
