@@ -136,6 +136,38 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform({:external, url, component, method}, duration_s: duration_s) do
+    host = URI.parse(url).host
+    method = method |> to_string() |> String.upcase()
+
+    [
+      %Metric{
+        name: :"External/all",
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      },
+      %Metric{
+        name: join(["External", host, "all"]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      },
+      %Metric{
+        name: join(["External", host, component, method]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
+    ]
+  end
+
   def transform({:external, name}, duration_s: duration_s),
     do: [
       %Metric{

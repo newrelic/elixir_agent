@@ -23,6 +23,11 @@ defmodule MetricTracerTest do
     def query do
     end
 
+    @trace {:query, category: :external}
+    def external_call do
+      NewRelic.set_span(:http, url: "http://domain.net", method: "GET", component: "HttpClient")
+    end
+
     @trace {:db_query, category: :datastore}
     def db_query do
     end
@@ -47,6 +52,17 @@ defmodule MetricTracerTest do
              "External/MetricTracerTest.MetricTraced.custom_name:special/all",
              2
            )
+  end
+
+  test "External metrics use span data" do
+    MetricTraced.external_call()
+    MetricTraced.external_call()
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestHelper.find_metric(metrics, "External/all", 2)
+    assert TestHelper.find_metric(metrics, "External/domain.net/all", 2)
+    assert TestHelper.find_metric(metrics, "External/domain.net/HttpClient/GET", 2)
   end
 
   test "Datastore metrics" do

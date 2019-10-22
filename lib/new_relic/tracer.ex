@@ -29,15 +29,19 @@ defmodule NewRelic.Tracer do
 
   #### Categories
 
-  To categorize External Service calls, use this syntax:
+  To categorize External Service calls you must give the trace annotation a category.
+
+  You may also call `NewRelic.set_span` to provide better naming for metrics & spans, and additonally annotate the outgoing HTTP headers with the Distributed Tracing context to track calls across services.
 
   ```elixir
   defmodule MyExternalService do
     use NewRelic.Tracer
 
-    @trace {:query, category: :external}
-    def query(args) do
-      # Make the call
+    @trace {:request, category: :external}
+    def request(method, url, headers) do
+      NewRelic.set_span(:http, url: url, method: method, component: "HttpClient")
+      headers ++ NewRelic.create_distributed_trace_payload(:http)
+      HttpClient.request(method, url, headers)
     end
   end
   ```
@@ -47,14 +51,14 @@ defmodule NewRelic.Tracer do
   * Add custom attributes to Transaction events:
     - `external_call_count`
     - `external_duration_ms`
-    - `external.MyExternalService.query/0.call_count`
-    - `external.MyExternalService.query/0.duration_ms`
+    - `external.MyExternalService.query.call_count`
+    - `external.MyExternalService.query.duration_ms`
 
   Transactions that call the traced `ExternalService` functions will contain `external_call_count` attribute
 
   ```elixir
   get "/endpoint" do
-    ExternalService.query(2)
+    ExternalService.request(:get, url, headers)
     send_resp(conn, 200, "ok")
   end
   ```
