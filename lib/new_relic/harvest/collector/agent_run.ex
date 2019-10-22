@@ -38,9 +38,6 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
 
       {:error, _reason} ->
         {:noreply, %{status: :error_during_preconnect}}
-
-      {:failed_connect, _reason} ->
-        {:noreply, %{status: :failed_to_preconnect}}
     end
   end
 

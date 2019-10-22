@@ -79,7 +79,8 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     {:error, reason}
   end
 
-  defp parse_collector_response({:error, code}), do: code
+  defp parse_collector_response({:error, code}) when is_integer(code), do: code
+  defp parse_collector_response({:error, reason}), do: {:error, reason}
   defp parse_collector_response({:ok, %{"return_value" => return_value}}), do: return_value
 
   defp parse_collector_response({:ok, %{"exception" => exception_value}}),
