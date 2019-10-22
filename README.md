@@ -21,7 +21,7 @@ Install the [Hex package](https://hex.pm/packages/new_relic_agent)
 
 Requirements:
 * Erlang/OTP 21
-* Elixir > 1.7
+* Elixir 1.8
 
 ```elixir
 defp deps do

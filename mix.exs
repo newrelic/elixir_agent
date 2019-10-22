@@ -6,7 +6,7 @@ defmodule NewRelic.Mixfile do
       app: :new_relic_agent,
       description: "New Relic's Open-Source Elixir Agent",
       version: agent_version(),
-      elixir: "~> 1.7",
+      elixir: "~> 1.8",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       name: "New Relic Elixir Agent",
