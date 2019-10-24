@@ -27,6 +27,22 @@ defp deps do
 end
 ```
 
+Ensure new_relic is started before your application:
+
+```elixir
+def application do
+  [
+    ...,
+    applications: [
+      :new_relic_agent,
+      ...
+      :myapp,
+      ...
+   ]
+  ]
+end
+```
+
 ## Configuration
 
 You need to set a few required configuration keys so we can authenticate properly.
