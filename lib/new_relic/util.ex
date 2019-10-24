@@ -33,13 +33,19 @@ defmodule NewRelic.Util do
     Enum.flat_map(attrs, &deep_flatten/1)
   end
 
-  def deep_flatten({key, value}) when is_list(value) do
-    Enum.with_index(value)
+  def deep_flatten({key, list_value}) when is_list(list_value) do
+    list_value
+    |> Enum.slice(0..9)
+    |> Enum.with_index()
     |> Enum.flat_map(fn {v, index} -> deep_flatten({"#{key}.#{index}", v}) end)
+    |> Enum.concat([{"#{key}.length", length(list_value)}])
   end
 
-  def deep_flatten({key, value}) when is_map(value) do
-    Enum.flat_map(value, fn {k, v} -> deep_flatten({"#{key}.#{k}", v}) end)
+  def deep_flatten({key, map_value}) when is_map(map_value) do
+    map_value
+    |> Enum.slice(0..9)
+    |> Enum.flat_map(fn {k, v} -> deep_flatten({"#{key}.#{k}", v}) end)
+    |> Enum.concat([{"#{key}.size", map_size(map_value)}])
   end
 
   def deep_flatten({key, value}) do

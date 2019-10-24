@@ -22,11 +22,30 @@ defmodule NewRelic do
   defdelegate set_transaction_name(name), to: NewRelic.Transaction.Reporter
 
   @doc """
-  Report a custom attribute on the current transaction
+  Report custom attributes on the current Transaction
+
+  Reporting nested data structures is supported by auto-flattening them
+  into a list of key-value pairs.
 
   ```elixir
   NewRelic.add_attributes(foo: "bar")
+    # "foo" => "bar"
+
+  NewRelic.add_attributes(map: %{foo: "bar", baz: "qux"})
+    # "map.foo" => "bar"
+    # "map.baz" => "qux"
+    # "map.size" => 2
+
+  NewRelic.add_attributes(list: ["a", "b", "c"])
+    # "list.0" => "a"
+    # "list.1" => "b"
+    # "list.2" => "c"
+    # "list.length" => 3
   ```
+
+  **Notes:**
+  * Lists and Maps are truncated at 10 items since there are a limited number
+  of attributes that can be reported on Transaction events
   """
   defdelegate add_attributes(custom_attributes), to: NewRelic.Transaction.Reporter
 
