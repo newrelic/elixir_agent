@@ -44,7 +44,7 @@ defmodule NewRelic do
   ```
 
   **Notes:**
-  * Lists and Maps are truncated at 10 items since there are a limited number
+  * Nested Lists and Maps are truncated at 10 items since there are a limited number
   of attributes that can be reported on Transaction events
   """
   defdelegate add_attributes(custom_attributes), to: NewRelic.Transaction.Reporter
