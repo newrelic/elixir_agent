@@ -29,7 +29,9 @@ defmodule UtilTest do
       NewRelic.Util.deep_flatten(
         not_nested: "value",
         nested: %{foo: %{bar: %{baz: "qux"}}},
-        nested_list: [%{one: %{two: "three"}}, %{four: "five"}, %{}, "string", ["nested string"]]
+        nested_list: [%{one: %{two: "three"}}, %{four: "five"}, %{}, "string", ["nested string"]],
+        super_long_list: Enum.map(0..99, & &1),
+        big_map: String.graphemes("abcdefghijklmnopqrstuvwxyz") |> Enum.into(%{}, &{&1, &1})
       )
 
     assert {"nested.foo.bar.baz", "qux"} in flattened
@@ -38,6 +40,15 @@ defmodule UtilTest do
     assert {"nested_list.1.four", "five"} in flattened
     assert {"nested_list.3", "string"} in flattened
     assert {"nested_list.4.0", "nested string"} in flattened
+    assert {"super_long_list.0", 0} in flattened
+    assert {"super_long_list.1", 1} in flattened
+    assert {"super_long_list.9", 9} in flattened
+    refute {"super_long_list.10", 10} in flattened
+    assert {"super_long_list.length", 100} in flattened
+    assert {"big_map.a", "a"} in flattened
+    assert {"big_map.j", "j"} in flattened
+    refute {"big_map.k", "k"} in flattened
+    assert {"big_map.size", 26} in flattened
   end
 
   test "Truncates unicode strings correctly" do
