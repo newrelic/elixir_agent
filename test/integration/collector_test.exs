@@ -22,6 +22,15 @@ defmodule CollectorIntegrationTest do
     assert redirect_host =~ "collector-"
   end
 
+  test "handles when unable to connect" do
+    Application.put_env(:new_relic_agent, :collector_instance_host, "badhost.com")
+
+    assert {:error, reason} = Collector.Protocol.preconnect()
+    assert {:failed_connect, _} = reason
+
+    Application.delete_env(:new_relic_agent, :collector_instance_host)
+  end
+
   test "handles invalid license key" do
     prev = Application.get_env(:new_relic_agent, :harvest_enabled)
     System.put_env("NEW_RELIC_LICENSE_KEY", "invalid_key")

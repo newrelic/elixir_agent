@@ -9,7 +9,7 @@ defmodule NewRelic.Util.HTTP do
     %{host: host} = URI.parse(url)
 
     with {:ok, {{_, status_code, _}, _headers, body}} <-
-           :httpc.request(:post, request, ssl_options(host), []) do
+           :httpc.request(:post, request, http_options(host), []) do
       {:ok, %{status_code: status_code, body: to_string(body)}}
     end
   end
@@ -21,8 +21,9 @@ defmodule NewRelic.Util.HTTP do
   Certs are pulled from Mozilla exactly as Hex does:
   https://github.com/hexpm/hex/blob/master/README.md#bundled-ca-certs
   """
-  def ssl_options(host) do
+  def http_options(host) do
     [
+      connect_timeout: 1000,
       ssl: [
         verify: :verify_peer,
         cacertfile: Application.app_dir(:new_relic_agent, "priv/cacert.pem"),
