@@ -20,7 +20,6 @@ defmodule NewRelic.Harvest.Supervisor do
 
   def init(_) do
     children = [
-      worker(Collector.HarvesterStore, []),
       supervisor(Task.Supervisor, [[name: Collector.TaskSupervisor]]),
       supervisor(Collector.Supervisor, [])
     ]

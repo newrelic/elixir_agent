@@ -10,6 +10,7 @@ defmodule NewRelic.AlwaysOnSupervisor do
   def init(_) do
     children = [
       worker(NewRelic.Harvest.Collector.AgentRun, []),
+      worker(NewRelic.Harvest.Collector.HarvesterStore, []),
       supervisor(NewRelic.DistributedTrace.Supervisor, []),
       supervisor(NewRelic.Transaction.Supervisor, [])
     ]
