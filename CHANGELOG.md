@@ -1,12 +1,20 @@
 ## CHANGELOG
 
 
+### `v1.13.1`
+
+Fixes
+
+* Handle rare edge cases connecting to New Relic. [#156](https://github.com/newrelic/elixir_agent/pull/156)
+
 ### `v1.13.0`
 
 Features
 
 * `OTP 21+` has been required for a while, and now the agent will enforce this version requirement [#151](https://github.com/newrelic/elixir_agent/pull/151)
 * Truncate super large nested attribute structure [#153](https://github.com/newrelic/elixir_agent/pull/153)
+
+------
 
 ### `v1.12.0`
 
