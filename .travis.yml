@@ -5,6 +5,7 @@ elixir:
 otp_release:
   - 22.1
   - 21.3
+  - 21.0
 notifications:
   email:
     - vince@newrelic.com
