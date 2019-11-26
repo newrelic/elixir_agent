@@ -22,9 +22,9 @@ defmodule NewRelic.Error.Supervisor do
     supervise(children, strategy: :one_for_one)
   end
 
-  def add_handler(), do: apply(logger_module(), :add_handler, [])
-  def remove_handler(), do: apply(logger_module(), :remove_handler, [])
+  def add_handler(),
+    do: NewRelic.Error.LoggerHandler.add_handler()
 
-  def logger_module(),
-    do: (Process.whereis(:logger) && Error.LoggerHandler) || Error.ErrorLoggerHandler
+  def remove_handler(),
+    do: NewRelic.Error.LoggerHandler.remove_handler()
 end
