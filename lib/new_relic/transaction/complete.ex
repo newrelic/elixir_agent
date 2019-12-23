@@ -14,6 +14,7 @@ defmodule NewRelic.Transaction.Complete do
       tx_attrs
       |> transform_name_attrs
       |> transform_time_attrs
+      |> transform_queue_duration
       |> extract_transaction_info(pid)
 
     report_transaction_event(tx_attrs)
@@ -56,11 +57,14 @@ defmodule NewRelic.Transaction.Complete do
       duration_ms: duration_ms,
       duration_s: duration_ms / 1000
     })
-    |> add_queue_duration(start_time)
   end
 
-  defp add_queue_duration(%{request_start_s: request_start_s} = tx, start_time) do
-    start_time_s = System.convert_time_unit(start_time, :native, :microsecond) / 1_000_000
+  defp transform_time_attrs(%{start_time: _, end_time: _} = tx) do
+    tx
+  end
+
+  defp transform_queue_duration(%{request_start_s: request_start_s, start_time: start_time} = tx) do
+    start_time_s = start_time / 1000.0
     queue_duration = max(0, start_time_s - request_start_s)
 
     tx
@@ -68,7 +72,7 @@ defmodule NewRelic.Transaction.Complete do
     |> Map.put(:queueDuration, queue_duration)
   end
 
-  defp add_queue_duration(tx, _), do: tx
+  defp transform_queue_duration(tx), do: tx
 
   defp extract_transaction_info(tx_attrs, pid) do
     {function_segments, tx_attrs} = Map.pop(tx_attrs, :trace_function_segments, [])
