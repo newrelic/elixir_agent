@@ -108,8 +108,7 @@ defmodule MetricTransactionTest do
     assert [_, [1, time, time, time, time, 0]] =
              TestHelper.find_metric(metrics, "WebFrontend/QueueTime")
 
-    assert time > 0.100
-    assert time < 0.110
+    assert_in_delta time, 0.1, 0.02
   end
 
   test "Failed transaction" do

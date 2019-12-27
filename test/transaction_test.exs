@@ -312,8 +312,7 @@ defmodule TransactionTest do
 
       [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-      assert event[:queueDuration] >= 1.5
-      assert event[:queueDuration] < 1.5 + 0.1
+      assert_in_delta event[:queueDuration], 1.5, 0.1
     end
 
     test "account for clock skew - ignore a negative queue duration" do
