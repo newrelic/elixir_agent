@@ -232,7 +232,7 @@ defmodule NewRelic.Transaction.Complete do
     |> Map.merge(%{
       class_name: class_name,
       method_name: nil,
-      metric_name: metric_name |> String.replace("/", ""),
+      metric_name: metric_name,
       attributes: attributes
     })
   end
