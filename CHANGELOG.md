@@ -1,6 +1,14 @@
 ## CHANGELOG
 
 
+### `v1.14.0`
+
+Features
+
+* Minor internal refactor to enable reporting spans after they complete. [#160](https://github.com/newrelic/elixir_agent/pull/160)
+
+------
+
 ### `v1.13.1`
 
 Fixes
