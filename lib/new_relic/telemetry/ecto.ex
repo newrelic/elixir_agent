@@ -1,20 +1,13 @@
-defmodule NewRelic.EctoTelemetry do
+defmodule NewRelic.Telemetry.Ecto do
   use GenServer
 
   @moduledoc """
   `NewRelic.EctoTelemetry` provides `Ecto` instrumentation via `telemetry`.
 
-  To install, simply add this `GenServer` to your application supervision tree
-  and configure it with the name of the `otp_app` of your Ecto repo.
-
-  ```elixir
-  children = [
-    {NewRelic.EctoTelemetry, otp_app: :ecto_example}
-  ]
-  ```
+  Repos are auto-discovered and instrumented.
   """
 
-  def start_link(otp_app: otp_app) do
+  def start_link(otp_app) do
     ecto_repos = Application.get_env(otp_app, :ecto_repos)
     config = extract_config(otp_app, ecto_repos)
 

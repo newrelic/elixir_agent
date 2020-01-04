@@ -51,7 +51,7 @@ defmodule NewRelic.Telemetry.EctoTest do
     Ecto.Migrator.up(TestRepo, 0, TestMigration)
 
     # Simulate an app configuring instrumentation
-    start_supervised({NewRelic.EctoTelemetry, otp_app: :test_app})
+    start_supervised({NewRelic.Telemetry.Ecto, :test_app})
 
     :ok
   end

@@ -12,6 +12,7 @@ defmodule NewRelic.Application do
       worker(NewRelic.Logger, []),
       supervisor(NewRelic.AlwaysOnSupervisor, []),
       supervisor(NewRelic.EnabledSupervisor, []),
+      supervisor(NewRelic.TelemetrySupervisor, []),
       worker(NewRelic.GracefulShutdown, [], shutdown: 30_000)
     ]
 
