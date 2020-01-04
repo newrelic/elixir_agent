@@ -35,10 +35,15 @@ defmodule NewRelic.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:ex_doc, ">= 0.0.0", only: :dev},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:ssl_verify_fun, "~> 1.1"}
+      {:ssl_verify_fun, "~> 1.1"},
+      {:telemetry, "~> 0.4"},
+      # Optional Instrumentation:
+      {:ecto, "~> 3.3", only: :test, optional: true},
+      {:ecto_sql, "~> 3.3", only: :test, optional: true},
+      {:postgrex, ">= 0.0.0", only: :test, optional: true}
     ]
   end
 
