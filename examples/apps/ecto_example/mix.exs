@@ -8,6 +8,7 @@ defmodule EctoExample.MixProject do
       build_path: "../../_build",
       deps_path: "../../deps",
       config_path: "../../config/config.exs",
+      elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
@@ -32,4 +33,7 @@ defmodule EctoExample.MixProject do
       {:myxql, ">= 0.0.0"}
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", Path.expand("../../../test/support")]
+  defp elixirc_paths(_), do: ["lib"]
 end
