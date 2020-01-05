@@ -22,6 +22,11 @@ defmodule TracerTest do
     def query do
     end
 
+    @trace {:db_query, category: :datastore}
+    def db_query do
+      :result
+    end
+
     @trace :default
     def default(arg \\ 3), do: arg
 
@@ -194,6 +199,15 @@ defmodule TracerTest do
              event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.priv/0" &&
                event[:call_count] == 1
            end)
+  end
+
+  test "Don't trace when trace is deprecated" do
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    assert Traced.db_query() == :result
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+    assert metrics == []
   end
 
   test "Don't track trace segments that are NOT part of a process in a Transaction" do
