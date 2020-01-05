@@ -12,9 +12,9 @@ notifications:
 services:
   - docker
 script:
-  - docker-compose up -d
   - mix format --check-formatted
   - mix test
   - cd examples
+  - docker-compose up -d
   - mix deps.get
   - mix test
