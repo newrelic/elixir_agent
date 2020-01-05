@@ -30,36 +30,6 @@ defmodule NewRelic.Telemetry.Ecto do
     :telemetry.detach(handler_id)
   end
 
-  defp extract_config(otp_app, ecto_repos) do
-    %{
-      otp_app: otp_app,
-      events: extract_events(otp_app, ecto_repos),
-      repo_configs: extract_repo_configs(otp_app, ecto_repos),
-      handler_id: {:new_relic_ecto, otp_app}
-    }
-  end
-
-  defp extract_events(otp_app, ecto_repos) do
-    Enum.map(ecto_repos, fn repo ->
-      ecto_telemetry_prefix(otp_app, repo) ++ [:query]
-    end)
-  end
-
-  defp extract_repo_configs(otp_app, ecto_repos) do
-    Enum.into(ecto_repos, %{}, fn repo ->
-      {repo, Application.get_env(otp_app, repo) |> Map.new()}
-    end)
-  end
-
-  defp ecto_telemetry_prefix(otp_app, repo) do
-    Application.get_env(otp_app, repo)
-    |> Keyword.get_lazy(:telemetry_prefix, fn ->
-      repo
-      |> Module.split()
-      |> Enum.map(&(&1 |> Macro.underscore() |> String.to_atom()))
-    end)
-  end
-
   def handle_event(
         _event,
         %{query_time: duration_ns},
@@ -138,6 +108,58 @@ defmodule NewRelic.Telemetry.Ecto do
     :ignore
   end
 
+  # Repo config extraction
+
+  defp extract_config(otp_app, ecto_repos) do
+    %{
+      otp_app: otp_app,
+      events: extract_events(otp_app, ecto_repos),
+      repo_configs: extract_repo_configs(otp_app, ecto_repos),
+      handler_id: {:new_relic_ecto, otp_app}
+    }
+  end
+
+  defp extract_events(otp_app, ecto_repos) do
+    Enum.map(ecto_repos, fn repo ->
+      ecto_telemetry_prefix(otp_app, repo) ++ [:query]
+    end)
+  end
+
+  defp extract_repo_configs(otp_app, ecto_repos) do
+    Enum.into(ecto_repos, %{}, fn repo ->
+      {repo, extract_repo_config(otp_app, repo)}
+    end)
+  end
+
+  defp extract_repo_config(otp_app, repo) do
+    Application.get_env(otp_app, repo)
+    |> Map.new()
+    |> case do
+      %{url: url} ->
+        uri = URI.parse(url)
+
+        %{
+          hostname: uri.host,
+          port: uri.port,
+          database: uri.path |> String.trim_leading("/")
+        }
+
+      config ->
+        config
+    end
+  end
+
+  defp ecto_telemetry_prefix(otp_app, repo) do
+    Application.get_env(otp_app, repo)
+    |> Keyword.get_lazy(:telemetry_prefix, fn ->
+      repo
+      |> Module.split()
+      |> Enum.map(&(&1 |> Macro.underscore() |> String.to_atom()))
+    end)
+  end
+
+  # Ecto result parsing
+
   @postgrex_insert ~r/INSERT INTO "(?<table>\w+)"/
   defp parse_ecto_metadata(%{
          source: table,
@@ -154,7 +176,6 @@ defmodule NewRelic.Telemetry.Ecto do
     {"Postgres", table, operation}
   end
 
-  # TODO: support other adapters
   @myxql_insert ~r/INSERT INTO `(?<table>\w+)`/
   @myxql_select ~r/FROM `(?<table>\w+)`/
   defp parse_ecto_metadata(%{

@@ -6,17 +6,11 @@ defmodule NewRelic.Telemetry.EctoTest do
   defmodule TestRepo do
   end
 
-  @config [
-    database: "test_db",
-    username: "postgres",
-    password: "password",
-    hostname: "localhost",
-    port: 5432
-  ]
+  # Simulate an app configuring instrumentation
+  @url_config [url: "ecto://postgres:password@localhost:5432/test_db"]
   setup_all do
-    # Simulate an app configuring instrumentation
     Application.put_env(:test_app, :ecto_repos, [__MODULE__.TestRepo])
-    Application.put_env(:test_app, __MODULE__.TestRepo, @config)
+    Application.put_env(:test_app, __MODULE__.TestRepo, @url_config)
     start_supervised({NewRelic.Telemetry.Ecto, :test_app})
     :ok
   end
@@ -25,12 +19,12 @@ defmodule NewRelic.Telemetry.EctoTest do
   @measurements %{query_time: 965_000}
   @metadata %{
     query: "SELECT i0.\"id\", i0.\"name\" FROM \"items\" AS i0",
-    repo: NewRelic.Telemetry.EctoTest.TestRepo,
+    repo: __MODULE__.TestRepo,
     result: {:ok, %Postgrex.Result{command: :select}},
     source: "items",
     type: :ecto_sql_query
   }
-  test "Report expected metrics event" do
+  test "Report expected metrics based on telemetry event" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
     :telemetry.execute(@event_name, @measurements, @metadata)
