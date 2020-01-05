@@ -33,7 +33,7 @@ defmodule NewRelic.Telemetry.Ecto do
   def handle_event(
         _event,
         %{query_time: duration_ns},
-        %{type: :ecto_sql_query, repo: repo, query: query} = metadata,
+        %{type: :ecto_sql_query, repo: repo} = metadata,
         config
       ) do
     end_time = System.system_time(:millisecond)
@@ -42,6 +42,8 @@ defmodule NewRelic.Telemetry.Ecto do
     start_time = end_time - duration_ms
 
     %{hostname: hostname, port: port, database: database} = config.repo_configs[repo]
+
+    query = (config.collect_sql? && metadata.query) || ""
 
     pid = inspect(self())
     id = {:ecto_sql_query, make_ref()}
@@ -115,6 +117,7 @@ defmodule NewRelic.Telemetry.Ecto do
       otp_app: otp_app,
       events: extract_events(otp_app, ecto_repos),
       repo_configs: extract_repo_configs(otp_app, ecto_repos),
+      collect_sql?: NewRelic.Config.feature?(:sql_collection),
       handler_id: {:new_relic_ecto, otp_app}
     }
   end
