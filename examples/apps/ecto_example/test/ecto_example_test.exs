@@ -3,6 +3,14 @@ defmodule EctoExampleTest do
 
   alias NewRelic.Harvest.Collector
 
+  setup_all do
+    # Simulate the agent fully starting up
+    Process.whereis(Collector.TaskSupervisor) ||
+      NewRelic.EnabledSupervisor.start_link(enabled: true)
+
+    :ok
+  end
+
   test "basic HTTP request flow" do
     restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
