@@ -43,7 +43,12 @@ defmodule SpanEventTest do
 
   test "collect and store top priority events" do
     Application.put_env(:new_relic_agent, :span_event_reservoir_size, 2)
-    {:ok, harvester} = Supervisor.start_child(Collector.SpanEvent.HarvesterSupervisor, [])
+
+    {:ok, harvester} =
+      DynamicSupervisor.start_child(
+        Collector.SpanEvent.HarvesterSupervisor,
+        Collector.SpanEvent.Harvester
+      )
 
     s1 = %NewRelic.Span.Event{priority: 3, trace_id: "abc123"}
     s2 = %NewRelic.Span.Event{priority: 2, trace_id: "def456"}

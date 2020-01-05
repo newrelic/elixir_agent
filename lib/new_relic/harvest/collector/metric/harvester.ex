@@ -5,7 +5,7 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
 
   alias NewRelic.Harvest.Collector
 
-  def start_link do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, [])
   end
 

@@ -26,7 +26,11 @@ defmodule CustomEventTest do
   end
 
   test "collect and store some events" do
-    {:ok, harvester} = Supervisor.start_child(Collector.CustomEvent.HarvesterSupervisor, [])
+    {:ok, harvester} =
+      DynamicSupervisor.start_child(
+        Collector.CustomEvent.HarvesterSupervisor,
+        Collector.CustomEvent.Harvester
+      )
 
     ev1 = %Event{
       type: "CustomEventTest",

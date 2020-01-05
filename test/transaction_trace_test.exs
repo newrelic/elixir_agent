@@ -82,7 +82,11 @@ defmodule TransactionTraceTest do
   end
 
   test "Harvester - collect and store some tracez" do
-    {:ok, harvester} = Supervisor.start_child(Collector.TransactionTrace.HarvesterSupervisor, [])
+    {:ok, harvester} =
+      DynamicSupervisor.start_child(
+        Collector.TransactionTrace.HarvesterSupervisor,
+        Collector.TransactionTrace.Harvester
+      )
 
     trace1 = %Trace{metric_name: :a, duration: 1, segments: [%Trace.Segment{}]}
     trace2 = %Trace{metric_name: :b, duration: 2, segments: [%Trace.Segment{}]}

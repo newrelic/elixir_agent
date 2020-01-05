@@ -90,7 +90,10 @@ defmodule TransactionErrorEventTest do
 
   test "collect and store some events" do
     {:ok, harvester} =
-      Supervisor.start_child(Collector.TransactionErrorEvent.HarvesterSupervisor, [])
+      DynamicSupervisor.start_child(
+        Collector.TransactionErrorEvent.HarvesterSupervisor,
+        Collector.TransactionErrorEvent.Harvester
+      )
 
     ev1 = %Event{transaction_name: "Ev1", duration: 1}
     ev2 = %Event{transaction_name: "Ev2", duration: 2}
