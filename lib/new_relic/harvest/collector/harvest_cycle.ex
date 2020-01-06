@@ -87,7 +87,12 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
 
   # Helpers
 
-  defp swap_harvester(%{supervisor: supervisor, name: name, harvester: harvester, child_spec: child_spec} ) do
+  defp swap_harvester(%{
+         supervisor: supervisor,
+         name: name,
+         harvester: harvester,
+         child_spec: child_spec
+       }) do
     {:ok, next} = Collector.HarvesterSupervisor.start_child(supervisor, child_spec)
     Process.monitor(next)
     Collector.HarvesterStore.update(name, next)
