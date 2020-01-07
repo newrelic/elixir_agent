@@ -1,28 +1,15 @@
 defmodule NewRelic.Telemetry.EctoSupervisor do
-  use Supervisor
+  use DynamicSupervisor
 
-  @moduledoc false
-
-  def start_link do
-    Supervisor.start_link(__MODULE__, [])
+  def start_link() do
+    DynamicSupervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def init(_) do
-    supervise(ecto_workers(), strategy: :one_for_one)
+  def start_child(otp_app) do
+    DynamicSupervisor.start_child(__MODULE__, {NewRelic.Telemetry.Ecto, otp_app})
   end
 
-  def ecto_workers() do
-    discover_ecto_otp_apps()
-    |> Enum.map(&ecto_worker/1)
-  end
-
-  def discover_ecto_otp_apps() do
-    Application.loaded_applications()
-    |> Enum.map(&elem(&1, 0))
-    |> Enum.filter(&Application.get_env(&1, :ecto_repos))
-  end
-
-  def ecto_worker(otp_app) do
-    worker(NewRelic.Telemetry.Ecto, [otp_app], id: make_ref())
+  def init(:ok) do
+    DynamicSupervisor.init(strategy: :one_for_one)
   end
 end
