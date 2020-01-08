@@ -6,13 +6,13 @@ defmodule EctoExample.Database do
   end
 
   def init(:ok) do
-    migrate(EctoExample.PostgresRepo, Ecto.Adapters.Postgres)
-    migrate(EctoExample.MySQLRepo, Ecto.Adapters.MyXQL)
+    start_and_migrate(EctoExample.PostgresRepo, Ecto.Adapters.Postgres)
+    start_and_migrate(EctoExample.MySQLRepo, Ecto.Adapters.MyXQL)
 
     {:ok, %{}}
   end
 
-  def migrate(repo, adapter) do
+  def start_and_migrate(repo, adapter) do
     config = Application.get_env(:ecto_example, repo)
 
     adapter.storage_down(config)

@@ -20,7 +20,7 @@ defmodule NewRelic.Telemetry.EctoTest do
   @metadata %{
     query: "SELECT i0.\"id\", i0.\"name\" FROM \"items\" AS i0",
     repo: __MODULE__.TestRepo,
-    result: {:ok, %Postgrex.Result{command: :select}},
+    result: {:ok, %{__struct__: Postgrex.Result, command: :select}},
     source: "items",
     type: :ecto_sql_query
   }
