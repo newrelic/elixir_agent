@@ -92,8 +92,7 @@ defmodule NewRelic.Transaction.Monitor do
 
   def handle_info(
         {:trace_ts, _pid, :call,
-         {Supervisor, :start_link,
-          [Ecto.Repo.Supervisor, {_name, _repo, otp_app, _adapter, _opts}, _]}, _timestamp},
+         {Ecto.Repo.Supervisor, :start_link, [_repo, otp_app, _adapter, _opts]}, _timestamp},
         state
       ) do
     NewRelic.Telemetry.EctoSupervisor.start_child(otp_app)
@@ -153,6 +152,7 @@ defmodule NewRelic.Transaction.Monitor do
   end
 
   defp trace_ecto_repo_discovery() do
-    :erlang.trace_pattern({Supervisor, :start_link, :_}, true, [:meta])
+    Code.ensure_loaded?(Ecto.Repo.Supervisor) &&
+      :erlang.trace_pattern({Ecto.Repo.Supervisor, :start_link, :_}, true, [:meta])
   end
 end
