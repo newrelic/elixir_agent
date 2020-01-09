@@ -8,13 +8,16 @@ defmodule NewRelic.Telemetry.Ecto do
   """
 
   def start_link(otp_app) do
+    enabled = NewRelic.Config.feature?(:ecto_instrumentation)
     ecto_repos = Application.get_env(otp_app, :ecto_repos)
     config = extract_config(otp_app, ecto_repos)
 
-    GenServer.start_link(__MODULE__, config: config)
+    GenServer.start_link(__MODULE__, config: config, enabled: enabled)
   end
 
-  def init(config: config) do
+  def init(config: _, enabled: false), do: :ignore
+
+  def init(config: config, enabled: true) do
     log(config)
 
     :telemetry.attach_many(

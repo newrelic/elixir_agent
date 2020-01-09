@@ -104,6 +104,10 @@ defmodule NewRelic.Config do
     feature_check?("NEW_RELIC_SQL_COLLECTION_ENABLED", :sql_collection_enabled)
   end
 
+  def feature?(:ecto_instrumentation) do
+    feature_check?("NEW_RELIC_ECTO_INSTRUMENTTION", :ecto_instrumentation)
+  end
+
   defp feature_check?(env, config) do
     case System.get_env(env) do
       "true" -> true
