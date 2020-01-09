@@ -16,7 +16,7 @@ defmodule NewRelic.Telemetry.EctoTest do
   end
 
   @event_name [:new_relic, :telemetry, :ecto_test, :test_repo, :query]
-  @measurements %{query_time: 965_000}
+  @measurements %{total_time: 965_000}
   @metadata %{
     query: "SELECT i0.\"id\", i0.\"name\" FROM \"items\" AS i0",
     repo: __MODULE__.TestRepo,

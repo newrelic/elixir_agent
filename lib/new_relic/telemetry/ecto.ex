@@ -2,9 +2,14 @@ defmodule NewRelic.Telemetry.Ecto do
   use GenServer
 
   @moduledoc """
-  `NewRelic.EctoTelemetry` provides `Ecto` instrumentation via `telemetry`.
+  `NewRelic.Telemetry.Ecto` provides `Ecto` instrumentation via `telemetry`.
 
-  Repos are auto-discovered and instrumented.
+  Repos are auto-discovered and instrumented. We automatically gather:
+
+  * Datastore metrics
+  * Transaction Trace segments
+  * Transaction datastore attributes
+  * Distributed Trace span events
 
   You can opt-out of this instrumentation as a whole and specifically of
   SQL query collection via configuration. See `NewRelic.Config` for details.
@@ -42,14 +47,19 @@ defmodule NewRelic.Telemetry.Ecto do
 
   def handle_event(
         _event,
-        %{query_time: duration_ns},
+        %{total_time: total_time} = measurements,
         %{type: :ecto_sql_query, repo: repo} = metadata,
         config
       ) do
     end_time = System.system_time(:millisecond)
-    duration_ms = System.convert_time_unit(duration_ns, :nanosecond, :millisecond)
+
+    duration_ms = total_time |> to_ms
     duration_s = duration_ms / 1000
     start_time = end_time - duration_ms
+
+    query_time_ms = measurements[:query_time] |> to_ms
+    queue_time_ms = measurements[:queue_time] |> to_ms
+    decode_time_ms = measurements[:decode_time] |> to_ms
 
     %{hostname: hostname, port: port, database: database} = config.repo_configs[repo]
 
@@ -72,7 +82,7 @@ defmodule NewRelic.Telemetry.Ecto do
           operation: operation,
           host: hostname,
           database_name: database,
-          port_path_or_id: port
+          port_path_or_id: port |> to_string
         },
         pid: pid,
         id: id,
@@ -87,17 +97,21 @@ defmodule NewRelic.Telemetry.Ecto do
         name: metric_name,
         edge: [span: id, parent: parent_id],
         category: "datastore",
-        attributes: %{
-          component: datastore,
-          "span.kind": :client,
-          "db.statement": query,
-          "db.instance": database,
-          "peer.address": "#{hostname}:#{port}}",
-          "peer.hostname": hostname,
-          "ecto.repo": inspect(repo),
-          "db.table": table,
-          "db.operation": operation
-        }
+        attributes:
+          %{
+            component: datastore,
+            "span.kind": :client,
+            "db.statement": query,
+            "db.instance": database,
+            "peer.address": "#{hostname}:#{port}}",
+            "peer.hostname": hostname,
+            "db.table": table,
+            "db.operation": operation,
+            "ecto.repo": inspect(repo)
+          }
+          |> maybe_add("ecto.query_time.ms", query_time_ms)
+          |> maybe_add("ecto.queue_time.ms", queue_time_ms)
+          |> maybe_add("ecto.decode_time.ms", decode_time_ms)
       )
 
       NewRelic.report_metric(
@@ -174,6 +188,7 @@ defmodule NewRelic.Telemetry.Ecto do
   # Ecto result parsing
 
   @postgrex_insert ~r/INSERT INTO "(?<table>\w+)"/
+  @postgrex_create_table ~r/CREATE TABLE( IF NOT EXISTS)? "(?<table>\w+)"/
   defp parse_ecto_metadata(%{
          source: table,
          query: query,
@@ -181,7 +196,8 @@ defmodule NewRelic.Telemetry.Ecto do
        }) do
     table =
       case {table, operation} do
-        {nil, :insert} -> Regex.named_captures(@postgrex_insert, query)["table"]
+        {nil, :insert} -> capture(@postgrex_insert, query, "table")
+        {nil, :create_table} -> capture(@postgrex_create_table, query, "table")
         {nil, _} -> "other"
         {table, _} -> table
       end
@@ -191,6 +207,7 @@ defmodule NewRelic.Telemetry.Ecto do
 
   @myxql_insert ~r/INSERT INTO `(?<table>\w+)`/
   @myxql_select ~r/FROM `(?<table>\w+)`/
+  @myxql_create_table ~r/CREATE TABLE( IF NOT EXISTS)? `(?<table>\w+)`/
   defp parse_ecto_metadata(%{
          query: query,
          result: {:ok, %{__struct__: MyXQL.Result}}
@@ -199,6 +216,9 @@ defmodule NewRelic.Telemetry.Ecto do
       case query do
         "SELECT" <> _ -> {"select", capture(@myxql_select, query, "table")}
         "INSERT" <> _ -> {"insert", capture(@myxql_insert, query, "table")}
+        "CREATE TABLE" <> _ -> {"create_table", capture(@myxql_create_table, query, "table")}
+        "begin" -> {"other", :begin}
+        "commit" -> {"other", :commit}
         _ -> {"other", "other"}
       end
 
@@ -220,4 +240,10 @@ defmodule NewRelic.Telemetry.Ecto do
       NewRelic.log(:info, "Detected Ecto Repo #{inspect(repo)}")
     end
   end
+
+  defp to_ms(nil), do: nil
+  defp to_ms(ns), do: System.convert_time_unit(ns, :nanosecond, :millisecond)
+
+  defp maybe_add(map, _, nil), do: map
+  defp maybe_add(map, key, value), do: Map.put(map, key, value)
 end
