@@ -5,6 +5,9 @@ defmodule NewRelic.Telemetry.Ecto do
   `NewRelic.EctoTelemetry` provides `Ecto` instrumentation via `telemetry`.
 
   Repos are auto-discovered and instrumented.
+
+  You can opt-out of this instrumentation as a whole and specifically of
+  SQL query collection via configuration. See `NewRelic.Config` for details.
   """
 
   def start_link(otp_app) do
@@ -34,6 +37,8 @@ defmodule NewRelic.Telemetry.Ecto do
   def terminate(_reason, %{handler_id: handler_id}) do
     :telemetry.detach(handler_id)
   end
+
+  # Telemetry handlers
 
   def handle_event(
         _event,
@@ -113,12 +118,6 @@ defmodule NewRelic.Telemetry.Ecto do
 
   def handle_event(_event, _value, _metadata, _config) do
     :ignore
-  end
-
-  def log(%{repo_configs: repo_configs}) do
-    for {repo, _config} <- repo_configs do
-      NewRelic.log(:info, "Detected Ecto Repo #{inspect(repo)}")
-    end
   end
 
   # Repo config extraction
@@ -210,7 +209,15 @@ defmodule NewRelic.Telemetry.Ecto do
     raise "Unsupported ecto adapter"
   end
 
+  # Helpers
+
   defp capture(regex, query, match) do
     Regex.named_captures(regex, query)[match]
+  end
+
+  defp log(%{repo_configs: repo_configs}) do
+    for {repo, _config} <- repo_configs do
+      NewRelic.log(:info, "Detected Ecto Repo #{inspect(repo)}")
+    end
   end
 end
