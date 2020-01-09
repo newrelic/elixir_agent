@@ -15,6 +15,8 @@ defmodule NewRelic.Telemetry.Ecto do
   end
 
   def init(config: config) do
+    log(config)
+
     :telemetry.attach_many(
       config.handler_id,
       config.events,
@@ -108,6 +110,12 @@ defmodule NewRelic.Telemetry.Ecto do
 
   def handle_event(_event, _value, _metadata, _config) do
     :ignore
+  end
+
+  def log(%{repo_configs: repo_configs}) do
+    for {repo, _config} <- repo_configs do
+      NewRelic.log(:info, "Detected Ecto Repo #{inspect(repo)}")
+    end
   end
 
   # Repo config extraction
