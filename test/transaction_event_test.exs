@@ -45,7 +45,12 @@ defmodule TransactionEventTest do
 
   test "collect and store top priority events" do
     Application.put_env(:new_relic_agent, :transaction_event_reservoir_size, 2)
-    {:ok, harvester} = Supervisor.start_child(Collector.TransactionEvent.HarvesterSupervisor, [])
+
+    {:ok, harvester} =
+      DynamicSupervisor.start_child(
+        Collector.TransactionEvent.HarvesterSupervisor,
+        Collector.TransactionEvent.Harvester
+      )
 
     ev1 = %Event{name: "Ev1", duration: 1, user_attributes: %{priority: 3}}
     ev2 = %Event{name: "Ev2", duration: 2, user_attributes: %{priority: 2}}

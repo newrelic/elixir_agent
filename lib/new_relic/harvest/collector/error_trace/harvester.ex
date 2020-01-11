@@ -6,7 +6,7 @@ defmodule NewRelic.Harvest.Collector.ErrorTrace.Harvester do
   alias NewRelic.Harvest.Collector
   alias NewRelic.Error.Trace
 
-  def start_link do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, [])
   end
 

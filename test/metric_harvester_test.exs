@@ -3,7 +3,11 @@ defmodule MetricHarvesterTest do
   alias NewRelic.Harvest.Collector
 
   test "Harvester - collect and aggregate some metrics" do
-    {:ok, harvester} = Supervisor.start_child(Collector.Metric.HarvesterSupervisor, [])
+    {:ok, harvester} =
+      DynamicSupervisor.start_child(
+        Collector.Metric.HarvesterSupervisor,
+        Collector.Metric.Harvester
+      )
 
     metric1 = %NewRelic.Metric{name: "TestMetric", call_count: 1, total_call_time: 100}
     metric2 = %NewRelic.Metric{name: "TestMetric", call_count: 1, total_call_time: 50}

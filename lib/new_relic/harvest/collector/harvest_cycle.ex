@@ -13,6 +13,7 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
 
   def init(
         name: name,
+        child_spec: child_spec,
         harvest_cycle_key: harvest_cycle_key,
         supervisor: supervisor
       ) do
@@ -21,6 +22,7 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
     {:ok,
      %{
        name: name,
+       child_spec: child_spec,
        harvest_cycle_key: harvest_cycle_key,
        supervisor: supervisor,
        harvester: nil,
@@ -85,8 +87,13 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
 
   # Helpers
 
-  defp swap_harvester(%{supervisor: supervisor, name: name, harvester: harvester}) do
-    {:ok, next} = Supervisor.start_child(supervisor, [])
+  defp swap_harvester(%{
+         supervisor: supervisor,
+         name: name,
+         harvester: harvester,
+         child_spec: child_spec
+       }) do
+    {:ok, next} = Collector.HarvesterSupervisor.start_child(supervisor, child_spec)
     Process.monitor(next)
     Collector.HarvesterStore.update(name, next)
     send_harvest(supervisor, harvester)
@@ -111,7 +118,7 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
           :exit, _exit ->
             NewRelic.log(:error, "Failed to send harvest from #{inspect(supervisor)}")
         after
-          Supervisor.terminate_child(supervisor, harvester)
+          DynamicSupervisor.terminate_child(supervisor, harvester)
         end
       end,
       shutdown: @harvest_timeout

@@ -27,7 +27,11 @@ defmodule ErrorTraceTest do
   end
 
   test "collect and store some error traces" do
-    {:ok, harvester} = Supervisor.start_child(Collector.ErrorTrace.HarvesterSupervisor, [])
+    {:ok, harvester} =
+      DynamicSupervisor.start_child(
+        Collector.ErrorTrace.HarvesterSupervisor,
+        Collector.ErrorTrace.Harvester
+      )
 
     tr1 = %Trace{error_type: "Err1"}
     tr2 = %Trace{error_type: "Err2"}

@@ -8,7 +8,11 @@ defmodule NewRelic.Util.PriorityQueue do
     :gb_trees.empty()
   end
 
-  def insert({size, _} = tree, max_size, key, value) when size >= max_size do
+  def insert(tree, max_size, key, value) do
+    insert(tree, :gb_trees.size(tree), max_size, key, value)
+  end
+
+  def insert(tree, size, max_size, key, value) when size >= max_size do
     {_k, _v, tree} =
       {key, differentiator()}
       |> :gb_trees.insert(value, tree)
@@ -17,7 +21,7 @@ defmodule NewRelic.Util.PriorityQueue do
     tree
   end
 
-  def insert(tree, _max_size, key, value) do
+  def insert(tree, _size, _max_size, key, value) do
     {key, differentiator()}
     |> :gb_trees.insert(value, tree)
   end

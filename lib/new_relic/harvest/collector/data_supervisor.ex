@@ -21,6 +21,7 @@ defmodule NewRelic.Harvest.Collector.DataSupervisor do
       worker(Collector.HarvestCycle, [
         [
           name: harvester_cycle,
+          child_spec: harvester,
           harvest_cycle_key: harvest_cycle_key,
           supervisor: harvester_supervisor
         ]

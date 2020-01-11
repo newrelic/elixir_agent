@@ -8,7 +8,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   alias NewRelic.Span.Event
   alias NewRelic.Util.PriorityQueue
 
-  def start_link do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, [])
   end
 

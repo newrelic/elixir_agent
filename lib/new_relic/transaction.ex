@@ -72,6 +72,8 @@ defmodule NewRelic.Transaction do
 
     NewRelic.DistributedTrace.generate_new_context()
     |> NewRelic.DistributedTrace.track_transaction(transport_type: "Other")
+
+    :ok
   end
 
   @doc false

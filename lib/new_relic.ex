@@ -76,7 +76,7 @@ defmodule NewRelic do
   * You can't start a new transaction within an existing one. Any process
   spawned inside a transaction belongs to that transaction.
   """
-  @spec start_transaction(String.t(), String.t()) :: none()
+  @spec start_transaction(String.t(), String.t()) :: :ok
   defdelegate start_transaction(category, name), to: NewRelic.Transaction
 
   @doc """
