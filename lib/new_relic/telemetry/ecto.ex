@@ -237,7 +237,7 @@ defmodule NewRelic.Telemetry.Ecto do
 
   defp log(%{repo_configs: repo_configs}) do
     for {repo, _config} <- repo_configs do
-      NewRelic.log(:info, "Detected Ecto Repo #{inspect(repo)}")
+      NewRelic.log(:info, "Detected Ecto Repo `#{inspect(repo)}`")
     end
   end
 
