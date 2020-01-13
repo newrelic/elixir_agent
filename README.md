@@ -54,13 +54,11 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 
 Out of the box, we will report Error Traces & some general BEAM VM stats. For further visibility, you'll need to add some basic instrumentation.
 
-#### Adapters
+#### Telemetry
 
-There are a few adapters which leverage this agent to provide library / framework specific instrumentation:
+Some Elixir packages are auto-instrumented via [`telemetry`](https://github.com/beam-telemetry/telemetry)
 
-* `Phoenix` https://github.com/binaryseed/new_relic_phoenix
-* `Absinthe` https://github.com/binaryseed/new_relic_absinthe
-* `Ecto` (coming soon) https://github.com/binaryseed/new_relic_ecto
+* [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://github.com/newrelic/elixir_agent/blob/master/lib/new_relic/telemetry/ecto.ex) for details.
 
 #### Plug
 
@@ -131,3 +129,10 @@ end
 alias NewRelic.Instrumented.HTTPoison
 HTTPoison.get("http://www.example.com")
 ```
+
+#### Adapters
+
+There are a few adapters which leverage this agent to provide library / framework specific instrumentation:
+
+* `Phoenix` https://github.com/binaryseed/new_relic_phoenix
+* `Absinthe` https://github.com/binaryseed/new_relic_absinthe
