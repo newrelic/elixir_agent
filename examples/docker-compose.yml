@@ -1,0 +1,15 @@
+version: '3.1'
+
+services:
+  postgres_db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: password
+    ports:
+      - 5432:5432
+  mysql_db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - 3306:3306

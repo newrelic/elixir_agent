@@ -21,12 +21,14 @@ defmodule NewRelic.Tracer.Macro do
   # Take no action if there is a top-level rescue clause
   def __on_definition__(env, _access, name, _args, _guards, do: _, rescue: _) do
     Logger.warn(
-      "Unable to trace `#{inspect(env.module)}.#{name}` due to top-level rescue clause -- please remove @trace"
+      "[New Relic] Unable to trace `#{inspect(env.module)}.#{name}` due to top-level rescue clause -- please remove @trace"
     )
   end
 
   def __on_definition__(%{module: module}, access, name, args, guards, do: body) do
-    if trace_info = trace_function?(module, name, length(args)) do
+    if trace_info =
+         trace_function?(module, name, length(args))
+         |> trace_deprecated?(module, name) do
       Module.put_attribute(module, :nr_tracers, %{
         module: module,
         access: access,
@@ -63,6 +65,19 @@ defmodule NewRelic.Tracer.Macro do
       {^name, ^arity, trace_info} -> trace_info
       _ -> false
     end
+  end
+
+  def trace_deprecated?({_, category: :datastore}, module, name) do
+    Logger.warn(
+      "[New Relic] Trace `:datastore` deprecated in favor of automatic ecto instrumentation. " <>
+        "Please remove @trace from #{inspect(module)}.#{name}"
+    )
+
+    false
+  end
+
+  def trace_deprecated?(trace_info, _, _) do
+    trace_info
   end
 
   def function_specs(module),

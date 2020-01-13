@@ -1,5 +1,13 @@
 ## CHANGELOG
 
+### `v1.15.0`
+
+Features
+
+* Adds automatic Ecto instrumentation via `telemetry`. [#161](https://github.com/newrelic/elixir_agent/pull/161)
+* Deprecates `@trace {_, category: :datastore}`. These trace annotations will now be ignored, and a warning logged during compilation.
+
+------
 
 ### `v1.14.0`
 

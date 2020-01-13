@@ -90,6 +90,15 @@ defmodule NewRelic.Transaction.Monitor do
     {:noreply, state}
   end
 
+  def handle_info(
+        {:trace_ts, _pid, :call,
+         {Ecto.Repo.Supervisor, :start_link, [_repo, otp_app, _adapter, _opts]}, _timestamp},
+        state
+      ) do
+    NewRelic.Telemetry.EctoSupervisor.start_child(otp_app)
+    {:noreply, state}
+  end
+
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     Transaction.Reporter.ensure_purge(pid)
     Transaction.Reporter.complete(pid)
@@ -131,6 +140,7 @@ defmodule NewRelic.Transaction.Monitor do
     #   http://erlang.org/doc/apps/erts/match_spec.html
     trace_task_async_nolink()
     trace_poolboy_checkout()
+    trace_ecto_repo_discovery()
   end
 
   defp trace_task_async_nolink do
@@ -139,5 +149,10 @@ defmodule NewRelic.Transaction.Monitor do
 
   defp trace_poolboy_checkout do
     :erlang.trace_pattern({:poolboy, :checkout, :_}, [{:_, [], [{:return_trace}]}], [])
+  end
+
+  defp trace_ecto_repo_discovery() do
+    Code.ensure_loaded?(Ecto.Repo.Supervisor) &&
+      :erlang.trace_pattern({Ecto.Repo.Supervisor, :start_link, :_}, true, [:meta])
   end
 end

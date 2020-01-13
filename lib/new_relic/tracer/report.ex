@@ -12,63 +12,6 @@ defmodule NewRelic.Tracer.Report do
 
   def call(
         {module, function, arguments},
-        {name, category: :datastore},
-        pid,
-        {id, parent_id},
-        {start_time, start_time_mono, end_time_mono}
-      ) do
-    duration_ms = duration_ms(start_time_mono, end_time_mono)
-    duration_s = duration_ms / 1000
-    arity = length(arguments)
-    args = inspect_args(arguments)
-
-    Transaction.Reporter.add_trace_segment(%{
-      module: module,
-      function: function,
-      arity: arity,
-      name: name,
-      args: args,
-      pid: pid,
-      id: id,
-      parent_id: parent_id,
-      start_time: start_time,
-      start_time_mono: start_time_mono,
-      end_time_mono: end_time_mono
-    })
-
-    NewRelic.report_span(
-      timestamp_ms: start_time,
-      duration_s: duration_s,
-      name: function_name({module, function, arity}, name),
-      edge: [span: id, parent: parent_id],
-      category: "datastore",
-      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, args)
-    )
-
-    NewRelic.incr_attributes(
-      datastore_call_count: 1,
-      datastore_duration_ms: duration_ms,
-      "datastore.#{function_name({module, function}, name)}.call_count": 1,
-      "datastore.#{function_name({module, function}, name)}.duration_ms": duration_ms
-    )
-
-    NewRelic.report_aggregate(
-      %{
-        name: :FunctionTrace,
-        mfa: function_name({module, function, arity}, name),
-        metric_category: :datastore
-      },
-      %{duration_ms: duration_ms, call_count: 1}
-    )
-
-    NewRelic.report_metric(
-      {:datastore, "Database", inspect(module), function_name(function, name)},
-      duration_s: duration_s
-    )
-  end
-
-  def call(
-        {module, function, arguments},
         {name, category: :external},
         pid,
         {id, parent_id},
