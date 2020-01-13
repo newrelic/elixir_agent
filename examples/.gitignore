@@ -21,5 +21,6 @@ erl_crash.dump
 
 /tmp/
 
+# Secrets file for local development
 secret.exs
 
