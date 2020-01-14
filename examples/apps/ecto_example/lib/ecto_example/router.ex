@@ -25,7 +25,9 @@ defmodule EctoExample.Router do
 
   @trace :query_db
   def query_db(repo) do
-    {:ok, _} = repo.insert(%EctoExample.Count{})
+    {:ok, %{id: id}} = repo.insert(%EctoExample.Count{})
+    record = repo.get!(EctoExample.Count, id) |> Ecto.Changeset.change()
+    repo.update!(record, force: true)
     Process.sleep(20)
     repo.aggregate(EctoExample.Count, :count)
   end
