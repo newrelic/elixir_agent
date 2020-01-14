@@ -7,9 +7,8 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
           source: table,
           query: query,
           result: {:ok, %{__struct__: Postgrex.Result, command: operation}}
-        } = event
+        }
       ) do
-    IO.inspect(event)
 
     table =
       case {table, operation} do
@@ -20,7 +19,7 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
         {table, _} -> table
       end
 
-    {"Postgres", table, operation} |> IO.inspect()
+    {"Postgres", table, operation}
   end
 
   @myxql_insert ~r/INSERT INTO `(?<table>\w+)`/
