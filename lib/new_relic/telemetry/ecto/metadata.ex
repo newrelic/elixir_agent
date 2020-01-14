@@ -2,14 +2,11 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
   @postgrex_insert ~r/INSERT INTO "(?<table>\w+)"/
   @postgrex_create_table ~r/CREATE TABLE( IF NOT EXISTS)? "(?<table>\w+)"/
   @postgrex_update ~r/UPDATE "(?<table>\w+)"/
-  def parse(
-        %{
-          source: table,
-          query: query,
-          result: {:ok, %{__struct__: Postgrex.Result, command: operation}}
-        }
-      ) do
-
+  def parse(%{
+        source: table,
+        query: query,
+        result: {:ok, %{__struct__: Postgrex.Result, command: operation}}
+      }) do
     table =
       case {table, operation} do
         {nil, :insert} -> capture(@postgrex_insert, query, "table")
