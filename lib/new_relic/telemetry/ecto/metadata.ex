@@ -5,15 +5,21 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
   def parse(%{
         source: table,
         query: query,
-        result: {:ok, %{__struct__: Postgrex.Result, command: operation}}
+        result: {:ok, %{__struct__: Postgrex.Result, command: command}}
       }) do
     table =
-      case {table, operation} do
+      case {table, command} do
         {nil, :insert} -> capture(@postgrex_insert, query, "table")
         {nil, :create_table} -> capture(@postgrex_create_table, query, "table")
         {nil, :update} -> capture(@postgrex_update, query, "table")
         {nil, _} -> "other"
         {table, _} -> table
+      end
+
+    operation =
+      case command do
+        operation when is_atom(operation) -> operation
+        _ -> "other"
       end
 
     {"Postgres", table, operation}
