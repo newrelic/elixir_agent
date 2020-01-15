@@ -19,6 +19,7 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
     operation =
       case command do
         operation when is_atom(operation) -> operation
+        [:rollback, :release] -> :rollback
         _ -> "other"
       end
 
