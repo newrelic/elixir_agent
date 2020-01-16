@@ -20,6 +20,7 @@ defmodule NewRelic.W3CTraceContext.TraceParent do
 
   def decode(_), do: :invalid
 
+  # trace_id  must be leftpadded with 0 if it comes from `newrelic` header
   def encode(%__MODULE__{version: "00"} = tp) do
     flags = (tp.flags.sampled && "01") || "00"
 

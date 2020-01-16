@@ -76,6 +76,7 @@ defmodule NewRelic.W3CTraceContext.TraceState do
       vendor: :new_relic,
       value: value,
       trusted_account_key: trusted_account_key,
+      # Flatten this:
       state: %__MODULE__.State{
         version: version |> String.to_integer(),
         parent_type: parent_type |> decode_type(),

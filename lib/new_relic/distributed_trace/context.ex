@@ -6,6 +6,7 @@ defmodule NewRelic.DistributedTrace.Context do
   @payload_version [0, 1]
 
   defstruct type: "App",
+            source: nil,
             version: @payload_version,
             account_id: nil,
             app_id: nil,
@@ -44,6 +45,7 @@ defmodule NewRelic.DistributedTrace.Context do
           } = data
       }) do
     %__MODULE__{
+      source: :new_relic,
       version: @payload_version,
       type: type,
       account_id: account_id,

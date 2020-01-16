@@ -37,6 +37,7 @@ defmodule NewRelic.DistributedTrace do
     {priority, sampled} = generate_sampling()
 
     %Context{
+      source: :new,
       account_id: AgentRun.account_id(),
       app_id: AgentRun.primary_application_id(),
       trust_key: AgentRun.trusted_account_key(),
