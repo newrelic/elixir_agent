@@ -1,5 +1,6 @@
 defmodule NewRelic.DistributedTrace do
   @dt_header "newrelic"
+  @w3c_traceparent "traceparent"
 
   @moduledoc false
 
@@ -8,13 +9,20 @@ defmodule NewRelic.DistributedTrace do
   alias NewRelic.Transaction
 
   def accept_distributed_trace_payload(:http, conn) do
-    case Plug.Conn.get_req_header(conn, @dt_header) do
-      [trace_payload | _] ->
-        trace_payload
-        |> Context.decode()
+    w3c_payload(conn) || nr_payload(conn) || :no_payload
+  end
 
-      [] ->
-        :no_payload
+  def w3c_payload(conn) do
+    case Plug.Conn.get_req_header(conn, @w3c_traceparent) do
+      [_traceparent | _] -> NewRelic.W3CTraceContext.extract(conn)
+      _ -> false
+    end
+  end
+
+  def nr_payload(conn) do
+    case Plug.Conn.get_req_header(conn, @dt_header) do
+      [trace_payload | _] -> Context.decode(trace_payload)
+      _ -> false
     end
   end
 
