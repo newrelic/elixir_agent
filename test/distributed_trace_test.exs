@@ -56,9 +56,11 @@ defmodule DistributedTraceTest do
   test "Annotate Transaction event with DT attrs" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    conn(:get, "/")
-    |> put_req_header(@dt_header, generate_inbound_payload())
-    |> TestPlugApp.call([])
+    TestHelper.request(
+      TestPlugApp,
+      conn(:get, "/")
+      |> put_req_header(@dt_header, generate_inbound_payload())
+    )
 
     [[_, attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
@@ -74,9 +76,11 @@ defmodule DistributedTraceTest do
 
   test "Generate expected outbound payload" do
     response =
-      conn(:get, "/")
-      |> put_req_header(@dt_header, generate_inbound_payload())
-      |> TestPlugApp.call([])
+      TestHelper.request(
+        TestPlugApp,
+        conn(:get, "/")
+        |> put_req_header(@dt_header, generate_inbound_payload())
+      )
 
     outbound_payload =
       response.resp_body
@@ -98,10 +102,11 @@ defmodule DistributedTraceTest do
   test "Generate the expected metrics" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
-    _response =
+    TestHelper.request(
+      TestPlugApp,
       conn(:get, "/")
       |> put_req_header(@dt_header, generate_inbound_payload())
-      |> TestPlugApp.call([])
+    )
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
@@ -117,9 +122,11 @@ defmodule DistributedTraceTest do
 
   test "propigate the context through connected Elixir processes" do
     response =
-      conn(:get, "/connected")
-      |> put_req_header(@dt_header, generate_inbound_payload())
-      |> TestPlugApp.call([])
+      TestHelper.request(
+        TestPlugApp,
+        conn(:get, "/connected")
+        |> put_req_header(@dt_header, generate_inbound_payload())
+      )
 
     outbound_payload =
       response.resp_body
@@ -137,9 +144,7 @@ defmodule DistributedTraceTest do
   end
 
   test "generate an outgoing payload when there is no incoming one" do
-    response =
-      conn(:get, "/")
-      |> TestPlugApp.call([])
+    response = TestHelper.request(TestPlugApp, conn(:get, "/"))
 
     outbound_payload =
       response.resp_body

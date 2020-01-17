@@ -21,6 +21,7 @@ defmodule TestHelper do
   end
 
   def restart_harvest_cycle(harvest_cycle) do
+    Process.sleep(300)
     GenServer.call(harvest_cycle, :restart)
   end
 
