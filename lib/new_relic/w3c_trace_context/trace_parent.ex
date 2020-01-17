@@ -1,5 +1,8 @@
 defmodule NewRelic.W3CTraceContext.TraceParent do
-  defstruct version: "00", trace_id: nil, parent_id: nil, flags: nil
+  defstruct version: "00",
+            trace_id: nil,
+            parent_id: nil,
+            flags: nil
 
   use Bitwise
   @hex 16

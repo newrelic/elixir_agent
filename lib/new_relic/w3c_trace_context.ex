@@ -21,7 +21,7 @@ defmodule NewRelic.W3CTraceContext do
       )
 
     %Context{
-      source: {:w3c, others},
+      source: {:w3c, %{others: others, sampled: traceparent.flags.sampled}},
       type: tracestate.parent_type,
       account_id: tracestate.account_id,
       app_id: tracestate.app_id,
@@ -36,18 +36,17 @@ defmodule NewRelic.W3CTraceContext do
   end
 
   def generate(%{source: source} = context) do
-    others =
+    {others, sampled} =
       case source do
-        {:w3c, others} -> others
-        _ -> []
+        {:w3c, %{others: others, sampled: sampled}} -> {others, sampled}
+        _ -> {[], context.sampled}
       end
 
     traceparent =
       TraceParent.encode(%TraceParent{
-        version: "00",
         trace_id: context.trace_id,
         parent_id: context.span_guid |> String.to_integer(@hex),
-        flags: %{sampled: true}
+        flags: %{sampled: sampled}
       })
 
     tracestate =
