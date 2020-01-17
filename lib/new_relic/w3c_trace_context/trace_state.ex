@@ -1,19 +1,17 @@
 defmodule NewRelic.W3CTraceContext.TraceState do
   defstruct [:members]
 
-  defmodule State do
-    defstruct [
-      :version,
-      :trusted_account_key,
-      :parent_type,
-      :account_id,
-      :app_id,
-      :span_id,
-      :transaction_id,
-      :sampled,
-      :priority,
-      :timestamp
-    ]
+  defmodule NewRelic do
+    defstruct version: "0",
+              trusted_account_key: nil,
+              parent_type: nil,
+              account_id: nil,
+              app_id: nil,
+              span_id: nil,
+              transaction_id: nil,
+              sampled: nil,
+              priority: nil,
+              timestamp: nil
   end
 
   def encode(%__MODULE__{members: members}) do
@@ -22,22 +20,22 @@ defmodule NewRelic.W3CTraceContext.TraceState do
     |> Enum.join(",")
   end
 
-  def encode(%{key: :new_relic, state: state}) do
-    value =
+  def encode(%{key: :new_relic, value: value}) do
+    encoded_value =
       [
-        state.version,
-        state.parent_type |> encode_type(),
-        state.account_id,
-        state.app_id,
-        state.span_id,
-        state.transaction_id,
-        state.sampled |> encode_sampled(),
-        state.priority,
-        state.timestamp
+        value.version,
+        value.parent_type |> encode_type(),
+        value.account_id,
+        value.app_id,
+        value.span_id,
+        value.transaction_id,
+        value.sampled |> encode_sampled(),
+        value.priority,
+        value.timestamp
       ]
       |> Enum.join("-")
 
-    "#{state.trusted_account_key}@nr=#{value}"
+    "#{value.trusted_account_key}@nr=#{encoded_value}"
   end
 
   def encode(%{key: key, value: value}) do
@@ -75,7 +73,7 @@ defmodule NewRelic.W3CTraceContext.TraceState do
 
     %{
       key: :new_relic,
-      state: %__MODULE__.State{
+      value: %__MODULE__.NewRelic{
         trusted_account_key: trusted_account_key,
         version: version |> String.to_integer(),
         parent_type: parent_type |> decode_type(),

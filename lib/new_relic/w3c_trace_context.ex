@@ -1,6 +1,7 @@
 defmodule NewRelic.W3CTraceContext do
   alias NewRelic.DistributedTrace.Context
   alias NewRelic.Harvest.Collector.AgentRun
+  alias __MODULE__.{TraceParent, TraceState}
 
   @w3c_traceparent "traceparent"
   @w3c_tracestate "tracestate"
@@ -9,29 +10,29 @@ defmodule NewRelic.W3CTraceContext do
     [traceparent_header | _] = Plug.Conn.get_req_header(conn, @w3c_traceparent)
     [tracestate_header | _] = Plug.Conn.get_req_header(conn, @w3c_tracestate)
 
-    traceparent = NewRelic.W3CTraceContext.TraceParent.decode(traceparent_header)
-    %{members: members} = NewRelic.W3CTraceContext.TraceState.decode(tracestate_header)
+    traceparent = TraceParent.decode(traceparent_header)
+    tracestate = TraceState.decode(tracestate_header)
 
-    {[tracestate], others} =
+    {[newrelic], others} =
       Enum.split_with(
-        members,
+        tracestate.members,
         &(&1.key == :new_relic &&
-            &1.state.trusted_account_key == AgentRun.trusted_account_key())
+            &1.value.trusted_account_key == AgentRun.trusted_account_key())
       )
 
     # need to store other members for outgoing
     %Context{
       source: {:w3c, others},
-      type: tracestate.state.parent_type,
-      account_id: tracestate.state.account_id,
-      app_id: tracestate.state.app_id,
-      parent_id: tracestate.state.transaction_id,
-      span_guid: tracestate.state.span_id,
+      type: newrelic.value.parent_type,
+      account_id: newrelic.value.account_id,
+      app_id: newrelic.value.app_id,
+      parent_id: newrelic.value.transaction_id,
+      span_guid: newrelic.value.span_id,
       trace_id: traceparent.trace_id,
-      trust_key: tracestate.state.trusted_account_key,
-      priority: tracestate.state.priority,
-      sampled: tracestate.state.sampled,
-      timestamp: tracestate.state.timestamp
+      trust_key: newrelic.value.trusted_account_key,
+      priority: newrelic.value.priority,
+      sampled: newrelic.value.sampled,
+      timestamp: newrelic.value.timestamp
     }
   end
 
@@ -43,35 +44,33 @@ defmodule NewRelic.W3CTraceContext do
       end
 
     traceparent =
-      NewRelic.W3CTraceContext.TraceParent.encode(%NewRelic.W3CTraceContext.TraceParent{
+      TraceParent.encode(%TraceParent{
         version: "00",
         trace_id: context.trace_id,
         parent_id: context.span_guid |> String.to_integer(16),
         flags: %{sampled: true}
       })
 
-    state = %NewRelic.W3CTraceContext.TraceState{
-      members: [
-        %{
-          key: :new_relic,
-          state: %NewRelic.W3CTraceContext.TraceState.State{
-            trusted_account_key: context.trust_key,
-            version: "0",
-            parent_type: context.type,
-            account_id: context.account_id,
-            app_id: context.app_id,
-            span_id: context.span_guid,
-            transaction_id: context.parent_id,
-            sampled: context.sampled,
-            priority: context.priority,
-            timestamp: context.timestamp
+    tracestate =
+      TraceState.encode(%TraceState{
+        members: [
+          %{
+            key: :new_relic,
+            value: %TraceState.NewRelic{
+              trusted_account_key: context.trust_key,
+              parent_type: context.type,
+              account_id: context.account_id,
+              app_id: context.app_id,
+              span_id: context.span_guid,
+              transaction_id: context.parent_id,
+              sampled: context.sampled,
+              priority: context.priority,
+              timestamp: context.timestamp
+            }
           }
-        }
-        | others
-      ]
-    }
-
-    tracestate = NewRelic.W3CTraceContext.TraceState.encode(state)
+          | others
+        ]
+      })
 
     {traceparent, tracestate}
   end
