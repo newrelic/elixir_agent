@@ -1,5 +1,5 @@
 defmodule NewRelic.DistributedTrace.Context do
-  # Struct containing the DT payload context
+  # Struct containing the Distributed Tracing context
 
   @moduledoc false
 

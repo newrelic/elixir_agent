@@ -4,6 +4,7 @@ defmodule NewRelic.W3CTraceContext.TraceState do
   defmodule State do
     defstruct [
       :version,
+      :trusted_account_key,
       :parent_type,
       :account_id,
       :app_id,
@@ -21,7 +22,7 @@ defmodule NewRelic.W3CTraceContext.TraceState do
     |> Enum.join(",")
   end
 
-  def encode(%{vendor: :new_relic, state: state, trusted_account_key: trusted_account_key}) do
+  def encode(%{vendor: :new_relic, state: state}) do
     value =
       [
         state.version,
@@ -36,7 +37,7 @@ defmodule NewRelic.W3CTraceContext.TraceState do
       ]
       |> Enum.join("-")
 
-    "#{trusted_account_key}@nr=#{value}"
+    "#{state.trusted_account_key}@nr=#{value}"
   end
 
   def encode(%{vendor: vendor, value: value}) do
@@ -74,10 +75,8 @@ defmodule NewRelic.W3CTraceContext.TraceState do
 
     %{
       vendor: :new_relic,
-      value: value,
-      trusted_account_key: trusted_account_key,
-      # Flatten this:
       state: %__MODULE__.State{
+        trusted_account_key: trusted_account_key,
         version: version |> String.to_integer(),
         parent_type: parent_type |> decode_type(),
         account_id: account_id,
