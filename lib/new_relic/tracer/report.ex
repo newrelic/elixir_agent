@@ -129,6 +129,4 @@ defmodule NewRelic.Tracer.Report do
   defp function_name({m, f}, i), do: "#{inspect(m)}.#{f}:#{i}"
   defp function_name({m, f, a}, f), do: "#{inspect(m)}.#{f}/#{a}"
   defp function_name({m, f, a}, i), do: "#{inspect(m)}.#{f}:#{i}/#{a}"
-  defp function_name(f, f), do: "#{f}"
-  defp function_name(_f, i), do: "#{i}"
 end
