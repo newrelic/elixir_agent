@@ -1,6 +1,7 @@
 defmodule NewRelic.DistributedTrace do
-  @dt_header "newrelic"
+  @nr_header "newrelic"
   @w3c_traceparent "traceparent"
+  @w3c_tracestate "tracestate"
 
   @moduledoc false
 
@@ -20,7 +21,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def nr_payload(conn) do
-    case Plug.Conn.get_req_header(conn, @dt_header) do
+    case Plug.Conn.get_req_header(conn, @nr_header) do
       [trace_payload | _] -> Context.decode(trace_payload)
       _ -> false
     end
@@ -28,8 +29,19 @@ defmodule NewRelic.DistributedTrace do
 
   def create_distributed_trace_payload(:http) do
     case get_tracing_context() do
-      nil -> []
-      context -> [{@dt_header, Context.encode(context, get_current_span_guid())}]
+      nil ->
+        []
+
+      context ->
+        current_span_guid = get_current_span_guid()
+        nr_header = Context.encode(context, current_span_guid)
+        {traceparent, tracestate} = NewRelic.W3CTraceContext.generate(context, current_span_guid)
+
+        [
+          {@nr_header, nr_header},
+          {@w3c_traceparent, traceparent},
+          {@w3c_tracestate, tracestate}
+        ]
     end
   end
 

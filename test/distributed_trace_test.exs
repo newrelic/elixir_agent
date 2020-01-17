@@ -16,12 +16,18 @@ defmodule DistributedTraceTest do
     plug(:dispatch)
 
     get "/" do
-      [{_, outbound_payload}] = NewRelic.create_distributed_trace_payload(:http)
+      [{_, outbound_payload} | _] = NewRelic.create_distributed_trace_payload(:http)
       send_resp(conn, 200, outbound_payload)
     end
 
+    get "/w3c" do
+      [_, {_, traceparent}, {_, tracestate}] = NewRelic.create_distributed_trace_payload(:http)
+
+      send_resp(conn, 200, "#{traceparent}|#{tracestate}")
+    end
+
     get "/connected" do
-      [{_, outbound_payload}] =
+      [{_, outbound_payload} | _] =
         Task.async(fn ->
           Process.sleep(20)
           external_call()
@@ -40,12 +46,16 @@ defmodule DistributedTraceTest do
   setup do
     prev_key = Collector.AgentRun.trusted_account_key()
     Collector.AgentRun.store(:trusted_account_key, "190")
+    prev_acct = Collector.AgentRun.account_id()
+    Collector.AgentRun.store(:account_id, 190)
+
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
     System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
     send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
       Collector.AgentRun.store(:trusted_account_key, prev_key)
+      Collector.AgentRun.store(:account_id, prev_acct)
       System.delete_env("NEW_RELIC_HARVEST_ENABLED")
       System.delete_env("NEW_RELIC_LICENSE_KEY")
     end)
@@ -74,6 +84,8 @@ defmodule DistributedTraceTest do
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
+  alias NewRelic.W3CTraceContext.{TraceParent, TraceState}
+
   test "Generate expected outbound payload" do
     response =
       TestHelper.request(
@@ -97,6 +109,26 @@ defmodule DistributedTraceTest do
 
     # ensure we delete the context after the request is complete
     refute NewRelic.DistributedTrace.Tracker.fetch(self())
+  end
+
+  test "Generate expected outbound W3C headers" do
+    response =
+      conn(:get, "/w3c")
+      |> put_req_header(@dt_header, generate_inbound_payload())
+      |> TestPlugApp.call([])
+
+    [traceparent_header, tracestate_header] =
+      response.resp_body
+      |> String.split("|")
+
+    traceparent = TraceParent.decode(traceparent_header)
+
+    assert traceparent_header =~ "d6b4ba0c3a712ca"
+
+    {tracestate, _} = TraceState.decode(tracestate_header) |> TraceState.newrelic()
+
+    assert tracestate.account_id == "190"
+    # ...
   end
 
   test "Generate the expected metrics" do

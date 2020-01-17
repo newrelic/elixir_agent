@@ -1,4 +1,6 @@
 defmodule NewRelic.W3CTraceContext.TraceState do
+  alias NewRelic.Harvest.Collector.AgentRun
+
   defstruct [:members]
 
   defmodule NewRelic do
@@ -12,6 +14,16 @@ defmodule NewRelic.W3CTraceContext.TraceState do
               sampled: nil,
               priority: nil,
               timestamp: nil
+  end
+
+  def newrelic(%__MODULE__{members: members}) do
+    {[%{value: tracestate}], others} =
+      Enum.split_with(
+        members,
+        &(&1.key == :new_relic && &1.value.trusted_account_key == AgentRun.trusted_account_key())
+      )
+
+    {tracestate, others}
   end
 
   def encode(%__MODULE__{members: members}) do

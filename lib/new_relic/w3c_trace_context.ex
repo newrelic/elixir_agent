@@ -12,13 +12,7 @@ defmodule NewRelic.W3CTraceContext do
     [tracestate_header | _] = Plug.Conn.get_req_header(conn, @w3c_tracestate)
 
     traceparent = TraceParent.decode(traceparent_header)
-    %{members: members} = TraceState.decode(tracestate_header)
-
-    {[%{value: tracestate}], others} =
-      Enum.split_with(
-        members,
-        &(&1.key == :new_relic && &1.value.trusted_account_key == AgentRun.trusted_account_key())
-      )
+    {tracestate, others} = TraceState.decode(tracestate_header) |> TraceState.newrelic()
 
     %Context{
       source: {:w3c, %{others: others, sampled: traceparent.flags.sampled}},
@@ -35,6 +29,10 @@ defmodule NewRelic.W3CTraceContext do
     }
   end
 
+  def generate(context, current_span_guid) do
+    generate(%{context | span_guid: current_span_guid})
+  end
+
   def generate(%{source: source} = context) do
     {others, sampled} =
       case source do
@@ -44,7 +42,7 @@ defmodule NewRelic.W3CTraceContext do
 
     traceparent =
       TraceParent.encode(%TraceParent{
-        trace_id: context.trace_id,
+        trace_id: context.trace_id |> String.to_integer(@hex),
         parent_id: context.span_guid |> String.to_integer(@hex),
         flags: %{sampled: sampled}
       })
@@ -63,7 +61,7 @@ defmodule NewRelic.W3CTraceContext do
               transaction_id: context.parent_id,
               sampled: context.sampled,
               priority: context.priority,
-              timestamp: context.timestamp
+              timestamp: System.system_time(:millisecond)
             }
           }
           | others
