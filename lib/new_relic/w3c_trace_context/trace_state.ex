@@ -22,7 +22,7 @@ defmodule NewRelic.W3CTraceContext.TraceState do
     |> Enum.join(",")
   end
 
-  def encode(%{vendor: :new_relic, state: state}) do
+  def encode(%{key: :new_relic, state: state}) do
     value =
       [
         state.version,
@@ -40,8 +40,8 @@ defmodule NewRelic.W3CTraceContext.TraceState do
     "#{state.trusted_account_key}@nr=#{value}"
   end
 
-  def encode(%{vendor: vendor, value: value}) do
-    "#{vendor}=#{value}"
+  def encode(%{key: key, value: value}) do
+    "#{key}=#{value}"
   end
 
   def decode(header) when is_binary(header) do
@@ -54,11 +54,11 @@ defmodule NewRelic.W3CTraceContext.TraceState do
     %__MODULE__{members: members}
   end
 
-  def decode([vendor, value]) do
-    decode(vendor_type(vendor), vendor, value)
+  def decode([key, value]) do
+    decode(vendor_type(key), key, value)
   end
 
-  def decode(:new_relic, vendor, value) do
+  def decode(:new_relic, key, value) do
     [
       version,
       parent_type,
@@ -71,10 +71,10 @@ defmodule NewRelic.W3CTraceContext.TraceState do
       timestamp
     ] = String.split(value, "-")
 
-    [trusted_account_key, _] = String.split(vendor, "@")
+    [trusted_account_key, _] = String.split(key, "@")
 
     %{
-      vendor: :new_relic,
+      key: :new_relic,
       state: %__MODULE__.State{
         trusted_account_key: trusted_account_key,
         version: version |> String.to_integer(),
@@ -90,12 +90,12 @@ defmodule NewRelic.W3CTraceContext.TraceState do
     }
   end
 
-  def decode(:other, vendor, value) do
-    %{vendor: vendor, value: value}
+  def decode(:other, key, value) do
+    %{key: key, value: value}
   end
 
-  defp vendor_type(vendor) do
-    (String.contains?(vendor, "@nr") && :new_relic) || :other
+  defp vendor_type(key) do
+    (String.contains?(key, "@nr") && :new_relic) || :other
   end
 
   defp decode_type("0"), do: "App"

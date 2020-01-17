@@ -15,7 +15,7 @@ defmodule NewRelic.W3CTraceContext do
     {[tracestate], others} =
       Enum.split_with(
         members,
-        &(&1.vendor == :new_relic &&
+        &(&1.key == :new_relic &&
             &1.state.trusted_account_key == AgentRun.trusted_account_key())
       )
 
@@ -53,7 +53,7 @@ defmodule NewRelic.W3CTraceContext do
     state = %NewRelic.W3CTraceContext.TraceState{
       members: [
         %{
-          vendor: :new_relic,
+          key: :new_relic,
           state: %NewRelic.W3CTraceContext.TraceState.State{
             trusted_account_key: context.trust_key,
             version: "0",
