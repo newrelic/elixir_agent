@@ -1,11 +1,9 @@
 defmodule NewRelic.W3CTraceContext do
   alias NewRelic.DistributedTrace.Context
-  alias NewRelic.Harvest.Collector.AgentRun
   alias __MODULE__.{TraceParent, TraceState}
 
   @w3c_traceparent "traceparent"
   @w3c_tracestate "tracestate"
-  @hex 16
 
   def extract(conn) do
     [traceparent_header | _] = Plug.Conn.get_req_header(conn, @w3c_traceparent)
@@ -29,10 +27,6 @@ defmodule NewRelic.W3CTraceContext do
     }
   end
 
-  def generate(context, current_span_guid) do
-    generate(%{context | span_guid: current_span_guid})
-  end
-
   def generate(%{source: source} = context) do
     {others, sampled} =
       case source do
@@ -42,8 +36,8 @@ defmodule NewRelic.W3CTraceContext do
 
     traceparent =
       TraceParent.encode(%TraceParent{
-        trace_id: context.trace_id |> String.to_integer(@hex),
-        parent_id: context.span_guid |> String.to_integer(@hex),
+        trace_id: context.trace_id,
+        parent_id: context.span_guid,
         flags: %{sampled: sampled}
       })
 
@@ -52,7 +46,7 @@ defmodule NewRelic.W3CTraceContext do
         members: [
           %{
             key: :new_relic,
-            value: %TraceState.NewRelic{
+            value: %TraceState.NewRelicState{
               trusted_account_key: context.trust_key,
               parent_type: context.type,
               account_id: context.account_id,
@@ -61,7 +55,7 @@ defmodule NewRelic.W3CTraceContext do
               transaction_id: context.parent_id,
               sampled: context.sampled,
               priority: context.priority,
-              timestamp: System.system_time(:millisecond)
+              timestamp: context.timestamp
             }
           }
           | others

@@ -6,6 +6,8 @@ defmodule DistributedTraceTest do
   alias NewRelic.DistributedTrace
 
   @dt_header "newrelic"
+  @w3c_traceparent "traceparent"
+  @w3c_tracestate "tracestate"
 
   defmodule TestPlugApp do
     use Plug.Router
@@ -84,6 +86,29 @@ defmodule DistributedTraceTest do
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
+  test "Annotate Transaction event with W3C attrs" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    conn(:get, "/")
+    |> put_req_header(@w3c_traceparent, "00-eb970877cfd349b4dcf5eb9957283bca-5f474d64b9cc9b2a-00")
+    |> put_req_header(
+      @w3c_tracestate,
+      "190@nr=0-2-332029-2827902-5f474d64b9cc9b2a-7d3efb1b173fecfa---1518469636035"
+    )
+    |> TestPlugApp.call([])
+
+    [[_, attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert attrs[:"parent.type"] == "Mobile"
+    assert attrs[:"parent.account"] == "332029"
+    assert attrs[:"parent.app"] == "2827902"
+    assert attrs[:parentId] == "7d3efb1b173fecfa"
+    assert attrs[:parentSpanId] == "5f474d64b9cc9b2a"
+    assert attrs[:traceId] == "eb970877cfd349b4dcf5eb9957283bca"
+
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+  end
+
   alias NewRelic.W3CTraceContext.{TraceParent, TraceState}
 
   test "Generate expected outbound payload" do
@@ -121,7 +146,7 @@ defmodule DistributedTraceTest do
       response.resp_body
       |> String.split("|")
 
-    traceparent = TraceParent.decode(traceparent_header)
+    _traceparent = TraceParent.decode(traceparent_header)
 
     assert traceparent_header =~ "d6b4ba0c3a712ca"
 
@@ -207,7 +232,7 @@ defmodule DistributedTraceTest do
     test "exclude tk when it matches account_id" do
       context =
         %DistributedTrace.Context{account_id: "foo", trust_key: "foo"}
-        |> DistributedTrace.Context.encode("spguid")
+        |> DistributedTrace.Context.encode()
         |> Base.decode64!()
 
       refute context =~ "tk"
@@ -216,7 +241,7 @@ defmodule DistributedTraceTest do
     test "exclude tk when it isn't there to start" do
       context =
         %DistributedTrace.Context{account_id: "foo"}
-        |> DistributedTrace.Context.encode("spguid")
+        |> DistributedTrace.Context.encode()
         |> Base.decode64!()
 
       refute context =~ "tk"
@@ -225,7 +250,7 @@ defmodule DistributedTraceTest do
     test "include tk when it differs from account_id" do
       context =
         %DistributedTrace.Context{account_id: "foo", trust_key: "bar"}
-        |> DistributedTrace.Context.encode("spguid")
+        |> DistributedTrace.Context.encode()
         |> Base.decode64!()
 
       assert context =~ ~s("tk":"bar")
@@ -233,8 +258,8 @@ defmodule DistributedTraceTest do
 
     test "include id when sampled" do
       context =
-        %DistributedTrace.Context{sampled: true}
-        |> DistributedTrace.Context.encode("spguid")
+        %DistributedTrace.Context{sampled: true, span_guid: "spguid"}
+        |> DistributedTrace.Context.encode()
         |> Base.decode64!()
 
       assert context =~ ~s("id":"spguid")
@@ -242,8 +267,8 @@ defmodule DistributedTraceTest do
 
     test "exclude id when not sampled" do
       context =
-        %DistributedTrace.Context{sampled: false}
-        |> DistributedTrace.Context.encode("spguid")
+        %DistributedTrace.Context{sampled: false, span_guid: "spguid"}
+        |> DistributedTrace.Context.encode()
         |> Base.decode64!()
 
       refute context =~ ~s("id")

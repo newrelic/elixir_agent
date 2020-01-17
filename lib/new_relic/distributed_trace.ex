@@ -33,9 +33,14 @@ defmodule NewRelic.DistributedTrace do
         []
 
       context ->
-        current_span_guid = get_current_span_guid()
-        nr_header = Context.encode(context, current_span_guid)
-        {traceparent, tracestate} = NewRelic.W3CTraceContext.generate(context, current_span_guid)
+        context = %{
+          context
+          | span_guid: get_current_span_guid(),
+            timestamp: System.system_time(:millisecond)
+        }
+
+        nr_header = Context.encode(context)
+        {traceparent, tracestate} = NewRelic.W3CTraceContext.generate(context)
 
         [
           {@nr_header, nr_header},
@@ -61,10 +66,18 @@ defmodule NewRelic.DistributedTrace do
   def track_transaction(context, transport_type: type) do
     context
     |> assign_transaction_guid()
+    |> maybe_generate_sampling()
     |> report_attributes(transport_type: type)
     |> convert_to_outbound()
     |> set_tracing_context()
   end
+
+  def maybe_generate_sampling(%Context{sampled: nil, priority: nil} = context) do
+    {priority, sampled} = generate_sampling()
+    %{context | sampled: sampled, priority: priority}
+  end
+
+  def maybe_generate_sampling(context), do: context
 
   def report_attributes(
         %Context{parent_id: nil} = context,
@@ -202,7 +215,9 @@ defmodule NewRelic.DistributedTrace do
     NewRelic.DistributedTrace.BackoffSampler.sample?()
   end
 
-  defp generate_priority, do: :rand.uniform() |> Float.round(6)
+  defp generate_priority do
+    :rand.uniform() |> Float.round(6)
+  end
 
   def assign_transaction_guid(context) do
     Map.put(context, :guid, generate_guid())

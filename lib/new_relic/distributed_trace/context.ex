@@ -62,7 +62,7 @@ defmodule NewRelic.DistributedTrace.Context do
 
   def validate(_invalid), do: :invalid
 
-  def encode(context, current_span_guid) do
+  def encode(context) do
     %{
       "v" => @payload_version,
       "d" =>
@@ -74,9 +74,9 @@ defmodule NewRelic.DistributedTrace.Context do
           "tr" => context.trace_id,
           "pr" => context.priority,
           "sa" => context.sampled,
-          "ti" => System.system_time(:millisecond)
+          "ti" => context.timestamp
         }
-        |> maybe_put(:span_guid, "id", context.sampled, current_span_guid)
+        |> maybe_put(:span_guid, "id", context.sampled, context.span_guid)
         |> maybe_put(:trust_key, "tk", context.account_id, context.trust_key)
     }
     |> Jason.encode!()

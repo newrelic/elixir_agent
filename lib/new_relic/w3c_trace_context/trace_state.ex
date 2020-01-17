@@ -3,7 +3,7 @@ defmodule NewRelic.W3CTraceContext.TraceState do
 
   defstruct [:members]
 
-  defmodule NewRelic do
+  defmodule NewRelicState do
     defstruct version: "0",
               trusted_account_key: nil,
               parent_type: nil,
@@ -85,7 +85,7 @@ defmodule NewRelic.W3CTraceContext.TraceState do
 
     %{
       key: :new_relic,
-      value: %__MODULE__.NewRelic{
+      value: %__MODULE__.NewRelicState{
         trusted_account_key: trusted_account_key,
         version: version |> String.to_integer(),
         parent_type: parent_type |> decode_type(),
@@ -94,7 +94,7 @@ defmodule NewRelic.W3CTraceContext.TraceState do
         span_id: span_id,
         transaction_id: transaction_id,
         sampled: sampled |> decode_sampled(),
-        priority: priority |> String.to_float(),
+        priority: priority |> decode_priority(),
         timestamp: timestamp |> String.to_integer()
       }
     }
@@ -116,8 +116,12 @@ defmodule NewRelic.W3CTraceContext.TraceState do
   defp encode_type("Browser"), do: "1"
   defp encode_type("Mobile"), do: "2"
 
+  defp decode_priority(""), do: nil
+  defp decode_priority(priority), do: String.to_float(priority)
+
   defp decode_sampled("1"), do: true
   defp decode_sampled("0"), do: false
+  defp decode_sampled(""), do: nil
 
   defp encode_sampled(true), do: "1"
   defp encode_sampled(false), do: "0"

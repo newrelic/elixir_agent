@@ -5,7 +5,6 @@ defmodule NewRelic.W3CTraceContext.TraceParent do
             flags: nil
 
   use Bitwise
-  @hex 16
 
   def decode(<<"00", "-", "00000000000000000000000000000000", _::binary>>), do: :invalid
   def decode(<<"00", "-", _::binary-32, "-", "0000000000000000", _::binary>>), do: :invalid
@@ -13,8 +12,8 @@ defmodule NewRelic.W3CTraceContext.TraceParent do
   def decode(<<"00", "-", trace_id::binary-32, "-", parent_id::binary-16, "-", flags::binary-2>>) do
     %__MODULE__{
       version: "00",
-      trace_id: String.to_integer(trace_id, @hex),
-      parent_id: String.to_integer(parent_id, @hex),
+      trace_id: trace_id,
+      parent_id: parent_id,
       flags: %{
         sampled: flags == "01"
       }
@@ -29,9 +28,9 @@ defmodule NewRelic.W3CTraceContext.TraceParent do
     [
       "00",
       "-",
-      :io_lib.format("~32.16.0b", [tp.trace_id]),
+      String.pad_leading(tp.trace_id, 32, "0") |> String.downcase(),
       "-",
-      :io_lib.format("~16.16.0b", [tp.parent_id]),
+      String.pad_leading(tp.parent_id, 16, "0") |> String.downcase(),
       "-",
       flags
     ]

@@ -31,6 +31,9 @@ defmodule W3CTraceContextTest do
     tracestate =
       "190@nr=0-0-1349956-41346604-27ddd2d8890283b4-b28be285632bbc0a-1-1.1273-1569367663277,@vendor=value"
 
+    tracestate_no_time = "190@nr=0-0-1349956-41346604-27ddd2d8890283b4-b28be285632bbc0a-1-1.1273-"
+    tracestate_other_vendor = ",@vendor=value"
+
     conn =
       Plug.Test.conn(:get, "/")
       |> Plug.Conn.put_req_header("traceparent", traceparent)
@@ -40,8 +43,9 @@ defmodule W3CTraceContextTest do
 
     {new_traceparent, new_tracestate} = NewRelic.W3CTraceContext.generate(context)
 
-    assert traceparent == new_traceparent
-    assert tracestate == new_tracestate
+    assert new_traceparent == traceparent
+    assert new_tracestate =~ tracestate_no_time
+    assert new_tracestate =~ tracestate_other_vendor
 
     Collector.AgentRun.store(:trusted_account_key, prev_key)
   end
