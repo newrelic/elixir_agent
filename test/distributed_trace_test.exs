@@ -86,8 +86,9 @@ defmodule DistributedTraceTest do
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
-  test "Annotate Transaction event with W3C attrs" do
+  test "Annotate Events with W3C attrs - incoming Mobile payload" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
 
     conn(:get, "/")
     |> put_req_header(@w3c_traceparent, "00-eb970877cfd349b4dcf5eb9957283bca-5f474d64b9cc9b2a-00")
@@ -97,16 +98,24 @@ defmodule DistributedTraceTest do
     )
     |> TestPlugApp.call([])
 
-    [[_, attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    [[_, tx_attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert attrs[:"parent.type"] == "Mobile"
-    assert attrs[:"parent.account"] == "332029"
-    assert attrs[:"parent.app"] == "2827902"
-    assert attrs[:parentId] == "7d3efb1b173fecfa"
-    assert attrs[:parentSpanId] == "5f474d64b9cc9b2a"
-    assert attrs[:traceId] == "eb970877cfd349b4dcf5eb9957283bca"
+    assert tx_attrs[:"parent.type"] == "Mobile"
+    assert tx_attrs[:"parent.account"] == "332029"
+    assert tx_attrs[:"parent.app"] == "2827902"
+    assert tx_attrs[:parentId] == "7d3efb1b173fecfa"
+    assert tx_attrs[:parentSpanId] == "5f474d64b9cc9b2a"
+    assert tx_attrs[:traceId] == "eb970877cfd349b4dcf5eb9957283bca"
+
+    [[span_attrs, _, _]] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+
+    assert span_attrs[:traceId] == "eb970877cfd349b4dcf5eb9957283bca"
+    assert span_attrs[:parentId] == "5f474d64b9cc9b2a"
+    # TODO:
+    # assert span_attrs[:trustedParentId] == "5f474d64b9cc9b2a"
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
   alias NewRelic.W3CTraceContext.{TraceParent, TraceState}
