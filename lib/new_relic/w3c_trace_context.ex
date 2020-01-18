@@ -19,7 +19,7 @@ defmodule NewRelic.W3CTraceContext do
       account_id: tracestate.account_id,
       app_id: tracestate.app_id,
       parent_id: tracestate.transaction_id,
-      span_guid: tracestate.span_id,
+      span_guid: traceparent.parent_id,
       trace_id: traceparent.trace_id,
       trust_key: tracestate.trusted_account_key,
       priority: tracestate.priority,
