@@ -118,6 +118,44 @@ defmodule DistributedTraceTest do
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
+  test "Annotate Events with W3C attrs - incoming agent payload" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+
+    prev_key = Collector.AgentRun.trusted_account_key()
+    Collector.AgentRun.store(:trusted_account_key, "1349956")
+
+    conn(:get, "/")
+    |> put_req_header(@w3c_traceparent, "00-74be672b84ddc4e4b28be285632bbc0a-27ddd2d8890283b4-01")
+    |> put_req_header(
+      @w3c_tracestate,
+      "1349956@nr=0-0-1349956-41346604-27ddd2d8890283b4-b28be285632bbc0a-1-1.1273-1569367663277"
+    )
+    |> TestPlugApp.call([])
+
+    [[_, tx_attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert tx_attrs[:"parent.type"] == "App"
+    assert tx_attrs[:"parent.account"] == "1349956"
+    assert tx_attrs[:"parent.app"] == "41346604"
+    assert tx_attrs[:parentId] == "b28be285632bbc0a"
+    assert tx_attrs[:parentSpanId] == "27ddd2d8890283b4"
+    assert tx_attrs[:sampled] == true
+    assert tx_attrs[:priority] == 1.1273
+    assert tx_attrs[:traceId] == "74be672b84ddc4e4b28be285632bbc0a"
+
+    [[span_attrs, _, _]] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+
+    assert span_attrs[:traceId] == "74be672b84ddc4e4b28be285632bbc0a"
+    assert span_attrs[:parentId] == "27ddd2d8890283b4"
+    # TODO:
+    # assert span_attrs[:trustedParentId] == "27ddd2d8890283b4"
+
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+    Collector.AgentRun.store(:trusted_account_key, prev_key)
+  end
+
   alias NewRelic.W3CTraceContext.{TraceParent, TraceState}
 
   test "Generate expected outbound payload" do

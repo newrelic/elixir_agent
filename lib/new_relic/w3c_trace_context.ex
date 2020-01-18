@@ -10,6 +10,7 @@ defmodule NewRelic.W3CTraceContext do
     [tracestate_header | _] = Plug.Conn.get_req_header(conn, @w3c_tracestate)
 
     traceparent = TraceParent.decode(traceparent_header)
+    # TODO: handle case with no allowed NR tracestate
     {tracestate, others} = TraceState.decode(tracestate_header) |> TraceState.newrelic()
 
     %Context{
