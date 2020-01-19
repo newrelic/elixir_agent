@@ -114,11 +114,11 @@ defmodule NewRelic.DistributedTrace do
     context
   end
 
-  def report_attributes(%{source: {:w3c, %{tracing_vendors: tracing_vendors}}} = context, :w3c) do
-    [
-      tracingVendors: tracing_vendors
-    ]
-    |> NewRelic.add_attributes()
+  def report_attributes(%{source: {:w3c, w3c}} = context, :w3c) do
+    NewRelic.add_attributes(tracingVendors: w3c.tracing_vendors)
+
+    w3c.tracestate == :new_relic &&
+      NewRelic.add_attributes(trustedParentId: w3c.span_id)
 
     context
   end

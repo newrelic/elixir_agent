@@ -18,6 +18,8 @@ defmodule NewRelic.W3CTraceContext do
       source:
         {:w3c,
          %{
+           tracestate: :new_relic,
+           span_id: tracestate.span_id,
            others: others,
            sampled: traceparent.flags.sampled,
            tracing_vendors: tracing_vendors

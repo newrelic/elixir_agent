@@ -130,8 +130,7 @@ defmodule W3CTraceContextTest do
 
     assert span_attrs[:traceId] == "eb970877cfd349b4dcf5eb9957283bca"
     assert span_attrs[:parentId] == "5f474d64b9cc9b2a"
-    # TODO:
-    # assert span_attrs[:trustedParentId] == "5f474d64b9cc9b2a"
+    assert span_attrs[:trustedParentId] == "5f474d64b9cc9b2a"
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
@@ -167,8 +166,7 @@ defmodule W3CTraceContextTest do
 
     assert span_attrs[:traceId] == "74be672b84ddc4e4b28be285632bbc0a"
     assert span_attrs[:parentId] == "27ddd2d8890283b4"
-    # TODO:
-    # assert span_attrs[:trustedParentId] == "27ddd2d8890283b4"
+    assert span_attrs[:trustedParentId] == "27ddd2d8890283b4"
     refute span_attrs[:tracingVendors]
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
@@ -206,8 +204,7 @@ defmodule W3CTraceContextTest do
 
     assert span_attrs[:traceId] == "87b1c9a429205b25e5b687d890d4821f"
     assert span_attrs[:parentId] == "7d3efb1b173fecfa"
-    # TODO:
-    # assert span_attrs[:trustedParentId] == "27ddd2d8890283b4"
+    assert span_attrs[:trustedParentId] == "27ddd2d8890283b4"
     assert span_attrs[:tracingVendors] == "dd"
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)

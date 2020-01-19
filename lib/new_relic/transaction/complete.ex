@@ -175,11 +175,13 @@ defmodule NewRelic.Transaction.Complete do
             pid: inspect(pid)
           }
           |> maybe_add(:tracingVendors, tx_attrs[:tracingVendors])
+          |> maybe_add(:trustedParentId, tx_attrs[:trustedParentId])
       }
       | spans
     ]
   end
 
+  def maybe_add(attrs, _key, nil), do: attrs
   def maybe_add(attrs, _key, ""), do: attrs
   def maybe_add(attrs, key, value), do: Map.put(attrs, key, value)
 
