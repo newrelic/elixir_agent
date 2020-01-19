@@ -92,5 +92,11 @@ defmodule NewRelic.Span.Event do
   end
 
   def merge_category_attributes(span, category_attributes),
-    do: Map.merge(span, category_attributes)
+    do:
+      Map.merge(
+        span,
+        category_attributes,
+        # Don't overwrite existing span keys with custom values
+        fn _k, v1, _v2 -> v1 end
+      )
 end

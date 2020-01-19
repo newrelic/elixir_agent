@@ -196,13 +196,12 @@ defmodule NewRelic.Transaction.Complete do
         sampled: tx_attrs[:sampled],
         priority: tx_attrs[:priority],
         category: "generic",
-        name: "Process",
+        name: proc.name || "Process",
         guid: DistributedTrace.generate_guid(pid: proc.id),
         parent_id: DistributedTrace.generate_guid(pid: proc.parent_id),
         timestamp: proc[:start_time],
         duration: (proc[:end_time] - proc[:start_time]) / 1000,
         category_attributes: %{
-          name: proc.name,
           pid: proc.pid
         }
       }

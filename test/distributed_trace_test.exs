@@ -159,7 +159,7 @@ defmodule DistributedTraceTest do
   describe "Context encoding" do
     test "exclude tk when it matches account_id" do
       context =
-        %DistributedTrace.Context{account_id: "foo", trust_key: "foo"}
+        %DistributedTrace.Context{account_id: "foo", sampled: true, trust_key: "foo"}
         |> DistributedTrace.Context.encode()
         |> Base.decode64!()
 
@@ -168,7 +168,7 @@ defmodule DistributedTraceTest do
 
     test "exclude tk when it isn't there to start" do
       context =
-        %DistributedTrace.Context{account_id: "foo"}
+        %DistributedTrace.Context{account_id: "foo", sampled: true}
         |> DistributedTrace.Context.encode()
         |> Base.decode64!()
 
@@ -177,7 +177,7 @@ defmodule DistributedTraceTest do
 
     test "include tk when it differs from account_id" do
       context =
-        %DistributedTrace.Context{account_id: "foo", trust_key: "bar"}
+        %DistributedTrace.Context{account_id: "foo", sampled: true, trust_key: "bar"}
         |> DistributedTrace.Context.encode()
         |> Base.decode64!()
 

@@ -16,7 +16,7 @@ defmodule NewRelic.DistributedTrace.Context do
             trace_id: nil,
             trust_key: nil,
             priority: nil,
-            sampled: false,
+            sampled: nil,
             timestamp: nil
 
   def decode(raw_payload) when is_binary(raw_payload) do
