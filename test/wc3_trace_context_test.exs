@@ -4,7 +4,9 @@ defmodule W3CTraceContextTest do
 
   alias NewRelic.W3CTraceContext.TraceParent
   alias NewRelic.W3CTraceContext.TraceState
+
   alias NewRelic.Harvest.Collector
+  alias NewRelic.DistributedTrace
 
   @w3c_traceparent "traceparent"
   @w3c_tracestate "tracestate"
@@ -30,6 +32,7 @@ defmodule W3CTraceContextTest do
 
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
     System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
       Collector.AgentRun.store(:trusted_account_key, prev_key)
@@ -161,6 +164,35 @@ defmodule W3CTraceContextTest do
     assert span_attrs[:parentId] == "27ddd2d8890283b4"
     assert span_attrs[:trustedParentId] == "27ddd2d8890283b4"
     refute span_attrs[:tracingVendors]
+
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+    Collector.AgentRun.store(:trusted_account_key, prev_key)
+  end
+
+  test "Annotate Events with W3C attrs - incoming non-NR tracestate" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+
+    prev_key = Collector.AgentRun.trusted_account_key()
+
+    conn(:get, "/w3c")
+    |> put_req_header(@w3c_traceparent, "00-74be672b84ddc4e4b28be285632bbc0a-27ddd2d8890283b4-01")
+    |> put_req_header(@w3c_tracestate, "vendor=value")
+    |> TestPlugApp.call([])
+
+    [[_, tx_attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    refute tx_attrs[:"parent.account"]
+    refute tx_attrs[:"parent.app"]
+
+    assert tx_attrs[:parentSpanId] == "27ddd2d8890283b4"
+    assert tx_attrs[:traceId] == "74be672b84ddc4e4b28be285632bbc0a"
+
+    [[span_attrs, _, _]] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+
+    assert span_attrs[:traceId] == "74be672b84ddc4e4b28be285632bbc0a"
+    assert span_attrs[:parentId] == "27ddd2d8890283b4"
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)

@@ -81,6 +81,24 @@ defmodule NewRelic.DistributedTrace do
   def maybe_generate_sampling(context), do: context
 
   def report_attributes(
+        %{source: {:w3c, %{tracestate: :non_new_relic}}} = context,
+        transport_type: type
+      ) do
+    [
+      "parent.transportType": type,
+      guid: context.trace_id,
+      traceId: context.trace_id,
+      priority: context.priority,
+      sampled: context.sampled,
+      parentId: context.parent_id,
+      parentSpanId: context.span_guid
+    ]
+    |> NewRelic.add_attributes()
+
+    context
+  end
+
+  def report_attributes(
         %Context{parent_id: nil} = context,
         transport_type: _type
       ) do

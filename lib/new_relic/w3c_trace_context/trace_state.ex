@@ -17,13 +17,11 @@ defmodule NewRelic.W3CTraceContext.TraceState do
   end
 
   def newrelic(%__MODULE__{members: members}) do
-    {[%{value: tracestate}], others} =
-      Enum.split_with(
-        members,
-        &(&1.key == :new_relic && &1.value.trusted_account_key == AgentRun.trusted_account_key())
-      )
-
-    {tracestate, others}
+    Enum.split_with(
+      members,
+      &(&1.key == :new_relic &&
+          &1.value.trusted_account_key == AgentRun.trusted_account_key())
+    )
   end
 
   def encode(%__MODULE__{members: members}) do

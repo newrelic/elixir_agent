@@ -1,4 +1,5 @@
 defmodule NewRelic.W3CTraceContext do
+  alias NewRelic.Harvest.Collector
   alias NewRelic.DistributedTrace.Context
   alias __MODULE__.{TraceParent, TraceState}
 
@@ -10,31 +11,50 @@ defmodule NewRelic.W3CTraceContext do
     [tracestate_header | _] = Plug.Conn.get_req_header(conn, @w3c_tracestate)
 
     traceparent = TraceParent.decode(traceparent_header)
-    # TODO: handle case with no allowed NR tracestate
-    {tracestate, others} = TraceState.decode(tracestate_header) |> TraceState.newrelic()
-    tracing_vendors = Enum.map(others, & &1.key) |> Enum.join(",")
 
-    %Context{
-      source:
-        {:w3c,
-         %{
-           tracestate: :new_relic,
-           span_id: tracestate.span_id,
-           others: others,
-           sampled: traceparent.flags.sampled,
-           tracing_vendors: tracing_vendors
-         }},
-      type: tracestate.parent_type,
-      account_id: tracestate.account_id,
-      app_id: tracestate.app_id,
-      parent_id: tracestate.transaction_id,
-      span_guid: traceparent.parent_id,
-      trace_id: traceparent.trace_id,
-      trust_key: tracestate.trusted_account_key,
-      priority: tracestate.priority,
-      sampled: tracestate.sampled,
-      timestamp: tracestate.timestamp
-    }
+    tracestate_header
+    |> TraceState.decode()
+    |> TraceState.newrelic()
+    |> case do
+      {[], others} ->
+        %Context{
+          source:
+            {:w3c,
+             %{
+               tracestate: :non_new_relic,
+               others: others,
+               sampled: traceparent.flags.sampled,
+               tracing_vendors: Enum.map(others, & &1.key) |> Enum.join(",")
+             }},
+          parent_id: traceparent.parent_id,
+          span_guid: traceparent.parent_id,
+          trace_id: traceparent.trace_id,
+          trust_key: Collector.AgentRun.trusted_account_key()
+        }
+
+      {[%{value: tracestate}], others} ->
+        %Context{
+          source:
+            {:w3c,
+             %{
+               tracestate: :new_relic,
+               span_id: tracestate.span_id,
+               others: others,
+               sampled: traceparent.flags.sampled,
+               tracing_vendors: Enum.map(others, & &1.key) |> Enum.join(",")
+             }},
+          type: tracestate.parent_type,
+          account_id: tracestate.account_id,
+          app_id: tracestate.app_id,
+          parent_id: tracestate.transaction_id,
+          span_guid: traceparent.parent_id,
+          trace_id: traceparent.trace_id,
+          trust_key: tracestate.trusted_account_key,
+          priority: tracestate.priority,
+          sampled: tracestate.sampled,
+          timestamp: tracestate.timestamp
+        }
+    end
   end
 
   def generate(%{source: source} = context) do
