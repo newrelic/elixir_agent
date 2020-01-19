@@ -12,20 +12,13 @@ defmodule W3CTraceContextTest do
   defmodule TestPlugApp do
     use Plug.Router
     use NewRelic.Transaction
-    use NewRelic.Tracer
 
     plug(:match)
     plug(:dispatch)
 
     get "/w3c" do
       [_, {_, traceparent}, {_, tracestate}] = NewRelic.create_distributed_trace_payload(:http)
-
       send_resp(conn, 200, "#{traceparent}|#{tracestate}")
-    end
-
-    @trace :external_call
-    def external_call() do
-      NewRelic.create_distributed_trace_payload(:http)
     end
   end
 
@@ -214,23 +207,35 @@ defmodule W3CTraceContextTest do
 
   alias NewRelic.W3CTraceContext.{TraceParent, TraceState}
 
-  # test "Generate expected outbound W3C headers" do
-  #   response =
-  #     conn(:get, "/w3c")
-  #     |> put_req_header(@dt_header, generate_inbound_payload())
-  #     |> TestPlugApp.call([])
+  test "Generate expected outbound W3C headers" do
+    prev_acct = Collector.AgentRun.account_id()
+    Collector.AgentRun.store(:account_id, 3482)
+    prev_app = Collector.AgentRun.primary_application_id()
+    Collector.AgentRun.store(:primary_application_id, 53442)
 
-  #   [traceparent_header, tracestate_header] =
-  #     response.resp_body
-  #     |> String.split("|")
+    response =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-74be672b84ddc4e4b28be285632bbc0a-d6e4e06002e24189-01"
+      )
+      |> put_req_header(
+        @w3c_tracestate,
+        "190@nr=0-0-212311-51424-d6e4e06002e24189-27856f70d3d314b7-1-0.421-1482959525577"
+      )
+      |> TestPlugApp.call([])
 
-  #   _traceparent = TraceParent.decode(traceparent_header)
+    [traceparent_header, tracestate_header] =
+      response.resp_body
+      |> String.split("|")
 
-  #   assert traceparent_header =~ "d6b4ba0c3a712ca"
+    expected_traceparent = ~r/00-74be672b84ddc4e4b28be285632bbc0a-\w{16}-01/
+    expected_tracestate = ~r/190@nr=0-0-3482-53442-\w{16}-\w{16}-1-0.421-\d{13}/
 
-  #   {tracestate, _} = TraceState.decode(tracestate_header) |> TraceState.newrelic()
+    assert tracestate_header =~ expected_tracestate
+    assert traceparent_header =~ expected_traceparent
 
-  #   assert tracestate.account_id == "190"
-  #   # ...
-  # end
+    Collector.AgentRun.store(:account_id, prev_acct)
+    Collector.AgentRun.store(:primary_application_id, prev_app)
+  end
 end
