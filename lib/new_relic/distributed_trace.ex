@@ -68,6 +68,7 @@ defmodule NewRelic.DistributedTrace do
     |> assign_transaction_guid()
     |> maybe_generate_sampling()
     |> report_attributes(transport_type: type)
+    |> report_attributes(:w3c)
     |> convert_to_outbound()
     |> set_tracing_context()
   end
@@ -110,6 +111,19 @@ defmodule NewRelic.DistributedTrace do
     ]
     |> NewRelic.add_attributes()
 
+    context
+  end
+
+  def report_attributes(%{source: {:w3c, %{tracing_vendors: tracing_vendors}}} = context, :w3c) do
+    [
+      tracingVendors: tracing_vendors
+    ]
+    |> NewRelic.add_attributes()
+
+    context
+  end
+
+  def report_attributes(context, :w3c) do
     context
   end
 

@@ -170,13 +170,18 @@ defmodule NewRelic.Transaction.Complete do
         timestamp: tx_attrs[:start_time],
         duration: tx_attrs[:duration_s],
         entry_point: true,
-        category_attributes: %{
-          pid: inspect(pid)
-        }
+        category_attributes:
+          %{
+            pid: inspect(pid)
+          }
+          |> maybe_add(:tracingVendors, tx_attrs[:tracingVendors])
       }
       | spans
     ]
   end
+
+  def maybe_add(attrs, _key, ""), do: attrs
+  def maybe_add(attrs, key, value), do: Map.put(attrs, key, value)
 
   defp spawned_process_span_events(tx_attrs, process_spawns, process_names, process_exits) do
     process_spawns

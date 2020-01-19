@@ -5,7 +5,6 @@ defmodule W3CTraceContextTest do
   alias NewRelic.W3CTraceContext.TraceParent
   alias NewRelic.W3CTraceContext.TraceState
   alias NewRelic.Harvest.Collector
-  alias NewRelic.DistributedTrace
 
   @w3c_traceparent "traceparent"
   @w3c_tracestate "tracestate"
@@ -38,7 +37,6 @@ defmodule W3CTraceContextTest do
 
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
     System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
-    send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
       Collector.AgentRun.store(:trusted_account_key, prev_key)
@@ -171,6 +169,7 @@ defmodule W3CTraceContextTest do
     assert span_attrs[:parentId] == "27ddd2d8890283b4"
     # TODO:
     # assert span_attrs[:trustedParentId] == "27ddd2d8890283b4"
+    refute span_attrs[:tracingVendors]
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
@@ -209,7 +208,7 @@ defmodule W3CTraceContextTest do
     assert span_attrs[:parentId] == "7d3efb1b173fecfa"
     # TODO:
     # assert span_attrs[:trustedParentId] == "27ddd2d8890283b4"
-    # assert span_attrs[:tracingVendors] == "dd"
+    assert span_attrs[:tracingVendors] == "dd"
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)

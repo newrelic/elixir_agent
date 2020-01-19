@@ -12,9 +12,16 @@ defmodule NewRelic.W3CTraceContext do
     traceparent = TraceParent.decode(traceparent_header)
     # TODO: handle case with no allowed NR tracestate
     {tracestate, others} = TraceState.decode(tracestate_header) |> TraceState.newrelic()
+    tracing_vendors = Enum.map(others, & &1.key) |> Enum.join(",")
 
     %Context{
-      source: {:w3c, %{others: others, sampled: traceparent.flags.sampled}},
+      source:
+        {:w3c,
+         %{
+           others: others,
+           sampled: traceparent.flags.sampled,
+           tracing_vendors: tracing_vendors
+         }},
       type: tracestate.parent_type,
       account_id: tracestate.account_id,
       app_id: tracestate.app_id,
