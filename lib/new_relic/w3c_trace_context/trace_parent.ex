@@ -6,10 +6,20 @@ defmodule NewRelic.W3CTraceContext.TraceParent do
 
   use Bitwise
 
-  def decode(<<"00", "-", "00000000000000000000000000000000", _::binary>>), do: :invalid
-  def decode(<<"00", "-", _::binary-32, "-", "0000000000000000", _::binary>>), do: :invalid
+  @trace_id 32
+  @parent_id 16
+  @flags 2
 
-  def decode(<<"00", "-", trace_id::binary-32, "-", parent_id::binary-16, "-", flags::binary-2>>) do
+  def decode(<<"00", "-", "00000000000000000000000000000000", _::binary>>),
+    do: :invalid
+
+  def decode(<<"00", "-", _::binary-size(@trace_id), "-", "0000000000000000", _::binary>>),
+    do: :invalid
+
+  def decode(
+        <<"00", "-", trace_id::binary-size(@trace_id), "-", parent_id::binary-size(@parent_id),
+          "-", flags::binary-size(@flags)>>
+      ) do
     %__MODULE__{
       version: "00",
       trace_id: trace_id,
@@ -22,17 +32,22 @@ defmodule NewRelic.W3CTraceContext.TraceParent do
 
   def decode(_), do: :invalid
 
-  def encode(%__MODULE__{version: "00"} = tp) do
-    flags = (tp.flags.sampled && "01") || "00"
-
+  def encode(%__MODULE__{
+        version: "00",
+        trace_id: trace_id,
+        parent_id: parent_id,
+        flags: %{
+          sampled: flags
+        }
+      }) do
     [
       "00",
       "-",
-      String.pad_leading(tp.trace_id, 32, "0") |> String.downcase(),
+      String.pad_leading(trace_id, @trace_id, "0") |> String.downcase(),
       "-",
-      String.pad_leading(tp.parent_id, 16, "0") |> String.downcase(),
+      String.pad_leading(parent_id, @parent_id, "0") |> String.downcase(),
       "-",
-      flags
+      (flags && "01") || "00"
     ]
     |> IO.iodata_to_binary()
   end
