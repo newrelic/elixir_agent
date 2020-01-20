@@ -18,6 +18,7 @@ defmodule NewRelic.W3CTraceContext.TraceState do
 
   def encode(%__MODULE__{members: members}) do
     members
+    |> Enum.take(32)
     |> Enum.map(&encode/1)
     |> Enum.join(",")
   end
