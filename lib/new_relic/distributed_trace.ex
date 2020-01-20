@@ -273,7 +273,7 @@ defmodule NewRelic.DistributedTrace do
     |> :erlang.phash2()
     |> Integer.to_charlist(16)
     |> to_string()
-    |> String.slice(0..4)
+    |> String.slice(0..3)
     |> String.downcase()
   end
 
