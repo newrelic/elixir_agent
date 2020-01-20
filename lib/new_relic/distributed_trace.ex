@@ -147,6 +147,7 @@ defmodule NewRelic.DistributedTrace do
 
   def convert_to_outbound(%Context{parent_id: nil} = context) do
     %Context{
+      source: context.source,
       account_id: AgentRun.account_id(),
       app_id: AgentRun.primary_application_id(),
       parent_id: nil,
@@ -160,6 +161,7 @@ defmodule NewRelic.DistributedTrace do
 
   def convert_to_outbound(%Context{} = context) do
     %Context{
+      source: context.source,
       account_id: AgentRun.account_id(),
       app_id: AgentRun.primary_application_id(),
       parent_id: context.guid,
