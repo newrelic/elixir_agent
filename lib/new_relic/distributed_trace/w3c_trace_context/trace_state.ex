@@ -60,12 +60,16 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
     %__MODULE__{members: validate(members)}
   end
 
-  def new_relic(%__MODULE__{members: members}) do
-    Enum.split_with(
-      members,
+  def restrict_access(%__MODULE__{members: members}) do
+    members
+    |> Enum.split_with(
       &(&1.key == :new_relic &&
           &1.value.trusted_account_key == AgentRun.trusted_account_key())
     )
+    |> case do
+      {[], others} -> others
+      {[%{value: new_relic}], others} -> {new_relic, others}
+    end
   end
 
   defp validate(members) do

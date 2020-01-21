@@ -9,7 +9,6 @@ defmodule NewRelic.DistributedTrace.Plug do
 
   alias NewRelic.DistributedTrace
   alias NewRelic.DistributedTrace.Context
-  alias NewRelic.Harvest.Collector.AgentRun
 
   @impl Plug
   def init(opts), do: opts
@@ -42,19 +41,9 @@ defmodule NewRelic.DistributedTrace.Plug do
   end
 
   defp determine_context(conn) do
-    with %Context{} = context <- DistributedTrace.accept_distributed_trace_payload(:http, conn),
-         %Context{} = context <- restrict_access(context) do
-      context
-    else
+    case DistributedTrace.accept_distributed_trace_payload(:http, conn) do
+      %Context{} = context -> context
       _ -> DistributedTrace.generate_new_context()
-    end
-  end
-
-  def restrict_access(context) do
-    if (context.trust_key || context.account_id) == AgentRun.trusted_account_key() do
-      context
-    else
-      :restricted
     end
   end
 end

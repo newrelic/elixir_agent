@@ -22,7 +22,7 @@ defmodule NewRelic.DistributedTrace do
 
   def nr_payload(conn) do
     case Plug.Conn.get_req_header(conn, @nr_header) do
-      [trace_payload | _] -> Context.decode(trace_payload)
+      [trace_payload | _] -> NewRelic.DistributedTrace.NewRelicContext.extract(trace_payload)
       _ -> false
     end
   end
@@ -39,7 +39,7 @@ defmodule NewRelic.DistributedTrace do
             timestamp: System.system_time(:millisecond)
         }
 
-        nr_header = Context.encode(context)
+        nr_header = NewRelic.DistributedTrace.NewRelicContext.generate(context)
         {traceparent, tracestate} = NewRelic.DistributedTrace.W3CTraceContext.generate(context)
 
         [
@@ -133,7 +133,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def report_attributes(%{source: {:w3c, w3c}} = context, :w3c) do
-    NewRelic.add_attributes(tracingVendors: w3c.tracing_vendors)
+    NewRelic.add_attributes(tracingVendors: Enum.join(w3c.tracing_vendors, ","))
 
     w3c.tracestate == :new_relic &&
       NewRelic.add_attributes(trustedParentId: w3c.span_id)
