@@ -10,7 +10,6 @@ defmodule W3cTraceContextValidation.Router do
 
   post "/test" do
     directions = conn.body_params["_json"]
-    IO.inspect(conn.req_headers, label: "inbound")
 
     for %{"url" => url, "arguments" => arguments} <- directions do
       request(url, arguments)
@@ -30,7 +29,7 @@ defmodule W3cTraceContextValidation.Router do
     HTTPoison.post(
       url,
       Jason.encode!(arguments),
-      NewRelic.create_distributed_trace_payload(:http) |> IO.inspect(label: "outbound")
+      NewRelic.create_distributed_trace_payload(:http)
     )
   end
 end

@@ -56,7 +56,7 @@ defmodule W3CTraceContextTest do
   test "parse tracestate" do
     assert_valid(
       TraceState,
-      "190@nr=0-0-709288-8599547-f85f42fd82a4cf1d-164d3b4b0d09cb05-1-0.789-1563574856827,@vendor=value"
+      "190@nr=0-0-709288-8599547-f85f42fd82a4cf1d-164d3b4b0d09cb05-1-0.789-1563574856827,foo@vendor=value"
     )
   end
 
@@ -69,10 +69,10 @@ defmodule W3CTraceContextTest do
     traceparent = "00-74be672b84ddc4e4b28be285632bbc0a-27ddd2d8890283b4-01"
 
     tracestate =
-      "190@nr=0-0-1349956-41346604-27ddd2d8890283b4-b28be285632bbc0a-1-1.1273-1569367663277,@vendor=value"
+      "190@nr=0-0-1349956-41346604-27ddd2d8890283b4-b28be285632bbc0a-1-1.1273-1569367663277,foo@vendor=value"
 
     tracestate_no_time = "190@nr=0-0-1349956-41346604-27ddd2d8890283b4-b28be285632bbc0a-1-1.1273-"
-    tracestate_other_vendor = ",@vendor=value"
+    tracestate_other_vendor = ",foo@vendor=value"
 
     conn =
       Plug.Test.conn(:get, "/w3c")

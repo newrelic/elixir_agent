@@ -10,7 +10,6 @@ defmodule NewRelic.W3CTraceContext do
     with [traceparent_header | _] <- Plug.Conn.get_req_header(conn, @w3c_traceparent),
          %TraceParent{} = traceparent <- TraceParent.decode(traceparent_header) do
       with [tracestate_header | _] <- Plug.Conn.get_req_header(conn, @w3c_tracestate),
-           IO.inspect(tracestate_header, label: "tracestate_header"),
            %TraceState{} = tracestate <- TraceState.decode(tracestate_header) do
         case TraceState.newrelic(tracestate) do
           {[], others} ->

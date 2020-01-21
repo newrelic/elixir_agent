@@ -38,8 +38,6 @@ defmodule NewRelic.W3CTraceContext.TraceParent do
         _ -> String.starts_with?(rest, "-") || rest == ""
       end
 
-    IO.inspect({:rest, rest})
-
     valid? =
       !invalid_version &&
         !invalid_trace_id && !invalid_parent_id && !invalid_flags && valid_rest
