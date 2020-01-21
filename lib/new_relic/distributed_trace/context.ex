@@ -1,6 +1,4 @@
 defmodule NewRelic.DistributedTrace.Context do
-  # Struct containing the Distributed Tracing context
-
   @moduledoc false
 
   defstruct type: "App",

@@ -1,7 +1,7 @@
 defmodule NewRelic.DistributedTrace.W3CTraceContext do
   @moduledoc false
 
-  alias NewRelic.Harvest.Collector
+  alias NewRelic.Harvest.Collector.AgentRun
   alias NewRelic.DistributedTrace.Context
   alias __MODULE__.{TraceParent, TraceState}
 
@@ -50,7 +50,7 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext do
             parent_id: traceparent.parent_id,
             span_guid: traceparent.parent_id,
             trace_id: traceparent.trace_id,
-            trust_key: Collector.AgentRun.trusted_account_key()
+            trust_key: AgentRun.trusted_account_key()
           }
       end
     else

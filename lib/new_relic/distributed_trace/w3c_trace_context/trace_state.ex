@@ -1,6 +1,8 @@
 defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
   @moduledoc false
 
+  # https://w3c.github.io/trace-context/#tracestate-header
+
   alias NewRelic.Harvest.Collector.AgentRun
 
   defstruct [:members]
@@ -62,14 +64,16 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
 
   def restrict_access(%__MODULE__{members: members}) do
     members
-    |> Enum.split_with(
-      &(&1.key == :new_relic &&
-          &1.value.trusted_account_key == AgentRun.trusted_account_key())
-    )
+    |> Enum.split_with(&matching_new_relic_state?/1)
     |> case do
-      {[], others} -> others
       {[%{value: new_relic}], others} -> {new_relic, others}
+      {_, others} -> others
     end
+  end
+
+  def matching_new_relic_state?(context) do
+    context.key == :new_relic &&
+      context.value.trusted_account_key == AgentRun.trusted_account_key()
   end
 
   defp validate(members) do
@@ -151,7 +155,7 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
   end
 
   defp vendor_type(key) do
-    (String.contains?(key, "@nr") && :new_relic) || :other
+    if String.contains?(key, "@nr"), do: :new_relic, else: :other
   end
 
   defp decode_type("0"), do: "App"

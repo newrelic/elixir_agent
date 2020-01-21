@@ -1,6 +1,8 @@
 defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceParent do
   @moduledoc false
 
+  # https://w3c.github.io/trace-context/#traceparent-header
+
   defstruct version: "00",
             trace_id: nil,
             parent_id: nil,
@@ -40,7 +42,7 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceParent do
     )
   end
 
-  # Future versions
+  # Future versions can be longer
   def decode(
         <<version::binary-size(@version), "-", trace_id::binary-size(@trace_id), "-",
           parent_id::binary-size(@parent_id), "-", flags::binary-size(@flags), "-", _::binary>>
@@ -65,14 +67,14 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceParent do
         trace_id: trace_id,
         parent_id: parent_id,
         flags: %{
-          sampled: flags
+          sampled: sampled
         }
       }) do
     [
       "00",
       String.pad_leading(trace_id, @trace_id, "0") |> String.downcase(),
       String.pad_leading(parent_id, @parent_id, "0") |> String.downcase(),
-      (flags && "01") || "00"
+      (sampled && "01") || "00"
     ]
     |> Enum.join("-")
   end
