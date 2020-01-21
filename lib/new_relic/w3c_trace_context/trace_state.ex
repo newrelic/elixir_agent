@@ -45,15 +45,13 @@ defmodule NewRelic.W3CTraceContext.TraceState do
     "#{key}=#{value}"
   end
 
-  def decode(nil), do: %__MODULE__{members: []}
-  def decode(""), do: %__MODULE__{members: []}
-  def decode(" "), do: %__MODULE__{members: []}
+  def decode([]), do: %__MODULE__{members: []}
 
-  def decode(header) when is_binary(header) do
+  def decode([header]) when is_binary(header) do
     members =
       header
       |> String.split(",")
-      |> Enum.map(&String.trim_leading/1)
+      |> Enum.map(&String.trim/1)
       |> Enum.map(&String.split(&1, "="))
       |> Enum.reject(&(&1 == [""]))
 

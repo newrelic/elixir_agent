@@ -44,28 +44,46 @@ defmodule W3CTraceContextTest do
     :ok
   end
 
-  test "decode traceparent header" do
-    assert_invalid(TraceParent, "00-00000000000000000000000000000000-00000000000000ea-01")
-    assert_invalid(TraceParent, "00-000000000000000000000000000000AA-0000000000000000-01")
+  test "TraceParent parsing" do
+    assert_invalid(TraceParent, "00-00000000000000000000000000000000-aaaaaaaaaaaaaaaa-01")
+    assert_invalid(TraceParent, "00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-0000000000000000-01")
+
+    assert_invalid(TraceParent, ".0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-aaaaaaaaaaaaaaaa-01")
+    assert_invalid(TraceParent, "00-aaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaa-aaaaaaaaaaaaaaaa-01")
+    assert_invalid(TraceParent, "00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-aaaaaa.aaaaaaaaa-01")
+    assert_invalid(TraceParent, "00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-aaaaaaaaaaaaaaaa-.1")
+
     assert_invalid(TraceParent, "asdf")
 
-    assert_valid(TraceParent, "00-000000000000000000000000000000AA-00000000000000ea-01")
-    assert_valid(TraceParent, "00-000000000000000000000000000000AA-00000000000000ea-00")
+    assert_valid(TraceParent, "00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-aaaaaaaaaaaaaaaa-01")
+    assert_valid(TraceParent, "00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-aaaaaaaaaaaaaaaa-00")
   end
 
-  test "parse tracestate" do
+  test "TraceState parsing" do
+    assert %{members: []} = TraceState.decode([""])
+    assert %{members: []} = TraceState.decode([" "])
+
+    # Don't allow duplicates
+    assert %{members: []} = TraceState.decode(["foo=bar,foo=baz"])
+
+    # Invalid format
+    assert %{members: []} = TraceState.decode(["foo=bar=baz"])
+    assert %{members: []} = TraceState.decode(["foo=,bar=3"])
+    assert %{members: []} = TraceState.decode(["foo@bar@baz=1,bar=2"])
+    assert %{members: []} = TraceState.decode(["foo@=1,bar=2"])
+    assert %{members: []} = TraceState.decode(["foo =1"])
+    assert %{members: []} = TraceState.decode(["foo.bar=1"])
+
+    # Optional white space
+    assert %{members: [%{key: "foo"}, %{key: "bar"}]} = TraceState.decode(["foo=1 , bar=2"])
+
     assert_valid(
       TraceState,
       "190@nr=0-0-709288-8599547-f85f42fd82a4cf1d-164d3b4b0d09cb05-1-0.789-1563574856827,foo@vendor=value"
     )
   end
 
-  alias NewRelic.Harvest.Collector
-
   test "header extraction & re-generation" do
-    prev_key = Collector.AgentRun.trusted_account_key()
-    Collector.AgentRun.store(:trusted_account_key, "190")
-
     traceparent = "00-74be672b84ddc4e4b28be285632bbc0a-27ddd2d8890283b4-01"
 
     tracestate =
@@ -86,13 +104,11 @@ defmodule W3CTraceContextTest do
     assert new_traceparent == traceparent
     assert new_tracestate =~ tracestate_no_time
     assert new_tracestate =~ tracestate_other_vendor
-
-    Collector.AgentRun.store(:trusted_account_key, prev_key)
   end
 
   def assert_valid(module, header) do
     assert String.downcase(header) ==
-             header
+             [header]
              |> module.decode()
              |> module.encode()
   end
@@ -269,10 +285,6 @@ defmodule W3CTraceContextTest do
 
     Collector.AgentRun.store(:account_id, prev_acct)
     Collector.AgentRun.store(:primary_application_id, prev_app)
-  end
-
-  test "TraceState parsing" do
-    assert %{members: []} = TraceState.decode([""])
   end
 
   test "Generate expected outbound W3C headers - no tracestate" do

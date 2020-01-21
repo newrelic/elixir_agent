@@ -7,65 +7,48 @@ defmodule NewRelic.W3CTraceContext do
   @w3c_tracestate "tracestate"
 
   def extract(conn) do
-    with [traceparent_header | _] <- Plug.Conn.get_req_header(conn, @w3c_traceparent),
-         %TraceParent{} = traceparent <- TraceParent.decode(traceparent_header) do
-      with [tracestate_header | _] <- Plug.Conn.get_req_header(conn, @w3c_tracestate),
-           %TraceState{} = tracestate <- TraceState.decode(tracestate_header) do
-        case TraceState.newrelic(tracestate) do
-          {[], others} ->
-            %Context{
-              source:
-                {:w3c,
-                 %{
-                   tracestate: :non_new_relic,
-                   others: others,
-                   sampled: traceparent.flags.sampled,
-                   tracing_vendors: Enum.map(others, & &1.key) |> Enum.join(",")
-                 }},
-              parent_id: traceparent.parent_id,
-              span_guid: traceparent.parent_id,
-              trace_id: traceparent.trace_id,
-              trust_key: Collector.AgentRun.trusted_account_key()
-            }
-
-          {[%{value: tracestate}], others} ->
-            %Context{
-              source:
-                {:w3c,
-                 %{
-                   tracestate: :new_relic,
-                   span_id: tracestate.span_id,
-                   others: others,
-                   sampled: traceparent.flags.sampled,
-                   tracing_vendors: Enum.map(others, & &1.key) |> Enum.join(",")
-                 }},
-              type: tracestate.parent_type,
-              account_id: tracestate.account_id,
-              app_id: tracestate.app_id,
-              parent_id: tracestate.transaction_id,
-              span_guid: traceparent.parent_id,
-              trace_id: traceparent.trace_id,
-              trust_key: tracestate.trusted_account_key,
-              priority: tracestate.priority,
-              sampled: tracestate.sampled,
-              timestamp: tracestate.timestamp
-            }
-        end
-      else
-        _ ->
+    with traceparent_header <- Plug.Conn.get_req_header(conn, @w3c_traceparent),
+         tracestate_header <- Plug.Conn.get_req_header(conn, @w3c_tracestate),
+         %TraceParent{} = traceparent <- TraceParent.decode(traceparent_header),
+         %TraceState{} = tracestate <- TraceState.decode(tracestate_header) do
+      case TraceState.newrelic(tracestate) do
+        {[], others} ->
           %Context{
             source:
               {:w3c,
                %{
                  tracestate: :non_new_relic,
-                 others: [],
+                 others: others,
                  sampled: traceparent.flags.sampled,
-                 tracing_vendors: []
+                 tracing_vendors: Enum.map(others, & &1.key) |> Enum.join(",")
                }},
             parent_id: traceparent.parent_id,
             span_guid: traceparent.parent_id,
             trace_id: traceparent.trace_id,
             trust_key: Collector.AgentRun.trusted_account_key()
+          }
+
+        {[%{value: tracestate}], others} ->
+          %Context{
+            source:
+              {:w3c,
+               %{
+                 tracestate: :new_relic,
+                 span_id: tracestate.span_id,
+                 others: others,
+                 sampled: traceparent.flags.sampled,
+                 tracing_vendors: Enum.map(others, & &1.key) |> Enum.join(",")
+               }},
+            type: tracestate.parent_type,
+            account_id: tracestate.account_id,
+            app_id: tracestate.app_id,
+            parent_id: tracestate.transaction_id,
+            span_guid: traceparent.parent_id,
+            trace_id: traceparent.trace_id,
+            trust_key: tracestate.trusted_account_key,
+            priority: tracestate.priority,
+            sampled: tracestate.sampled,
+            timestamp: tracestate.timestamp
           }
       end
     else
