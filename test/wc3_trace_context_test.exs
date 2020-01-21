@@ -270,4 +270,70 @@ defmodule W3CTraceContextTest do
     Collector.AgentRun.store(:account_id, prev_acct)
     Collector.AgentRun.store(:primary_application_id, prev_app)
   end
+
+  test "TraceState parsing" do
+    assert %{members: []} = TraceState.decode([""])
+  end
+
+  test "Generate expected outbound W3C headers - no tracestate" do
+    prev_acct = Collector.AgentRun.account_id()
+    Collector.AgentRun.store(:account_id, 3482)
+    prev_app = Collector.AgentRun.primary_application_id()
+    Collector.AgentRun.store(:primary_application_id, 53442)
+
+    response =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-74be672b84ddc4e4b28be285632bbc0a-d6e4e06002e24189-01"
+      )
+      |> TestPlugApp.call([])
+
+    [traceparent_header, tracestate_header] =
+      response.resp_body
+      |> String.split("|")
+
+    expected_traceparent = ~r/00-74be672b84ddc4e4b28be285632bbc0a-\w{16}-01/
+    expected_tracestate = ~r/190@nr=0-0-3482-53442-\w{16}-\w{16}/
+
+    assert tracestate_header =~ expected_tracestate
+    assert traceparent_header =~ expected_traceparent
+
+    Collector.AgentRun.store(:account_id, prev_acct)
+    Collector.AgentRun.store(:primary_application_id, prev_app)
+  end
+
+  test "Generate expected outbound W3C headers - bad traceparent" do
+    response =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-74be672b84ddc.....8be285632bbc0a-d6e4e06002e24189-01"
+      )
+      |> TestPlugApp.call([])
+
+    [traceparent_header, _tracestate_header] =
+      response.resp_body
+      |> String.split("|")
+
+    # Create a new Trace ID
+    refute traceparent_header =~ "74be672b84ddc.....8be285632bbc0a"
+  end
+
+  test "Generate expected outbound W3C headers - future version" do
+    response =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "cc-74be672b84ddc4e4b28be285632bbc0a-d6e4e06002e24189-01-future-stuff"
+      )
+      |> TestPlugApp.call([])
+
+    [traceparent_header, _tracestate_header] =
+      response.resp_body
+      |> String.split("|")
+
+    # Accept the Trace ID
+    assert traceparent_header =~ ~r/00-74be672b84ddc4e4b28be285632bbc0a-\w{16}-01/
+  end
 end
