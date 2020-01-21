@@ -1,4 +1,6 @@
 defmodule NewRelic.W3CTraceContext.TraceState do
+  @moduledoc false
+
   alias NewRelic.Harvest.Collector.AgentRun
 
   defstruct [:members]
@@ -55,46 +57,56 @@ defmodule NewRelic.W3CTraceContext.TraceState do
       |> Enum.map(&String.split(&1, "="))
       |> Enum.reject(&(&1 == [""]))
 
-    valid_members? = Enum.all?(members, &validate/1)
-    valid? = check_duplicates(members) && length(members) <= 32
+    %__MODULE__{members: validate(members)}
+  end
 
-    members =
-      if valid_members? && valid? do
-        members
-        |> Enum.flat_map(&decode_member/1)
-      else
-        []
-      end
+  def new_relic(%__MODULE__{members: members}) do
+    Enum.split_with(
+      members,
+      &(&1.key == :new_relic &&
+          &1.value.trusted_account_key == AgentRun.trusted_account_key())
+    )
+  end
 
-    %__MODULE__{members: members}
+  defp validate(members) do
+    case valid_members?(members) do
+      true -> Enum.flat_map(members, &decode_member/1)
+      false -> []
+    end
+  end
+
+  defp valid_members?(members) do
+    Enum.all?(members, &valid_member?/1) &&
+      no_duplicate_keys(members) &&
+      length(members) <= 32
   end
 
   @key_wo_vendor ~r/^[0-9a-z][_0-9a-z\-\*\/]{0,255}$/
   @key_with_vendor ~r/^[0-9a-z][_0-9a-z\-\*\/]{0,240}@[0-9a-z][_0-9a-z\-\*\/]{0,13}$/
   @value ~r/^([\x20-\x2b\x2d-\x3c\x3e-\x7e]{0,255}[\x21-\x2b\x2d-\x3c\x3e-\x7e])$/
-  def validate([key, value]) do
+  defp valid_member?([key, value]) do
     valid_key? = Regex.match?(@key_wo_vendor, key) || Regex.match?(@key_with_vendor, key)
     valid_value? = Regex.match?(@value, value)
 
     valid_key? && valid_value?
   end
 
-  def validate(_) do
+  defp valid_member?(_) do
     false
   end
 
-  def check_duplicates(members) do
+  defp no_duplicate_keys(members) do
     keys = Enum.map(members, &List.first/1)
     duplicates? = length(keys) != length(Enum.uniq(keys))
 
-    not duplicates?
+    !duplicates?
   end
 
-  def decode_member([key, value]) do
+  defp decode_member([key, value]) do
     decode_member(vendor_type(key), key, value)
   end
 
-  def decode_member(:new_relic, key, value) do
+  defp decode_member(:new_relic, key, value) do
     [
       version,
       parent_type,
@@ -128,18 +140,10 @@ defmodule NewRelic.W3CTraceContext.TraceState do
     ]
   end
 
-  def decode_member(:other, key, value) do
+  defp decode_member(:other, key, value) do
     [
       %{key: key, value: value}
     ]
-  end
-
-  def newrelic(%__MODULE__{members: members}) do
-    Enum.split_with(
-      members,
-      &(&1.key == :new_relic &&
-          &1.value.trusted_account_key == AgentRun.trusted_account_key())
-    )
   end
 
   defp vendor_type(key) do

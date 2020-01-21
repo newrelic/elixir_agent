@@ -1,4 +1,6 @@
 defmodule NewRelic.W3CTraceContext do
+  @moduledoc false
+
   alias NewRelic.Harvest.Collector
   alias NewRelic.DistributedTrace.Context
   alias __MODULE__.{TraceParent, TraceState}
@@ -11,7 +13,7 @@ defmodule NewRelic.W3CTraceContext do
          tracestate_header <- Plug.Conn.get_req_header(conn, @w3c_tracestate),
          %TraceParent{} = traceparent <- TraceParent.decode(traceparent_header),
          %TraceState{} = tracestate <- TraceState.decode(tracestate_header) do
-      case TraceState.newrelic(tracestate) do
+      case TraceState.new_relic(tracestate) do
         {[], others} ->
           %Context{
             source:
@@ -57,7 +59,7 @@ defmodule NewRelic.W3CTraceContext do
   end
 
   def generate(%{source: source} = context) do
-    {others, sampled} =
+    {others, traceparent_sampled} =
       case source do
         {:w3c, %{others: others, sampled: sampled}} -> {others, sampled}
         _ -> {[], context.sampled}
@@ -67,7 +69,7 @@ defmodule NewRelic.W3CTraceContext do
       TraceParent.encode(%TraceParent{
         trace_id: context.trace_id,
         parent_id: context.span_guid,
-        flags: %{sampled: sampled}
+        flags: %{sampled: traceparent_sampled}
       })
 
     tracestate =

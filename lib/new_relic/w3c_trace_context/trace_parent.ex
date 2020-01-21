@@ -1,10 +1,10 @@
 defmodule NewRelic.W3CTraceContext.TraceParent do
+  @moduledoc false
+
   defstruct version: "00",
             trace_id: nil,
             parent_id: nil,
             flags: nil
-
-  use Bitwise
 
   @version 2
   @trace_id 32
@@ -27,41 +27,41 @@ defmodule NewRelic.W3CTraceContext.TraceParent do
 
   def decode(
         <<version::binary-size(@version), "-", trace_id::binary-size(@trace_id), "-",
-          parent_id::binary-size(@parent_id), "-", flags::binary-size(@flags), rest::binary>>
+          parent_id::binary-size(@parent_id), "-", flags::binary-size(@flags)>>
       ) do
-    invalid_version = :error == Base.decode16(version, case: :mixed)
-    invalid_trace_id = :error == Base.decode16(trace_id, case: :mixed)
-    invalid_parent_id = :error == Base.decode16(parent_id, case: :mixed)
-    invalid_flags = :error == Base.decode16(flags, case: :mixed)
-
-    valid_rest =
-      case version do
-        "00" -> rest == ""
-        _ -> String.starts_with?(rest, "-") || rest == ""
-      end
-
-    valid? =
-      !invalid_version &&
-        !invalid_trace_id && !invalid_parent_id && !invalid_flags && valid_rest
-
-    if valid? do
+    validate(
+      [version, trace_id, parent_id, flags],
       %__MODULE__{
         version: version,
         trace_id: trace_id,
         parent_id: parent_id,
-        flags: %{
-          sampled: flags == "01"
-        }
+        flags: %{sampled: flags == "01"}
       }
-    else
-      :invalid
-    end
+    )
   end
 
-  def decode(_), do: :invalid
+  # Future versions
+  def decode(
+        <<version::binary-size(@version), "-", trace_id::binary-size(@trace_id), "-",
+          parent_id::binary-size(@parent_id), "-", flags::binary-size(@flags), "-", _::binary>>
+      )
+      when version != "00" do
+    validate(
+      [version, trace_id, parent_id, flags],
+      %__MODULE__{
+        version: version,
+        trace_id: trace_id,
+        parent_id: parent_id,
+        flags: %{sampled: flags == "01"}
+      }
+    )
+  end
+
+  def decode(_),
+    do: :invalid
 
   def encode(%__MODULE__{
-        version: "00",
+        version: _version,
         trace_id: trace_id,
         parent_id: parent_id,
         flags: %{
@@ -70,13 +70,20 @@ defmodule NewRelic.W3CTraceContext.TraceParent do
       }) do
     [
       "00",
-      "-",
       String.pad_leading(trace_id, @trace_id, "0") |> String.downcase(),
-      "-",
       String.pad_leading(parent_id, @parent_id, "0") |> String.downcase(),
-      "-",
       (flags && "01") || "00"
     ]
-    |> IO.iodata_to_binary()
+    |> Enum.join("-")
   end
+
+  defp validate(values, context) do
+    case Enum.all?(values, &valid?/1) do
+      true -> context
+      false -> :invalid
+    end
+  end
+
+  defp valid?(value),
+    do: Base.decode16(value, case: :mixed) != :error
 end
