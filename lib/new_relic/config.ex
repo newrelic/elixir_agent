@@ -123,7 +123,7 @@ defmodule NewRelic.Config do
 
   defp harvest_enabled?,
     do:
-      System.get_env("NEW_RELIC_HARVEST_ENABLED") ||
+      System.get_env("NEW_RELIC_HARVEST_ENABLED") == "true" ||
         Application.get_env(:new_relic_agent, :harvest_enabled, true)
 
   defp parse_app_names(nil), do: nil
