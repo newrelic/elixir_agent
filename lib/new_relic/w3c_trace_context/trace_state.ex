@@ -45,21 +45,58 @@ defmodule NewRelic.W3CTraceContext.TraceState do
     "#{key}=#{value}"
   end
 
+  def decode(nil), do: %__MODULE__{members: []}
+  def decode(""), do: %__MODULE__{members: []}
+  def decode(" "), do: %__MODULE__{members: []}
+
   def decode(header) when is_binary(header) do
     members =
       header
       |> String.split(",")
+      |> Enum.map(&String.trim_leading/1)
       |> Enum.map(&String.split(&1, "="))
-      |> Enum.map(&decode/1)
+      |> Enum.reject(&(&1 == [""]))
+
+    valid_members? = Enum.all?(members, &validate/1)
+    valid? = check_duplicates(members) && length(members) <= 32
+
+    members =
+      if valid_members? && valid? do
+        members
+        |> Enum.flat_map(&decode_member/1)
+      else
+        []
+      end
 
     %__MODULE__{members: members}
   end
 
-  def decode([key, value]) do
-    decode(vendor_type(key), key, value)
+  @key_wo_vendor ~r/^[a-z][_0-9a-z\-\*\/]{0,255}$/
+  @key_with_vendor ~r/^[a-z][_0-9a-z\-\*\/]{0,240}@[a-z][_0-9a-z\-\*\/]{0,13}$/
+  @value ~r/^([\x20-\x2b\x2d-\x3c\x3e-\x7e]{0,255}[\x21-\x2b\x2d-\x3c\x3e-\x7e])/
+  def validate([key, value]) do
+    valid_key? = Regex.match?(@key_wo_vendor, key) || Regex.match?(@key_with_vendor, key)
+    valid_value? = Regex.match?(@value, value)
+
+    valid_key? && valid_value?
   end
 
-  def decode(:new_relic, key, value) do
+  def validate(_) do
+    false
+  end
+
+  def check_duplicates(members) do
+    keys = Enum.map(members, &List.first/1)
+    duplicates? = length(keys) != length(Enum.uniq(keys))
+
+    not duplicates?
+  end
+
+  def decode_member([key, value]) do
+    decode_member(vendor_type(key), key, value)
+  end
+
+  def decode_member(:new_relic, key, value) do
     [
       version,
       parent_type,
@@ -74,25 +111,29 @@ defmodule NewRelic.W3CTraceContext.TraceState do
 
     [trusted_account_key, _] = String.split(key, "@")
 
-    %{
-      key: :new_relic,
-      value: %__MODULE__.NewRelicState{
-        trusted_account_key: trusted_account_key,
-        version: version |> String.to_integer(),
-        parent_type: parent_type |> decode_type(),
-        account_id: account_id,
-        app_id: app_id,
-        span_id: span_id,
-        transaction_id: transaction_id,
-        sampled: sampled |> decode_sampled(),
-        priority: priority |> decode_priority(),
-        timestamp: timestamp |> String.to_integer()
+    [
+      %{
+        key: :new_relic,
+        value: %__MODULE__.NewRelicState{
+          trusted_account_key: trusted_account_key,
+          version: version |> String.to_integer(),
+          parent_type: parent_type |> decode_type(),
+          account_id: account_id,
+          app_id: app_id,
+          span_id: span_id,
+          transaction_id: transaction_id,
+          sampled: sampled |> decode_sampled(),
+          priority: priority |> decode_priority(),
+          timestamp: timestamp |> String.to_integer()
+        }
       }
-    }
+    ]
   end
 
-  def decode(:other, key, value) do
-    %{key: key, value: value}
+  def decode_member(:other, key, value) do
+    [
+      %{key: key, value: value}
+    ]
   end
 
   def newrelic(%__MODULE__{members: members}) do
