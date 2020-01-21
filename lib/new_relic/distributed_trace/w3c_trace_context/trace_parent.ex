@@ -1,4 +1,4 @@
-defmodule NewRelic.W3CTraceContext.TraceParent do
+defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceParent do
   @moduledoc false
 
   defstruct version: "00",

@@ -1,4 +1,4 @@
-defmodule NewRelic.W3CTraceContext.TraceState do
+defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
   @moduledoc false
 
   alias NewRelic.Harvest.Collector.AgentRun

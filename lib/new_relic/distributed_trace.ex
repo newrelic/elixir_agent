@@ -15,7 +15,7 @@ defmodule NewRelic.DistributedTrace do
 
   def w3c_payload(conn) do
     case Plug.Conn.get_req_header(conn, @w3c_traceparent) do
-      [_traceparent | _] -> NewRelic.W3CTraceContext.extract(conn)
+      [_traceparent | _] -> NewRelic.DistributedTrace.W3CTraceContext.extract(conn)
       _ -> false
     end
   end
@@ -40,7 +40,7 @@ defmodule NewRelic.DistributedTrace do
         }
 
         nr_header = Context.encode(context)
-        {traceparent, tracestate} = NewRelic.W3CTraceContext.generate(context)
+        {traceparent, tracestate} = NewRelic.DistributedTrace.W3CTraceContext.generate(context)
 
         [
           {@nr_header, nr_header},

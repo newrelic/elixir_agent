@@ -2,8 +2,9 @@ defmodule W3CTraceContextTest do
   use ExUnit.Case
   use Plug.Test
 
-  alias NewRelic.W3CTraceContext.TraceParent
-  alias NewRelic.W3CTraceContext.TraceState
+  alias NewRelic.DistributedTrace.W3CTraceContext
+  alias NewRelic.DistributedTrace.W3CTraceContext.TraceParent
+  alias NewRelic.DistributedTrace.W3CTraceContext.TraceState
 
   alias NewRelic.Harvest.Collector
   alias NewRelic.DistributedTrace
@@ -97,9 +98,9 @@ defmodule W3CTraceContextTest do
       |> Plug.Conn.put_req_header("traceparent", traceparent)
       |> Plug.Conn.put_req_header("tracestate", tracestate)
 
-    context = NewRelic.W3CTraceContext.extract(conn)
+    context = W3CTraceContext.extract(conn)
 
-    {new_traceparent, new_tracestate} = NewRelic.W3CTraceContext.generate(context)
+    {new_traceparent, new_tracestate} = W3CTraceContext.generate(context)
 
     assert new_traceparent == traceparent
     assert new_tracestate =~ tracestate_no_time
@@ -252,8 +253,6 @@ defmodule W3CTraceContextTest do
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
     Collector.AgentRun.store(:trusted_account_key, prev_key)
   end
-
-  alias NewRelic.W3CTraceContext.{TraceParent, TraceState}
 
   test "Generate expected outbound W3C headers" do
     prev_acct = Collector.AgentRun.account_id()

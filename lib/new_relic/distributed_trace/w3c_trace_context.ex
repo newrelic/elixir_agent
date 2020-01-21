@@ -1,4 +1,4 @@
-defmodule NewRelic.W3CTraceContext do
+defmodule NewRelic.DistributedTrace.W3CTraceContext do
   @moduledoc false
 
   alias NewRelic.Harvest.Collector
