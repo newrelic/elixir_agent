@@ -41,7 +41,7 @@ defmodule NewRelic.DistributedTrace.Plug do
   end
 
   defp determine_context(conn) do
-    case DistributedTrace.accept_distributed_trace_payload(:http, conn) do
+    case DistributedTrace.accept_distributed_trace_headers(:http, conn) do
       %Context{} = context -> context
       _ -> DistributedTrace.generate_new_context()
     end

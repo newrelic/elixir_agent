@@ -16,12 +16,12 @@ defmodule DistributedTraceTest do
     plug(:dispatch)
 
     get "/" do
-      [{_, outbound_payload} | _] = NewRelic.create_distributed_trace_payload(:http)
+      [{_, outbound_payload} | _] = NewRelic.distributed_trace_headers(:http)
       send_resp(conn, 200, outbound_payload)
     end
 
     get "/w3c" do
-      [_, {_, traceparent}, {_, tracestate}] = NewRelic.create_distributed_trace_payload(:http)
+      [_, {_, traceparent}, {_, tracestate}] = NewRelic.distributed_trace_headers(:http)
 
       send_resp(conn, 200, "#{traceparent}|#{tracestate}")
     end
@@ -39,7 +39,7 @@ defmodule DistributedTraceTest do
 
     @trace :external_call
     def external_call() do
-      NewRelic.create_distributed_trace_payload(:http)
+      NewRelic.distributed_trace_headers(:http)
     end
   end
 

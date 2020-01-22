@@ -108,16 +108,22 @@ defmodule NewRelic do
   of a Distributed Trace, but outgoing requests need an extra header:
 
   ```elixir
-  dt_header_payload = NewRelic.create_distributed_trace_payload(:http)
-  HTTPoison.get(url, ["x-api-key": "secret"] ++ dt_header_payload)
+  HTTPoison.get(url, ["x-api-key": "secret"] ++ NewRelic.distributed_trace_headers(:http))
   ```
 
   **Notes:**
 
-  * Call `NewRelic.create_distributed_trace_payload` immediately before making the
+  * Call `NewRelic.distributed_trace_headers` immediately before making the
   request since calling the function marks the "start" time of the request.
   """
-  defdelegate create_distributed_trace_payload(type), to: NewRelic.DistributedTrace
+  defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
+
+  @doc """
+  Deprecated, please use `distributed_trace_headers`
+  """
+  defdelegate create_distributed_trace_payload(type),
+    to: NewRelic.DistributedTrace,
+    as: :distributed_trace_headers
 
   @doc """
   To get detailed information about a particular process, you can install a Process sampler.

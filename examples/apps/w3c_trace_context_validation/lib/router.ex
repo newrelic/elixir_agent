@@ -29,7 +29,7 @@ defmodule W3cTraceContextValidation.Router do
     HTTPoison.post(
       url,
       Jason.encode!(arguments),
-      NewRelic.create_distributed_trace_payload(:http)
+      NewRelic.distributed_trace_headers(:http)
     )
   end
 end

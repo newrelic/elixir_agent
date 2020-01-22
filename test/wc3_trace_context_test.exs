@@ -20,7 +20,7 @@ defmodule W3CTraceContextTest do
     plug(:dispatch)
 
     get "/w3c" do
-      [_, {_, traceparent}, {_, tracestate}] = NewRelic.create_distributed_trace_payload(:http)
+      [_, {_, traceparent}, {_, tracestate}] = NewRelic.distributed_trace_headers(:http)
       send_resp(conn, 200, "#{traceparent}|#{tracestate}")
     end
   end
