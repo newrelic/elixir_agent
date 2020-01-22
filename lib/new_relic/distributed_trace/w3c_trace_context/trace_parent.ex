@@ -16,16 +16,16 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceParent do
   def decode([header]), do: decode(header)
 
   def decode(<<"ff", "-", _::binary>>),
-    do: :invalid
+    do: invalid()
 
   def decode(<<_::binary-size(@version), "-", "00000000000000000000000000000000", _::binary>>),
-    do: :invalid
+    do: invalid()
 
   def decode(
         <<_::binary-size(@version), "-", _::binary-size(@trace_id), "-", "0000000000000000",
           _::binary>>
       ),
-      do: :invalid
+      do: invalid()
 
   def decode(
         <<version::binary-size(@version), "-", trace_id::binary-size(@trace_id), "-",
@@ -60,7 +60,7 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceParent do
   end
 
   def decode(_),
-    do: :invalid
+    do: invalid()
 
   def encode(%__MODULE__{
         version: _version,
@@ -77,6 +77,11 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceParent do
       (sampled && "01") || "00"
     ]
     |> Enum.join("-")
+  end
+
+  defp invalid() do
+    NewRelic.report_metric(:supportability, [:trace_context, :traceparent, :invalid])
+    :invalid
   end
 
   defp validate(values, context) do

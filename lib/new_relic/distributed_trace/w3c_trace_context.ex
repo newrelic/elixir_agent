@@ -15,6 +15,8 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext do
          %TraceState{} = tracestate <- TraceState.decode(tracestate_header) do
       case TraceState.restrict_access(tracestate) do
         {newrelic, others} ->
+          NewRelic.report_metric(:supportability, [:trace_context, :accept, :success])
+
           %Context{
             source:
               {:w3c,
@@ -38,6 +40,9 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext do
           }
 
         others ->
+          NewRelic.report_metric(:supportability, [:trace_context, :accept, :success])
+          NewRelic.report_metric(:supportability, [:trace_context, :tracestate, :non_new_relic])
+
           %Context{
             source:
               {:w3c,
@@ -54,7 +59,9 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext do
           }
       end
     else
-      _ -> false
+      _ ->
+        NewRelic.report_metric(:supportability, [:trace_context, :accept, :exception])
+        false
     end
   end
 
