@@ -139,8 +139,9 @@ defmodule DistributedTraceTest do
     # There is no parent Transaction when we start a new Trace
     refute get_in(outbound_payload, ["d", "pa"])
 
-    # The Transaction GUID == Trace ID because we start a new Trace
-    assert get_in(outbound_payload, ["d", "tx"]) == get_in(outbound_payload, ["d", "tr"])
+    # Transaction GUID, Trace ID initialized
+    assert get_in(outbound_payload, ["d", "tx"]) |> is_binary
+    assert get_in(outbound_payload, ["d", "tr"]) |> is_binary
 
     # Increase by 1 the priority when we generate it
     assert get_in(outbound_payload, ["d", "pr"]) > 1.0

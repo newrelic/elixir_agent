@@ -67,6 +67,7 @@ defmodule NewRelic.DistributedTrace do
     context
     |> assign_transaction_guid()
     |> maybe_generate_sampling()
+    |> maybe_generate_trace_id()
     |> report_attributes(transport_type: type)
     |> report_attributes(:w3c)
     |> convert_to_outbound()
@@ -79,6 +80,14 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def maybe_generate_sampling(context), do: context
+
+  def maybe_generate_trace_id(%Context{parent_id: nil} = context) do
+    %{context | trace_id: generate_guid(16)}
+  end
+
+  def maybe_generate_trace_id(context) do
+    context
+  end
 
   def report_attributes(
         %{source: {:w3c, %{tracestate: :non_new_relic}}} = context,
@@ -104,7 +113,7 @@ defmodule NewRelic.DistributedTrace do
       ) do
     [
       guid: context.guid,
-      traceId: context.guid,
+      traceId: context.trace_id,
       priority: context.priority,
       sampled: context.sampled
     ]
@@ -153,7 +162,7 @@ defmodule NewRelic.DistributedTrace do
       parent_id: nil,
       trust_key: context.trust_key,
       guid: context.guid,
-      trace_id: context.guid,
+      trace_id: context.trace_id,
       priority: context.priority,
       sampled: context.sampled
     }
@@ -258,6 +267,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def generate_guid(), do: :crypto.strong_rand_bytes(8) |> Base.encode16() |> String.downcase()
+  def generate_guid(16), do: :crypto.strong_rand_bytes(16) |> Base.encode16() |> String.downcase()
   def generate_guid(pid: pid), do: encode_guid([pid, node()])
   def generate_guid(pid: pid, label: label, ref: ref), do: encode_guid([label, ref, pid, node()])
 
