@@ -11,13 +11,16 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
   end
 
   def init(_) do
+    reservoir_size = Collector.AgentRun.lookup(:custom_event_reservoir_size)
+    NewRelic.report_metric({:supportability, "CustomEventData"}, reservoir_size: reservoir_size)
+
     {:ok,
      %{
        start_time: System.system_time(),
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
        sampling: %{
-         reservoir_size: Collector.AgentRun.lookup(:custom_event_reservoir_size),
+         reservoir_size: reservoir_size,
          events_seen: 0
        },
        custom_events: []

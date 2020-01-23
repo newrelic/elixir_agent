@@ -7,9 +7,9 @@ defmodule IntegrationTest do
   # env NR_INT_TEST=true mix test test/integration --include skip
 
   setup do
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
     Collector.AgentRun.reconnect()
     GenServer.call(Collector.AgentRun, :ping)
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
 
     on_exit(fn ->
       System.delete_env("NEW_RELIC_HARVEST_ENABLED")
