@@ -65,9 +65,7 @@ defmodule IntegrationTest do
       # Other metrics
     ]
 
-    {:ok, return_value} =
+    {:ok, :accepted} =
       Collector.Protocol.metric_data([agent_run_id, ts_start, ts_end, data_array])
-
-    assert return_value == []
   end
 end

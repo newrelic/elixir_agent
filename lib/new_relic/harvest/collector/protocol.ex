@@ -3,7 +3,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
 
   @moduledoc false
 
-  @protocol_version 16
+  @protocol_version 17
 
   def preconnect,
     do: call_remote(%{method: "preconnect"}, [])
@@ -87,6 +87,10 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     end
   end
 
+  defp parse_http_response({:ok, %{status_code: 202}}, _params) do
+    {:ok, :accepted}
+  end
+
   defp parse_http_response({:ok, %{status_code: status, body: body}}, params) do
     NewRelic.log(:error, "#{params[:method]}: (#{status}) #{body}")
     {:error, status}
@@ -112,6 +116,10 @@ defmodule NewRelic.Harvest.Collector.Protocol do
   defp parse_collector_response({:ok, %{"exception" => exception}}, %{method: method}) do
     exception_type = respond_to_exception(exception, method)
     {:error, exception_type}
+  end
+
+  defp parse_collector_response({:ok, :accepted}, _params) do
+    {:ok, :accepted}
   end
 
   defp parse_collector_response({:error, reason}, _params) do
@@ -160,8 +168,10 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     :unexpected_exception
   end
 
-  defp collector_headers,
-    do: ["user-agent": "NewRelic-ElixirAgent/#{NewRelic.Config.agent_version()}"]
+  defp collector_headers do
+    ["user-agent": "NewRelic-ElixirAgent/#{NewRelic.Config.agent_version()}"] ++
+      Collector.AgentRun.lookup(:request_headers, [])
+  end
 
   defp default_collector_params,
     do: %{

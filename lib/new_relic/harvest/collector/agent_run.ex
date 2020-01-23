@@ -69,6 +69,8 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     store(:account_id, connect_response["account_id"])
     store(:primary_application_id, connect_response["primary_application_id"])
 
+    store(:request_headers, connect_response["request_headers_map"] |> Map.to_list())
+
     store(:sampling_target, connect_response["sampling_target"])
     store(:sampling_target_period, connect_response["sampling_target_period_in_seconds"] * 1000)
 
@@ -103,11 +105,11 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     :ets.insert(__MODULE__, {key, value})
   end
 
-  def lookup(key) do
+  def lookup(key, default \\ nil) do
     Application.get_env(:new_relic_agent, key) ||
       case :ets.lookup(__MODULE__, key) do
         [{^key, value}] -> value
-        [] -> nil
+        [] -> default
       end
   end
 end
