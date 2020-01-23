@@ -76,7 +76,8 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     |> URI.to_string()
   end
 
-  defp parse_http_response({:ok, %{status_code: 200, body: body}}, _params) do
+  defp parse_http_response({:ok, %{status_code: status_code, body: body}}, _params)
+       when status_code in [200, 410] do
     case Jason.decode(body) do
       {:ok, response} ->
         {:ok, response}
