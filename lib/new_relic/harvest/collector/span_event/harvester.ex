@@ -13,16 +13,13 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   end
 
   def init(_) do
-    reservoir_size = Collector.AgentRun.lookup(:span_event_reservoir_size)
-    NewRelic.report_metric({:supportability, "SpanEventData"}, reservoir_size: reservoir_size)
-
     {:ok,
      %{
        start_time: System.system_time(),
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
        sampling: %{
-         reservoir_size: reservoir_size,
+         reservoir_size: Collector.AgentRun.lookup(:span_event_reservoir_size, 100),
          events_seen: 0
        },
        events: PriorityQueue.new()
@@ -134,7 +131,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
       spans
     ])
 
-    log_harvest(length(spans))
+    log_harvest(length(spans), state.sampling.reservoir_size)
   end
 
   def generate_guid(:root), do: DistributedTrace.generate_guid(pid: self())
@@ -142,8 +139,9 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   def generate_guid({label, ref}),
     do: DistributedTrace.generate_guid(pid: self(), label: label, ref: ref)
 
-  def log_harvest(harvest_size) do
-    NewRelic.report_metric({:supportability, SpanEvent}, harvest_size: harvest_size)
+  def log_harvest(harvest_size, reservoir_size) do
+    NewRelic.report_metric({:supportability, "SpanEventData"}, harvest_size: harvest_size)
+    NewRelic.report_metric({:supportability, "SpanEventData"}, reservoir_size: reservoir_size)
     NewRelic.log(:debug, "Completed Span Event harvest - size: #{harvest_size}")
   end
 

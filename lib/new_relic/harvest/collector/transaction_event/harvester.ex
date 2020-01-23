@@ -12,16 +12,13 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
   end
 
   def init(_) do
-    reservoir_size = Collector.AgentRun.lookup(:transaction_event_reservoir_size)
-    NewRelic.report_metric({:supportability, "AnalyticEventData"}, reservoir_size: reservoir_size)
-
     {:ok,
      %{
        start_time: System.system_time(),
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
        sampling: %{
-         reservoir_size: reservoir_size,
+         reservoir_size: Collector.AgentRun.lookup(:transaction_event_reservoir_size, 100),
          events_seen: 0
        },
        events: PriorityQueue.new()
@@ -85,11 +82,12 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
       events
     ])
 
-    log_harvest(length(events))
+    log_harvest(length(events), state.sampling.reservoir_size)
   end
 
-  def log_harvest(harvest_size) do
-    NewRelic.report_metric({:supportability, TransactionEvent}, harvest_size: harvest_size)
+  def log_harvest(harvest_size, reservoir_size) do
+    NewRelic.report_metric({:supportability, "AnalyticEventData"}, harvest_size: harvest_size)
+    NewRelic.report_metric({:supportability, "AnalyticEventData"}, reservoir_size: reservoir_size)
     NewRelic.log(:debug, "Completed Transaction Event harvest - size: #{harvest_size}")
   end
 

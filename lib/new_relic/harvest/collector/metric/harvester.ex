@@ -74,7 +74,7 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
   end
 
   def log_harvest(harvest_size) do
-    NewRelic.report_metric({:supportability, Metric}, harvest_size: harvest_size)
+    NewRelic.report_metric({:supportability, "MetricData"}, harvest_size: harvest_size)
     NewRelic.log(:debug, "Completed Metric harvest - size: #{harvest_size}")
   end
 

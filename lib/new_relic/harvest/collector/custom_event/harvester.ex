@@ -11,16 +11,13 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
   end
 
   def init(_) do
-    reservoir_size = Collector.AgentRun.lookup(:custom_event_reservoir_size)
-    NewRelic.report_metric({:supportability, "CustomEventData"}, reservoir_size: reservoir_size)
-
     {:ok,
      %{
        start_time: System.system_time(),
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
        sampling: %{
-         reservoir_size: reservoir_size,
+         reservoir_size: Collector.AgentRun.lookup(:custom_event_reservoir_size, 100),
          events_seen: 0
        },
        custom_events: []
@@ -93,11 +90,12 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
   def send_harvest(state) do
     events = build_payload(state)
     Collector.Protocol.custom_event([Collector.AgentRun.agent_run_id(), state.sampling, events])
-    log_harvest(length(events))
+    log_harvest(length(events), state.sampling.reservoir_size)
   end
 
-  def log_harvest(harvest_size) do
-    NewRelic.report_metric({:supportability, CustomEvent}, harvest_size: harvest_size)
+  def log_harvest(harvest_size, reservoir_size) do
+    NewRelic.report_metric({:supportability, "CustomEventData"}, harvest_size: harvest_size)
+    NewRelic.report_metric({:supportability, "CustomEventData"}, reservoir_size: reservoir_size)
     NewRelic.log(:debug, "Completed Custom Event harvest - size: #{harvest_size}")
   end
 
