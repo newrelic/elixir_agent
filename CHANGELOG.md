@@ -1,5 +1,14 @@
 ## CHANGELOG
 
+### `v1.16.0`
+
+Features
+
+* Support the W3C Trace Context spec for Distributed Tracing. [#169](https://github.com/newrelic/elixir_agent/pull/169)
+* Upgrade to New Relic "Protocol 17" which includes support for faster event harvest (sent every 5 seconds!). [#168](https://github.com/newrelic/elixir_agent/pull/168)
+
+------
+
 ### `v1.15.0`
 
 Features
