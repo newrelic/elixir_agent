@@ -16,12 +16,18 @@ defmodule DistributedTraceTest do
     plug(:dispatch)
 
     get "/" do
-      [{_, outbound_payload}] = NewRelic.create_distributed_trace_payload(:http)
+      [{_, outbound_payload} | _] = NewRelic.distributed_trace_headers(:http)
       send_resp(conn, 200, outbound_payload)
     end
 
+    get "/w3c" do
+      [_, {_, traceparent}, {_, tracestate}] = NewRelic.distributed_trace_headers(:http)
+
+      send_resp(conn, 200, "#{traceparent}|#{tracestate}")
+    end
+
     get "/connected" do
-      [{_, outbound_payload}] =
+      [{_, outbound_payload} | _] =
         Task.async(fn ->
           Process.sleep(20)
           external_call()
@@ -33,19 +39,23 @@ defmodule DistributedTraceTest do
 
     @trace :external_call
     def external_call() do
-      NewRelic.create_distributed_trace_payload(:http)
+      NewRelic.distributed_trace_headers(:http)
     end
   end
 
   setup do
     prev_key = Collector.AgentRun.trusted_account_key()
     Collector.AgentRun.store(:trusted_account_key, "190")
+    prev_acct = Collector.AgentRun.account_id()
+    Collector.AgentRun.store(:account_id, 190)
+
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
     System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
     send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
       Collector.AgentRun.store(:trusted_account_key, prev_key)
+      Collector.AgentRun.store(:account_id, prev_acct)
       System.delete_env("NEW_RELIC_HARVEST_ENABLED")
       System.delete_env("NEW_RELIC_LICENSE_KEY")
     end)
@@ -72,31 +82,6 @@ defmodule DistributedTraceTest do
     assert attrs[:traceId] == "d6b4ba0c3a712ca"
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-  end
-
-  test "Generate expected outbound payload" do
-    response =
-      TestHelper.request(
-        TestPlugApp,
-        conn(:get, "/")
-        |> put_req_header(@dt_header, generate_inbound_payload())
-      )
-
-    outbound_payload =
-      response.resp_body
-      |> Base.decode64!()
-      |> Jason.decode!()
-
-    refute "332029" == get_in(outbound_payload, ["d", "ac"])
-    refute "2827902" == get_in(outbound_payload, ["d", "ap"])
-    assert "d6b4ba0c3a712ca" == get_in(outbound_payload, ["d", "tr"])
-    assert true == get_in(outbound_payload, ["d", "sa"])
-
-    # Don't change the priority when we inherit it
-    assert 0.123456 = get_in(outbound_payload, ["d", "pr"])
-
-    # ensure we delete the context after the request is complete
-    refute NewRelic.DistributedTrace.Tracker.fetch(self())
   end
 
   test "Generate the expected metrics" do
@@ -154,8 +139,9 @@ defmodule DistributedTraceTest do
     # There is no parent Transaction when we start a new Trace
     refute get_in(outbound_payload, ["d", "pa"])
 
-    # The Transaction GUID == Trace ID because we start a new Trace
-    assert get_in(outbound_payload, ["d", "tx"]) == get_in(outbound_payload, ["d", "tr"])
+    # Transaction GUID, Trace ID initialized
+    assert get_in(outbound_payload, ["d", "tx"]) |> is_binary
+    assert get_in(outbound_payload, ["d", "tr"]) |> is_binary
 
     # Increase by 1 the priority when we generate it
     assert get_in(outbound_payload, ["d", "pr"]) > 1.0
@@ -163,19 +149,19 @@ defmodule DistributedTraceTest do
 
   describe "Context decoding" do
     test "ignore unknown version" do
-      assert DistributedTrace.Context.validate(%{"v" => [666]}) == :invalid
+      assert DistributedTrace.NewRelicContext.validate(%{"v" => [666]}) == :invalid
     end
 
     test "ignore bad base64" do
-      refute DistributedTrace.Context.decode("foobar")
+      refute DistributedTrace.NewRelicContext.decode("foobar")
     end
   end
 
   describe "Context encoding" do
     test "exclude tk when it matches account_id" do
       context =
-        %DistributedTrace.Context{account_id: "foo", trust_key: "foo"}
-        |> DistributedTrace.Context.encode("spguid")
+        %DistributedTrace.Context{account_id: "foo", sampled: true, trust_key: "foo"}
+        |> DistributedTrace.NewRelicContext.encode()
         |> Base.decode64!()
 
       refute context =~ "tk"
@@ -183,8 +169,8 @@ defmodule DistributedTraceTest do
 
     test "exclude tk when it isn't there to start" do
       context =
-        %DistributedTrace.Context{account_id: "foo"}
-        |> DistributedTrace.Context.encode("spguid")
+        %DistributedTrace.Context{account_id: "foo", sampled: true}
+        |> DistributedTrace.NewRelicContext.encode()
         |> Base.decode64!()
 
       refute context =~ "tk"
@@ -192,8 +178,8 @@ defmodule DistributedTraceTest do
 
     test "include tk when it differs from account_id" do
       context =
-        %DistributedTrace.Context{account_id: "foo", trust_key: "bar"}
-        |> DistributedTrace.Context.encode("spguid")
+        %DistributedTrace.Context{account_id: "foo", sampled: true, trust_key: "bar"}
+        |> DistributedTrace.NewRelicContext.encode()
         |> Base.decode64!()
 
       assert context =~ ~s("tk":"bar")
@@ -201,8 +187,8 @@ defmodule DistributedTraceTest do
 
     test "include id when sampled" do
       context =
-        %DistributedTrace.Context{sampled: true}
-        |> DistributedTrace.Context.encode("spguid")
+        %DistributedTrace.Context{sampled: true, span_guid: "spguid"}
+        |> DistributedTrace.NewRelicContext.encode()
         |> Base.decode64!()
 
       assert context =~ ~s("id":"spguid")
@@ -210,8 +196,8 @@ defmodule DistributedTraceTest do
 
     test "exclude id when not sampled" do
       context =
-        %DistributedTrace.Context{sampled: false}
-        |> DistributedTrace.Context.encode("spguid")
+        %DistributedTrace.Context{sampled: false, span_guid: "spguid"}
+        |> DistributedTrace.NewRelicContext.encode()
         |> Base.decode64!()
 
       refute context =~ ~s("id")
@@ -223,20 +209,20 @@ defmodule DistributedTraceTest do
       tak = Collector.AgentRun.trusted_account_key()
       context = %DistributedTrace.Context{trust_key: tak}
 
-      assert context == DistributedTrace.Plug.restrict_access(context)
+      assert context == DistributedTrace.NewRelicContext.restrict_access(context)
     end
 
     test "payload AC == TAK" do
       tak = Collector.AgentRun.trusted_account_key()
       context = %DistributedTrace.Context{trust_key: nil, account_id: tak}
 
-      assert context == DistributedTrace.Plug.restrict_access(context)
+      assert context == DistributedTrace.NewRelicContext.restrict_access(context)
     end
 
     test "payload denied" do
       context = %DistributedTrace.Context{account_id: :FOO, trust_key: :FOO}
 
-      assert :restricted == DistributedTrace.Plug.restrict_access(context)
+      assert :restricted == DistributedTrace.NewRelicContext.restrict_access(context)
     end
   end
 

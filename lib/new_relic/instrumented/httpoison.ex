@@ -30,7 +30,7 @@ if Code.ensure_loaded?(HTTPoison) do
 
     defp instrument(method, url, headers) do
       NewRelic.set_span(:http, url: url, method: method, component: "HTTPoison")
-      headers ++ NewRelic.create_distributed_trace_payload(:http)
+      headers ++ NewRelic.distributed_trace_headers(:http)
     end
 
     @trace {:get, category: :external}

@@ -99,7 +99,7 @@ defmodule MyExternalService do
   @trace {:request, category: :external}
   def request(method, url, headers) do
     NewRelic.set_span(:http, url: url, method: method, component: "HttpClient")
-    headers ++ NewRelic.create_distributed_trace_payload(:http)
+    headers ++ NewRelic.distributed_trace_headers(:http)
     HttpClient.request(method, url, headers)
   end
 end

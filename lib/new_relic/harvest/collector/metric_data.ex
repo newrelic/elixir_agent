@@ -271,12 +271,29 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform(:supportability, [:trace_context, :accept, :success]),
+    do: [
+      %Metric{name: :"Supportability/TraceContext/Accept/Success", call_count: 1}
+    ]
+
+  def transform(:supportability, [:trace_context, :accept, :exception]),
+    do: [
+      %Metric{name: :"Supportability/TraceContext/Accept/Exception", call_count: 1}
+    ]
+
+  def transform(:supportability, [:trace_context, :tracestate, :non_new_relic]),
+    do: [
+      %Metric{name: :"Supportability/TraceContext/TraceState/NoNrEntry", call_count: 1}
+    ]
+
+  def transform(:supportability, [:trace_context, :traceparent, :invalid]),
+    do: [
+      %Metric{name: :"Supportability/TraceContext/TraceParent/Parse/Exception", call_count: 1}
+    ]
+
   def transform(:supportability, [:dt, :accept, :success]),
     do: [
-      %Metric{
-        name: :"Supportability/DistributedTrace/AcceptPayload/Success",
-        call_count: 1
-      }
+      %Metric{name: :"Supportability/DistributedTrace/AcceptPayload/Success", call_count: 1}
     ]
 
   def transform(:supportability, [:dt, :accept, :parse_error]),
