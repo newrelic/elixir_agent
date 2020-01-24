@@ -13,6 +13,7 @@ defmodule NewRelic.Harvest.Collector.Connect do
             %{label_type: key, label_value: value}
           end),
         utilization: NewRelic.Util.utilization(),
+        event_harvest_config: NewRelic.Config.event_harvest_config(),
         metadata: NewRelic.Util.metadata(),
         environment: NewRelic.Util.elixir_environment(),
         agent_version: NewRelic.Config.agent_version()

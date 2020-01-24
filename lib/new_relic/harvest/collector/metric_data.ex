@@ -245,11 +245,21 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform({:supportability, harvester}, reservoir_size: reservoir_size),
+    do: [
+      %Metric{
+        name: join(["Supportability/EventHarvest", harvester, "HarvestLimit"]),
+        call_count: 1,
+        total_call_time: reservoir_size
+      }
+    ]
+
   def transform({:supportability, harvester}, harvest_size: harvest_size),
     do: [
       %Metric{
-        name: join(["Supportability/Elixir/Collector/HarvestSize", inspect(harvester)]),
-        call_count: harvest_size
+        name: join(["Supportability/Elixir/Collector/HarvestSize", harvester]),
+        call_count: 1,
+        total_call_time: harvest_size
       },
       %Metric{
         name: :"Supportability/Elixir/Harvest",
