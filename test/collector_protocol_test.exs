@@ -7,7 +7,7 @@ defmodule CollectorProtocolTest do
     System.put_env("NEW_RELIC_LICENSE_KEY", "invalid_key")
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
 
-    assert {:error, :license_exception} = Collector.Protocol.preconnect()
+    assert {:error, :force_disconnect} = Collector.Protocol.preconnect()
 
     log = GenServer.call(NewRelic.Logger, :flush)
     assert log =~ "[ERROR]"

@@ -271,6 +271,14 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform({:supportability, :collector}, status: status),
+    do: [
+      %Metric{
+        name: join(["Supportability/Agent/Collector/HTTPError", status]),
+        call_count: 1
+      }
+    ]
+
   def transform(:supportability, [:trace_context, :accept, :success]),
     do: [
       %Metric{name: :"Supportability/TraceContext/Accept/Success", call_count: 1}

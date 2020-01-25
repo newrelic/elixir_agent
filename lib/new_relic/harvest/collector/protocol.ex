@@ -49,7 +49,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
       params
       |> issue_call(payload)
       |> retry_call(params, payload)
-      |> parse_collector_response(params)
+      |> handle_collector_response(params)
 
   defp issue_call(params, payload),
     do:
@@ -59,7 +59,12 @@ defmodule NewRelic.Harvest.Collector.Protocol do
       |> parse_http_response(params)
 
   defp retry_call({:ok, response}, _params, _payload), do: {:ok, response}
-  defp retry_call({:error, _response}, params, payload), do: issue_call(params, payload)
+
+  @retryable [408, 429, 500, 503]
+  defp retry_call({:error, status}, params, payload) when status in @retryable,
+    do: issue_call(params, payload)
+
+  defp retry_call({:error, error}, _params, _payload), do: {:error, error}
 
   defp collector_method_url(params) do
     params = Map.merge(default_collector_params(), params)
@@ -76,8 +81,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     |> URI.to_string()
   end
 
-  defp parse_http_response({:ok, %{status_code: status_code, body: body}}, _params)
-       when status_code in [200, 410] do
+  defp parse_http_response({:ok, %{status_code: 200, body: body}}, _params) do
     case Jason.decode(body) do
       {:ok, response} ->
         {:ok, response}
@@ -92,17 +96,34 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     {:ok, :accepted}
   end
 
+  @force_restart [401, 409]
+  defp parse_http_response({:ok, %{status_code: status_code, body: body}}, params)
+       when status_code in @force_restart do
+    NewRelic.report_metric({:supportability, :collector}, status: status_code)
+    log_error(status_code, :force_restart, params, body)
+    {:error, :force_restart}
+  end
+
+  @force_disconnect [410]
+  defp parse_http_response({:ok, %{status_code: status_code, body: body}}, params)
+       when status_code in @force_disconnect do
+    NewRelic.report_metric({:supportability, :collector}, status: status_code)
+    log_error(status_code, :force_disconnect, params, body)
+    {:error, :force_disconnect}
+  end
+
   defp parse_http_response({:ok, %{status_code: status, body: body}}, params) do
-    NewRelic.log(:error, "#{params[:method]}: (#{status}) #{body}")
+    NewRelic.report_metric({:supportability, :collector}, status: status)
+    log_error(status, :unexpected_response, params, body)
     {:error, status}
   end
 
   defp parse_http_response({:error, reason}, params) do
-    NewRelic.log(:error, "#{params[:method]}: #{inspect(reason)}")
+    log_error(:failed_request, reason, params)
     {:error, reason}
   end
 
-  defp parse_collector_response(
+  defp handle_collector_response(
          {:ok, %{"return_value" => %{"messages" => messages} = return_value}},
          _params
        ) do
@@ -110,63 +131,50 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     {:ok, return_value}
   end
 
-  defp parse_collector_response({:ok, %{"return_value" => return_value}}, _params) do
+  defp handle_collector_response({:ok, %{"return_value" => return_value}}, _params) do
     {:ok, return_value}
   end
 
-  defp parse_collector_response({:ok, %{"exception" => exception}}, %{method: method}) do
-    exception_type = respond_to_exception(exception, method)
-    {:error, exception_type}
-  end
-
-  defp parse_collector_response({:ok, :accepted}, _params) do
+  defp handle_collector_response({:ok, :accepted}, _params) do
     {:ok, :accepted}
   end
 
-  defp parse_collector_response({:error, reason}, _params) do
+  defp handle_collector_response({:error, :force_disconnect}, _params) do
+    NewRelic.log(:error, "Disabling agent harvest")
+    Application.put_env(:new_relic_agent, :harvest_enabled, false)
+    {:error, :force_disconnect}
+  end
+
+  defp handle_collector_response({:error, :force_restart}, _params) do
+    NewRelic.log(:error, "Reconnecting agent")
+    Collector.AgentRun.reconnect()
+    {:error, :force_restart}
+  end
+
+  defp handle_collector_response({:error, reason}, _params) do
     {:error, reason}
   end
 
-  defp parse_collector_response(response, method) do
-    NewRelic.log(:error, "#{method}: (Unexpected collector response) #{inspect(response)}")
-    {:error, :unexpected_collector_response}
+  defp log_error(error, reason, params) do
+    NewRelic.log(:error, "#{params[:method]}: (#{error}) #{inspect(reason)}")
   end
 
-  defp respond_to_exception(%{"error_type" => error_type} = exception, method)
-       when error_type in [
-              "NewRelic::Agent::ForceDisconnectException",
-              "NewRelic::Agent::LicenseException"
-            ] do
-    NewRelic.log(:error, "#{method}: (#{error_type}) #{exception["message"]}")
-    NewRelic.log(:error, "Disabling agent harvest")
-
-    Application.put_env(:new_relic_agent, :harvest_enabled, false)
-
-    :license_exception
+  defp log_error(error, reason, params, "") do
+    NewRelic.log(:error, "#{params[:method]}: (#{error}) #{inspect(reason)}")
   end
 
-  defp respond_to_exception(%{"error_type" => error_type} = exception, method)
-       when error_type in [
-              "NewRelic::Agent::ForceRestartException"
-            ] do
-    NewRelic.log(:error, "#{method}: (#{error_type}) #{exception["message"]}")
-    NewRelic.log(:error, "Reconnecting agent")
+  defp log_error(status, error, params, body) do
+    case Jason.decode(body) do
+      {:ok, %{"exception" => exception}} ->
+        NewRelic.log(
+          :error,
+          "#{params[:method]}: (#{status}) #{error} - " <>
+            "#{exception["error_type"]} - #{exception["message"]}"
+        )
 
-    Collector.AgentRun.reconnect()
-
-    :force_restart_exception
-  end
-
-  defp respond_to_exception(%{"error_type" => error_type} = exception, method) do
-    NewRelic.log(:error, "#{method}: (#{error_type}) #{exception["message"]}")
-
-    :collector_exception
-  end
-
-  defp respond_to_exception(exception, method) do
-    NewRelic.log(:error, "#{method}: Unexpected collector exception: #{inspect(exception)}")
-
-    :unexpected_exception
+      _ ->
+        NewRelic.log(:error, "#{params[:method]}: (#{status}) #{error} - #{body}")
+    end
   end
 
   defp collector_headers do
