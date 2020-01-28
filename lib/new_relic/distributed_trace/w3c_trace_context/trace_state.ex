@@ -37,7 +37,7 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
         value.span_id,
         value.transaction_id,
         value.sampled |> encode_sampled(),
-        value.priority,
+        value.priority |> encode_priority(),
         value.timestamp
       ]
       |> Enum.join("-")
@@ -168,6 +168,9 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
 
   defp decode_priority(""), do: nil
   defp decode_priority(priority), do: String.to_float(priority)
+
+  defp encode_priority(priority),
+    do: priority |> :erlang.float_to_binary([:compact, decimals: 6])
 
   defp decode_sampled("1"), do: true
   defp decode_sampled("0"), do: false

@@ -82,6 +82,11 @@ defmodule W3CTraceContextTest do
       TraceState,
       "190@nr=0-0-709288-8599547-f85f42fd82a4cf1d-164d3b4b0d09cb05-1-0.789-1563574856827,foo@vendor=value"
     )
+
+    assert_valid(
+      TraceState,
+      "190@nr=0-0-709288-8599547-f85f42fd82a4cf1d-164d3b4b0d09cb05-1-0.000001-1563574856827,foo@vendor=value"
+    )
   end
 
   test "header extraction & re-generation" do
