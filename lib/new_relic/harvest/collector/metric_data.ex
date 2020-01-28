@@ -245,11 +245,21 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform({:supportability, harvester}, reservoir_size: reservoir_size),
+    do: [
+      %Metric{
+        name: join(["Supportability/EventHarvest", harvester, "HarvestLimit"]),
+        call_count: 1,
+        total_call_time: reservoir_size
+      }
+    ]
+
   def transform({:supportability, harvester}, harvest_size: harvest_size),
     do: [
       %Metric{
-        name: join(["Supportability/Elixir/Collector/HarvestSize", inspect(harvester)]),
-        call_count: harvest_size
+        name: join(["Supportability/Elixir/Collector/HarvestSize", harvester]),
+        call_count: 1,
+        total_call_time: harvest_size
       },
       %Metric{
         name: :"Supportability/Elixir/Harvest",
@@ -261,12 +271,37 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
-  def transform(:supportability, [:dt, :accept, :success]),
+  def transform({:supportability, :collector}, status: status),
     do: [
       %Metric{
-        name: :"Supportability/DistributedTrace/AcceptPayload/Success",
+        name: join(["Supportability/Agent/Collector/HTTPError", status]),
         call_count: 1
       }
+    ]
+
+  def transform(:supportability, [:trace_context, :accept, :success]),
+    do: [
+      %Metric{name: :"Supportability/TraceContext/Accept/Success", call_count: 1}
+    ]
+
+  def transform(:supportability, [:trace_context, :accept, :exception]),
+    do: [
+      %Metric{name: :"Supportability/TraceContext/Accept/Exception", call_count: 1}
+    ]
+
+  def transform(:supportability, [:trace_context, :tracestate, :non_new_relic]),
+    do: [
+      %Metric{name: :"Supportability/TraceContext/TraceState/NoNrEntry", call_count: 1}
+    ]
+
+  def transform(:supportability, [:trace_context, :traceparent, :invalid]),
+    do: [
+      %Metric{name: :"Supportability/TraceContext/TraceParent/Parse/Exception", call_count: 1}
+    ]
+
+  def transform(:supportability, [:dt, :accept, :success]),
+    do: [
+      %Metric{name: :"Supportability/DistributedTrace/AcceptPayload/Success", call_count: 1}
     ]
 
   def transform(:supportability, [:dt, :accept, :parse_error]),

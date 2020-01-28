@@ -17,7 +17,7 @@ defmodule NewRelic.Harvest.Collector.TransactionErrorEvent.Harvester do
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
        sampling: %{
-         reservoir_size: Collector.AgentRun.lookup(:error_event_reservoir_size),
+         reservoir_size: Collector.AgentRun.lookup(:error_event_reservoir_size, 10),
          events_seen: 0
        },
        error_events: []
@@ -80,7 +80,7 @@ defmodule NewRelic.Harvest.Collector.TransactionErrorEvent.Harvester do
   end
 
   def log_harvest(harvest_size) do
-    NewRelic.report_metric({:supportability, TransactionErrorEvent}, harvest_size: harvest_size)
+    NewRelic.report_metric({:supportability, "ErrorEventData"}, harvest_size: harvest_size)
     NewRelic.log(:debug, "Completed Error Event harvest - size: #{harvest_size}")
   end
 

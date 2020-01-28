@@ -121,9 +121,21 @@ defmodule NewRelic.Config do
   @doc false
   def enabled?, do: (harvest_enabled?() && app_name() && license_key() && true) || false
 
+  def event_harvest_config() do
+    %{
+      harvest_limits: %{
+        analytic_event_data:
+          Application.get_env(:new_relic_agent, :analytic_event_per_minute, 1000),
+        custom_event_data: Application.get_env(:new_relic_agent, :custom_event_per_minute, 1000),
+        error_event_data: Application.get_env(:new_relic_agent, :error_event_per_minute, 100),
+        span_event_data: Application.get_env(:new_relic_agent, :span_event_per_minute, 1000)
+      }
+    }
+  end
+
   defp harvest_enabled?,
     do:
-      System.get_env("NEW_RELIC_HARVEST_ENABLED") ||
+      System.get_env("NEW_RELIC_HARVEST_ENABLED") == "true" ||
         Application.get_env(:new_relic_agent, :harvest_enabled, true)
 
   defp parse_app_names(nil), do: nil

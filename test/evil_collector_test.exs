@@ -119,7 +119,7 @@ defmodule EvilCollectorTest do
       }
     }
 
-    EvilCollector.start(code: 200, body: Jason.encode!(exception))
+    EvilCollector.start(code: 415, body: Jason.encode!(exception))
     previous_logger = GenServer.call(NewRelic.Logger, {:logger, :memory})
 
     Collector.Protocol.preconnect()

@@ -164,16 +164,26 @@ defmodule NewRelic.Transaction.Complete do
         sampled: tx_attrs[:sampled],
         priority: tx_attrs[:priority],
         category: "generic",
-        name: "Transaction Root Process #{inspect(pid)}",
+        name: "Transaction Root Process",
         guid: DistributedTrace.generate_guid(pid: pid),
         parent_id: tx_attrs[:parentSpanId],
         timestamp: tx_attrs[:start_time],
         duration: tx_attrs[:duration_s],
-        entry_point: true
+        entry_point: true,
+        category_attributes:
+          %{
+            pid: inspect(pid)
+          }
+          |> maybe_add(:tracingVendors, tx_attrs[:tracingVendors])
+          |> maybe_add(:trustedParentId, tx_attrs[:trustedParentId])
       }
       | spans
     ]
   end
+
+  def maybe_add(attrs, _key, nil), do: attrs
+  def maybe_add(attrs, _key, ""), do: attrs
+  def maybe_add(attrs, key, value), do: Map.put(attrs, key, value)
 
   defp spawned_process_span_events(tx_attrs, process_spawns, process_names, process_exits) do
     process_spawns
@@ -186,11 +196,14 @@ defmodule NewRelic.Transaction.Complete do
         sampled: tx_attrs[:sampled],
         priority: tx_attrs[:priority],
         category: "generic",
-        name: "Process #{proc.name || proc.pid}",
+        name: proc.name || "Process",
         guid: DistributedTrace.generate_guid(pid: proc.id),
         parent_id: DistributedTrace.generate_guid(pid: proc.parent_id),
         timestamp: proc[:start_time],
-        duration: (proc[:end_time] - proc[:start_time]) / 1000
+        duration: (proc[:end_time] - proc[:start_time]) / 1000,
+        category_attributes: %{
+          pid: proc.pid
+        }
       }
     end)
   end

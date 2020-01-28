@@ -200,8 +200,7 @@ defmodule SpanEventTest do
     [nested_function_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.do_hello/0" end)
 
-    [task_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] -> String.starts_with?(ev[:name], "Process #PID") end)
+    [task_event, _, _] = Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "Process" end)
 
     [nested_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] ->

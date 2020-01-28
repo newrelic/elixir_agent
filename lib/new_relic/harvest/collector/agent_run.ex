@@ -69,24 +69,50 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     store(:account_id, connect_response["account_id"])
     store(:primary_application_id, connect_response["primary_application_id"])
 
+    store(:request_headers, connect_response["request_headers_map"] |> Map.to_list())
+
     store(:sampling_target, connect_response["sampling_target"])
     store(:sampling_target_period, connect_response["sampling_target_period_in_seconds"] * 1000)
 
-    transaction_event = connect_response["data_methods"]["analytic_event_data"]
-    store(:transaction_event_reservoir_size, transaction_event["max_samples_stored"])
-    store(:transaction_event_harvest_cycle, transaction_event["report_period_in_seconds"] * 1000)
+    connect_response["data_methods"]
+    event_harvest = connect_response["event_harvest_config"]
+    harvest_limits = event_harvest["harvest_limits"]
 
-    custom_event = connect_response["data_methods"]["custom_event_data"]
-    store(:custom_event_reservoir_size, custom_event["max_samples_stored"])
-    store(:custom_event_harvest_cycle, custom_event["report_period_in_seconds"] * 1000)
+    if harvest_limits["analytic_event_data"] do
+      store(:transaction_event_reservoir_size, harvest_limits["analytic_event_data"])
+      store(:transaction_event_harvest_cycle, event_harvest["report_period_ms"])
+    else
+      analytic_event = connect_response["data_methods"]["analytic_event_data"]
+      store(:transaction_event_reservoir_size, analytic_event["max_samples_stored"])
+      store(:transaction_event_harvest_cycle, analytic_event["report_period_in_seconds"] * 1000)
+    end
 
-    error_event = connect_response["data_methods"]["error_event_data"]
-    store(:error_event_reservoir_size, error_event["max_samples_stored"])
-    store(:error_event_harvest_cycle, error_event["report_period_in_seconds"] * 1000)
+    if harvest_limits["custom_event_data"] do
+      store(:custom_event_reservoir_size, harvest_limits["custom_event_data"])
+      store(:custom_event_harvest_cycle, event_harvest["report_period_ms"])
+    else
+      custom_event = connect_response["data_methods"]["custom_event_data"]
+      store(:custom_event_reservoir_size, custom_event["max_samples_stored"])
+      store(:custom_event_harvest_cycle, custom_event["report_period_in_seconds"] * 1000)
+    end
 
-    span_event = connect_response["data_methods"]["span_event_data"]
-    store(:span_event_reservoir_size, span_event["max_samples_stored"])
-    store(:span_event_harvest_cycle, span_event["report_period_in_seconds"] * 1000)
+    if harvest_limits["error_event_data"] do
+      store(:error_event_reservoir_size, harvest_limits["error_event_data"])
+      store(:error_event_harvest_cycle, event_harvest["report_period_ms"])
+    else
+      error_event = connect_response["data_methods"]["error_event_data"]
+      store(:error_event_reservoir_size, error_event["max_samples_stored"])
+      store(:error_event_harvest_cycle, error_event["report_period_in_seconds"] * 1000)
+    end
+
+    if harvest_limits["span_event_data"] do
+      store(:span_event_reservoir_size, harvest_limits["span_event_data"])
+      store(:span_event_harvest_cycle, event_harvest["report_period_ms"])
+    else
+      span_event = connect_response["data_methods"]["span_event_data"]
+      store(:span_event_reservoir_size, span_event["max_samples_stored"])
+      store(:span_event_harvest_cycle, span_event["report_period_in_seconds"] * 1000)
+    end
 
     store(:data_report_period, connect_response["data_report_period"] * 1000)
 
@@ -103,11 +129,11 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     :ets.insert(__MODULE__, {key, value})
   end
 
-  def lookup(key) do
+  def lookup(key, default \\ nil) do
     Application.get_env(:new_relic_agent, key) ||
       case :ets.lookup(__MODULE__, key) do
         [{^key, value}] -> value
-        [] -> nil
+        [] -> default
       end
   end
 end

@@ -1,5 +1,7 @@
 defmodule NewRelic.DistributedTrace do
-  @dt_header "newrelic"
+  @nr_header "newrelic"
+  @w3c_traceparent "traceparent"
+  @w3c_tracestate "tracestate"
 
   @moduledoc false
 
@@ -7,21 +9,44 @@ defmodule NewRelic.DistributedTrace do
   alias NewRelic.Harvest.Collector.AgentRun
   alias NewRelic.Transaction
 
-  def accept_distributed_trace_payload(:http, conn) do
-    case Plug.Conn.get_req_header(conn, @dt_header) do
-      [trace_payload | _] ->
-        trace_payload
-        |> Context.decode()
+  def accept_distributed_trace_headers(:http, conn) do
+    w3c_headers(conn) || newrelic_header(conn) || :no_payload
+  end
 
-      [] ->
-        :no_payload
+  defp w3c_headers(conn) do
+    case Plug.Conn.get_req_header(conn, @w3c_traceparent) do
+      [_traceparent | _] -> NewRelic.DistributedTrace.W3CTraceContext.extract(conn)
+      _ -> false
     end
   end
 
-  def create_distributed_trace_payload(:http) do
+  defp newrelic_header(conn) do
+    case Plug.Conn.get_req_header(conn, @nr_header) do
+      [trace_payload | _] -> NewRelic.DistributedTrace.NewRelicContext.extract(trace_payload)
+      _ -> false
+    end
+  end
+
+  def distributed_trace_headers(:http) do
     case get_tracing_context() do
-      nil -> []
-      context -> [{@dt_header, Context.encode(context, get_current_span_guid())}]
+      nil ->
+        []
+
+      context ->
+        context = %{
+          context
+          | span_guid: get_current_span_guid(),
+            timestamp: System.system_time(:millisecond)
+        }
+
+        nr_header = NewRelic.DistributedTrace.NewRelicContext.generate(context)
+        {traceparent, tracestate} = NewRelic.DistributedTrace.W3CTraceContext.generate(context)
+
+        [
+          {@nr_header, nr_header},
+          {@w3c_traceparent, traceparent},
+          {@w3c_tracestate, tracestate}
+        ]
     end
   end
 
@@ -29,6 +54,7 @@ defmodule NewRelic.DistributedTrace do
     {priority, sampled} = generate_sampling()
 
     %Context{
+      source: :new,
       account_id: AgentRun.account_id(),
       app_id: AgentRun.primary_application_id(),
       trust_key: AgentRun.trusted_account_key(),
@@ -40,9 +66,45 @@ defmodule NewRelic.DistributedTrace do
   def track_transaction(context, transport_type: type) do
     context
     |> assign_transaction_guid()
+    |> maybe_generate_sampling()
+    |> maybe_generate_trace_id()
     |> report_attributes(transport_type: type)
+    |> report_attributes(:w3c)
     |> convert_to_outbound()
     |> set_tracing_context()
+  end
+
+  def maybe_generate_sampling(%Context{sampled: nil, priority: nil} = context) do
+    {priority, sampled} = generate_sampling()
+    %{context | sampled: sampled, priority: priority}
+  end
+
+  def maybe_generate_sampling(context), do: context
+
+  def maybe_generate_trace_id(%Context{parent_id: nil} = context) do
+    %{context | trace_id: generate_guid(16)}
+  end
+
+  def maybe_generate_trace_id(context) do
+    context
+  end
+
+  def report_attributes(
+        %{source: {:w3c, %{tracestate: :non_new_relic}}} = context,
+        transport_type: type
+      ) do
+    [
+      "parent.transportType": type,
+      guid: context.trace_id,
+      traceId: context.trace_id,
+      priority: context.priority,
+      sampled: context.sampled,
+      parentId: context.parent_id,
+      parentSpanId: context.span_guid
+    ]
+    |> NewRelic.add_attributes()
+
+    context
   end
 
   def report_attributes(
@@ -51,7 +113,7 @@ defmodule NewRelic.DistributedTrace do
       ) do
     [
       guid: context.guid,
-      traceId: context.guid,
+      traceId: context.trace_id,
       priority: context.priority,
       sampled: context.sampled
     ]
@@ -79,14 +141,28 @@ defmodule NewRelic.DistributedTrace do
     context
   end
 
+  def report_attributes(%{source: {:w3c, w3c}} = context, :w3c) do
+    NewRelic.add_attributes(tracingVendors: Enum.join(w3c.tracing_vendors, ","))
+
+    w3c.tracestate == :new_relic &&
+      NewRelic.add_attributes(trustedParentId: w3c.span_id)
+
+    context
+  end
+
+  def report_attributes(context, :w3c) do
+    context
+  end
+
   def convert_to_outbound(%Context{parent_id: nil} = context) do
     %Context{
+      source: context.source,
       account_id: AgentRun.account_id(),
       app_id: AgentRun.primary_application_id(),
       parent_id: nil,
       trust_key: context.trust_key,
       guid: context.guid,
-      trace_id: context.guid,
+      trace_id: context.trace_id,
       priority: context.priority,
       sampled: context.sampled
     }
@@ -94,6 +170,7 @@ defmodule NewRelic.DistributedTrace do
 
   def convert_to_outbound(%Context{} = context) do
     %Context{
+      source: context.source,
       account_id: AgentRun.account_id(),
       app_id: AgentRun.primary_application_id(),
       parent_id: context.guid,
@@ -181,13 +258,16 @@ defmodule NewRelic.DistributedTrace do
     NewRelic.DistributedTrace.BackoffSampler.sample?()
   end
 
-  defp generate_priority, do: :rand.uniform() |> Float.round(6)
+  defp generate_priority do
+    :rand.uniform() |> Float.round(6)
+  end
 
   def assign_transaction_guid(context) do
     Map.put(context, :guid, generate_guid())
   end
 
   def generate_guid(), do: :crypto.strong_rand_bytes(8) |> Base.encode16() |> String.downcase()
+  def generate_guid(16), do: :crypto.strong_rand_bytes(16) |> Base.encode16() |> String.downcase()
   def generate_guid(pid: pid), do: encode_guid([pid, node()])
   def generate_guid(pid: pid, label: label, ref: ref), do: encode_guid([label, ref, pid, node()])
 
@@ -203,7 +283,7 @@ defmodule NewRelic.DistributedTrace do
     |> :erlang.phash2()
     |> Integer.to_charlist(16)
     |> to_string()
-    |> String.slice(0..4)
+    |> String.slice(0..3)
     |> String.downcase()
   end
 
