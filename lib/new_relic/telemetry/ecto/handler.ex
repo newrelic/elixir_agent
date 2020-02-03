@@ -15,7 +15,9 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
     queue_time_ms = measurements[:queue_time] |> to_ms
     decode_time_ms = measurements[:decode_time] |> to_ms
 
-    %{hostname: hostname, port: port, database: database} = config.repo_configs[repo]
+    database = config.repo_configs[repo][:database] || "unknown"
+    hostname = config.repo_configs[repo][:hostname] || "unknown"
+    port = config.repo_configs[repo][:port] || "unknown"
 
     query = (config.collect_sql? && metadata.query) || ""
 
