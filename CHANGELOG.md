@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.16.1`
+
+Fixes
+
+* Safely access optional Ecto config attributes. [#172](https://github.com/newrelic/elixir_agent/pull/172)
+
 ### `v1.16.0`
 
 Features
