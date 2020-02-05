@@ -48,6 +48,8 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
     {"MySQL", table, operation}
   end
 
+  def parse(%{result: {:error, _}}), do: :ignore
+
   def parse(_) do
     raise "Unsupported ecto adapter"
   end

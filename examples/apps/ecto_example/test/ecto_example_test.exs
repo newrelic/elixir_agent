@@ -21,15 +21,13 @@ defmodule EctoExampleTest do
 
     assert TestHelper.find_metric(
              metrics,
-             "Datastore/statement/Postgres/counts/insert",
-             1
-           )
+             "Datastore/statement/Postgres/counts/insert"
+           ) >= 1
 
     assert TestHelper.find_metric(
              metrics,
-             "Datastore/statement/MySQL/counts/insert",
-             1
-           )
+             "Datastore/statement/MySQL/counts/insert"
+           ) >= 1
   end
 
   def request() do

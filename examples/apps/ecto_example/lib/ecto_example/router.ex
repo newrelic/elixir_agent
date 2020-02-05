@@ -7,6 +7,9 @@ defmodule EctoExample.Router do
   plug(:dispatch)
 
   get "/hello" do
+    error_query(EctoExample.PostgresRepo)
+    error_query(EctoExample.MySQLRepo)
+
     response =
       %{
         hello: "world",
@@ -30,5 +33,16 @@ defmodule EctoExample.Router do
     repo.update!(record, force: true)
     Process.sleep(20)
     repo.aggregate(EctoExample.Count, :count)
+  end
+
+  def error_query(repo) do
+    # The migration has a unique index on inserted_at
+    # This triggers an error that the agent should capture
+    ts = ~N[2020-01-17 10:00:00]
+
+    {:ok, %{id: _id}} = repo.insert(%EctoExample.Count{inserted_at: ts})
+    {:error, _} = repo.insert(%EctoExample.Count{inserted_at: ts})
+  rescue
+    Ecto.ConstraintError -> nil
   end
 end
