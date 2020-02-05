@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.16.2`
+
+Fixes
+
+* Handle error queries properly. [#173](https://github.com/newrelic/elixir_agent/pull/173)
+
 ### `v1.16.1`
 
 Fixes
