@@ -7,6 +7,9 @@ defmodule EctoExample.Router do
   plug(:dispatch)
 
   get "/hello" do
+    error_query(EctoExample.PostgresRepo)
+    error_query(EctoExample.MySQLRepo)
+
     response =
       %{
         hello: "world",
@@ -14,9 +17,6 @@ defmodule EctoExample.Router do
         mysql_count: query_db(EctoExample.MySQLRepo)
       }
       |> Jason.encode!()
-
-    error_query(EctoExample.PostgresRepo)
-    error_query(EctoExample.MySQLRepo)
 
     Process.sleep(100)
     send_resp(conn, 200, response)
