@@ -546,6 +546,28 @@ defmodule NewRelic.Transaction.Complete do
     NewRelic.report_metric(:external_web, duration_s: duration_s)
   end
 
+  def report_transaction_metrics(
+        %{name: tx_name},
+        {{:external, url, component, method}, duration_s: duration_s}
+      ) do
+    NewRelic.report_metric(
+      {:external, url, component, method},
+      scope: tx_name,
+      duration_s: duration_s
+    )
+  end
+
+  def report_transaction_metrics(
+        %{name: tx_name},
+        {{:external, function_name}, duration_s: duration_s}
+      ) do
+    NewRelic.report_metric(
+      {:external, function_name},
+      scope: tx_name,
+      duration_s: duration_s
+    )
+  end
+
   def report_apdex_metric(:ignore), do: :ignore
 
   def report_apdex_metric(apdex) do

@@ -29,7 +29,16 @@ defmodule TestHelper do
     GenServer.call(harvest_cycle, :pause)
   end
 
-  def find_metric(metrics, name, call_count \\ 1) do
+  def find_metric(metrics, name, call_count \\ 1)
+
+  def find_metric(metrics, {name, scope}, call_count) do
+    Enum.find(metrics, fn
+      [%{name: ^name, scope: ^scope}, [^call_count, _, _, _, _, _]] -> true
+      _ -> false
+    end)
+  end
+
+  def find_metric(metrics, name, call_count) do
     Enum.find(metrics, fn
       [%{name: ^name}, [^call_count, _, _, _, _, _]] -> true
       _ -> false

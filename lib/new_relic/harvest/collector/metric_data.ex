@@ -168,8 +168,33 @@ defmodule NewRelic.Harvest.Collector.MetricData do
     ]
   end
 
+  def transform({:external, url, component, method}, scope: scope, duration_s: duration_s) do
+    host = URI.parse(url).host
+    method = method |> to_string() |> String.upcase()
+
+    [
+      %Metric{
+        name: join(["External", host, component, method]),
+        scope: join(["WebTransaction", scope]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
+    ]
+  end
+
   def transform({:external, name}, duration_s: duration_s),
     do: [
+      %Metric{
+        name: :"External/all",
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      },
       %Metric{
         name: join(["External", name, "all"]),
         call_count: 1,
@@ -179,6 +204,17 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         max_call_time: duration_s
       }
     ]
+
+  def transform({:external, name}, scope: scope, duration_s: duration_s),
+    do: %Metric{
+      name: join(["External", name]),
+      scope: join(["WebTransaction", scope]),
+      call_count: 1,
+      total_call_time: duration_s,
+      total_exclusive_time: duration_s,
+      min_call_time: duration_s,
+      max_call_time: duration_s
+    }
 
   def transform(:external_web, duration_s: duration_s),
     do: [

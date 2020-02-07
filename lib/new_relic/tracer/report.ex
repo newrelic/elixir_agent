@@ -71,8 +71,18 @@ defmodule NewRelic.Tracer.Report do
       %{url: url, component: component, method: method} ->
         NewRelic.report_metric({:external, url, component, method}, duration_s: duration_s)
 
+        Transaction.Reporter.track_metric({
+          {:external, url, component, method},
+          duration_s: duration_s
+        })
+
       _ ->
         NewRelic.report_metric({:external, function_name}, duration_s: duration_s)
+
+        Transaction.Reporter.track_metric({
+          {:external, function_name},
+          duration_s: duration_s
+        })
     end
   end
 

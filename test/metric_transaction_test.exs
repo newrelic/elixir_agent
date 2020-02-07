@@ -23,8 +23,17 @@ defmodule MetricTransactionTest do
 
   defmodule External do
     use NewRelic.Tracer
+
     @trace {:call, category: :external}
-    def call, do: :make_request
+    def call(span: true) do
+      NewRelic.set_span(:http, url: "http://domain.net", method: "GET", component: "HttpClient")
+      Process.sleep(20)
+    end
+
+    @trace {:call, category: :external}
+    def call do
+      Process.sleep(20)
+    end
   end
 
   defmodule TestPlugApp do
@@ -35,7 +44,9 @@ defmodule MetricTransactionTest do
     plug(:dispatch)
 
     get "/foo/:blah" do
+      External.call(span: true)
       External.call()
+      Process.sleep(10)
       send_resp(conn, 200, blah)
     end
 
@@ -85,13 +96,31 @@ defmodule MetricTransactionTest do
 
     assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
     refute TestHelper.find_metric(metrics, "WebFrontend/QueueTime")
+    assert TestHelper.find_metric(metrics, "Apdex", 1)
+  end
 
-    apdex = TestHelper.find_metric(metrics, "Apdex")
+  test "External metrics" do
+    TestPlugApp.call(conn(:get, "/foo/1"), [])
 
-    assert [_, [1, _, _, _, _, _]] = apdex
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert TestHelper.find_metric(metrics, "External/MetricTransactionTest.External.call/all")
-    assert TestHelper.find_metric(metrics, "External/allWeb")
+    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
+
+    assert TestHelper.find_metric(metrics, "External/domain.net/HttpClient/GET")
+
+    assert TestHelper.find_metric(
+             metrics,
+             {"External/domain.net/HttpClient/GET", "WebTransaction/Plug/GET//foo/:blah"}
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             {"External/MetricTransactionTest.External.call",
+              "WebTransaction/Plug/GET//foo/:blah"}
+           )
+
+    assert TestHelper.find_metric(metrics, "External/allWeb", 2)
+    assert TestHelper.find_metric(metrics, "External/all", 2)
   end
 
   test "Request queueing transaction" do
