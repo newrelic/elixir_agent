@@ -5,85 +5,63 @@ defmodule NewRelic.Harvest.Collector.MetricData do
 
   alias NewRelic.Metric
 
-  def transform({:transaction, name}, duration_s: duration_s, total_time_s: total_time_s),
-    do: [
-      %Metric{
-        name: :HttpDispatcher,
-        call_count: 1,
-        total_call_time: duration_s,
-        total_exclusive_time: duration_s,
-        min_call_time: duration_s,
-        max_call_time: duration_s
-      },
-      %Metric{
-        name: :WebTransaction,
-        call_count: 1,
-        total_call_time: duration_s,
-        total_exclusive_time: duration_s,
-        min_call_time: duration_s,
-        max_call_time: duration_s
-      },
-      %Metric{
-        name: join(["WebTransaction", name]),
-        call_count: 1,
-        total_call_time: duration_s,
-        total_exclusive_time: duration_s,
-        min_call_time: duration_s,
-        max_call_time: duration_s
-      },
-      %Metric{
-        name: :WebTransactionTotalTime,
-        call_count: 1,
-        total_call_time: total_time_s,
-        total_exclusive_time: total_time_s,
-        min_call_time: total_time_s,
-        max_call_time: total_time_s
-      },
-      %Metric{
-        name: join(["WebTransactionTotalTime", name]),
-        call_count: 1,
-        total_call_time: total_time_s,
-        total_exclusive_time: total_time_s,
-        min_call_time: total_time_s,
-        max_call_time: total_time_s
-      }
-    ]
+  def transform(:http_dispatcher, duration_s: duration_s),
+    do: %Metric{
+      name: :HttpDispatcher,
+      call_count: 1,
+      total_call_time: duration_s,
+      total_exclusive_time: duration_s,
+      min_call_time: duration_s,
+      max_call_time: duration_s
+    }
 
-  def transform({:other_transaction, name}, duration_s: duration_s, total_time_s: total_time_s),
-    do: [
-      %Metric{
-        name: :"OtherTransaction/all",
-        call_count: 1,
-        total_call_time: duration_s,
-        total_exclusive_time: duration_s,
-        min_call_time: duration_s,
-        max_call_time: duration_s
-      },
-      %Metric{
-        name: join(["OtherTransaction", name]),
-        call_count: 1,
-        total_call_time: duration_s,
-        total_exclusive_time: duration_s,
-        min_call_time: duration_s,
-        max_call_time: duration_s
-      },
-      %Metric{
-        name: :OtherTransactionTotalTime,
-        call_count: 1,
-        total_call_time: total_time_s,
-        total_exclusive_time: total_time_s,
-        min_call_time: total_time_s,
-        max_call_time: total_time_s
-      },
-      %Metric{
-        name: join(["OtherTransactionTotalTime", name]),
-        call_count: 1,
-        total_call_time: total_time_s,
-        total_exclusive_time: total_time_s,
-        min_call_time: total_time_s,
-        max_call_time: total_time_s
-      }
-    ]
+  def transform({:transaction, name},
+        type: type,
+        duration_s: duration_s,
+        total_time_s: total_time_s
+      ),
+      do: [
+        %Metric{
+          name: "#{type}Transaction",
+          call_count: 1,
+          total_call_time: duration_s,
+          total_exclusive_time: duration_s,
+          min_call_time: duration_s,
+          max_call_time: duration_s
+        },
+        %Metric{
+          name: "#{type}Transaction/all",
+          call_count: 1,
+          total_call_time: duration_s,
+          total_exclusive_time: duration_s,
+          min_call_time: duration_s,
+          max_call_time: duration_s
+        },
+        %Metric{
+          name: join(["#{type}Transaction", name]),
+          call_count: 1,
+          total_call_time: duration_s,
+          total_exclusive_time: duration_s,
+          min_call_time: duration_s,
+          max_call_time: duration_s
+        },
+        %Metric{
+          name: "#{type}TransactionTotalTime",
+          call_count: 1,
+          total_call_time: total_time_s,
+          total_exclusive_time: total_time_s,
+          min_call_time: total_time_s,
+          max_call_time: total_time_s
+        },
+        %Metric{
+          name: join(["#{type}TransactionTotalTime", name]),
+          call_count: 1,
+          total_call_time: total_time_s,
+          total_exclusive_time: total_time_s,
+          min_call_time: total_time_s,
+          max_call_time: total_time_s
+        }
+      ]
 
   def transform(
         {:caller, parent_type, parent_account_id, parent_app_id, transport_type},
@@ -168,14 +146,18 @@ defmodule NewRelic.Harvest.Collector.MetricData do
     ]
   end
 
-  def transform({:external, url, component, method}, scope: scope, duration_s: duration_s) do
+  def transform({:external, url, component, method},
+        type: type,
+        scope: scope,
+        duration_s: duration_s
+      ) do
     host = URI.parse(url).host
     method = method |> to_string() |> String.upcase()
 
     [
       %Metric{
         name: join(["External", host, component, method]),
-        scope: join(["WebTransaction", scope]),
+        scope: join(["#{type}Transaction", scope]),
         call_count: 1,
         total_call_time: duration_s,
         total_exclusive_time: duration_s,
@@ -205,10 +187,10 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
-  def transform({:external, name}, scope: scope, duration_s: duration_s),
+  def transform({:external, name}, type: type, scope: scope, duration_s: duration_s),
     do: %Metric{
       name: join(["External", name]),
-      scope: join(["WebTransaction", scope]),
+      scope: join(["#{type}Transaction", scope]),
       call_count: 1,
       total_call_time: duration_s,
       total_exclusive_time: duration_s,
@@ -216,29 +198,16 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       max_call_time: duration_s
     }
 
-  def transform(:external_web, duration_s: duration_s),
-    do: [
-      %Metric{
-        name: :"External/allWeb",
-        call_count: 1,
-        total_call_time: duration_s,
-        total_exclusive_time: duration_s,
-        min_call_time: duration_s,
-        max_call_time: duration_s
-      }
-    ]
-
-  def transform(:external_other, duration_s: duration_s),
-    do: [
-      %Metric{
-        name: :"External/allOther",
-        call_count: 1,
-        total_call_time: duration_s,
-        total_exclusive_time: duration_s,
-        min_call_time: duration_s,
-        max_call_time: duration_s
-      }
-    ]
+  def transform(:external, type: type, duration_s: duration_s) do
+    %Metric{
+      name: "External/all#{type}",
+      call_count: 1,
+      total_call_time: duration_s,
+      total_exclusive_time: duration_s,
+      min_call_time: duration_s,
+      max_call_time: duration_s
+    }
+  end
 
   def transform(:error, error_count: error_count),
     do: %Metric{

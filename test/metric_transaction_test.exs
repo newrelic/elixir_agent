@@ -89,14 +89,15 @@ defmodule MetricTransactionTest do
     end)
   end
 
-  test "Basic transaction" do
+  test "Basic web transaction" do
     TestPlugApp.call(conn(:get, "/foo/1"), [])
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
     assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
     refute TestHelper.find_metric(metrics, "WebFrontend/QueueTime")
-    assert TestHelper.find_metric(metrics, "Apdex", 1)
+    assert TestHelper.find_metric(metrics, "Apdex")
+    assert TestHelper.find_metric(metrics, "HttpDispatcher")
   end
 
   test "External metrics" do
