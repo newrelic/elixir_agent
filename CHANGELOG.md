@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.17.0`
+
+Features
+* Report "Scoped" Transaction metrics.
+
+------
+
 ### `v1.16.2`
 
 Fixes
