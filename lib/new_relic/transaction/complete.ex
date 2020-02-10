@@ -14,12 +14,14 @@ defmodule NewRelic.Transaction.Complete do
       tx_attrs
       |> transform_name_attrs
       |> transform_time_attrs
+      |> identify_transaction_type
       |> transform_queue_duration
       |> extract_transaction_info(pid)
 
     report_transaction_event(tx_attrs)
     report_transaction_trace(tx_attrs, tx_segments)
     report_transaction_error_event(tx_attrs, tx_error)
+    report_http_dispatcher_metric(tx_attrs)
     report_transaction_metric(tx_attrs)
     report_queue_time_metric(tx_attrs)
     report_transaction_metrics(tx_attrs, tx_metrics)
@@ -39,6 +41,12 @@ defmodule NewRelic.Transaction.Complete do
   defp transform_name_attrs(%{plug_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{other_transaction_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(tx), do: Map.put(tx, :name, "Unknown")
+
+  defp identify_transaction_type(%{other_transaction_name: _} = tx),
+    do: Map.put(tx, :transactionType, :Other)
+
+  defp identify_transaction_type(tx),
+    do: Map.put(tx, :transactionType, :Web)
 
   defp transform_time_attrs(
          %{start_time: start_time, end_time_mono: end_time_mono, start_time_mono: start_time_mono} =
@@ -144,7 +152,7 @@ defmodule NewRelic.Transaction.Complete do
     []
   end
 
-  defp calculate_apdex(%{other_transaction_name: _}, _error) do
+  defp calculate_apdex(%{transactionType: :Other}, _error) do
     :ignore
   end
 
@@ -323,7 +331,7 @@ defmodule NewRelic.Transaction.Complete do
     Enum.each(span_events, &Collector.SpanEvent.Harvester.report_span_event/1)
   end
 
-  defp report_transaction_event(%{other_transaction_name: _} = tx_attrs) do
+  defp report_transaction_event(%{transactionType: :Other} = tx_attrs) do
     Collector.TransactionEvent.Harvester.report_event(%Transaction.Event{
       timestamp: tx_attrs.start_time,
       duration: tx_attrs.duration_s,
@@ -346,7 +354,7 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
-  defp report_transaction_trace(%{other_transaction_name: _} = tx_attrs, tx_segments) do
+  defp report_transaction_trace(%{transactionType: :Other} = tx_attrs, tx_segments) do
     Collector.TransactionTrace.Harvester.report_trace(%Transaction.Trace{
       start_time: tx_attrs.start_time,
       metric_name: Util.metric_join(["OtherTransaction", tx_attrs.name]),
@@ -404,7 +412,7 @@ defmodule NewRelic.Transaction.Complete do
   end
 
   defp report_error_trace(
-         %{other_transaction_name: _} = tx_attrs,
+         %{transactionType: :Other} = tx_attrs,
          exception_type,
          exception_reason,
          expected,
@@ -448,7 +456,7 @@ defmodule NewRelic.Transaction.Complete do
   end
 
   defp report_error_event(
-         %{other_transaction_name: _} = tx_attrs,
+         %{transactionType: :Other} = tx_attrs,
          exception_type,
          exception_reason,
          expected,
@@ -498,7 +506,7 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
-  defp report_aggregate(%{other_transaction_name: _} = tx) do
+  defp report_aggregate(%{transactionType: :Other} = tx) do
     NewRelic.report_aggregate(%{type: :OtherTransaction, name: tx[:name]}, %{
       duration_us: tx.duration_us,
       duration_ms: tx.duration_ms,
@@ -514,15 +522,9 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
-  def report_transaction_metric(%{other_transaction_name: _} = tx) do
-    NewRelic.report_metric({:other_transaction, tx.name},
-      duration_s: tx.duration_s,
-      total_time_s: tx.total_time_s
-    )
-  end
-
   def report_transaction_metric(tx) do
     NewRelic.report_metric({:transaction, tx.name},
+      type: tx.transactionType,
       duration_s: tx.duration_s,
       total_time_s: tx.total_time_s
     )
@@ -532,18 +534,44 @@ defmodule NewRelic.Transaction.Complete do
     NewRelic.report_metric(:queue_time, duration_s: duration_s)
   end
 
-  def report_queue_time_metric(_), do: nil
+  def report_queue_time_metric(_), do: :ignore
+
+  def report_http_dispatcher_metric(%{transactionType: :Web} = tx) do
+    NewRelic.report_metric(:http_dispatcher, duration_s: tx.duration_s)
+  end
+
+  def report_http_dispatcher_metric(_), do: :ignore
 
   def report_transaction_metrics(tx, tx_metrics) when is_list(tx_metrics) do
     Enum.each(tx_metrics, &report_transaction_metrics(tx, &1))
   end
 
-  def report_transaction_metrics(%{other_transaction_name: _}, {:external, duration_s}) do
-    NewRelic.report_metric(:external_other, duration_s: duration_s)
+  def report_transaction_metrics(%{transactionType: type}, {:external, duration_s}) do
+    NewRelic.report_metric(:external, type: type, duration_s: duration_s)
   end
 
-  def report_transaction_metrics(_tx, {:external, duration_s}) do
-    NewRelic.report_metric(:external_web, duration_s: duration_s)
+  def report_transaction_metrics(
+        %{name: tx_name, transactionType: type},
+        {{:external, url, component, method}, duration_s: duration_s}
+      ) do
+    NewRelic.report_metric(
+      {:external, url, component, method},
+      type: type,
+      scope: tx_name,
+      duration_s: duration_s
+    )
+  end
+
+  def report_transaction_metrics(
+        %{name: tx_name, transactionType: type},
+        {{:external, function_name}, duration_s: duration_s}
+      ) do
+    NewRelic.report_metric(
+      {:external, function_name},
+      type: type,
+      scope: tx_name,
+      duration_s: duration_s
+    )
   end
 
   def report_apdex_metric(:ignore), do: :ignore
