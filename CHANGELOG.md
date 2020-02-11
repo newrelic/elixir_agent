@@ -7,6 +7,12 @@ Features
 
 ------
 
+### `v1.16.3`
+
+Fixes
+
+* Fix sampling decision default value. [#177](https://github.com/newrelic/elixir_agent/pull/177)
+
 ### `v1.16.2`
 
 Fixes
