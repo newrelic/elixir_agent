@@ -226,6 +226,39 @@ defmodule DistributedTraceTest do
     end
   end
 
+  test "Always handle payload w/o sampling decision" do
+    payload =
+      """
+      {
+        "v":[0,1],
+        "d":{
+          "ty": "Browser",
+          "ac":"190",
+          "tk": "190",
+          "ap":"234567890",
+          "id":"123ab456cd78e9f0",
+          "tr":"234b56cd789e0fa1",
+          "ti":1581385629189
+        }
+      }
+      """
+      |> Base.encode64()
+
+    response =
+      TestHelper.request(
+        TestPlugApp,
+        conn(:get, "/w3c")
+        |> put_req_header(@dt_header, payload)
+      )
+
+    [traceparent_header, tracestate_header] =
+      response.resp_body
+      |> String.split("|")
+
+    assert traceparent_header |> is_binary
+    assert tracestate_header |> is_binary
+  end
+
   def generate_inbound_payload() do
     """
     {
