@@ -56,7 +56,7 @@ defmodule NewRelic.DistributedTrace.NewRelicContext do
       trace_id: trace_id,
       trust_key: data["tk"],
       priority: data["pr"],
-      sampled: data["sa"] || false,
+      sampled: data["sa"],
       timestamp: timestamp
     }
   end
