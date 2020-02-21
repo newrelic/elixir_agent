@@ -52,10 +52,6 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
 
   def parse(%{result: {:error, _}}), do: :ignore
 
-  def parse(_) do
-    raise "Unsupported ecto adapter"
-  end
-
   def capture(regex, query, match) do
     Regex.named_captures(regex, query)[match]
   end
