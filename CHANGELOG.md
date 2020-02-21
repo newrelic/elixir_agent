@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.16.4`
+
+Tweaks
+
+* Remove ecto metadata catchall for better debugging.
+
 ### `v1.16.3`
 
 Fixes
