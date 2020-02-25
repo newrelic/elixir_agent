@@ -1,6 +1,15 @@
 # Example applications
 
-A set example apps demonstrating instrumentation.
+A set example apps demonstrating and validating built-in instrumentation.
+
+### Running tests
+
+In CI, these test are always run. When developing locally, you can run the tests easily by first starting the dependent docker services:
+
+```
+docker-compose up
+mix test
+```
 
 ### Adding example apps
 
