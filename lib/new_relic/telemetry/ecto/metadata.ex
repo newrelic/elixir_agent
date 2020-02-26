@@ -1,4 +1,6 @@
 defmodule NewRelic.Telemetry.Ecto.Metadata do
+  @moduledoc false
+
   @postgrex_insert ~r/INSERT INTO "(?<table>\w+)"/
   @postgrex_create_table ~r/CREATE TABLE( IF NOT EXISTS)? "(?<table>\w+)"/
   @postgrex_update ~r/UPDATE "(?<table>\w+)"/
