@@ -1,4 +1,6 @@
 defmodule NewRelic.Telemetry.Ecto.Supervisor do
+  @moduledoc false
+
   use DynamicSupervisor
 
   def start_link() do

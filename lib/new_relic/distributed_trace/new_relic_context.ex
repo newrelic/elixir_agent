@@ -1,4 +1,6 @@
 defmodule NewRelic.DistributedTrace.NewRelicContext do
+  @moduledoc false
+
   alias NewRelic.DistributedTrace.Context
   alias NewRelic.Harvest.Collector.AgentRun
 

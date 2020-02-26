@@ -8,6 +8,8 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
   defstruct [:members]
 
   defmodule NewRelicState do
+    @moduledoc false
+
     defstruct version: "0",
               trusted_account_key: nil,
               parent_type: nil,
