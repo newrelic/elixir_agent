@@ -130,6 +130,12 @@ alias NewRelic.Instrumented.HTTPoison
 HTTPoison.get("http://www.example.com")
 ```
 
+* `NewRelic.Instrumented.HTTPoison.Base` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace. Also allows the overriding of `HTTPoison.Base` functions.
+
+```elixir
+use NewRelic.Instrumented.HTTPoison.Base
+```
+
 #### Adapters
 
 There are a few adapters which leverage this agent to provide library / framework specific instrumentation:
