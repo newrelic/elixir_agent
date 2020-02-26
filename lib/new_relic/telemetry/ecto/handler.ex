@@ -1,4 +1,6 @@
 defmodule NewRelic.Telemetry.Ecto.Handler do
+  @moduledoc false
+
   def handle_event(
         _event,
         %{total_time: total_time} = measurements,
