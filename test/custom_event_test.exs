@@ -4,6 +4,13 @@ defmodule CustomEventTest do
   alias NewRelic.Harvest.Collector
   alias NewRelic.Custom.Event
 
+  setup_all do
+    unless System.get_env("NR_INT_TEST") do
+      start_supervised({NewRelic.EnabledSupervisor, enabled: true})
+      :ok
+    end
+  end
+
   test "post a custom event" do
     agent_run_id = Collector.AgentRun.agent_run_id()
 

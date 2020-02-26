@@ -3,6 +3,13 @@ defmodule SamplerTest do
 
   alias NewRelic.Harvest.Collector
 
+  setup_all do
+    unless System.get_env("NR_INT_TEST") do
+      start_supervised({NewRelic.EnabledSupervisor, enabled: true})
+      :ok
+    end
+  end
+
   defmodule TestProcess do
     use GenServer
 

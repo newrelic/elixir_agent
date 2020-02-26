@@ -4,6 +4,13 @@ defmodule ErrorTraceTest do
   alias NewRelic.Error.Trace
   alias NewRelic.Harvest.Collector
 
+  setup_all do
+    unless System.get_env("NR_INT_TEST") do
+      start_supervised({NewRelic.EnabledSupervisor, enabled: true})
+      :ok
+    end
+  end
+
   test "post an error trace" do
     agent_run_id = Collector.AgentRun.agent_run_id()
 

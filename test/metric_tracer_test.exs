@@ -3,6 +3,13 @@ defmodule MetricTracerTest do
 
   alias NewRelic.Harvest.Collector
 
+  setup_all do
+    unless System.get_env("NR_INT_TEST") do
+      start_supervised({NewRelic.EnabledSupervisor, enabled: true})
+      :ok
+    end
+  end
+
   setup do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     on_exit(fn -> TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle) end)

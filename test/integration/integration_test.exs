@@ -9,7 +9,7 @@ defmodule IntegrationTest do
   setup do
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
     Collector.AgentRun.reconnect()
-    GenServer.call(Collector.AgentRun, :ping)
+    GenServer.call(Collector.AgentRun, :connected?)
 
     on_exit(fn ->
       System.delete_env("NEW_RELIC_HARVEST_ENABLED")
@@ -40,7 +40,7 @@ defmodule IntegrationTest do
     original_agent_run_id = Collector.AgentRun.agent_run_id()
 
     Collector.AgentRun.reconnect()
-    GenServer.call(Collector.AgentRun, :ping)
+    GenServer.call(Collector.AgentRun, :connected?)
 
     new_agent_run_id = Collector.AgentRun.agent_run_id()
 

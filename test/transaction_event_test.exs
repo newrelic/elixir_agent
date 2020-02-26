@@ -5,6 +5,13 @@ defmodule TransactionEventTest do
   alias NewRelic.Harvest.Collector
   alias NewRelic.Transaction.Event
 
+  setup_all do
+    unless System.get_env("NR_INT_TEST") do
+      start_supervised({NewRelic.EnabledSupervisor, enabled: true})
+      :ok
+    end
+  end
+
   defmodule TestPlugApp do
     use Plug.Router
     use NewRelic.Transaction

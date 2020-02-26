@@ -2,6 +2,13 @@ defmodule OtherTransactionTest do
   use ExUnit.Case
   alias NewRelic.Harvest.Collector
 
+  setup_all do
+    unless System.get_env("NR_INT_TEST") do
+      start_supervised({NewRelic.EnabledSupervisor, enabled: true})
+      :ok
+    end
+  end
+
   setup do
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
     System.put_env("NEW_RELIC_LICENSE_KEY", "foo")

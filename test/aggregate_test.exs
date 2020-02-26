@@ -4,6 +4,13 @@ defmodule AggregateTest do
   alias NewRelic.Aggregate
   alias NewRelic.Harvest.Collector
 
+  setup_all do
+    unless System.get_env("NR_INT_TEST") do
+      start_supervised({NewRelic.EnabledSupervisor, enabled: true})
+      :ok
+    end
+  end
+
   test "Aggregate metrics" do
     metric = %Aggregate{
       meta: %{key: "value", foo: "bar"},

@@ -5,6 +5,13 @@ defmodule DistributedTraceTest do
   alias NewRelic.Harvest.Collector
   alias NewRelic.DistributedTrace
 
+  setup_all do
+    unless System.get_env("NR_INT_TEST") do
+      start_supervised({NewRelic.EnabledSupervisor, enabled: true})
+      :ok
+    end
+  end
+
   @dt_header "newrelic"
 
   defmodule TestPlugApp do

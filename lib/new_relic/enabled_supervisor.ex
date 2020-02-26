@@ -7,7 +7,6 @@ defmodule NewRelic.EnabledSupervisor do
   @moduledoc false
 
   def start_link() do
-    NewRelic.Harvest.Collector.AgentRun.ensure_init()
     start_link(enabled: NewRelic.Config.enabled?())
   end
 

@@ -9,6 +9,13 @@ defmodule W3CTraceContextTest do
   alias NewRelic.Harvest.Collector
   alias NewRelic.DistributedTrace
 
+  setup_all do
+    unless System.get_env("NR_INT_TEST") do
+      start_supervised({NewRelic.EnabledSupervisor, enabled: true})
+      :ok
+    end
+  end
+
   @w3c_traceparent "traceparent"
   @w3c_tracestate "tracestate"
 

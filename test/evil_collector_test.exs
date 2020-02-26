@@ -14,6 +14,15 @@ defmodule EvilCollectorTest do
         )
     end
 
+    def start(duration: duration) do
+      {:ok, _} =
+        Plug.Cowboy.http(
+          EvilCollector,
+          [test_pid: self(), duration: duration],
+          port: 8881
+        )
+    end
+
     def stop() do
       Plug.Cowboy.shutdown(EvilCollector.HTTP)
     end
@@ -24,6 +33,12 @@ defmodule EvilCollectorTest do
       send(test_pid, :attempt)
       send_resp(conn, code, body)
     end
+
+    def call(conn, test_pid: test_pid, duration: duration) do
+      Process.sleep(duration)
+      send(test_pid, :collector_took_a_while)
+      send_resp(conn, 200, ~s({"return_value": "took a while"}))
+    end
   end
 
   setup_all do
@@ -32,6 +47,7 @@ defmodule EvilCollectorTest do
       port: 8881,
       scheme: "http",
       license_key: "key",
+      app_name: "tester",
       harvest_enabled: true
     ]
 
@@ -131,6 +147,22 @@ defmodule EvilCollectorTest do
     assert log =~ "Longer message"
 
     GenServer.call(NewRelic.Logger, {:replace, previous_logger})
+    EvilCollector.stop()
+  end
+
+  test "long collector response don't prevent app starting" do
+    # simulate collector with a slow response
+    EvilCollector.start(duration: 800)
+    Collector.AgentRun.reconnect()
+
+    # ensure the EnabledSupervisorManager starts right away
+    {:ok, _} = NewRelic.EnabledSupervisorManager.start_link(:test)
+
+    # verify a process under the EnabledSupervisor eventually starts
+    assert_receive(:collector_took_a_while, 1000)
+    Process.sleep(100)
+    assert Process.whereis(NewRelic.Sampler.Beam)
+
     EvilCollector.stop()
   end
 end

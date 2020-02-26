@@ -2,6 +2,13 @@ defmodule MetricHarvesterTest do
   use ExUnit.Case
   alias NewRelic.Harvest.Collector
 
+  setup_all do
+    unless System.get_env("NR_INT_TEST") do
+      start_supervised({NewRelic.EnabledSupervisor, enabled: true})
+      :ok
+    end
+  end
+
   test "Harvester - collect and aggregate some metrics" do
     {:ok, harvester} =
       DynamicSupervisor.start_child(
