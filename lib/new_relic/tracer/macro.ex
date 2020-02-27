@@ -17,6 +17,7 @@ defmodule NewRelic.Tracer.Macro do
 
   # Take no action on the definition of a function head
   def __on_definition__(_env, _access, _name, _args, _guards, nil), do: nil
+  def __on_definition__(_env, _access, _name, _args, _guards, []), do: nil
 
   # Take no action if there is a top-level rescue clause
   def __on_definition__(env, _access, name, _args, _guards, do: _, rescue: _) do
