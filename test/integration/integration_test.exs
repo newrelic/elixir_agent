@@ -9,7 +9,7 @@ defmodule IntegrationTest do
   setup do
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
     Collector.AgentRun.reconnect()
-    GenServer.call(Collector.AgentRun, :connected?)
+    ensure_connect_cycle_complete()
 
     on_exit(fn ->
       System.delete_env("NEW_RELIC_HARVEST_ENABLED")
@@ -40,7 +40,7 @@ defmodule IntegrationTest do
     original_agent_run_id = Collector.AgentRun.agent_run_id()
 
     Collector.AgentRun.reconnect()
-    GenServer.call(Collector.AgentRun, :connected?)
+    ensure_connect_cycle_complete()
 
     new_agent_run_id = Collector.AgentRun.agent_run_id()
 
@@ -67,5 +67,13 @@ defmodule IntegrationTest do
 
     {:ok, :accepted} =
       Collector.Protocol.metric_data([agent_run_id, ts_start, ts_end, data_array])
+  end
+
+  def ensure_connect_cycle_complete() do
+    GenServer.cast(Collector.AgentRun, {:connect_cycle_complete?, self()})
+
+    receive do
+      :connect_cycle_complete -> :continue
+    end
   end
 end

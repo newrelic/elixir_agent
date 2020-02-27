@@ -51,12 +51,8 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     {:noreply, %{status: status}}
   end
 
-  def handle_call(:connected?, _from, state) do
-    {:reply, true, state}
-  end
-
-  def handle_cast({:connected?, from}, state) do
-    send(from, :connected)
+  def handle_cast({:connect_cycle_complete?, from}, state) do
+    send(from, :connect_cycle_complete)
     {:noreply, state}
   end
 

@@ -13,11 +13,11 @@ defmodule NewRelic.EnabledSupervisorManager do
   end
 
   def init(:ok) do
-    GenServer.cast(AgentRun, {:connected?, self()})
+    GenServer.cast(AgentRun, {:connect_cycle_complete?, self()})
     {:ok, %{}}
   end
 
-  def handle_info(:connected, state) do
+  def handle_info(:connect_cycle_complete, state) do
     NewRelic.EnabledSupervisor.start_link()
     {:noreply, state}
   end
