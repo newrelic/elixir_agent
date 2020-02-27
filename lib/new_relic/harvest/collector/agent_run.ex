@@ -30,8 +30,6 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
 
   def reconnect, do: send(__MODULE__, :reconnect)
 
-  def ensure_init, do: GenServer.call(__MODULE__, :ping)
-
   def handle_continue(:preconnect, _state) do
     case Collector.Protocol.preconnect() do
       {:ok, %{"redirect_host" => redirect_host}} ->
@@ -45,7 +43,16 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
 
   def handle_continue(:connect, _state) do
     status = connect()
-    {:noreply, %{status: status}}
+    {:noreply, %{status: status}, {:continue, :complete_boot}}
+  end
+
+  def handle_continue(:complete_boot, %{status: :connected} = state) do
+    NewRelic.EnabledSupervisorManager.start_child()
+    {:noreply, state}
+  end
+
+  def handle_continue(:complete_boot, state) do
+    {:noreply, state}
   end
 
   def handle_info(:reconnect, _state) do

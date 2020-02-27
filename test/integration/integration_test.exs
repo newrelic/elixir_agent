@@ -68,4 +68,9 @@ defmodule IntegrationTest do
     {:ok, :accepted} =
       Collector.Protocol.metric_data([agent_run_id, ts_start, ts_end, data_array])
   end
+
+  test "EnabledSupervisor starts" do
+    # make sure a process under EnabledSupervisor started
+    assert Process.whereis(NewRelic.Sampler.Beam)
+  end
 end
