@@ -12,15 +12,43 @@ defmodule NewRelic.Tracer.Report do
 
   def call(
         {module, function, arguments},
-        {name, category: :external},
+        trace_annotation,
         pid,
         {id, parent_id},
         {start_time, start_time_mono, end_time_mono}
       ) do
+    {name, options} =
+      case trace_annotation do
+        {name, options} -> {name, options}
+        name -> {name, []}
+      end
+
+    category = Keyword.get(options, :category, :function)
+
+    report(
+      category,
+      options,
+      {module, function, arguments},
+      name,
+      pid,
+      {id, parent_id},
+      {start_time, start_time_mono, end_time_mono}
+    )
+  end
+
+  defp report(
+         :external,
+         options,
+         {module, function, arguments},
+         name,
+         pid,
+         {id, parent_id},
+         {start_time, start_time_mono, end_time_mono}
+       ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
     arity = length(arguments)
-    args = inspect_args(arguments)
+    args = inspect_args(arguments, Keyword.take(options, [:args]))
     span_attrs = NewRelic.DistributedTrace.get_span_attrs()
 
     function_name = function_name({module, function}, name)
@@ -86,18 +114,19 @@ defmodule NewRelic.Tracer.Report do
     end
   end
 
-  def call(
-        {module, function, arguments},
-        name,
-        pid,
-        {id, parent_id},
-        {start_time, start_time_mono, end_time_mono}
-      )
-      when is_atom(name) do
+  defp report(
+         :function,
+         options,
+         {module, function, arguments},
+         name,
+         pid,
+         {id, parent_id},
+         {start_time, start_time_mono, end_time_mono}
+       ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
     arity = length(arguments)
-    args = inspect_args(arguments)
+    args = inspect_args(arguments, Keyword.take(options, [:args]))
 
     Transaction.Reporter.add_trace_segment(%{
       module: module,
@@ -128,7 +157,11 @@ defmodule NewRelic.Tracer.Report do
     )
   end
 
-  defp inspect_args(arguments) do
+  defp inspect_args(_arguments, args: false) do
+    "[DISABLED]"
+  end
+
+  defp inspect_args(arguments, _) do
     if NewRelic.Config.feature?(:function_argument_collection) do
       inspect(arguments, charlists: :as_lists, limit: 5, printable_limit: 10)
     else

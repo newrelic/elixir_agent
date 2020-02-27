@@ -62,6 +62,25 @@ defmodule NewRelic.Tracer do
     send_resp(conn, 200, "ok")
   end
   ```
+
+  #### Arguments
+
+  By default, arguments are inspected and recorded along with traces. You can opt-out of function argument tracing on individual tracers:
+
+  ```elixir
+  defmodule SecretModule do
+    use NewRelic.Tracer
+
+    @trace {:login, args: false}
+    def login(username, password) do
+      # do something secret...
+    end
+  end
+  ```
+
+  This will prevent the argument values from becoming part of Transaction Traces.
+
+  This may also be configured globally via `Application` config. See `NewRelic.Config` for details.
   """
 
   defmacro __using__(_args) do
