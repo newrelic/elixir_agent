@@ -6,20 +6,11 @@ defmodule NewRelic.EnabledSupervisor do
 
   @moduledoc false
 
-  def start_link() do
-    NewRelic.Harvest.Collector.AgentRun.ensure_init()
-    start_link(enabled: NewRelic.Config.enabled?())
+  def start_link(_) do
+    Supervisor.start_link(__MODULE__, :ok)
   end
 
-  def start_link(enabled: enabled) do
-    Supervisor.start_link(__MODULE__, enabled: enabled)
-  end
-
-  def init(enabled: false) do
-    :ignore
-  end
-
-  def init(enabled: true) do
+  def init(:ok) do
     children = [
       supervisor(NewRelic.Harvest.Supervisor, []),
       supervisor(NewRelic.Sampler.Supervisor, []),

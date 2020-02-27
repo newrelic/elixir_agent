@@ -11,7 +11,7 @@ defmodule NewRelic.Application do
     children = [
       worker(NewRelic.Logger, []),
       supervisor(NewRelic.AlwaysOnSupervisor, []),
-      supervisor(NewRelic.EnabledSupervisor, []),
+      supervisor(NewRelic.EnabledSupervisorManager, []),
       supervisor(NewRelic.TelemetrySupervisor, []),
       worker(NewRelic.GracefulShutdown, [], shutdown: 30_000)
     ]

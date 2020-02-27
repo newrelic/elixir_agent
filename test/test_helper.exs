@@ -1,5 +1,5 @@
 unless System.get_env("NR_INT_TEST") do
-  {:ok, _} = NewRelic.EnabledSupervisor.start_link(enabled: true)
+  {:ok, _} = NewRelic.EnabledSupervisor.start_link(:ok)
 end
 
 ExUnit.start()
