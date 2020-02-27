@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.16.6`
+
+Fixes
+
+* Prevent boot process from getting blocked if New Relic is slow. [#187](https://github.com/newrelic/elixir_agent/pull/187)
+
 ### `v1.16.5`
 
 Fixes
