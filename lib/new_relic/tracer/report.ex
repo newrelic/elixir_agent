@@ -129,7 +129,11 @@ defmodule NewRelic.Tracer.Report do
   end
 
   defp inspect_args(arguments) do
-    inspect(arguments, charlists: :as_lists, limit: 20, printable_limit: 100)
+    if NewRelic.Config.feature?(:function_argument_collection) do
+      inspect(arguments, charlists: :as_lists, limit: 5, printable_limit: 10)
+    else
+      "[DISABLED]"
+    end
   end
 
   defp duration_ms(start_time_mono, end_time_mono),

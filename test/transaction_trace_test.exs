@@ -314,4 +314,24 @@ defmodule TransactionTraceTest do
     System.delete_env("NEW_RELIC_HARVEST_ENABLED")
     System.delete_env("NEW_RELIC_LICENSE_KEY")
   end
+
+  test "Don't trace arguments when disabled" do
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
+    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    Application.put_env(:new_relic_agent, :function_argument_collection_enabled, false)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
+
+    [span, _, _] =
+      TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+      |> Enum.find(fn [sp, _, _] ->
+        sp.name == "TransactionTraceTest.HelperModule.do_work/1"
+      end)
+
+    assert span[:args] == "[DISABLED]"
+
+    Application.delete_env(:new_relic_agent, :function_argument_collection_enabled)
+    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+    System.delete_env("NEW_RELIC_LICENSE_KEY")
+  end
 end
