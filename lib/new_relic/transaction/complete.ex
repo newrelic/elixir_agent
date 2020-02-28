@@ -115,6 +115,7 @@ defmodule NewRelic.Transaction.Complete do
       |> Enum.map(&transform_trace_time_attrs(&1, tx_attrs.start_time))
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
+      |> Enum.reject(&(&1.relative_start_time == &1.relative_end_time))
       |> Enum.sort_by(& &1.relative_start_time)
 
     segment_tree =
@@ -529,8 +530,7 @@ defmodule NewRelic.Transaction.Complete do
   def report_transaction_metric(tx) do
     NewRelic.report_metric({:transaction, tx.name},
       type: tx.transactionType,
-      duration_s: tx.duration_s,
-      total_time_s: tx.total_time_s
+      duration_s: tx.duration_s
     )
   end
 

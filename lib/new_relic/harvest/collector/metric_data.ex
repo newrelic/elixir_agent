@@ -17,8 +17,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
 
   def transform({:transaction, name},
         type: type,
-        duration_s: duration_s,
-        total_time_s: total_time_s
+        duration_s: duration_s
       ),
       do: [
         %Metric{
@@ -45,21 +44,15 @@ defmodule NewRelic.Harvest.Collector.MetricData do
           min_call_time: duration_s,
           max_call_time: duration_s
         },
+        # UI doesn't handle Elixir's level of concurrency so great
+        # sending just call count improves things
         %Metric{
           name: "#{type}TransactionTotalTime",
-          call_count: 1,
-          total_call_time: total_time_s,
-          total_exclusive_time: total_time_s,
-          min_call_time: total_time_s,
-          max_call_time: total_time_s
+          call_count: 1
         },
         %Metric{
           name: join(["#{type}TransactionTotalTime", name]),
-          call_count: 1,
-          total_call_time: total_time_s,
-          total_exclusive_time: total_time_s,
-          min_call_time: total_time_s,
-          max_call_time: total_time_s
+          call_count: 1
         }
       ]
 
