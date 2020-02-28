@@ -27,7 +27,7 @@ defmodule NewRelic.DistributedTrace.NewRelicContext do
     end
   end
 
-  def restrict_access(nil)), do: :restricted
+  def restrict_access(nil), do: :restricted
   def restrict_access(context) do
     if (context.trust_key || context.account_id) == AgentRun.trusted_account_key() do
       context
