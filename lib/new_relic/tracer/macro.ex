@@ -165,26 +165,42 @@ defmodule NewRelic.Tracer.Macro do
 
   def traced_function_body(body, module, function, args, trace_info) do
     quote do
-      start_time = System.system_time()
-      start_time_mono = System.monotonic_time()
+      current_ref = make_ref()
 
       {span, previous_span, previous_span_attrs} =
         NewRelic.DistributedTrace.set_current_span(
           label: {unquote(module), unquote(function), unquote(length(args))},
-          ref: make_ref()
+          ref: current_ref
         )
+
+      start_time = System.system_time()
+      start_time_mono = System.monotonic_time()
 
       try do
         unquote(body)
       after
         end_time_mono = System.monotonic_time()
 
+        parent_ref =
+          case previous_span do
+            {_, ref} -> ref
+            nil -> :root
+          end
+
+        duration_ms =
+          System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
+
+        duration_acc = Process.get({:nr_duration_acc, parent_ref}, 0)
+        Process.put({:nr_duration_acc, parent_ref}, duration_acc + duration_ms)
+
+        child_duration_ms = Process.get({:nr_duration_acc, current_ref}, 0)
+
         Tracer.Report.call(
           {unquote(module), unquote(function), unquote(build_call_args(args))},
           unquote(trace_info),
           inspect(self()),
           {span, previous_span || :root},
-          {start_time, start_time_mono, end_time_mono}
+          {start_time, start_time_mono, end_time_mono, child_duration_ms}
         )
 
         NewRelic.DistributedTrace.reset_span(

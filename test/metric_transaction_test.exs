@@ -24,15 +24,22 @@ defmodule MetricTransactionTest do
   defmodule External do
     use NewRelic.Tracer
 
-    @trace {:call, category: :external}
-    def call(span: true) do
-      NewRelic.set_span(:http, url: "http://domain.net", method: "GET", component: "HttpClient")
+    @trace :make_queries
+    def make_queries do
+      External.call(span: true)
+      External.call()
       Process.sleep(20)
     end
 
     @trace {:call, category: :external}
+    def call(span: true) do
+      NewRelic.set_span(:http, url: "http://domain.net", method: "GET", component: "HttpClient")
+      Process.sleep(40)
+    end
+
+    @trace {:call, category: :external}
     def call do
-      Process.sleep(20)
+      Process.sleep(40)
     end
   end
 
@@ -44,8 +51,7 @@ defmodule MetricTransactionTest do
     plug(:dispatch)
 
     get "/foo/:blah" do
-      External.call(span: true)
-      External.call()
+      External.make_queries()
       Process.sleep(10)
       send_resp(conn, 200, blah)
     end
@@ -107,8 +113,12 @@ defmodule MetricTransactionTest do
 
     assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
 
+    # Unscoped
     assert TestHelper.find_metric(metrics, "External/domain.net/HttpClient/GET")
+    assert TestHelper.find_metric(metrics, "External/allWeb", 2)
+    assert TestHelper.find_metric(metrics, "External/all", 2)
 
+    # Scoped
     assert TestHelper.find_metric(
              metrics,
              {"External/domain.net/HttpClient/GET", "WebTransaction/Plug/GET//foo/:blah"}
@@ -119,9 +129,27 @@ defmodule MetricTransactionTest do
              {"External/MetricTransactionTest.External.call",
               "WebTransaction/Plug/GET//foo/:blah"}
            )
+  end
 
-    assert TestHelper.find_metric(metrics, "External/allWeb", 2)
-    assert TestHelper.find_metric(metrics, "External/all", 2)
+  test "Function trace metrics" do
+    TestHelper.request(TestPlugApp, conn(:get, "/foo/1"))
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
+
+    # Unscoped
+    assert TestHelper.find_metric(
+             metrics,
+             "Function/MetricTransactionTest.External.make_queries/0"
+           )
+
+    # Scoped
+    assert TestHelper.find_metric(
+             metrics,
+             {"Function/MetricTransactionTest.External.make_queries/0",
+              "WebTransaction/Plug/GET//foo/:blah"}
+           )
   end
 
   test "Request queueing transaction" do
