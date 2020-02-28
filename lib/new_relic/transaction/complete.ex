@@ -226,6 +226,10 @@ defmodule NewRelic.Transaction.Complete do
         parent_id: original,
         name: name,
         start_time: start_time,
+        attributes: %{
+          exclusive_duration_millis: 0,
+          async_wait: true
+        },
         end_time: end_time
       }
     end
@@ -571,6 +575,18 @@ defmodule NewRelic.Transaction.Complete do
       type: type,
       scope: tx_name,
       duration_s: duration_s
+    )
+  end
+
+  def report_transaction_metrics(
+        %{name: tx_name, transactionType: type},
+        {{:function, function_name}, duration_s: duration_s, exclusive_time_s: exclusive_time_s}
+      ) do
+    NewRelic.report_metric({:function, function_name},
+      type: type,
+      scope: tx_name,
+      duration_s: duration_s,
+      exclusive_time_s: exclusive_time_s
     )
   end
 

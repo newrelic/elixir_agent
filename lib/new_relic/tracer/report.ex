@@ -11,11 +11,11 @@ defmodule NewRelic.Tracer.Report do
   @moduledoc false
 
   def call(
-        {module, function, arguments},
+        mfa,
         trace_annotation,
         pid,
-        {id, parent_id},
-        {start_time, start_time_mono, end_time_mono}
+        edge,
+        timing
       ) do
     {name, options} =
       case trace_annotation do
@@ -28,11 +28,11 @@ defmodule NewRelic.Tracer.Report do
     report(
       category,
       options,
-      {module, function, arguments},
+      mfa,
       name,
       pid,
-      {id, parent_id},
-      {start_time, start_time_mono, end_time_mono}
+      edge,
+      timing
     )
   end
 
@@ -43,7 +43,7 @@ defmodule NewRelic.Tracer.Report do
          name,
          pid,
          {id, parent_id},
-         {start_time, start_time_mono, end_time_mono}
+         {start_time, start_time_mono, end_time_mono, _child_duration_ms}
        ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
@@ -121,12 +121,15 @@ defmodule NewRelic.Tracer.Report do
          name,
          pid,
          {id, parent_id},
-         {start_time, start_time_mono, end_time_mono}
+         {start_time, start_time_mono, end_time_mono, child_duration_ms}
        ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
+    exclusive_time_s = duration_s - child_duration_ms / 1000
+
     arity = length(arguments)
     args = inspect_args(arguments, Keyword.take(options, [:args]))
+    function_name = function_name({module, function, arity}, name)
 
     Transaction.Reporter.add_trace_segment(%{
       module: module,
@@ -145,16 +148,27 @@ defmodule NewRelic.Tracer.Report do
     NewRelic.report_span(
       timestamp_ms: System.convert_time_unit(start_time, :native, :millisecond),
       duration_s: duration_s,
-      name: function_name({module, function, arity}, name),
+      name: function_name,
       edge: [span: id, parent: parent_id],
       category: "generic",
       attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, args)
     )
 
     NewRelic.report_aggregate(
-      %{name: :FunctionTrace, mfa: function_name({module, function, arity}, name)},
+      %{name: :FunctionTrace, mfa: function_name},
       %{duration_ms: duration_ms, call_count: 1}
     )
+
+    NewRelic.report_metric(
+      {:function, function_name},
+      duration_s: duration_s,
+      exclusive_time_s: exclusive_time_s
+    )
+
+    Transaction.Reporter.track_metric({
+      {:function, function_name},
+      duration_s: duration_s, exclusive_time_s: exclusive_time_s
+    })
   end
 
   defp inspect_args(_arguments, args: false) do
