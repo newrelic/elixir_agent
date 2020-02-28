@@ -27,12 +27,21 @@ defmodule TransactionTraceTest do
       Process.sleep(200)
       args
     end
+
+    @trace {:work_hard, args: false}
+    def work_hard(args) do
+      args
+    end
   end
 
   defmodule ExternalService do
     use NewRelic.Tracer
+
     @trace {:query, category: :external}
     def query(n), do: HelperModule.function(n)
+
+    @trace {:secret_query, category: :external, args: false}
+    def secret_query(n), do: HelperModule.function(n)
   end
 
   defmodule TestPlugApp do
@@ -59,7 +68,7 @@ defmodule TransactionTraceTest do
 
       t2 =
         Task.async(fn ->
-          ExternalService.query(304)
+          ExternalService.secret_query(304)
         end)
 
       Task.await(t1)
@@ -76,6 +85,8 @@ defmodule TransactionTraceTest do
     get "/huge_args" do
       Enum.into(1..10000, %{}, &{&1, &1})
       |> HelperModule.do_work()
+
+      HelperModule.work_hard(%{on: :something})
 
       send_resp(conn, 200, "ok")
     end
@@ -310,6 +321,78 @@ defmodule TransactionTraceTest do
       end)
 
     assert String.length(span[:args]) < 500
+
+    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+    System.delete_env("NEW_RELIC_LICENSE_KEY")
+  end
+
+  test "Don't trace arguments when disabled" do
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
+    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    Application.put_env(:new_relic_agent, :function_argument_collection_enabled, false)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
+
+    [span, _, _] =
+      TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+      |> Enum.find(fn [sp, _, _] ->
+        sp.name == "TransactionTraceTest.HelperModule.do_work/1"
+      end)
+
+    assert span[:args] == "[DISABLED]"
+
+    Application.delete_env(:new_relic_agent, :function_argument_collection_enabled)
+    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+    System.delete_env("NEW_RELIC_LICENSE_KEY")
+  end
+
+  test "Don't trace arguments when opted-out on individual function" do
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
+    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+
+    TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
+
+    [span, _, _] =
+      TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+      |> Enum.find(fn [sp, _, _] ->
+        sp.name == "TransactionTraceTest.HelperModule.work_hard/1"
+      end)
+
+    assert span[:args] == "[DISABLED]"
+
+    [span, _, _] =
+      TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+      |> Enum.find(fn [sp, _, _] ->
+        sp.name == "TransactionTraceTest.HelperModule.do_work/1"
+      end)
+
+    refute span[:args] == "[DISABLED]"
+
+    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+    System.delete_env("NEW_RELIC_LICENSE_KEY")
+  end
+
+  test "Don't trace arguments when opted-out on individual external" do
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
+    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+
+    TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
+
+    [span, _, _] =
+      TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+      |> Enum.find(fn [sp, _, _] ->
+        sp.name == "TransactionTraceTest.ExternalService.secret_query/1"
+      end)
+
+    assert span[:args] == "[DISABLED]"
+
+    [span, _, _] =
+      TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+      |> Enum.find(fn [sp, _, _] ->
+        sp.name == "TransactionTraceTest.ExternalService.query/1"
+      end)
+
+    refute span[:args] == "[DISABLED]"
 
     System.delete_env("NEW_RELIC_HARVEST_ENABLED")
     System.delete_env("NEW_RELIC_LICENSE_KEY")

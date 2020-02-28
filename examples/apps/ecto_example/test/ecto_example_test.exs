@@ -6,7 +6,7 @@ defmodule EctoExampleTest do
   setup_all do
     # Simulate the agent fully starting up
     Process.whereis(Collector.TaskSupervisor) ||
-      NewRelic.EnabledSupervisor.start_link(enabled: true)
+      NewRelic.EnabledSupervisor.start_link(:ok)
 
     :ok
   end

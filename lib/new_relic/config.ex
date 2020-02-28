@@ -97,6 +97,8 @@ defmodule NewRelic.Config do
     * Controls collection of SQL query strings
   * `:ecto_instrumentation_enabled` (default `true`)
     * Controls all Ecto instrumentation
+  * `function_argument_collection_enabled` (default `true`)
+    * Controls collection of traced function arguments
   """
   def feature?(:error_collector) do
     feature_check?("NEW_RELIC_ERROR_COLLECTOR_ENABLED", :error_collector_enabled)
@@ -108,6 +110,13 @@ defmodule NewRelic.Config do
 
   def feature?(:ecto_instrumentation) do
     feature_check?("NEW_RELIC_ECTO_INSTRUMENTTION_ENABLED", :ecto_instrumentation_enabled)
+  end
+
+  def feature?(:function_argument_collection) do
+    feature_check?(
+      "NEW_RELIC_FUNCTION_ARGUMENT_COLLECTION_ENABLED",
+      :function_argument_collection_enabled
+    )
   end
 
   defp feature_check?(env, config) do
