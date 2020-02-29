@@ -153,7 +153,7 @@ defmodule DistributedTraceTest do
     end
 
     test "ignore bad base64" do
-      refute DistributedTrace.NewRelicContext.decode("foobar")
+      assert DistributedTrace.NewRelicContext.decode("foobar") == :bad_dt_payload
     end
   end
 
@@ -224,6 +224,10 @@ defmodule DistributedTraceTest do
 
       assert :restricted == DistributedTrace.NewRelicContext.restrict_access(context)
     end
+  end
+
+  test "correctly handle a bad NR payload" do
+    TestPlugApp.call(put_req_header(conn(:get, "/"), @dt_header, "asdf"), [])
   end
 
   test "Always handle payload w/o sampling decision" do

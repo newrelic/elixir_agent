@@ -61,7 +61,7 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext do
     else
       _ ->
         NewRelic.report_metric(:supportability, [:trace_context, :accept, :exception])
-        false
+        :bad_trace_context
     end
   end
 
