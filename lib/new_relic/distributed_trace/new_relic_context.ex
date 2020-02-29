@@ -23,9 +23,11 @@ defmodule NewRelic.DistributedTrace.NewRelicContext do
       error ->
         NewRelic.report_metric(:supportability, [:dt, :accept, :parse_error])
         NewRelic.log(:debug, "Bad DT Payload: #{inspect(error)} #{inspect(raw_payload)}")
-        nil
+        :bad_dt_payload
     end
   end
+
+  def restrict_access(:bad_dt_payload), do: :bad_dt_payload
 
   def restrict_access(context) do
     if (context.trust_key || context.account_id) == AgentRun.trusted_account_key() do

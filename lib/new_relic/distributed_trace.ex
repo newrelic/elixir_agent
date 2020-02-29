@@ -14,15 +14,19 @@ defmodule NewRelic.DistributedTrace do
   end
 
   defp w3c_headers(conn) do
-    case Plug.Conn.get_req_header(conn, @w3c_traceparent) do
-      [_traceparent | _] -> NewRelic.DistributedTrace.W3CTraceContext.extract(conn)
+    with [_traceparent | _] <- Plug.Conn.get_req_header(conn, @w3c_traceparent),
+         %Context{} = context <- __MODULE__.W3CTraceContext.extract(conn) do
+      context
+    else
       _ -> false
     end
   end
 
   defp newrelic_header(conn) do
-    case Plug.Conn.get_req_header(conn, @nr_header) do
-      [trace_payload | _] -> NewRelic.DistributedTrace.NewRelicContext.extract(trace_payload)
+    with [trace_payload | _] <- Plug.Conn.get_req_header(conn, @nr_header),
+         %Context{} = context <- __MODULE__.NewRelicContext.extract(trace_payload) do
+      context
+    else
       _ -> false
     end
   end
