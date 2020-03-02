@@ -590,6 +590,17 @@ defmodule NewRelic.Transaction.Complete do
     )
   end
 
+  def report_transaction_metrics(
+        %{name: tx_name, transactionType: type},
+        {{:datastore, datastore, table, operation}, duration_s: duration_s}
+      ) do
+    NewRelic.report_metric({:datastore, datastore, table, operation},
+      type: type,
+      scope: tx_name,
+      duration_s: duration_s
+    )
+  end
+
   def report_apdex_metric(:ignore), do: :ignore
 
   def report_apdex_metric(apdex) do
