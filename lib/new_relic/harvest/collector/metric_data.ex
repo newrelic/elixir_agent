@@ -16,12 +16,12 @@ defmodule NewRelic.Harvest.Collector.MetricData do
     }
 
   def transform({:transaction, name},
-        type: type,
+        type: :Web,
         duration_s: duration_s
       ),
       do: [
         %Metric{
-          name: "#{type}Transaction",
+          name: "WebTransaction",
           call_count: 1,
           total_call_time: duration_s,
           total_exclusive_time: duration_s,
@@ -29,15 +29,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
           max_call_time: duration_s
         },
         %Metric{
-          name: "#{type}Transaction/all",
-          call_count: 1,
-          total_call_time: duration_s,
-          total_exclusive_time: duration_s,
-          min_call_time: duration_s,
-          max_call_time: duration_s
-        },
-        %Metric{
-          name: join(["#{type}Transaction", name]),
+          name: join(["WebTransaction", name]),
           call_count: 1,
           total_call_time: duration_s,
           total_exclusive_time: duration_s,
@@ -46,14 +38,35 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         },
         # UI doesn't handle Elixir's level of concurrency so great
         # sending just call count improves things
+        %Metric{name: "WebTransactionTotalTime", call_count: 1},
+        %Metric{name: join(["WebTransactionTotalTime", name]), call_count: 1}
+      ]
+
+  def transform({:transaction, name},
+        type: :Other,
+        duration_s: duration_s
+      ),
+      do: [
         %Metric{
-          name: "#{type}TransactionTotalTime",
-          call_count: 1
+          name: "OtherTransaction/all",
+          call_count: 1,
+          total_call_time: duration_s,
+          total_exclusive_time: duration_s,
+          min_call_time: duration_s,
+          max_call_time: duration_s
         },
         %Metric{
-          name: join(["#{type}TransactionTotalTime", name]),
-          call_count: 1
-        }
+          name: join(["OtherTransaction", name]),
+          call_count: 1,
+          total_call_time: duration_s,
+          total_exclusive_time: duration_s,
+          min_call_time: duration_s,
+          max_call_time: duration_s
+        },
+        # UI doesn't handle Elixir's level of concurrency so great
+        # sending just call count improves things
+        %Metric{name: "OtherTransactionTotalTime", call_count: 1},
+        %Metric{name: join(["OtherTransactionTotalTime", name]), call_count: 1}
       ]
 
   def transform(
