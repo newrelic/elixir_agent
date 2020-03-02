@@ -50,6 +50,10 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
     {"MySQL", table, operation}
   end
 
+  def parse(%{result: {:ok, %{__struct__: Postgrex.Cursor}}}), do: :ignore
+  def parse(%{result: {:ok, %{__struct__: MyXQL.Cursor}}}), do: :ignore
+  def parse(%{result: {:ok, nil}}), do: :ignore
+
   def parse(%{result: {:error, _}}), do: :ignore
 
   def capture(regex, query, match) do
