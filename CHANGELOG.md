@@ -3,7 +3,13 @@
 ### `v1.17.0`
 
 Features
-* Report "Scoped" Transaction metrics.
+
+* Report "Scoped" Transaction metrics:
+  * Externals [#175](https://github.com/newrelic/elixir_agent/pull/175)
+  * Function traces [#189](https://github.com/newrelic/elixir_agent/pull/189)
+  * Database calls [#195](https://github.com/newrelic/elixir_agent/pull/195)
+
+* Enable disabling function argument tracing globally & per-trace. [#186](https://github.com/newrelic/elixir_agent/pull/186)
 
 ------
 
