@@ -22,3 +22,5 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 w3c_trace_context_validation-*.tar
 
+/trace-context/
+
