@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.16.7`
+
+Fixes
+
+* Handle Ecto stream telemetry results. [#192](https://github.com/newrelic/elixir_agent/pull/192)
+
 ### `v1.16.6`
 
 Fixes
