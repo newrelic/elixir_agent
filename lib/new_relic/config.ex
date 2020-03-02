@@ -109,7 +109,7 @@ defmodule NewRelic.Config do
   end
 
   def feature?(:ecto_instrumentation) do
-    feature_check?("NEW_RELIC_ECTO_INSTRUMENTTION_ENABLED", :ecto_instrumentation_enabled)
+    feature_check?("NEW_RELIC_ECTO_INSTRUMENTATION_ENABLED", :ecto_instrumentation_enabled)
   end
 
   def feature?(:function_argument_collection) do
