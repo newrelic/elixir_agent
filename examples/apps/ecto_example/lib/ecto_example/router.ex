@@ -1,7 +1,6 @@
 defmodule EctoExample.Router do
   use Plug.Router
   use NewRelic.Transaction
-  use NewRelic.Tracer
 
   plug(:match)
   plug(:dispatch)
@@ -10,29 +9,41 @@ defmodule EctoExample.Router do
     error_query(EctoExample.PostgresRepo)
     error_query(EctoExample.MySQLRepo)
 
-    response =
-      %{
-        hello: "world",
-        postgres_count: query_db(EctoExample.PostgresRepo),
-        mysql_count: query_db(EctoExample.MySQLRepo)
-      }
-      |> Jason.encode!()
+    count_query(EctoExample.PostgresRepo)
+    count_query(EctoExample.MySQLRepo)
+
+    stream_query(EctoExample.PostgresRepo)
+    stream_query(EctoExample.MySQLRepo)
 
     Process.sleep(100)
-    send_resp(conn, 200, response)
+    send_resp(conn, 200, Jason.encode!(%{hello: "world"}))
   end
 
   match _ do
     send_resp(conn, 404, "oops")
   end
 
-  @trace :query_db
-  def query_db(repo) do
+  def stream_query(repo) do
+    repo.transaction(fn ->
+      EctoExample.Count.all()
+      |> repo.stream()
+      |> Enum.to_list()
+    end)
+    |> case do
+      {:ok, [_ | _]} -> :good
+    end
+  end
+
+  def count_query(repo) do
     {:ok, %{id: id}} = repo.insert(%EctoExample.Count{})
     record = repo.get!(EctoExample.Count, id) |> Ecto.Changeset.change()
     repo.update!(record, force: true)
     Process.sleep(20)
+
     repo.aggregate(EctoExample.Count, :count)
+    |> case do
+      n when n > 1 -> :good
+    end
   end
 
   def error_query(repo) do
