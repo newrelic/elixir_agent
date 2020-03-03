@@ -95,24 +95,22 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         {:caller, parent_type, parent_account_id, parent_app_id, transport_type},
         duration_s: duration_s
       ),
-      do: [
-        %Metric{
-          name:
-            join([
-              "DurationByCaller",
-              parent_type,
-              parent_account_id,
-              parent_app_id,
-              transport_type,
-              "all"
-            ]),
-          call_count: 1,
-          total_call_time: duration_s,
-          total_exclusive_time: duration_s,
-          min_call_time: duration_s,
-          max_call_time: duration_s
-        }
-      ]
+      do: %Metric{
+        name:
+          join([
+            "DurationByCaller",
+            parent_type,
+            parent_account_id,
+            parent_app_id,
+            transport_type,
+            "all"
+          ]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
 
   def transform({:datastore, datastore, table, operation}, duration_s: duration_s),
     do: [
@@ -146,17 +144,16 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         type: type,
         scope: scope,
         duration_s: duration_s
-      ) do
-    %Metric{
-      name: join(["Datastore/statement", datastore, table, operation]),
-      scope: join(["#{type}Transaction", scope]),
-      call_count: 1,
-      total_call_time: duration_s,
-      total_exclusive_time: duration_s,
-      min_call_time: duration_s,
-      max_call_time: duration_s
-    }
-  end
+      ),
+      do: %Metric{
+        name: join(["Datastore/statement", datastore, table, operation]),
+        scope: join(["#{type}Transaction", scope]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
 
   def transform({:external, url, component, method}, duration_s: duration_s) do
     host = URI.parse(url).host
@@ -198,17 +195,15 @@ defmodule NewRelic.Harvest.Collector.MetricData do
     host = URI.parse(url).host
     method = method |> to_string() |> String.upcase()
 
-    [
-      %Metric{
-        name: join(["External", host, component, method]),
-        scope: join(["#{type}Transaction", scope]),
-        call_count: 1,
-        total_call_time: duration_s,
-        total_exclusive_time: duration_s,
-        min_call_time: duration_s,
-        max_call_time: duration_s
-      }
-    ]
+    %Metric{
+      name: join(["External", host, component, method]),
+      scope: join(["#{type}Transaction", scope]),
+      call_count: 1,
+      total_call_time: duration_s,
+      total_exclusive_time: duration_s,
+      min_call_time: duration_s,
+      max_call_time: duration_s
+    }
   end
 
   def transform({:external, name}, duration_s: duration_s),
@@ -242,8 +237,8 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       max_call_time: duration_s
     }
 
-  def transform(:external, type: type, duration_s: duration_s) do
-    %Metric{
+  def transform(:external, type: type, duration_s: duration_s),
+    do: %Metric{
       name: "External/all#{type}",
       call_count: 1,
       total_call_time: duration_s,
@@ -251,38 +246,35 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       min_call_time: duration_s,
       max_call_time: duration_s
     }
-  end
 
   def transform({:function, function_name},
         duration_s: duration_s,
         exclusive_time_s: exclusive_time_s
-      ) do
-    %Metric{
-      name: join(["Function", function_name]),
-      call_count: 1,
-      total_call_time: duration_s,
-      total_exclusive_time: exclusive_time_s,
-      min_call_time: duration_s,
-      max_call_time: duration_s
-    }
-  end
+      ),
+      do: %Metric{
+        name: join(["Function", function_name]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: exclusive_time_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
 
   def transform({:function, function_name},
         type: type,
         scope: scope,
         duration_s: duration_s,
         exclusive_time_s: exclusive_time_s
-      ) do
-    %Metric{
-      name: join(["Function", function_name]),
-      scope: join(["#{type}Transaction", scope]),
-      call_count: 1,
-      total_call_time: duration_s,
-      total_exclusive_time: exclusive_time_s,
-      min_call_time: duration_s,
-      max_call_time: duration_s
-    }
-  end
+      ),
+      do: %Metric{
+        name: join(["Function", function_name]),
+        scope: join(["#{type}Transaction", scope]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: exclusive_time_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
 
   def transform(:error, error_count: error_count),
     do: %Metric{
@@ -352,66 +344,62 @@ defmodule NewRelic.Harvest.Collector.MetricData do
     ]
 
   def transform({:supportability, :collector}, status: status),
-    do: [
-      %Metric{
-        name: join(["Supportability/Agent/Collector/HTTPError", status]),
-        call_count: 1
-      }
-    ]
+    do: %Metric{
+      name: join(["Supportability/Agent/Collector/HTTPError", status]),
+      call_count: 1
+    }
 
   def transform(:supportability, [:trace_context, :accept, :success]),
-    do: [
-      %Metric{name: :"Supportability/TraceContext/Accept/Success", call_count: 1}
-    ]
+    do: %Metric{
+      name: :"Supportability/TraceContext/Accept/Success",
+      call_count: 1
+    }
 
   def transform(:supportability, [:trace_context, :accept, :exception]),
-    do: [
-      %Metric{name: :"Supportability/TraceContext/Accept/Exception", call_count: 1}
-    ]
+    do: %Metric{
+      name: :"Supportability/TraceContext/Accept/Exception",
+      call_count: 1
+    }
 
   def transform(:supportability, [:trace_context, :tracestate, :non_new_relic]),
-    do: [
-      %Metric{name: :"Supportability/TraceContext/TraceState/NoNrEntry", call_count: 1}
-    ]
+    do: %Metric{
+      name: :"Supportability/TraceContext/TraceState/NoNrEntry",
+      call_count: 1
+    }
 
   def transform(:supportability, [:trace_context, :traceparent, :invalid]),
-    do: [
-      %Metric{name: :"Supportability/TraceContext/TraceParent/Parse/Exception", call_count: 1}
-    ]
+    do: %Metric{
+      name: :"Supportability/TraceContext/TraceParent/Parse/Exception",
+      call_count: 1
+    }
 
   def transform(:supportability, [:dt, :accept, :success]),
-    do: [
-      %Metric{name: :"Supportability/DistributedTrace/AcceptPayload/Success", call_count: 1}
-    ]
+    do: %Metric{
+      name: :"Supportability/DistributedTrace/AcceptPayload/Success",
+      call_count: 1
+    }
 
   def transform(:supportability, [:dt, :accept, :parse_error]),
-    do: [
-      %Metric{
-        name: :"Supportability/DistributedTrace/AcceptPayload/ParseException",
-        call_count: 1
-      }
-    ]
+    do: %Metric{
+      name: :"Supportability/DistributedTrace/AcceptPayload/ParseException",
+      call_count: 1
+    }
 
   def transform(:supportability, [:transaction, :missing_attributes]),
-    do: [
-      %Metric{
-        name: :"Supportability/Transaction/MissingAttributes",
-        call_count: 1
-      }
-    ]
+    do: %Metric{
+      name: :"Supportability/Transaction/MissingAttributes",
+      call_count: 1
+    }
 
-  def transform(:queue_time, duration_s: duration_s) do
-    [
-      %Metric{
-        name: "WebFrontend/QueueTime",
-        call_count: 1,
-        total_call_time: duration_s,
-        total_exclusive_time: duration_s,
-        min_call_time: duration_s,
-        max_call_time: duration_s
-      }
-    ]
-  end
+  def transform(:queue_time, duration_s: duration_s),
+    do: %Metric{
+      name: "WebFrontend/QueueTime",
+      call_count: 1,
+      total_call_time: duration_s,
+      total_exclusive_time: duration_s,
+      min_call_time: duration_s,
+      max_call_time: duration_s
+    }
 
   defp join(segments), do: NewRelic.Util.metric_join(segments)
 end
