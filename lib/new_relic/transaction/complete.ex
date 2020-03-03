@@ -130,7 +130,7 @@ defmodule NewRelic.Transaction.Complete do
 
     apdex = calculate_apdex(tx_attrs, tx_error)
 
-    total_time =
+    concurrent_process_time_ms =
       process_segments
       |> Enum.map(&(&1.relative_end_time - &1.relative_start_time))
       |> Enum.sum()
@@ -139,7 +139,7 @@ defmodule NewRelic.Transaction.Complete do
       tx_attrs
       |> Map.merge(NewRelic.Config.automatic_attributes())
       |> Map.put(:"nr.apdexPerfZone", Util.Apdex.label(apdex))
-      |> Map.put(:total_time_s, tx_attrs.duration_s + total_time / 1000)
+      |> Map.put(:total_time_s, tx_attrs.duration_s + concurrent_process_time_ms / 1000)
 
     {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
   end
@@ -530,7 +530,8 @@ defmodule NewRelic.Transaction.Complete do
   def report_transaction_metric(tx) do
     NewRelic.report_metric({:transaction, tx.name},
       type: tx.transactionType,
-      duration_s: tx.duration_s
+      duration_s: tx.duration_s,
+      total_time_s: tx.total_time_s
     )
   end
 

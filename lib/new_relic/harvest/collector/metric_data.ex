@@ -17,7 +17,8 @@ defmodule NewRelic.Harvest.Collector.MetricData do
 
   def transform({:transaction, name},
         type: :Web,
-        duration_s: duration_s
+        duration_s: duration_s,
+        total_time_s: total_time_s
       ),
       do: [
         %Metric{
@@ -36,15 +37,26 @@ defmodule NewRelic.Harvest.Collector.MetricData do
           min_call_time: duration_s,
           max_call_time: duration_s
         },
-        # UI doesn't handle Elixir's level of concurrency so great
+        %Metric{
+          name: "WebTransactionTotalTime",
+          call_count: 1,
+          total_call_time: total_time_s,
+          total_exclusive_time: total_time_s,
+          min_call_time: total_time_s,
+          max_call_time: total_time_s
+        },
+        # Transaction breakdown doesn't handle Elixir's level of concurrency,
         # sending just call count improves things
-        %Metric{name: "WebTransactionTotalTime", call_count: 1},
-        %Metric{name: join(["WebTransactionTotalTime", name]), call_count: 1}
+        %Metric{
+          name: join(["WebTransactionTotalTime", name]),
+          call_count: 1
+        }
       ]
 
   def transform({:transaction, name},
         type: :Other,
-        duration_s: duration_s
+        duration_s: duration_s,
+        total_time_s: total_time_s
       ),
       do: [
         %Metric{
@@ -63,10 +75,20 @@ defmodule NewRelic.Harvest.Collector.MetricData do
           min_call_time: duration_s,
           max_call_time: duration_s
         },
-        # UI doesn't handle Elixir's level of concurrency so great
+        %Metric{
+          name: "OtherTransactionTotalTime",
+          call_count: 1,
+          total_call_time: total_time_s,
+          total_exclusive_time: total_time_s,
+          min_call_time: total_time_s,
+          max_call_time: total_time_s
+        },
+        # Transaction breakdown doesn't handle Elixir's level of concurrency,
         # sending just call count improves things
-        %Metric{name: "OtherTransactionTotalTime", call_count: 1},
-        %Metric{name: join(["OtherTransactionTotalTime", name]), call_count: 1}
+        %Metric{
+          name: join(["OtherTransactionTotalTime", name]),
+          call_count: 1
+        }
       ]
 
   def transform(
