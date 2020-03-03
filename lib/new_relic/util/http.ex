@@ -27,7 +27,9 @@ defmodule NewRelic.Util.HTTP do
       ssl: [
         verify: :verify_peer,
         cacertfile: Application.app_dir(:new_relic_agent, "priv/cacert.pem"),
-        verify_fun: {&:ssl_verify_hostname.verify_fun/3, [{:check_hostname, '#{host}'}]}
+        customize_hostname_check: [
+          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+        ]
       ]
     ]
   end
