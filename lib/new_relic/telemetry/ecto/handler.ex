@@ -77,6 +77,11 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
         duration_s: duration_s
       )
 
+      NewRelic.Transaction.Reporter.track_metric({
+        {:datastore, datastore, table, operation},
+        duration_s: duration_s
+      })
+
       NewRelic.incr_attributes(
         databaseCallCount: 1,
         databaseDuration: duration_s,
