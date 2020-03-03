@@ -530,7 +530,8 @@ defmodule NewRelic.Transaction.Complete do
   def report_transaction_metric(tx) do
     NewRelic.report_metric({:transaction, tx.name},
       type: tx.transactionType,
-      duration_s: tx.duration_s
+      duration_s: tx.duration_s,
+      total_time_s: tx.total_time_s
     )
   end
 
