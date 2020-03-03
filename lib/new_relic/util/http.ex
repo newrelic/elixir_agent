@@ -6,10 +6,9 @@ defmodule NewRelic.Util.HTTP do
   def post(url, body, headers) when is_binary(body) do
     headers = [@gzip | Enum.map(headers, fn {k, v} -> {'#{k}', '#{v}'} end)]
     request = {'#{url}', headers, 'application/json', :zlib.gzip(body)}
-    %{host: host} = URI.parse(url)
 
     with {:ok, {{_, status_code, _}, _headers, body}} <-
-           :httpc.request(:post, request, http_options(host), []) do
+           :httpc.request(:post, request, http_options(), []) do
       {:ok, %{status_code: status_code, body: to_string(body)}}
     end
   end
@@ -20,8 +19,11 @@ defmodule NewRelic.Util.HTTP do
   @doc """
   Certs are pulled from Mozilla exactly as Hex does:
   https://github.com/hexpm/hex/blob/master/README.md#bundled-ca-certs
+
+  SSL configured according to EEF Security guide:
+  https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
   """
-  def http_options(host) do
+  def http_options() do
     [
       connect_timeout: 1000,
       ssl: [
