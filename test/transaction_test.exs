@@ -150,7 +150,7 @@ defmodule TransactionTest do
   test "Error in Transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    assert_raise RuntimeError, fn ->
+    assert_raise Plug.Conn.WrapperError, fn ->
       TestPlugApp.call(conn(:get, "/error"), [])
     end
 
@@ -168,7 +168,7 @@ defmodule TransactionTest do
 
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    assert_raise RuntimeError, fn ->
+    assert_raise Plug.Conn.WrapperError, fn ->
       TestPlugApp.call(conn(:get, "/error"), [])
     end
 
