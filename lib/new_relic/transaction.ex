@@ -63,7 +63,7 @@ defmodule NewRelic.Transaction do
     NewRelic.DistributedTrace.Tracker.cleanup(self())
     NewRelic.Transaction.Plug.add_stop_attrs(conn)
     NewRelic.Transaction.Reporter.fail(error)
-    NewRelic.Transaction.Reporter.complete()
+    NewRelic.Transaction.Reporter.complete(self(), :async)
   end
 
   @doc false
@@ -73,6 +73,12 @@ defmodule NewRelic.Transaction do
     NewRelic.DistributedTrace.generate_new_context()
     |> NewRelic.DistributedTrace.track_transaction(transport_type: "Other")
 
+    :ok
+  end
+
+  @doc false
+  def stop_transaction() do
+    NewRelic.Transaction.Reporter.complete(self(), :sync)
     :ok
   end
 

@@ -97,15 +97,20 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
-  def complete(pid \\ self()) do
+  def complete(pid, mode) do
     if tracking?(pid) do
       AttrStore.add(__MODULE__, pid, end_time_mono: System.monotonic_time())
       AttrStore.untrack(__MODULE__, pid)
 
-      Task.Supervisor.start_child(NewRelic.Transaction.TaskSupervisor, fn ->
-        AttrStore.collect(__MODULE__, pid)
-        |> Transaction.Complete.run(pid)
-      end)
+      case mode do
+        :sync ->
+          collect_and_complete(pid)
+
+        :async ->
+          Task.Supervisor.start_child(Transaction.TaskSupervisor, fn ->
+            collect_and_complete(pid)
+          end)
+      end
     end
   end
 
@@ -138,6 +143,11 @@ defmodule NewRelic.Transaction.Reporter do
       {:purge, AttrStore.find_root(__MODULE__, pid)},
       Application.get_env(:new_relic_agent, :tx_pid_expire, 2_000)
     )
+  end
+
+  def collect_and_complete(pid) do
+    AttrStore.collect(__MODULE__, pid)
+    |> Transaction.Complete.run(pid)
   end
 
   # GenServer

@@ -40,7 +40,7 @@ defmodule NewRelic.Transaction.Plug do
 
   defp before_send(conn) do
     add_stop_attrs(conn)
-    Transaction.Reporter.complete()
+    Transaction.Reporter.complete(self(), :async)
     conn
   end
 

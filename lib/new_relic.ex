@@ -75,9 +75,20 @@ defmodule NewRelic do
   will risk a memory leak tracking attributes in the transaction!
   * You can't start a new transaction within an existing one. Any process
   spawned inside a transaction belongs to that transaction.
+  * If multiple transactions are started in the same Process, you must
+  call `NewRelic.stop_transaction()` to mark the end of the transaction.
   """
   @spec start_transaction(String.t(), String.t()) :: :ok
   defdelegate start_transaction(category, name), to: NewRelic.Transaction
+
+  @doc """
+  Stop an "Other" Transaction.
+
+  If multiple transactions are started in the same Process, you must
+  call `NewRelic.stop_transaction()` to mark the end of the transaction.
+  """
+  @spec stop_transaction() :: :ok
+  defdelegate stop_transaction(), to: NewRelic.Transaction
 
   @doc """
   Call within a transaction to prevent it from reporting.
