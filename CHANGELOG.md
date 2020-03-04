@@ -11,6 +11,8 @@ Features
 
 * Enable disabling function argument tracing globally & per-trace. [#186](https://github.com/newrelic/elixir_agent/pull/186)
 
+* Provide an API for manually stopping an Other transaction. [#198](https://github.com/newrelic/elixir_agent/pull/198)
+
 ------
 
 ### `v1.16.7`
