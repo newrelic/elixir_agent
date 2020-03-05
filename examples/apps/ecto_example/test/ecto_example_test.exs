@@ -11,7 +11,7 @@ defmodule EctoExampleTest do
     :ok
   end
 
-  test "basic HTTP request flow" do
+  test "Datastore metrics generated" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
     {:ok, %{body: body}} = request()
@@ -22,25 +22,47 @@ defmodule EctoExampleTest do
     assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/Postgres/counts/insert",
-             2
+             3
            )
 
     assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/MySQL/counts/insert",
-             2
+             3
            )
 
     assert TestHelper.find_metric(
              metrics,
              {"Datastore/statement/Postgres/counts/insert", "WebTransaction/Plug/GET//hello"},
-             2
+             3
            )
 
     assert TestHelper.find_metric(
              metrics,
              {"Datastore/statement/MySQL/counts/insert", "WebTransaction/Plug/GET//hello"},
-             2
+             3
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/statement/Postgres/counts/select",
+             5
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/statement/MySQL/counts/select",
+             5
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/statement/Postgres/counts/delete"
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/statement/MySQL/counts/delete"
            )
   end
 

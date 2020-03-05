@@ -1,49 +1,52 @@
 defmodule NewRelic.Telemetry.Ecto.Metadata do
   @moduledoc false
 
+  @postgrex_select ~r/FROM "(?<table>\w+)"/
   @postgrex_insert ~r/INSERT INTO "(?<table>\w+)"/
-  @postgrex_create_table ~r/CREATE TABLE( IF NOT EXISTS)? "(?<table>\w+)"/
   @postgrex_update ~r/UPDATE "(?<table>\w+)"/
+  @postgrex_delete ~r/FROM "(?<table>\w+)"/
+  @postgrex_create_table ~r/CREATE TABLE( IF NOT EXISTS)? "(?<table>\w+)"/
   def parse(%{
-        source: table,
         query: query,
-        result: {:ok, %{__struct__: Postgrex.Result, command: command}}
-      }) do
-    table =
-      case {table, command} do
-        {nil, :insert} -> capture(@postgrex_insert, query, "table")
-        {nil, :create_table} -> capture(@postgrex_create_table, query, "table")
-        {nil, :update} -> capture(@postgrex_update, query, "table")
-        {nil, _} -> "other"
-        {table, _} -> table
-      end
-
-    operation =
-      case command do
-        operation when is_atom(operation) -> operation
-        [:rollback, :release] -> :rollback
-        _ -> "other"
+        result: {_ok_or_error, %{__struct__: struct}}
+      })
+      when struct in [Postgrex.Result, Postgrex.Error] do
+    {operation, table} =
+      case query do
+        "SELECT" <> _ -> {"select", capture(@postgrex_select, query, "table")}
+        "INSERT" <> _ -> {"insert", capture(@postgrex_insert, query, "table")}
+        "UPDATE" <> _ -> {"update", capture(@postgrex_update, query, "table")}
+        "DELETE" <> _ -> {"delete", capture(@postgrex_delete, query, "table")}
+        "CREATE TABLE" <> _ -> {"create", capture(@postgrex_create_table, query, "table")}
+        "begin" -> {"begin", "other"}
+        "commit" -> {"commit", "other"}
+        "rollback" -> {"rollback", "other"}
+        _ -> {"other", "other"}
       end
 
     {"Postgres", table, operation}
   end
 
-  @myxql_insert ~r/INSERT INTO `(?<table>\w+)`/
   @myxql_select ~r/FROM `(?<table>\w+)`/
-  @myxql_create_table ~r/CREATE TABLE( IF NOT EXISTS)? `(?<table>\w+)`/
+  @myxql_insert ~r/INSERT INTO `(?<table>\w+)`/
   @myxql_update ~r/UPDATE `(?<table>\w+)`/
+  @myxql_delete ~r/FROM `(?<table>\w+)`/
+  @myxql_create_table ~r/CREATE TABLE( IF NOT EXISTS)? `(?<table>\w+)`/
   def parse(%{
         query: query,
-        result: {:ok, %{__struct__: MyXQL.Result}}
-      }) do
+        result: {_ok_or_error, %{__struct__: struct}}
+      })
+      when struct in [MyXQL.Result, MyXQL.Error] do
     {operation, table} =
       case query do
         "SELECT" <> _ -> {"select", capture(@myxql_select, query, "table")}
         "INSERT" <> _ -> {"insert", capture(@myxql_insert, query, "table")}
         "UPDATE" <> _ -> {"update", capture(@myxql_update, query, "table")}
-        "CREATE TABLE" <> _ -> {"create_table", capture(@myxql_create_table, query, "table")}
-        "begin" -> {:begin, "other"}
-        "commit" -> {:commit, "other"}
+        "DELETE" <> _ -> {"delete", capture(@myxql_delete, query, "table")}
+        "CREATE TABLE" <> _ -> {"create", capture(@myxql_create_table, query, "table")}
+        "begin" -> {"begin", "other"}
+        "commit" -> {"commit", "other"}
+        "rollback" -> {"rollback", "other"}
         _ -> {"other", "other"}
       end
 
@@ -53,7 +56,6 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
   def parse(%{result: {:ok, %{__struct__: Postgrex.Cursor}}}), do: :ignore
   def parse(%{result: {:ok, %{__struct__: MyXQL.Cursor}}}), do: :ignore
   def parse(%{result: {:ok, nil}}), do: :ignore
-
   def parse(%{result: {:error, _}}), do: :ignore
 
   def capture(regex, query, match) do
