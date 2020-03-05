@@ -4,7 +4,10 @@ defmodule NewRelic.Telemetry.Ecto do
   @moduledoc """
   `NewRelic.Telemetry.Ecto` provides `Ecto` instrumentation via `telemetry`.
 
-  Repos are auto-discovered and instrumented. We automatically gather:
+  Repos are auto-discovered and instrumented. Make sure your Ecto app depends
+  on `new_relic_agent` so that the agent can detect when your Repos start.
+  
+  We automatically gather:
 
   * Datastore metrics
   * Transaction Trace segments
