@@ -21,7 +21,7 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
     hostname = config.opts[:hostname] || "unknown"
     port = config.opts[:port] || "unknown"
 
-    query = (config.collect_sql? && metadata.query) || ""
+    query = (config.collect_db_query? && metadata.query) || ""
 
     pid = inspect(self())
     id = {:ecto_sql_query, make_ref()}

@@ -3,13 +3,7 @@ defmodule EctoExampleTest do
 
   alias NewRelic.Harvest.Collector
 
-  setup_all do
-    # Simulate the agent fully starting up
-    Process.whereis(Collector.TaskSupervisor) ||
-      NewRelic.EnabledSupervisor.start_link(:ok)
-
-    :ok
-  end
+  setup context, do: TestHelper.simulate_startup(context)
 
   test "Datastore metrics generated" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)

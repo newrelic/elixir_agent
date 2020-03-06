@@ -93,8 +93,10 @@ defmodule NewRelic.Config do
 
   * `:error_collector_enabled` (default `true`)
     * Controls collecting any Error traces or metrics
-  * `:sql_collection_enabled` (default `true`)
-    * Controls collection of SQL query strings
+  * `:db_query_collection_enabled` (default `true`)
+    * Controls collection of Database query strings
+  * `:ecto_instrumentation_enabled` (default `true`)
+    * Controls all Ecto instrumentation
   * `:ecto_instrumentation_enabled` (default `true`)
     * Controls all Ecto instrumentation
   * `function_argument_collection_enabled` (default `true`)
@@ -104,12 +106,17 @@ defmodule NewRelic.Config do
     feature_check?("NEW_RELIC_ERROR_COLLECTOR_ENABLED", :error_collector_enabled)
   end
 
-  def feature?(:sql_collection) do
-    feature_check?("NEW_RELIC_SQL_COLLECTION_ENABLED", :sql_collection_enabled)
+  def feature?(:db_query_collection) do
+    feature_check?("NEW_RELIC_SQL_COLLECTION_ENABLED", :sql_collection_enabled, false) ||
+      feature_check?("NEW_RELIC_DB_QUERY_COLLECTION_ENABLED", :db_query_collection_enabled)
   end
 
   def feature?(:ecto_instrumentation) do
     feature_check?("NEW_RELIC_ECTO_INSTRUMENTATION_ENABLED", :ecto_instrumentation_enabled)
+  end
+
+  def feature?(:redix_instrumentation) do
+    feature_check?("NEW_RELIC_REDIX_INSTRUMENTATION_ENABLED", :ecto_instrumentation_enabled)
   end
 
   def feature?(:function_argument_collection) do
@@ -119,11 +126,11 @@ defmodule NewRelic.Config do
     )
   end
 
-  defp feature_check?(env, config) do
+  defp feature_check?(env, config, default \\ true) do
     case System.get_env(env) do
       "true" -> true
       "false" -> false
-      _ -> Application.get_env(:new_relic_agent, config, true)
+      _ -> Application.get_env(:new_relic_agent, config, default)
     end
   end
 
