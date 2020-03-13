@@ -37,6 +37,31 @@ defmodule TransactionTest do
       send_resp(conn, 200, "incr")
     end
 
+    get "/funky_attrs" do
+      NewRelic.add_attributes(
+        # allowed:
+        one: 1,
+        half: 0.5,
+        string: "String",
+        bool: true,
+        atom: :atom,
+        pid: self(),
+        ref: make_ref(),
+        port: :erlang.list_to_port('#Port<0.4>'),
+        date: Date.utc_today(),
+        date_time: DateTime.utc_now(),
+        naive_date_time: NaiveDateTime.utc_now(),
+        time: Time.utc_now(),
+        # not allowed:
+        binary: "fooo" |> :zlib.gzip(),
+        struct: %NewRelic.Metric{},
+        tuple: {:one, :two},
+        function: fn -> :fun! end
+      )
+
+      send_resp(conn, 200, "funky_attrs")
+    end
+
     get "/service" do
       NewRelic.set_transaction_name("/service")
       NewRelic.add_attributes(query: "query{}")
@@ -132,6 +157,42 @@ defmodule TransactionTest do
                event[:start_time_mono] == nil && event[:test_attribute] == "test_value" &&
                event[:"nr.apdexPerfZone"] == "S" && event[:status] == 200
            end)
+  end
+
+  @bad "[BAD_VALUE]"
+  test "Attribute coercion" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/funky_attrs"))
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    [_, event] = Enum.find(events, fn [_, event] -> event[:name] == "/Plug/GET//funky_attrs" end)
+
+    # Basic values
+    assert event[:one] == 1
+    assert event[:half] == 0.5
+    assert event[:bool] == true
+    assert event[:string] == "String"
+    assert event[:atom] == "atom"
+
+    # Fancy values
+    assert event[:pid] =~ "#PID"
+    assert event[:ref] =~ "#Reference"
+    assert event[:port] =~ "#Port"
+    assert event[:date_time] =~ "~U"
+    assert event[:naive_date_time] =~ "~N"
+    assert event[:date] =~ "~D"
+    assert event[:time] =~ "~T"
+
+    # Bad values
+    assert event[:binary] == @bad
+    assert event[:tuple] == @bad
+    assert event[:function] == @bad
+    assert event[:struct] == @bad
+
+    # Make sure it can serialize to JSON
+    Jason.encode!(events)
   end
 
   test "Incrementing attribute counters" do
