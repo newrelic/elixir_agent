@@ -1,6 +1,18 @@
 defmodule UtilTest do
   use ExUnit.Case
 
+  setup context do
+    if context[:tempfile] do
+      on_exit(fn ->
+        if File.exists?(context[:tempfile]) do
+          File.rm!(context[:tempfile])
+        end
+      end)
+    else
+      :ok
+    end
+  end
+
   test "respects max attr size" do
     events = [%{giant: String.duplicate("A", 5_000), gianter: String.duplicate("A", 10_000)}]
     [%{giant: giant, gianter: gianter}] = NewRelic.Util.Event.process(events)
@@ -165,5 +177,21 @@ defmodule UtilTest do
     test "allows good domains" do
       assert {:ok, _} = NewRelic.Util.HTTP.post("https://sha512.badssl.com/", "", [])
     end
+  end
+
+  @tag tempfile: "/tmp/nr_agent_docker_cgroup.test"
+  test "get docker id from cgroup file", %{tempfile: tempfile} do
+    content = """
+    11:devices:/kubepods/besteffort/pod88ba95f5-37f2-4a9d-a9f4-585b20f006cc/d77a1dfca6ba5656b1e1c77fa67cedad49c583cdba6ab95d111935c31005ffe7
+    10:memory:/kubepods/besteffort/pod88ba95f5-37f2-4a9d-a9f4-585b20f006cc/d77a1dfca6ba5656b1e1c77fa67cedad49c583cdba6ab95d111935c31005ffe7
+    9:cpu,cpuacct:/kubepods/besteffort/pod88ba95f5-37f2-4a9d-a9f4-585b20f006cc/1dfca6ba5656
+    1:cpu,cpuacct:/kubepods/besteffort/pod88ba95f5-37f2-4a9d-a9f4-585b20f006cc/d77a1dfca6ba5656b1e1c77fa67cedad49c583cdba6ab95d111935c31005ffe7
+    """
+
+    File.write!(tempfile, content)
+
+    assert NewRelic.Util.Vendor.maybe_add_docker_container_id(%{}, tempfile) == %{
+             docker: %{id: "d77a1dfca6ba5656b1e1c77fa67cedad49c583cdba6ab95d111935c31005ffe7"}
+           }
   end
 end
