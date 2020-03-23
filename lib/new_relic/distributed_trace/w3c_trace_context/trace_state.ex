@@ -116,38 +116,58 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
     decode_member(vendor_type(key), key, value)
   end
 
-  defp decode_member(:new_relic, key, value) do
-    [
-      version,
-      parent_type,
-      account_id,
-      app_id,
-      span_id,
-      transaction_id,
-      sampled,
-      priority,
-      timestamp
-    ] = String.split(value, "-")
+  @version_0 "0-"
+  @version_0_range 1..8
 
-    [trusted_account_key, _] = String.split(key, "@")
-
-    [
-      %{
-        key: :new_relic,
-        value: %__MODULE__.NewRelicState{
-          trusted_account_key: trusted_account_key,
-          version: version |> String.to_integer(),
-          parent_type: parent_type |> decode_type(),
-          account_id: account_id,
-          app_id: app_id,
-          span_id: span_id,
-          transaction_id: transaction_id,
-          sampled: sampled |> decode_sampled(),
-          priority: priority |> decode_priority(),
-          timestamp: timestamp |> String.to_integer()
+  defp decode_member(:new_relic, key, @version_0 <> _ = value) do
+    with [
+           "0",
+           parent_type,
+           account_id,
+           app_id,
+           span_id,
+           transaction_id,
+           sampled,
+           priority,
+           timestamp
+         ] <- String.split(value, "-"),
+         [
+           trusted_account_key,
+           _
+         ] <- String.split(key, "@") do
+      [
+        %{
+          key: :new_relic,
+          value: %__MODULE__.NewRelicState{
+            trusted_account_key: trusted_account_key,
+            version: 0,
+            parent_type: parent_type |> decode_type(),
+            account_id: account_id,
+            app_id: app_id,
+            span_id: span_id,
+            transaction_id: transaction_id,
+            sampled: sampled |> decode_sampled(),
+            priority: priority |> decode_priority(),
+            timestamp: timestamp |> String.to_integer()
+          }
         }
-      }
-    ]
+      ]
+    else
+      _ ->
+        NewRelic.log(:debug, "Bad W3C NR tracestate: `#{key}`: `#{value}`")
+        []
+    end
+  end
+
+  # Future versions can have more elements, but meaning of existing fields won't change
+  defp decode_member(:new_relic, key, future_value) do
+    version_0_value =
+      future_value
+      |> String.split("-")
+      |> Enum.slice(@version_0_range)
+      |> Enum.join("-")
+
+    decode_member(:new_relic, key, @version_0 <> version_0_value)
   end
 
   defp decode_member(:other, key, value) do

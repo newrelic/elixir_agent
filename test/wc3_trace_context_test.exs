@@ -336,7 +336,32 @@ defmodule W3CTraceContextTest do
     refute traceparent_header =~ "74be672b84ddc.....8be285632bbc0a"
   end
 
-  test "Generate expected outbound W3C headers - future version" do
+  test "Generate expected outbound W3C headers - bad NR tracestate" do
+    response =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-74be672b84ddc4e4b28be285632bbc0a-d6e4e06002e24189-01"
+      )
+      |> put_req_header(
+        @w3c_tracestate,
+        "190@nr=0-0-212311-51424-d6e4e06002e24189-27856f70d3d314b7-1-2.0e-5-1482959525577"
+      )
+      |> TestPlugApp.call([])
+
+    [traceparent_header, tracestate_header] =
+      response.resp_body
+      |> String.split("|")
+
+    expected_traceparent = ~r/00-74be672b84ddc4e4b28be285632bbc0a-\w{16}-01/
+
+    assert traceparent_header =~ expected_traceparent
+
+    # Don't accept or forward invalid priority serialization
+    refute tracestate_header =~ "2.0e-5"
+  end
+
+  test "Generate expected outbound W3C headers - future traceparent version" do
     response =
       conn(:get, "/w3c")
       |> put_req_header(
@@ -351,5 +376,30 @@ defmodule W3CTraceContextTest do
 
     # Accept the Trace ID
     assert traceparent_header =~ ~r/00-74be672b84ddc4e4b28be285632bbc0a-\w{16}-01/
+  end
+
+  test "Generate expected outbound W3C headers - future tracestate version" do
+    response =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-74be672b84ddc4e4b28be285632bbc0a-d6e4e06002e24189-01"
+      )
+      |> put_req_header(
+        @w3c_tracestate,
+        "190@nr=1-0-212311-51424-d6e4e06002e24189-27856f70d3d314b7-1-0.421-1482959525577-future-stuff"
+      )
+      |> TestPlugApp.call([])
+
+    [traceparent_header, tracestate_header] =
+      response.resp_body
+      |> String.split("|")
+
+    expected_traceparent = ~r/00-74be672b84ddc4e4b28be285632bbc0a-\w{16}-01/
+
+    assert traceparent_header =~ expected_traceparent
+
+    # Interpret the known portions of a future version of NR tracestate
+    assert tracestate_header =~ "1-0.421"
   end
 end
