@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.17.1`
+
+Fixes
+
+* Handle cases where another New Relic agent sends a bad `tracestate` header. [#206](https://github.com/newrelic/elixir_agent/pull/206)
+
 ### `v1.17.0`
 
 Features
