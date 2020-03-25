@@ -74,7 +74,7 @@ defmodule NewRelic.Util do
         {key, to_string(value)}
 
       {key, %struct{} = value} when struct in [Date, DateTime, Time, NaiveDateTime] ->
-        {key, inspect(value)}
+        {key, struct.to_iso8601(value)}
 
       {key, value} ->
         bad_value(key, value)

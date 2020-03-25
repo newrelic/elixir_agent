@@ -180,10 +180,10 @@ defmodule TransactionTest do
     assert event[:pid] =~ "#PID"
     assert event[:ref] =~ "#Reference"
     assert event[:port] =~ "#Port"
-    assert event[:date_time] =~ "~U"
-    assert event[:naive_date_time] =~ "~N"
-    assert event[:date] =~ "~D"
-    assert event[:time] =~ "~T"
+    assert {:ok, _, _} = DateTime.from_iso8601(event[:date_time])
+    assert {:ok, _} = NaiveDateTime.from_iso8601(event[:naive_date_time])
+    assert {:ok, _} = Date.from_iso8601(event[:date])
+    assert {:ok, _} = Time.from_iso8601(event[:time])
 
     # Bad values
     assert event[:binary] == @bad
