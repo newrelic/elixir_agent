@@ -42,7 +42,7 @@ defmodule TransactionTest do
         # allowed:
         one: 1,
         half: 0.5,
-        string: "String",
+        string: "A string",
         bool: true,
         atom: :atom,
         pid: self(),
@@ -173,7 +173,7 @@ defmodule TransactionTest do
     assert event[:one] == 1
     assert event[:half] == 0.5
     assert event[:bool] == true
-    assert event[:string] == "String"
+    assert event[:string] == "A string"
     assert event[:atom] == "atom"
 
     # Fancy values
