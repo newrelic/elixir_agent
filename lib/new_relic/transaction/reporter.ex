@@ -18,7 +18,13 @@ defmodule NewRelic.Transaction.Reporter do
 
   def add_attributes(attrs) when is_list(attrs) do
     if tracking?(self()) do
-      AttrStore.add(__MODULE__, self(), NewRelic.Util.deep_flatten(attrs))
+      AttrStore.add(
+        __MODULE__,
+        self(),
+        attrs
+        |> NewRelic.Util.deep_flatten()
+        |> NewRelic.Util.coerce_attributes()
+      )
     end
   end
 
@@ -28,20 +34,19 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
-  def set_transaction_name(custom_name) do
+  def set_transaction_name(custom_name) when is_binary(custom_name) do
     if tracking?(self()) do
       AttrStore.add(__MODULE__, self(), custom_name: custom_name)
     end
   end
 
   # Internal Agent API
-  #
 
   def start() do
     Transaction.Monitor.add(self())
     AttrStore.track(__MODULE__, self())
 
-    add_attributes(
+    AttrStore.add(__MODULE__, self(),
       pid: inspect(self()),
       start_time: System.system_time(),
       start_time_mono: System.monotonic_time()
@@ -66,7 +71,7 @@ defmodule NewRelic.Transaction.Reporter do
   def fail(%{kind: kind, reason: reason, stack: stack} = error) do
     if tracking?(self()) do
       if NewRelic.Config.feature?(:error_collector) do
-        add_attributes(
+        AttrStore.add(__MODULE__, self(),
           error: true,
           transaction_error: {:error, error},
           error_kind: kind,
@@ -74,7 +79,7 @@ defmodule NewRelic.Transaction.Reporter do
           error_stack: inspect(stack)
         )
       else
-        add_attributes(error: true)
+        AttrStore.add(__MODULE__, self(), error: true)
       end
     end
   end
