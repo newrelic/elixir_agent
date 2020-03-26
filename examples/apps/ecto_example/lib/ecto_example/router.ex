@@ -15,7 +15,9 @@ defmodule EctoExample.Router do
     stream_query(EctoExample.PostgresRepo)
     stream_query(EctoExample.MySQLRepo)
 
-    Process.sleep(100)
+    delete_query(EctoExample.PostgresRepo)
+    delete_query(EctoExample.MySQLRepo)
+
     send_resp(conn, 200, Jason.encode!(%{hello: "world"}))
   end
 
@@ -34,11 +36,15 @@ defmodule EctoExample.Router do
     end
   end
 
+  def delete_query(repo) do
+    repo.get!(EctoExample.Count, 1)
+    |> repo.delete!
+  end
+
   def count_query(repo) do
     {:ok, %{id: id}} = repo.insert(%EctoExample.Count{})
     record = repo.get!(EctoExample.Count, id) |> Ecto.Changeset.change()
     repo.update!(record, force: true)
-    Process.sleep(20)
 
     repo.aggregate(EctoExample.Count, :count)
     |> case do
