@@ -109,6 +109,28 @@ defmodule SamplerTest do
     assert second_reductions > first_reductions
   end
 
+  test "Agent sampler" do
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    Task.Supervisor.start_child(NewRelic.Transaction.TaskSupervisor, fn ->
+      Process.sleep(1000)
+    end)
+
+    Task.Supervisor.start_child(NewRelic.Transaction.TaskSupervisor, fn ->
+      Process.sleep(1000)
+    end)
+
+    TestHelper.trigger_report(NewRelic.Sampler.Agent)
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert [_, [_, 2, _, _, _, _]] =
+             TestHelper.find_metric(
+               metrics,
+               "Supportability/ElixirAgent/ReporterCompleteActive"
+             )
+  end
+
   describe "Sampler.ETS" do
     test "records metrics on ETS tables" do
       TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
