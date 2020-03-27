@@ -31,13 +31,6 @@ defmodule AttrStoreTest do
     assert Enum.member?(attrs, {:two, 2})
     assert Enum.member?(attrs, {:count_tag, 2})
 
-    AttrStore.purge(table, :pid)
-    assert %{} == AttrStore.collect(table, :pid)
-
-    AttrStore.add(table, :pid, extra: "attr")
-    AttrStore.add(table, :pid, junk: "stuff")
-
-    AttrStore.purge(table, :pid)
     assert %{} == AttrStore.collect(table, :pid)
   end
 
@@ -56,14 +49,12 @@ defmodule AttrStoreTest do
     AttrStore.add(table, :pid, foo: "BAR")
     AttrStore.add(table, :task, baz: "QUX")
 
+    AttrStore.untrack(table, :pid)
     attrs = AttrStore.collect(table, :pid)
     assert attrs == %{foo: "BAR", baz: "QUX"}
 
-    AttrStore.purge(table, :task)
-    assert %{} == AttrStore.collect(table, :task)
-
-    AttrStore.purge(table, :pid)
     refute AttrStore.tracking?(table, :pid)
+    assert %{} == AttrStore.collect(table, :task)
     assert %{} == AttrStore.collect(table, :pid)
   end
 

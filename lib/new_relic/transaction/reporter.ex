@@ -109,11 +109,13 @@ defmodule NewRelic.Transaction.Reporter do
 
       case mode do
         :sync ->
-          collect_and_complete(pid)
+          AttrStore.collect(__MODULE__, pid)
+          |> Transaction.Complete.run(pid)
 
         :async ->
           Task.Supervisor.start_child(Transaction.TaskSupervisor, fn ->
-            collect_and_complete(pid)
+            AttrStore.collect(__MODULE__, pid)
+            |> Transaction.Complete.run(pid)
           end)
       end
     end
@@ -140,16 +142,15 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   def ensure_purge(pid) do
-    Process.send_after(
-      __MODULE__,
-      {:purge, AttrStore.find_root(__MODULE__, pid)},
-      Application.get_env(:new_relic_agent, :tx_pid_expire, 2_000)
-    )
-  end
+    root = AttrStore.find_root(__MODULE__, pid)
 
-  def collect_and_complete(pid) do
-    AttrStore.collect(__MODULE__, pid)
-    |> Transaction.Complete.run(pid)
+    if tracking?(root) do
+      Process.send_after(
+        __MODULE__,
+        {:ensure_purge, root},
+        Application.get_env(:new_relic_agent, :tx_pid_expire, 2_000)
+      )
+    end
   end
 
   # GenServer
@@ -165,7 +166,7 @@ defmodule NewRelic.Transaction.Reporter do
     {:ok, %{timers: %{}}}
   end
 
-  def handle_info({:purge, pid}, state) do
+  def handle_info({:ensure_purge, pid}, state) do
     AttrStore.purge(__MODULE__, pid)
     {:noreply, %{state | timers: Map.drop(state.timers, [pid])}}
   end

@@ -74,10 +74,7 @@ defmodule NewRelic.Util.AttrStore do
     pid
     |> with_children(table)
     |> Enum.each(fn pid ->
-      delete(
-        tracking(table),
-        {pid, :tracking}
-      )
+      delete(tracking(table), {pid, :tracking})
     end)
   end
 
@@ -118,7 +115,7 @@ defmodule NewRelic.Util.AttrStore do
 
   def find_attributes(table, pids) do
     Enum.flat_map(pids, fn pid ->
-      lookup(
+      take(
         collecting(table),
         pid
       )
@@ -134,6 +131,12 @@ defmodule NewRelic.Util.AttrStore do
 
   defp lookup(table, term) do
     :ets.lookup(table, term)
+  rescue
+    ArgumentError -> []
+  end
+
+  defp take(table, term) do
+    :ets.take(table, term)
   rescue
     ArgumentError -> []
   end
