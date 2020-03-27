@@ -41,10 +41,9 @@ defmodule AttrStoreTest do
     AttrStore.track(table, :pid)
     AttrStore.link(table, :pid, :task)
 
-    links = AttrStore.find_children(table, :pid)
-    assert links == [:task]
+    assert AttrStore.root(table, :task) == :pid
 
-    assert [] == AttrStore.find_children(table, :not_there)
+    assert AttrStore.root(table, :no_links) == :no_links
 
     AttrStore.add(table, :pid, foo: "BAR")
     AttrStore.add(table, :task, baz: "QUX")
@@ -82,14 +81,11 @@ defmodule AttrStoreTest do
     AttrStore.link(table, :task, :sibling_task)
     AttrStore.link(table, :another_task, :super_nested)
 
-    links = AttrStore.find_children(table, :pid)
-    assert [] = links -- [:task, :another_task, :super_nested, :sibling_task]
-
-    assert AttrStore.find_root(table, :pid) == :pid
-    assert AttrStore.find_root(table, :task) == :pid
-    assert AttrStore.find_root(table, :another_task) == :pid
-    assert AttrStore.find_root(table, :sibling_task) == :pid
-    assert AttrStore.find_root(table, :super_nested) == :pid
+    assert AttrStore.root(table, :pid) == :pid
+    assert AttrStore.root(table, :task) == :pid
+    assert AttrStore.root(table, :another_task) == :pid
+    assert AttrStore.root(table, :sibling_task) == :pid
+    assert AttrStore.root(table, :super_nested) == :pid
 
     AttrStore.add(table, :pid, grand: "PARENT")
     AttrStore.add(table, :task, foo: "BAR")
@@ -133,11 +129,29 @@ defmodule AttrStoreTest do
     refute AttrStore.tracking?(table, :task3)
   end
 
+  test "untrack doesn't break links" do
+    table = AttrStore.Test
+    AttrStore.new(table)
+
+    AttrStore.track(table, :pid)
+    AttrStore.link(table, :pid, :task1)
+
+    assert AttrStore.tracking?(table, :pid)
+    assert AttrStore.tracking?(table, :task1)
+
+    AttrStore.untrack(table, :task1)
+
+    refute AttrStore.tracking?(table, :pid)
+    refute AttrStore.tracking?(table, :task1)
+
+    assert AttrStore.root(table, :task1) == :pid
+  end
+
   test "If the table doesn't exist, don't blow up" do
     AttrStore.track(NoTable, :pid)
     AttrStore.add(NoTable, :pid, some: "VALUE")
     AttrStore.tracking?(NoTable, self())
-    AttrStore.find_root(NoTable, self())
+    AttrStore.root(NoTable, self())
     AttrStore.purge(NoTable, self())
   end
 end

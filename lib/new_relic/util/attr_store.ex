@@ -29,7 +29,7 @@ defmodule NewRelic.Util.AttrStore do
   end
 
   def link(table, parent, child) do
-    root = find_root(table, parent)
+    root = find_root(parent, table)
 
     insert(
       tracking(table),
@@ -39,6 +39,10 @@ defmodule NewRelic.Util.AttrStore do
         {{root, :root_of}, child}
       ]
     )
+  end
+
+  def root(table, pid) do
+    find_root(pid, table)
   end
 
   def add(table, pid, attrs) when is_list(attrs) do
@@ -63,15 +67,15 @@ defmodule NewRelic.Util.AttrStore do
   end
 
   def collect(table, pid) do
-    pids = with_children(pid, table)
-
-    table
-    |> find_attributes(pids)
+    pid
+    |> with_children(table)
+    |> find_attributes(table)
     |> Enum.reduce(%{}, &collect_attr/2)
   end
 
   def untrack(table, pid) do
     pid
+    |> find_root(table)
     |> with_children(table)
     |> Enum.each(fn pid ->
       delete(tracking(table), {pid, :tracking})
@@ -80,6 +84,7 @@ defmodule NewRelic.Util.AttrStore do
 
   def purge(table, pid) do
     pid
+    |> find_root(table)
     |> with_children(table)
     |> Enum.each(fn pid ->
       delete(collecting(table), pid)
@@ -90,7 +95,7 @@ defmodule NewRelic.Util.AttrStore do
     end)
   end
 
-  def find_root(table, pid) do
+  defp find_root(pid, table) do
     lookup(
       tracking(table),
       {pid, :child_of}
@@ -101,11 +106,11 @@ defmodule NewRelic.Util.AttrStore do
     end
   end
 
-  def with_children(pid, table) do
+  defp with_children(pid, table) do
     [pid | find_children(table, pid)]
   end
 
-  def find_children(table, root_pid) do
+  defp find_children(table, root_pid) do
     lookup(
       tracking(table),
       {root_pid, :root_of}
@@ -113,7 +118,7 @@ defmodule NewRelic.Util.AttrStore do
     |> Enum.map(fn {_, child} -> child end)
   end
 
-  def find_attributes(table, pids) do
+  def find_attributes(pids, table) do
     Enum.flat_map(pids, fn pid ->
       take(
         collecting(table),

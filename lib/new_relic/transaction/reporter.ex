@@ -109,16 +109,21 @@ defmodule NewRelic.Transaction.Reporter do
 
       case mode do
         :sync ->
-          AttrStore.collect(__MODULE__, pid)
-          |> Transaction.Complete.run(pid)
+          complete_and_purge(pid)
 
         :async ->
           Task.Supervisor.start_child(Transaction.TaskSupervisor, fn ->
-            AttrStore.collect(__MODULE__, pid)
-            |> Transaction.Complete.run(pid)
+            complete_and_purge(pid)
           end)
       end
     end
+  end
+
+  defp complete_and_purge(pid) do
+    AttrStore.collect(__MODULE__, pid)
+    |> Transaction.Complete.run(pid)
+
+    AttrStore.purge(__MODULE__, pid)
   end
 
   # Internal Transaction.Monitor API
@@ -141,16 +146,13 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
+  # Try really hard not to leak memory if any async reporting trickles in late
   def ensure_purge(pid) do
-    root = AttrStore.find_root(__MODULE__, pid)
-
-    if tracking?(root) do
-      Process.send_after(
-        __MODULE__,
-        {:ensure_purge, root},
-        Application.get_env(:new_relic_agent, :tx_pid_expire, 2_000)
-      )
-    end
+    Process.send_after(
+      __MODULE__,
+      {:ensure_purge, AttrStore.root(__MODULE__, pid)},
+      Application.get_env(:new_relic_agent, :ensure_purge_after, 2_000)
+    )
   end
 
   # GenServer
@@ -176,5 +178,5 @@ defmodule NewRelic.Transaction.Reporter do
 
   def tracking?(pid), do: AttrStore.tracking?(__MODULE__, pid)
 
-  def root(pid), do: AttrStore.find_root(__MODULE__, pid)
+  def root(pid), do: AttrStore.root(__MODULE__, pid)
 end
