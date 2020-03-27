@@ -1,5 +1,20 @@
 ## CHANGELOG
 
+### `v1.18.0`
+
+Features
+
+* Read the Docker container ID for accurate container detection. [#207](https://github.com/newrelic/elixir_agent/pull/207) Thanks @alejandrodnm!
+* Report Ecto queries that result in an error. [#202](https://github.com/newrelic/elixir_agent/pull/202)
+* Coerce and handle all custom attribute values. [#205](https://github.com/newrelic/elixir_agent/pull/205)
+
+Tweaks
+
+* Make `plug_cowboy` an optional dep. [#201](https://github.com/newrelic/elixir_agent/pull/201)
+* Use Erlang/OTP 21+ built-in SSL hostname verification. [#197](https://github.com/newrelic/elixir_agent/pull/197)
+
+------
+
 ### `v1.17.1`
 
 Fixes
