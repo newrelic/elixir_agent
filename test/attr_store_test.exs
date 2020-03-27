@@ -137,6 +137,9 @@ defmodule AttrStoreTest do
     assert AttrStore.tracking?(table, :pid)
     AttrStore.untrack(table, :pid)
     refute AttrStore.tracking?(table, :pid)
+    refute AttrStore.tracking?(table, :task1)
+    refute AttrStore.tracking?(table, :task2)
+    refute AttrStore.tracking?(table, :task3)
   end
 
   test "If the table doesn't exist, don't blow up" do

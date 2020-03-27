@@ -62,9 +62,9 @@ defmodule NewRelic.Transaction.Reporter do
 
   def ignore_transaction() do
     if tracking?(self()) do
+      ensure_purge(self())
       AttrStore.untrack(__MODULE__, self())
       AttrStore.purge(__MODULE__, self())
-      ensure_purge(self())
     end
   end
 
@@ -124,15 +124,12 @@ defmodule NewRelic.Transaction.Reporter do
 
   def track_spawn(original, pid, timestamp) do
     if tracking?(original) do
-      AttrStore.link(
-        __MODULE__,
-        original,
-        pid,
+      AttrStore.link(__MODULE__, original, pid)
+
+      AttrStore.add(__MODULE__, pid,
         trace_process_spawns: {:list, {pid, timestamp, original}},
         trace_process_names: {:list, {pid, NewRelic.Util.process_name(pid)}}
       )
-
-      AttrStore.incr(__MODULE__, original, process_spawns: 1)
     end
   end
 
