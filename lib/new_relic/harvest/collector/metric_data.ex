@@ -343,9 +343,9 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
-  def transform({:supportability, :agent, name}, value: value),
+  def transform({:supportability, :agent, metric}, value: value),
     do: %Metric{
-      name: join(["Supportability/ElixirAgent", name]),
+      name: join(["Supportability/ElixirAgent", metric]),
       call_count: 1,
       total_call_time: value,
       min_call_time: value,

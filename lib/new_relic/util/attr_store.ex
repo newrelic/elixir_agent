@@ -8,17 +8,10 @@ defmodule NewRelic.Util.AttrStore do
 
   @moduledoc false
 
-  @ets_options [
-    :named_table,
-    :duplicate_bag,
-    :public,
-    read_concurrency: true,
-    write_concurrency: true
-  ]
-
+  @ets_options [:named_table, :duplicate_bag, :public]
   def new(table) do
-    :ets.new(collecting(table), @ets_options)
-    :ets.new(tracking(table), @ets_options)
+    :ets.new(collecting(table), @ets_options ++ [write_concurrency: true])
+    :ets.new(tracking(table), @ets_options ++ [read_concurrency: true, write_concurrency: true])
   end
 
   def track(table, pid) do
@@ -131,7 +124,7 @@ defmodule NewRelic.Util.AttrStore do
   defp collect_attr({_pid, {k, {:counter, n}}}, acc), do: Map.update(acc, k, n, &(&1 + n))
   defp collect_attr({_pid, {k, v}}, acc), do: Map.put(acc, k, v)
 
-  defp collecting(table), do: table
+  defp collecting(table), do: Module.concat(table, Collecting)
   defp tracking(table), do: Module.concat(table, Tracking)
 
   defp lookup(table, term) do
