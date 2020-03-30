@@ -274,32 +274,6 @@ defmodule TransactionTest do
            end)
   end
 
-  test "Multiple sequential transactions in the same process" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
-    Task.async(fn ->
-      TestPlugApp.call(conn(:get, "/sequential/1"), [])
-      TestPlugApp.call(conn(:get, "/sequential/2"), [])
-      TestPlugApp.call(conn(:get, "/sequential/3"), [])
-    end)
-    |> Task.await()
-
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-
-    assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/sequential/1" && event[:order] == "1" && event[:status] == 200
-           end)
-
-    assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/sequential/2" && event[:order] == "2" && event[:status] == 200
-           end)
-
-    assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/sequential/3" && event[:order] == "3" && event[:status] == 200
-           end)
-  end
-
   test "Track attrs inside proccesses spawned by the transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     Task.Supervisor.start_link(name: TestTaskSup)
@@ -352,11 +326,10 @@ defmodule TransactionTest do
 
     [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert event[:duration_s] >= 0.2
-    assert event[:duration_s] < 0.3
+    assert_in_delta event[:duration_s], 0.2, 0.1
+    assert_in_delta event[:total_time_s], 0.4, 0.1
 
-    assert event[:total_time_s] > 0.3
-    assert event[:total_time_s] < 0.5
+    assert event[:total_time_s] > event[:duration_s]
   end
 
   describe "Request queueing" do
