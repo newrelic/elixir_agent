@@ -343,6 +343,15 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
+  def transform({:supportability, :agent, metric}, value: value),
+    do: %Metric{
+      name: join(["Supportability/ElixirAgent", metric]),
+      call_count: 1,
+      total_call_time: value,
+      min_call_time: value,
+      max_call_time: value
+    }
+
   def transform({:supportability, :collector}, status: status),
     do: %Metric{
       name: join(["Supportability/Agent/Collector/HTTPError", status]),

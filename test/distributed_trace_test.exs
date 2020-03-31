@@ -227,7 +227,10 @@ defmodule DistributedTraceTest do
   end
 
   test "correctly handle a bad NR payload" do
-    TestPlugApp.call(put_req_header(conn(:get, "/"), @dt_header, "asdf"), [])
+    TestHelper.request(
+      TestPlugApp,
+      put_req_header(conn(:get, "/"), @dt_header, "asdf")
+    )
   end
 
   test "Always handle payload w/o sampling decision" do

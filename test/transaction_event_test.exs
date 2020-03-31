@@ -117,8 +117,8 @@ defmodule TransactionEventTest do
   test "instrument & harvest" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    TestPlugApp.call(conn(:get, "/"), [])
-    TestPlugApp.call(conn(:get, "/"), [])
+    TestHelper.request(TestPlugApp, conn(:get, "/"))
+    TestHelper.request(TestPlugApp, conn(:get, "/"))
 
     [event | _] = events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
@@ -148,14 +148,11 @@ defmodule TransactionEventTest do
     Application.put_env(:new_relic_agent, :transaction_event_reservoir_size, 3)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    Task.async(fn ->
-      TestPlugApp.call(conn(:get, "/"), [])
-      TestPlugApp.call(conn(:get, "/"), [])
-      TestPlugApp.call(conn(:get, "/"), [])
-      TestPlugApp.call(conn(:get, "/"), [])
-      TestPlugApp.call(conn(:get, "/"), [])
-    end)
-    |> Task.await()
+    TestHelper.request(TestPlugApp, conn(:get, "/"))
+    TestHelper.request(TestPlugApp, conn(:get, "/"))
+    TestHelper.request(TestPlugApp, conn(:get, "/"))
+    TestHelper.request(TestPlugApp, conn(:get, "/"))
+    TestHelper.request(TestPlugApp, conn(:get, "/"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
     assert length(events) == 3

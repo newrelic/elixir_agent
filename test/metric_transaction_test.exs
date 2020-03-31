@@ -96,7 +96,7 @@ defmodule MetricTransactionTest do
   end
 
   test "Basic web transaction" do
-    TestPlugApp.call(conn(:get, "/foo/1"), [])
+    TestHelper.request(TestPlugApp, conn(:get, "/foo/1"))
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
@@ -107,7 +107,7 @@ defmodule MetricTransactionTest do
   end
 
   test "External metrics" do
-    TestPlugApp.call(conn(:get, "/foo/1"), [])
+    TestHelper.request(TestPlugApp, conn(:get, "/foo/1"))
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
@@ -159,7 +159,7 @@ defmodule MetricTransactionTest do
       conn(:get, "/foo/1")
       |> put_req_header("x-request-start", request_start)
 
-    TestPlugApp.call(conn, [])
+    TestHelper.request(TestPlugApp, conn)
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
@@ -181,7 +181,7 @@ defmodule MetricTransactionTest do
   end
 
   test "Custom transaction names" do
-    TestPlugApp.call(conn(:get, "/custom_name"), [])
+    TestHelper.request(TestPlugApp, conn(:get, "/custom_name"))
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
@@ -189,7 +189,7 @@ defmodule MetricTransactionTest do
   end
 
   test "fancy transaction names" do
-    TestPlugApp.call(conn(:get, "/fancy/transaction/names/supported/here!"), [])
+    TestHelper.request(TestPlugApp, conn(:get, "/fancy/transaction/names/supported/here!"))
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
