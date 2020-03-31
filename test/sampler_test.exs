@@ -127,7 +127,7 @@ defmodule SamplerTest do
     assert [_, [_, 2, _, _, _, _]] =
              TestHelper.find_metric(
                metrics,
-               "Supportability/ElixirAgent/ReporterCompleteActive"
+               "Supportability/ElixirAgent/ReporterCompleteTasksActive"
              )
   end
 

@@ -31,8 +31,24 @@ defmodule NewRelic.Sampler.Agent do
 
   def record_sample do
     NewRelic.report_metric(
-      {:supportability, :agent, "ReporterCompleteActive"},
+      {:supportability, :agent, "ReporterCollectingSize"},
+      value: ets_size(NewRelic.Transaction.Reporter.Collecting)
+    )
+
+    NewRelic.report_metric(
+      {:supportability, :agent, "ReporterTrackingSize"},
+      value: ets_size(NewRelic.Transaction.Reporter.Tracking)
+    )
+
+    NewRelic.report_metric(
+      {:supportability, :agent, "ReporterCompleteTasksActive"},
       value: length(Task.Supervisor.children(Transaction.TaskSupervisor))
     )
+  end
+
+  def ets_size(table) do
+    :ets.info(table, :size)
+  rescue
+    ArgumentError -> nil
   end
 end
