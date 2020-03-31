@@ -17,6 +17,10 @@ defmodule RedixExample.Router do
         ["GET", "counter"]
       ])
 
+    {:ok, pid} = Redix.start_link("redis://localhost")
+    {:ok, _} = Redix.command(pid, ["HSET", "myHash", "myKey", "foo"])
+    :ok = Redix.stop(pid)
+
     send_resp(conn, 200, Jason.encode!(%{hello: "world"}))
   end
 

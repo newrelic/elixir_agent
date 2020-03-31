@@ -19,12 +19,18 @@ defmodule RedixExampleTest do
     assert TestHelper.find_metric(
              metrics,
              "Datastore/Redis/all",
-             3
+             4
            )
 
     assert TestHelper.find_metric(
              metrics,
              "Datastore/operation/Redis/SET",
+             1
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/operation/Redis/HSET",
              1
            )
 
@@ -51,5 +57,10 @@ defmodule RedixExampleTest do
 
     assert pipeline_event[:"db.statement"] ==
              "DEL counter; INCR counter; INCR counter; GET counter"
+
+    [hset_event, _, _] =
+      Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "Datastore/operation/Redis/HSET" end)
+
+    assert hset_event[:"peer.address"] == "localhost:6379"
   end
 end
