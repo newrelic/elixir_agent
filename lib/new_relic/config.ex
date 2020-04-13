@@ -112,6 +112,10 @@ defmodule NewRelic.Config do
     feature_check?("NEW_RELIC_ECTO_INSTRUMENTATION_ENABLED", :ecto_instrumentation_enabled)
   end
 
+  def feature?(:tesla_instrumentation) do
+    feature_check?("NEW_RELIC_TESLA_INSTRUMENTATION_ENABLED", :tesla_instrumentation_enabled)
+  end
+
   def feature?(:function_argument_collection) do
     feature_check?(
       "NEW_RELIC_FUNCTION_ARGUMENT_COLLECTION_ENABLED",
