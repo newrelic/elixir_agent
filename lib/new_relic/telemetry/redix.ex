@@ -61,7 +61,7 @@ defmodule NewRelic.Telemetry.Redix do
     :telemetry.detach(handler_id)
   end
 
-  def handle_event(@redix_connection, _, %{reconnection: false} = meta, _config) do
+  def handle_event(@redix_connection, _, meta, _config) do
     GenServer.call(__MODULE__, {@redix_connection, meta})
   end
 

@@ -5,7 +5,7 @@ defmodule RedixExample.Application do
     http_port = Application.get_env(:redix_example, :http_port)
 
     children = [
-      {Redix, host: "localhost", name: :redix},
+      {Redix, host: "localhost", name: :redix, sync_connect: true},
       Plug.Cowboy.child_spec(scheme: :http, plug: RedixExample.Router, options: [port: http_port])
     ]
 
