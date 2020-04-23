@@ -136,9 +136,18 @@ defmodule TransactionTest do
     end
 
     get "/total_time" do
-      t1 = Task.async(fn -> ExternalService.query(200) end)
+      Process.sleep(10)
+
+      t1 =
+        Task.async(fn ->
+          Process.sleep(10)
+          ExternalService.query(200)
+        end)
+
       ExternalService.query(200)
       Task.await(t1)
+
+      Process.sleep(10)
       send_resp(conn, 200, "ok")
     end
   end
