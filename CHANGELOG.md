@@ -13,6 +13,7 @@ Tweaks
 * Make `plug_cowboy` an optional dep. [#201](https://github.com/newrelic/elixir_agent/pull/201)
 * Use Erlang/OTP 21+ built-in SSL hostname verification. [#197](https://github.com/newrelic/elixir_agent/pull/197)
 * Reduce contention on transaction storage. [#209](https://github.com/newrelic/elixir_agent/pull/209)
+* Detect Ecto repo via telemetry event instead of an Erlang tracer. [#214](https://github.com/newrelic/elixir_agent/pull/214)
 
 ------
 
