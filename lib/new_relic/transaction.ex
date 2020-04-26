@@ -38,9 +38,8 @@ defmodule NewRelic.Transaction do
 
   defmacro __using__(_) do
     quote do
-      plug(NewRelic.Transaction.Plug)
-      plug(NewRelic.DistributedTrace.Plug)
-      use NewRelic.Transaction.ErrorHandler
+      # TODO: emit warning to remove
+      :not_needed!
     end
   end
 

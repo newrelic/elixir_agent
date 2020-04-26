@@ -10,7 +10,8 @@ defmodule NewRelic.TelemetrySupervisor do
   def init(_) do
     children = [
       supervisor(NewRelic.Telemetry.Ecto.Supervisor, []),
-      supervisor(NewRelic.Telemetry.Redix, [])
+      supervisor(NewRelic.Telemetry.Redix, []),
+      supervisor(NewRelic.Telemetry.Plug, [])
     ]
 
     supervise(children, strategy: :one_for_one)

@@ -31,14 +31,14 @@ defmodule NewRelic.Transaction.Plug do
     |> register_before_send(&before_send/1)
   end
 
-  defp on_call(conn) do
+  def on_call(conn) do
     Transaction.Reporter.start()
     add_start_attrs(conn)
     maybe_report_queueing(conn)
     conn
   end
 
-  defp before_send(conn) do
+  def before_send(conn) do
     add_stop_attrs(conn)
     Transaction.Reporter.complete(self(), :async)
     conn

@@ -1,13 +1,16 @@
 defmodule TestHelper do
+  # todo: refactor callers to take path not conn
   def request(module, conn) do
-    Task.async(fn ->
-      try do
-        module.call(conn, [])
-      rescue
-        error -> error
-      end
-    end)
-    |> Task.await()
+    Plug.Cowboy.http(module, [], port: 8000)
+
+    url = 'http://localhost:8000#{conn.request_path}'
+    headers = Enum.map(conn.req_headers, fn {k, v} -> {'#{k}', '#{v}'} end)
+    {:ok, {{_, status, _}, _, body}} = :httpc.request(:get, {url, headers}, [], [])
+
+    Plug.Cowboy.shutdown(Module.concat(module, HTTP))
+
+    # todo: refactor callers nicer struct (this used to be conn)
+    %{status: status, resp_body: to_string(body)}
   end
 
   def trigger_report(module) do
