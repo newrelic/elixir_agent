@@ -38,11 +38,10 @@ defmodule NewRelic.Mixfile do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:jason, "~> 1.0"},
-      {:telemetry, "~> 0.4"},
-      # Built-in Instrumentation:
       {:plug, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0", optional: true},
-      # Optional Instrumentation:
+      {:telemetry, "~> 0.4"},
+      # Instrumentation:
+      {:plug_cowboy, ">= 2.2.1", optional: true},
       {:ecto_sql, ">= 3.4.0", optional: true},
       {:ecto, ">= 3.4.1", optional: true}
     ]

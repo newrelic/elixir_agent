@@ -127,13 +127,18 @@ defmodule W3CTraceContextTest do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
 
-    conn(:get, "/w3c")
-    |> put_req_header(@w3c_traceparent, "00-eb970877cfd349b4dcf5eb9957283bca-5f474d64b9cc9b2a-00")
-    |> put_req_header(
-      @w3c_tracestate,
-      "190@nr=0-2-332029-2827902-5f474d64b9cc9b2a-7d3efb1b173fecfa---1518469636035"
-    )
-    |> TestPlugApp.call([])
+    conn =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-eb970877cfd349b4dcf5eb9957283bca-5f474d64b9cc9b2a-00"
+      )
+      |> put_req_header(
+        @w3c_tracestate,
+        "190@nr=0-2-332029-2827902-5f474d64b9cc9b2a-7d3efb1b173fecfa---1518469636035"
+      )
+
+    TestHelper.request(TestPlugApp, conn)
 
     [[_, tx_attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
@@ -161,13 +166,18 @@ defmodule W3CTraceContextTest do
     prev_key = Collector.AgentRun.trusted_account_key()
     Collector.AgentRun.store(:trusted_account_key, "1349956")
 
-    conn(:get, "/w3c")
-    |> put_req_header(@w3c_traceparent, "00-74be672b84ddc4e4b28be285632bbc0a-27ddd2d8890283b4-01")
-    |> put_req_header(
-      @w3c_tracestate,
-      "1349956@nr=0-0-1349956-41346604-27ddd2d8890283b4-b28be285632bbc0a-1-1.1273-1569367663277"
-    )
-    |> TestPlugApp.call([])
+    conn =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-74be672b84ddc4e4b28be285632bbc0a-27ddd2d8890283b4-01"
+      )
+      |> put_req_header(
+        @w3c_tracestate,
+        "1349956@nr=0-0-1349956-41346604-27ddd2d8890283b4-b28be285632bbc0a-1-1.1273-1569367663277"
+      )
+
+    TestHelper.request(TestPlugApp, conn)
 
     [[_, tx_attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
@@ -198,10 +208,15 @@ defmodule W3CTraceContextTest do
 
     prev_key = Collector.AgentRun.trusted_account_key()
 
-    conn(:get, "/w3c")
-    |> put_req_header(@w3c_traceparent, "00-74be672b84ddc4e4b28be285632bbc0a-27ddd2d8890283b4-01")
-    |> put_req_header(@w3c_tracestate, "vendor=value")
-    |> TestPlugApp.call([])
+    conn =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-74be672b84ddc4e4b28be285632bbc0a-27ddd2d8890283b4-01"
+      )
+      |> put_req_header(@w3c_tracestate, "vendor=value")
+
+    TestHelper.request(TestPlugApp, conn)
 
     [[_, tx_attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
@@ -228,13 +243,18 @@ defmodule W3CTraceContextTest do
     prev_key = Collector.AgentRun.trusted_account_key()
     Collector.AgentRun.store(:trusted_account_key, "33")
 
-    conn(:get, "/w3c")
-    |> put_req_header(@w3c_traceparent, "00-87b1c9a429205b25e5b687d890d4821f-7d3efb1b173fecfa-00")
-    |> put_req_header(
-      @w3c_tracestate,
-      "dd=YzRiMTIxODk1NmVmZTE4ZQ,33@nr=0-0-33-5043-27ddd2d8890283b4-5569065a5b1313bd-1-1.23456-1518469636025"
-    )
-    |> TestPlugApp.call([])
+    conn =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-87b1c9a429205b25e5b687d890d4821f-7d3efb1b173fecfa-00"
+      )
+      |> put_req_header(
+        @w3c_tracestate,
+        "dd=YzRiMTIxODk1NmVmZTE4ZQ,33@nr=0-0-33-5043-27ddd2d8890283b4-5569065a5b1313bd-1-1.23456-1518469636025"
+      )
+
+    TestHelper.request(TestPlugApp, conn)
 
     [[_, tx_attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
@@ -265,7 +285,7 @@ defmodule W3CTraceContextTest do
     prev_app = Collector.AgentRun.primary_application_id()
     Collector.AgentRun.store(:primary_application_id, 53442)
 
-    response =
+    conn =
       conn(:get, "/w3c")
       |> put_req_header(
         @w3c_traceparent,
@@ -275,7 +295,8 @@ defmodule W3CTraceContextTest do
         @w3c_tracestate,
         "190@nr=0-0-212311-51424-d6e4e06002e24189-27856f70d3d314b7-1-0.421-1482959525577"
       )
-      |> TestPlugApp.call([])
+
+    response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, tracestate_header] =
       response.resp_body
@@ -297,13 +318,14 @@ defmodule W3CTraceContextTest do
     prev_app = Collector.AgentRun.primary_application_id()
     Collector.AgentRun.store(:primary_application_id, 53442)
 
-    response =
+    conn =
       conn(:get, "/w3c")
       |> put_req_header(
         @w3c_traceparent,
         "00-74be672b84ddc4e4b28be285632bbc0a-d6e4e06002e24189-01"
       )
-      |> TestPlugApp.call([])
+
+    response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, tracestate_header] =
       response.resp_body
@@ -320,13 +342,14 @@ defmodule W3CTraceContextTest do
   end
 
   test "Generate expected outbound W3C headers - bad traceparent" do
-    response =
+    conn =
       conn(:get, "/w3c")
       |> put_req_header(
         @w3c_traceparent,
         "00-74be672b84ddc.....8be285632bbc0a-d6e4e06002e24189-01"
       )
-      |> TestPlugApp.call([])
+
+    response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, _tracestate_header] =
       response.resp_body
@@ -337,7 +360,7 @@ defmodule W3CTraceContextTest do
   end
 
   test "Generate expected outbound W3C headers - bad NR tracestate" do
-    response =
+    conn =
       conn(:get, "/w3c")
       |> put_req_header(
         @w3c_traceparent,
@@ -347,7 +370,8 @@ defmodule W3CTraceContextTest do
         @w3c_tracestate,
         "190@nr=0-0-212311-51424-d6e4e06002e24189-27856f70d3d314b7-1-2.0e-5-1482959525577"
       )
-      |> TestPlugApp.call([])
+
+    response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, tracestate_header] =
       response.resp_body
@@ -362,13 +386,14 @@ defmodule W3CTraceContextTest do
   end
 
   test "Generate expected outbound W3C headers - future traceparent version" do
-    response =
+    conn =
       conn(:get, "/w3c")
       |> put_req_header(
         @w3c_traceparent,
         "cc-74be672b84ddc4e4b28be285632bbc0a-d6e4e06002e24189-01-future-stuff"
       )
-      |> TestPlugApp.call([])
+
+    response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, _tracestate_header] =
       response.resp_body
@@ -379,7 +404,7 @@ defmodule W3CTraceContextTest do
   end
 
   test "Generate expected outbound W3C headers - future tracestate version" do
-    response =
+    conn =
       conn(:get, "/w3c")
       |> put_req_header(
         @w3c_traceparent,
@@ -389,7 +414,8 @@ defmodule W3CTraceContextTest do
         @w3c_tracestate,
         "190@nr=1-0-212311-51424-d6e4e06002e24189-27856f70d3d314b7-1-0.421-1482959525577-future-stuff"
       )
-      |> TestPlugApp.call([])
+
+    response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, tracestate_header] =
       response.resp_body

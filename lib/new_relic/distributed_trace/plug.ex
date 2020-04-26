@@ -35,7 +35,7 @@ defmodule NewRelic.DistributedTrace.Plug do
     |> register_before_send(&before_send/1)
   end
 
-  defp before_send(conn) do
+  def before_send(conn) do
     DistributedTrace.cleanup_context()
     conn
   end

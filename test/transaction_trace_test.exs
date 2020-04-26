@@ -9,6 +9,7 @@ defmodule TransactionTraceTest do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+    send(NewRelic.DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
       TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
