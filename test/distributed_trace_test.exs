@@ -48,6 +48,7 @@ defmodule DistributedTraceTest do
     Collector.AgentRun.store(:trusted_account_key, "190")
     prev_acct = Collector.AgentRun.account_id()
     Collector.AgentRun.store(:account_id, 190)
+    Collector.AgentRun.store(:primary_application_id, 1441)
 
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
     System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
@@ -69,19 +70,46 @@ defmodule DistributedTraceTest do
     TestHelper.request(
       TestPlugApp,
       conn(:get, "/")
-      |> put_req_header(@dt_header, generate_inbound_payload())
+      |> put_req_header(@dt_header, generate_inbound_payload(:app))
     )
 
     [[_, attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
     assert attrs[:"parent.app"] == "2827902"
-    assert attrs[:"parent.transportDuration"] >= 0.1
-    assert attrs[:"parent.transportDuration"] < 1.0
+    assert is_number(attrs[:"parent.transportDuration"])
     assert attrs[:parentId] == "7d3efb1b173fecfa"
     assert attrs[:parentSpanId] == "5f474d64b9cc9b2a"
     assert attrs[:traceId] == "d6b4ba0c3a712ca"
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+  end
+
+  test "Generate linkage from a Browser app" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    response =
+      TestHelper.request(
+        TestPlugApp,
+        conn(:get, "/")
+        |> put_req_header(@dt_header, generate_inbound_payload(:browser))
+      )
+
+    outbound_payload =
+      response.resp_body
+      |> Base.decode64!()
+      |> Jason.decode!()
+
+    assert get_in(outbound_payload, ["d", "tr"]) == "d6b4ba0c3a712ca"
+    assert get_in(outbound_payload, ["d", "ac"]) == "190"
+    assert get_in(outbound_payload, ["d", "ap"]) == "1441"
+
+    [[_, attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert attrs[:traceId] == "d6b4ba0c3a712ca"
+    assert attrs[:"parent.app"] == "2827902"
+    assert attrs[:"parent.type"] == "Browser"
+    assert attrs[:parentSpanId] == "5f474d64b9cc9b2a"
+    refute attrs[:parentId]
   end
 
   test "Generate the expected metrics" do
@@ -90,12 +118,12 @@ defmodule DistributedTraceTest do
     TestHelper.request(
       TestPlugApp,
       conn(:get, "/")
-      |> put_req_header(@dt_header, generate_inbound_payload())
+      |> put_req_header(@dt_header, generate_inbound_payload(:app))
     )
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert TestHelper.find_metric(metrics, "DurationByCaller/Browser/190/2827902/HTTP/all")
+    assert TestHelper.find_metric(metrics, "DurationByCaller/App/190/2827902/HTTP/all")
 
     assert TestHelper.find_metric(
              metrics,
@@ -110,7 +138,7 @@ defmodule DistributedTraceTest do
       TestHelper.request(
         TestPlugApp,
         conn(:get, "/connected")
-        |> put_req_header(@dt_header, generate_inbound_payload())
+        |> put_req_header(@dt_header, generate_inbound_payload(:app))
       )
 
     outbound_payload =
@@ -136,10 +164,8 @@ defmodule DistributedTraceTest do
       |> Base.decode64!()
       |> Jason.decode!()
 
-    # There is no parent Transaction when we start a new Trace
-    refute get_in(outbound_payload, ["d", "pa"])
-
-    # Transaction GUID, Trace ID initialized
+    # Span GUID, Transaction ID, Trace ID initialized
+    assert get_in(outbound_payload, ["d", "id"]) |> is_binary
     assert get_in(outbound_payload, ["d", "tx"]) |> is_binary
     assert get_in(outbound_payload, ["d", "tr"]) |> is_binary
 
@@ -266,12 +292,12 @@ defmodule DistributedTraceTest do
     assert tracestate_header |> is_binary
   end
 
-  def generate_inbound_payload() do
+  def generate_inbound_payload(:app) do
     """
     {
       "v": [0,1],
       "d": {
-        "ty": "Browser",
+        "ty": "App",
         "ac": "190",
         "tk": "190",
         "ap": "2827902",
@@ -281,6 +307,23 @@ defmodule DistributedTraceTest do
         "ti": #{System.system_time(:millisecond) - 100},
         "pr": 0.123456,
         "sa": true
+      }
+    }
+    """
+    |> Base.encode64()
+  end
+
+  def generate_inbound_payload(:browser) do
+    """
+    {
+      "v": [0,1],
+      "d": {
+        "ty": "Browser",
+        "ac": "190",
+        "ap": "2827902",
+        "tr": "d6b4ba0c3a712ca",
+        "id": "5f474d64b9cc9b2a",
+        "ti": #{System.system_time(:millisecond) - 100}
       }
     }
     """
