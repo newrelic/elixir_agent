@@ -57,27 +57,30 @@ defmodule NewRelic.Util do
   end
 
   def coerce_attributes(attrs) do
-    Enum.map(attrs, fn
+    Enum.flat_map(attrs, fn
+      {_key, nil} ->
+        []
+
       {key, value} when is_number(value) when is_boolean(value) ->
-        {key, value}
+        [{key, value}]
 
       {key, value} when is_bitstring(value) ->
         case String.valid?(value) do
-          true -> {key, value}
-          false -> bad_value(key, value)
+          true -> [{key, value}]
+          false -> [bad_value(key, value)]
         end
 
       {key, value} when is_reference(value) when is_pid(value) when is_port(value) ->
-        {key, inspect(value)}
+        [{key, inspect(value)}]
 
       {key, value} when is_atom(value) ->
-        {key, to_string(value)}
+        [{key, to_string(value)}]
 
       {key, %struct{} = value} when struct in [Date, DateTime, Time, NaiveDateTime] ->
-        {key, struct.to_iso8601(value)}
+        [{key, struct.to_iso8601(value)}]
 
       {key, value} ->
-        bad_value(key, value)
+        [bad_value(key, value)]
     end)
   end
 
