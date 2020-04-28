@@ -73,8 +73,8 @@ defmodule NewRelic.DistributedTrace.NewRelicContext do
       "d" =>
         %{
           "ty" => context.type,
-          "ac" => context.account_id,
-          "ap" => context.app_id,
+          "ac" => context.account_id |> to_string,
+          "ap" => context.app_id |> to_string,
           "tx" => context.guid,
           "tr" => context.trace_id,
           "pr" => context.priority,
