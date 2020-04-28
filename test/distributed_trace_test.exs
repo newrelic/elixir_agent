@@ -220,13 +220,13 @@ defmodule DistributedTraceTest do
       assert context =~ ~s("id":"spguid")
     end
 
-    test "exclude id when not sampled" do
+    test "include id when not sampled" do
       context =
         %DistributedTrace.Context{sampled: false, span_guid: "spguid"}
         |> DistributedTrace.NewRelicContext.encode()
         |> Base.decode64!()
 
-      refute context =~ ~s("id")
+      assert context =~ ~s("id":"spguid")
     end
   end
 

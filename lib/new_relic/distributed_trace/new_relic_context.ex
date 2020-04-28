@@ -77,19 +77,16 @@ defmodule NewRelic.DistributedTrace.NewRelicContext do
           "ap" => context.app_id |> to_string,
           "tx" => context.guid,
           "tr" => context.trace_id,
+          "id" => context.span_guid,
           "pr" => context.priority,
           "sa" => context.sampled,
           "ti" => context.timestamp
         }
-        |> maybe_put(:span_guid, "id", context.sampled, context.span_guid)
         |> maybe_put(:trust_key, "tk", context.account_id, context.trust_key)
     }
     |> Jason.encode!()
     |> Base.encode64()
   end
-
-  def maybe_put(data, :span_guid, key, true = _sampled, guid), do: Map.put(data, key, guid)
-  def maybe_put(data, :span_guid, _key, false = _sampled, _guid), do: data
 
   def maybe_put(data, :trust_key, _key, account_id, account_id), do: data
   def maybe_put(data, :trust_key, _key, _account_id, nil), do: data
