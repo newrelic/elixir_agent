@@ -44,6 +44,10 @@ defmodule NewRelic.Logger do
     {:reply, StringIO.flush(io_device), state}
   end
 
+  def handle_call(:flush, _from, state) do
+    {:reply, "", state}
+  end
+
   def handle_call({:logger, logger}, _from, old_state) do
     {:ok, io_device} = device(logger)
     {:reply, old_state, %{io_device: io_device, logger: logger}}

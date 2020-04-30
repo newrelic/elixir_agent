@@ -44,6 +44,7 @@ defmodule TransactionTest do
         half: 0.5,
         string: "A string",
         bool: true,
+        nilValue: nil,
         atom: :atom,
         pid: self(),
         ref: make_ref(),
@@ -199,6 +200,9 @@ defmodule TransactionTest do
     assert event[:tuple] == @bad
     assert event[:function] == @bad
     assert event[:struct] == @bad
+
+    # Don't report nil values
+    refute Map.has_key?(event, :nilValue)
 
     # Make sure it can serialize to JSON
     Jason.encode!(events)
