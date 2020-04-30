@@ -14,6 +14,7 @@ Tweaks
 * Use Erlang/OTP 21+ built-in SSL hostname verification. [#197](https://github.com/newrelic/elixir_agent/pull/197)
 * Reduce contention on transaction storage. [#209](https://github.com/newrelic/elixir_agent/pull/209)
 * Detect Ecto repo via telemetry event instead of an Erlang tracer. [#214](https://github.com/newrelic/elixir_agent/pull/214)
+* Fix for Distributed Traces that start from a Browser Agent. [#215](https://github.com/newrelic/elixir_agent/pull/215)
 
 ------
 
