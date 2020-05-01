@@ -299,7 +299,7 @@ defmodule W3CTraceContextTest do
     response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, tracestate_header] =
-      response.resp_body
+      response.body
       |> String.split("|")
 
     expected_traceparent = ~r/00-74be672b84ddc4e4b28be285632bbc0a-\w{16}-01/
@@ -328,7 +328,7 @@ defmodule W3CTraceContextTest do
     response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, tracestate_header] =
-      response.resp_body
+      response.body
       |> String.split("|")
 
     expected_traceparent = ~r/00-74be672b84ddc4e4b28be285632bbc0a-\w{16}-01/
@@ -352,7 +352,7 @@ defmodule W3CTraceContextTest do
     response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, _tracestate_header] =
-      response.resp_body
+      response.body
       |> String.split("|")
 
     # Create a new Trace ID
@@ -374,7 +374,7 @@ defmodule W3CTraceContextTest do
     response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, tracestate_header] =
-      response.resp_body
+      response.body
       |> String.split("|")
 
     expected_traceparent = ~r/00-74be672b84ddc4e4b28be285632bbc0a-\w{16}-01/
@@ -396,7 +396,7 @@ defmodule W3CTraceContextTest do
     response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, _tracestate_header] =
-      response.resp_body
+      response.body
       |> String.split("|")
 
     # Accept the Trace ID
@@ -418,7 +418,7 @@ defmodule W3CTraceContextTest do
     response = TestHelper.request(TestPlugApp, conn)
 
     [traceparent_header, tracestate_header] =
-      response.resp_body
+      response.body
       |> String.split("|")
 
     expected_traceparent = ~r/00-74be672b84ddc4e4b28be285632bbc0a-\w{16}-01/
