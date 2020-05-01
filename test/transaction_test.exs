@@ -231,6 +231,7 @@ defmodule TransactionTest do
            end)
   end
 
+  @tag capture_log: true
   test "Failure of the Transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
@@ -259,6 +260,7 @@ defmodule TransactionTest do
            end)
   end
 
+  @tag capture_log: true
   test "Allow disabling error detail collection" do
     Application.put_env(:new_relic_agent, :error_collector_enabled, false)
 
