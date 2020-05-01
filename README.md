@@ -60,21 +60,8 @@ Out of the box, we will report Error Traces & some general BEAM VM stats. For fu
 
 Some Elixir packages are auto-instrumented via [`telemetry`](https://github.com/beam-telemetry/telemetry)
 
-* [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://github.com/newrelic/elixir_agent/blob/master/lib/new_relic/telemetry/ecto.ex) for details.
-
-#### Plug
-
-Plug instrumentation is built into the agent.
-
-* `NewRelic.Transaction` enables rich Transaction Monitoring for a `Plug` pipeline. It's a macro that injects a few plugs and an error handler. Install it by adding `use NewRelic.Transaction` to your Plug module.
-
-```elixir
-defmodule MyPlug do
-  use Plug.Router
-  use NewRelic.Transaction
-  # ...
-end
-```
+* [`Plug`](https://github.com/elixir-plug/plug): See [NewRelic.Telemetry.Plug](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Plug.html) for details.
+* [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Ecto.html) for details.
 
 #### Function Tracing
 

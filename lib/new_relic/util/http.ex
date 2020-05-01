@@ -16,6 +16,14 @@ defmodule NewRelic.Util.HTTP do
   def post(url, body, headers),
     do: post(url, Jason.encode!(body), headers)
 
+  def get(url, headers) do
+    headers = Enum.map(headers, fn {k, v} -> {'#{k}', '#{v}'} end)
+
+    with {:ok, {{_, status, _}, _, body}} <- :httpc.request(:get, {'#{url}', headers}, [], []) do
+      {:ok, %{status: status, body: to_string(body)}}
+    end
+  end
+
   @doc """
   Certs are pulled from Mozilla exactly as Hex does:
   https://github.com/hexpm/hex/blob/master/README.md#bundled-ca-certs

@@ -9,6 +9,18 @@ defmodule NewRelic.DistributedTrace do
   alias NewRelic.Harvest.Collector.AgentRun
   alias NewRelic.Transaction
 
+  def start(conn) do
+    determine_context(conn)
+    |> track_transaction(transport_type: "HTTP")
+  end
+
+  defp determine_context(conn) do
+    case accept_distributed_trace_headers(:http, conn) do
+      %Context{} = context -> context
+      _ -> generate_new_context()
+    end
+  end
+
   def accept_distributed_trace_headers(:http, conn) do
     w3c_headers(conn) || newrelic_header(conn) || :no_payload
   end

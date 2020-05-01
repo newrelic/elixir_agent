@@ -95,7 +95,7 @@ defmodule DistributedTraceTest do
       )
 
     outbound_payload =
-      response.resp_body
+      response.body
       |> Base.decode64!()
       |> Jason.decode!()
 
@@ -160,7 +160,7 @@ defmodule DistributedTraceTest do
     response = TestHelper.request(TestPlugApp, conn(:get, "/"))
 
     outbound_payload =
-      response.resp_body
+      response.body
       |> Base.decode64!()
       |> Jason.decode!()
 
@@ -285,7 +285,7 @@ defmodule DistributedTraceTest do
       )
 
     [traceparent_header, tracestate_header] =
-      response.resp_body
+      response.body
       |> String.split("|")
 
     assert traceparent_header |> is_binary

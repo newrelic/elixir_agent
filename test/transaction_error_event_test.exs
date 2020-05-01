@@ -197,7 +197,7 @@ defmodule TransactionErrorEventTest do
 
     response = TestHelper.request(TestPlugApp, conn(:get, "/caught/error"))
     assert response.status == 200
-    assert response.resp_body =~ "ok, fine"
+    assert response.body =~ "ok, fine"
 
     traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
 
