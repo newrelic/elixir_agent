@@ -31,14 +31,14 @@ defmodule NewRelic.Telemetry.Plug do
     :telemetry.detach(handler_id)
   end
 
-  def handle_event(@plug_start , _measurements, %{conn: conn} , _config) do
+  def handle_event(@plug_start, _measurements, %{conn: conn}, _config) do
     NewRelic.Transaction.Plug.on_call(conn)
     NewRelic.DistributedTrace.Plug.trace(conn, true)
   end
 
   def handle_event(
-        @plug_stop ,
-        %{duration: _duration} ,
+        @plug_stop,
+        %{duration: _duration},
         %{conn: conn},
         _config
       ) do
@@ -47,8 +47,15 @@ defmodule NewRelic.Telemetry.Plug do
     NewRelic.DistributedTrace.Plug.before_send(conn)
   end
 
-  def handle_event(@plug_exception = event, measurements, meta, _config) do
-    IO.inspect({event, measurements, meta})
+  def handle_event(
+        @plug_exception,
+        %{duration: _duration},
+        %{conn: conn, kind: kind, reason: reason, stacktrace: stack},
+        _config
+      ) do
+    # TODO: use duration
+    conn = %{conn | status: 500}
+    NewRelic.Transaction.handle_errors(conn, %{kind: kind, reason: reason, stack: stack})
   end
 
   def handle_event(_event, _measurements, _meta, _config) do

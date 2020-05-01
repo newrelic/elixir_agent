@@ -221,12 +221,11 @@ defmodule TransactionTest do
            end)
   end
 
+  @tag capture_log: true
   test "Error in Transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    assert_raise Plug.Conn.WrapperError, fn ->
-      TestPlugApp.call(conn(:get, "/error"), [])
-    end
+    TestHelper.request(TestPlugApp, conn(:get, "/error"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
@@ -237,14 +236,13 @@ defmodule TransactionTest do
            end)
   end
 
+  @tag capture_log: true
   test "Allow disabling error collection" do
     Application.put_env(:new_relic_agent, :error_collector_enabled, false)
 
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    assert_raise Plug.Conn.WrapperError, fn ->
-      TestPlugApp.call(conn(:get, "/error"), [])
-    end
+    TestHelper.request(TestPlugApp, conn(:get, "/error"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 

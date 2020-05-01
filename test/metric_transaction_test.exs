@@ -169,6 +169,7 @@ defmodule MetricTransactionTest do
     assert_in_delta time, 0.1, 0.02
   end
 
+  @tag capture_log: true
   test "Failed transaction" do
     TestHelper.request(TestPlugApp, conn(:get, "/fail"))
 
