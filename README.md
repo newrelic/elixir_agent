@@ -170,7 +170,7 @@ def my_func() do
 
   rescue
     error ->
-      NewRelic.Transaction.Reporter.fail(%{
+      NewRelic.fail(%{
         kind: "#{__MODULE__}.process/1 failed",
         reason: inspect(error),
         stack: __STACKTRACE__
