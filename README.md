@@ -136,3 +136,46 @@ There are a few adapters which leverage this agent to provide library / framewor
 
 * `Phoenix` https://github.com/binaryseed/new_relic_phoenix
 * `Absinthe` https://github.com/binaryseed/new_relic_absinthe
+
+#### Other Transactions
+
+Other transaction is a non-web transaction, so this should only be used in such cases
+This could be while consuming messages from a broker, for example
+
+To start a other transaction:
+```elixir
+NewRelic.start_transaction(category, name)
+```
+
+And to stop these transactions within the same process:
+```elixir
+NewRelic.stop_transaction()
+```
+
+Such transactions may end up failing and you can mark then as failed transactions using `NewRelic.Transaction.Reporter`
+```
+NewRelic.Transaction.Reporter.fail(%{
+        kind: "Kind of failure",
+        reason: "reason for error",
+        stack: __STACKTRACE__
+      })
+```
+
+A common approach to deal with such transactions and using rescue to mark failures and always ending with `stop_transaction()`
+```elixir
+def my_func() do
+  NewRelic.start_transaction("Task", "MyTask")
+
+  MyTask.exeute(something)
+
+  rescue
+    error ->
+      NewRelic.Transaction.Reporter.fail(%{
+        kind: "#{__MODULE__}.process/1 failed",
+        reason: inspect(error),
+        stack: __STACKTRACE__
+      })
+  after
+    NewRelic.stop_transaction()
+end
+```
