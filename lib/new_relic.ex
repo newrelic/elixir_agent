@@ -171,6 +171,20 @@ defmodule NewRelic do
   defdelegate report_custom_event(type, attributes),
     to: NewRelic.Harvest.Collector.CustomEvent.Harvester
 
+  @doc """
+  Mark a ongoing transaction as failed and enrich with the error information
+  Expects a map with the following information %{kind: kind, reason: reason, stack: stack}
+
+  ```elixir
+  NewRelic.fail(%{
+    kind: "#{__MODULE__}.process/1 failed",
+    reason: inspect(error),
+    stack: __STACKTRACE__
+  })
+  ```
+  """
+  defdelegate fail(error), to: NewRelic.Transaction.Reporter
+
   @doc false
   defdelegate report_aggregate(meta, values), to: NewRelic.Aggregate.Reporter
 
