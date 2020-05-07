@@ -96,12 +96,6 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
-  def set_transaction_error(pid, error) do
-    if tracking?(pid) do
-      AttrStore.add(__MODULE__, pid, transaction_error: {:error, error})
-    end
-  end
-
   def complete(pid, mode) do
     if tracking?(pid) do
       AttrStore.add(__MODULE__, pid, end_time_mono: System.monotonic_time())
