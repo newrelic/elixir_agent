@@ -32,16 +32,21 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
 
   # API
 
-  def current_harvester(name), do: Collector.HarvesterStore.current(name)
+  def current_harvester(harvest_cycle), do: Collector.HarvesterStore.current(harvest_cycle)
 
-  def manual_shutdown(name) do
-    harvester = current_harvester(name)
-    Process.monitor(harvester)
-    GenServer.call(name, :pause)
+  def manual_shutdown(harvest_cycle) do
+    case current_harvester(harvest_cycle) do
+      nil ->
+        :ignore
 
-    receive do
-      {:DOWN, _ref, _, ^harvester, _reason} ->
-        NewRelic.log(:warn, "Completed shutdown #{inspect(name)}")
+      harvester ->
+        Process.monitor(harvester)
+        GenServer.call(harvest_cycle, :pause)
+
+        receive do
+          {:DOWN, _ref, _, ^harvester, _reason} ->
+            NewRelic.log(:warn, "Completed shutdown #{inspect(harvest_cycle)}")
+        end
     end
   end
 

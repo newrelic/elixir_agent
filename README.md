@@ -105,23 +105,20 @@ defmodule MyExternalService do
 end
 ```
 
-#### `Mix.Task`
+#### Pre-Instrumented Modules
 
-To enable the agent during a `Mix.Task`, you simply need to start and stop it.
+* `NewRelic.Instrumented.Mix.Task` To enable the Agent and record a Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, record the Transaction, and shut down.
 
 ```elixir
 defmodule Mix.Tasks.Example do
   use Mix.Task
+  use NewRelic.Instrumented.Mix.Task
 
   def run(args) do
-    Application.ensure_all_started(:new_relic_agent)
     # ...
-    Application.stop(:new_relic_agent)
   end
 end
 ```
-
-#### Pre-Instrumented Modules
 
 * `NewRelic.Instrumented.HTTPoison` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace.
 
@@ -135,11 +132,13 @@ HTTPoison.get("http://www.example.com")
 You may start an "Other" Transaction for non-HTTP related work. This could used be while consuming messages from a broker, for example.
 
 To start an other transaction:
+
 ```elixir
 NewRelic.start_transaction(category, name)
 ```
 
 And to stop the transaction within the same process:
+
 ```elixir
 NewRelic.stop_transaction()
 ```

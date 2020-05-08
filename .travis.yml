@@ -18,3 +18,4 @@ script:
   - mix deps.get
   - mix format --check-formatted
   - mix test
+  - mix instrumented_task.example_task
