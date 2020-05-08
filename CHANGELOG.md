@@ -15,6 +15,7 @@ Tweaks
 * Reduce contention on transaction storage. [#209](https://github.com/newrelic/elixir_agent/pull/209)
 * Detect Ecto repo via telemetry event instead of an Erlang tracer. [#214](https://github.com/newrelic/elixir_agent/pull/214)
 * Fix for Distributed Traces that start from a Browser Agent. [#215](https://github.com/newrelic/elixir_agent/pull/215)
+* Fix for error reporting during Other Transactions. [#220](https://github.com/newrelic/elixir_agent/pull/220) Thanks @prabello.
 
 ------
 
