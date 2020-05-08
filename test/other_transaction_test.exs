@@ -82,6 +82,7 @@ defmodule OtherTransactionTest do
 
   @tag :capture_log
   test "Error in Other Transaction" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     start_supervised({Task.Supervisor, name: TestSupervisor})
 
@@ -106,6 +107,11 @@ defmodule OtherTransactionTest do
 
     assert name =~ "OtherTransaction"
 
+    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert event[:error]
+
     TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 end
