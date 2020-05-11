@@ -23,6 +23,10 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     end
   end
 
+  def ensure_initialized do
+    GenServer.call(__MODULE__, :ping)
+  end
+
   def agent_run_id, do: lookup(:agent_run_id)
   def trusted_account_key, do: lookup(:trusted_account_key)
   def account_id, do: lookup(:account_id)
