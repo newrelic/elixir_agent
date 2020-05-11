@@ -7,6 +7,7 @@ Features
 * Read the Docker container ID for accurate container detection. [#207](https://github.com/newrelic/elixir_agent/pull/207) Thanks @alejandrodnm!
 * Report Ecto queries that result in an error. [#202](https://github.com/newrelic/elixir_agent/pull/202)
 * Coerce and handle all custom attribute values. [#205](https://github.com/newrelic/elixir_agent/pull/205)
+* `Mix.Task` instrumentation. [#221](https://github.com/newrelic/elixir_agent/pull/221)
 
 Tweaks
 
