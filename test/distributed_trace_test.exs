@@ -142,7 +142,7 @@ defmodule DistributedTraceTest do
       )
 
     outbound_payload =
-      response.resp_body
+      response.body
       |> Base.decode64!()
       |> Jason.decode!()
 
