@@ -1,5 +1,25 @@
 ## CHANGELOG
 
+### `v1.18.0`
+
+Features
+
+* Read the Docker container ID for accurate container detection. [#207](https://github.com/newrelic/elixir_agent/pull/207) Thanks @alejandrodnm!
+* Report Ecto queries that result in an error. [#202](https://github.com/newrelic/elixir_agent/pull/202)
+* Coerce and handle all custom attribute values. [#205](https://github.com/newrelic/elixir_agent/pull/205)
+* `Mix.Task` instrumentation. [#221](https://github.com/newrelic/elixir_agent/pull/221)
+
+Tweaks
+
+* Make `plug_cowboy` an optional dep. [#201](https://github.com/newrelic/elixir_agent/pull/201)
+* Use Erlang/OTP 21+ built-in SSL hostname verification. [#197](https://github.com/newrelic/elixir_agent/pull/197)
+* Reduce contention on transaction storage. [#209](https://github.com/newrelic/elixir_agent/pull/209)
+* Detect Ecto repo via telemetry event instead of an Erlang tracer. [#214](https://github.com/newrelic/elixir_agent/pull/214)
+* Fix for Distributed Traces that start from a Browser Agent. [#215](https://github.com/newrelic/elixir_agent/pull/215)
+* Fix for error reporting during Other Transactions. [#220](https://github.com/newrelic/elixir_agent/pull/220) Thanks @prabello.
+
+------
+
 ### `v1.17.1`
 
 Fixes

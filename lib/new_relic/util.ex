@@ -41,6 +41,10 @@ defmodule NewRelic.Util do
     |> Enum.concat([{"#{key}.length", length(list_value)}])
   end
 
+  def deep_flatten({key, %{__struct__: _} = value}) do
+    [{key, value}]
+  end
+
   def deep_flatten({key, map_value}) when is_map(map_value) do
     map_value
     |> Enum.slice(0..9)
@@ -50,6 +54,39 @@ defmodule NewRelic.Util do
 
   def deep_flatten({key, value}) do
     [{key, value}]
+  end
+
+  def coerce_attributes(attrs) do
+    Enum.flat_map(attrs, fn
+      {_key, nil} ->
+        []
+
+      {key, value} when is_number(value) when is_boolean(value) ->
+        [{key, value}]
+
+      {key, value} when is_bitstring(value) ->
+        case String.valid?(value) do
+          true -> [{key, value}]
+          false -> [bad_value(key, value)]
+        end
+
+      {key, value} when is_reference(value) when is_pid(value) when is_port(value) ->
+        [{key, inspect(value)}]
+
+      {key, value} when is_atom(value) ->
+        [{key, to_string(value)}]
+
+      {key, %struct{} = value} when struct in [Date, DateTime, Time, NaiveDateTime] ->
+        [{key, struct.to_iso8601(value)}]
+
+      {key, value} ->
+        [bad_value(key, value)]
+    end)
+  end
+
+  defp bad_value(key, value) do
+    NewRelic.log(:debug, "Bad attribute value: #{inspect(key)} => #{inspect(value)}")
+    {key, "[BAD_VALUE]"}
   end
 
   def elixir_environment() do

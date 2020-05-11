@@ -18,7 +18,13 @@ defmodule NewRelic.Transaction.Reporter do
 
   def add_attributes(attrs) when is_list(attrs) do
     if tracking?(self()) do
-      AttrStore.add(__MODULE__, self(), NewRelic.Util.deep_flatten(attrs))
+      AttrStore.add(
+        __MODULE__,
+        self(),
+        attrs
+        |> NewRelic.Util.deep_flatten()
+        |> NewRelic.Util.coerce_attributes()
+      )
     end
   end
 
@@ -28,20 +34,19 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
-  def set_transaction_name(custom_name) do
+  def set_transaction_name(custom_name) when is_binary(custom_name) do
     if tracking?(self()) do
       AttrStore.add(__MODULE__, self(), custom_name: custom_name)
     end
   end
 
   # Internal Agent API
-  #
 
   def start() do
     Transaction.Monitor.add(self())
     AttrStore.track(__MODULE__, self())
 
-    add_attributes(
+    AttrStore.add(__MODULE__, self(),
       pid: inspect(self()),
       start_time: System.system_time(),
       start_time_mono: System.monotonic_time()
@@ -57,16 +62,16 @@ defmodule NewRelic.Transaction.Reporter do
 
   def ignore_transaction() do
     if tracking?(self()) do
+      ensure_purge(self())
       AttrStore.untrack(__MODULE__, self())
       AttrStore.purge(__MODULE__, self())
-      ensure_purge(self())
     end
   end
 
   def fail(%{kind: kind, reason: reason, stack: stack} = error) do
     if tracking?(self()) do
       if NewRelic.Config.feature?(:error_collector) do
-        add_attributes(
+        AttrStore.add(__MODULE__, self(),
           error: true,
           transaction_error: {:error, error},
           error_kind: kind,
@@ -74,7 +79,7 @@ defmodule NewRelic.Transaction.Reporter do
           error_stack: inspect(stack)
         )
       else
-        add_attributes(error: true)
+        AttrStore.add(__MODULE__, self(), error: true)
       end
     end
   end
@@ -91,12 +96,6 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
-  def set_transaction_error(pid, error) do
-    if tracking?(pid) do
-      AttrStore.add(__MODULE__, pid, transaction_error: {:error, error})
-    end
-  end
-
   def complete(pid, mode) do
     if tracking?(pid) do
       AttrStore.add(__MODULE__, pid, end_time_mono: System.monotonic_time())
@@ -104,14 +103,21 @@ defmodule NewRelic.Transaction.Reporter do
 
       case mode do
         :sync ->
-          collect_and_complete(pid)
+          complete_and_purge(pid)
 
         :async ->
           Task.Supervisor.start_child(Transaction.TaskSupervisor, fn ->
-            collect_and_complete(pid)
+            complete_and_purge(pid)
           end)
       end
     end
+  end
+
+  defp complete_and_purge(pid) do
+    AttrStore.collect(__MODULE__, pid)
+    |> Transaction.Complete.run(pid)
+
+    AttrStore.purge(__MODULE__, pid)
   end
 
   # Internal Transaction.Monitor API
@@ -119,15 +125,12 @@ defmodule NewRelic.Transaction.Reporter do
 
   def track_spawn(original, pid, timestamp) do
     if tracking?(original) do
-      AttrStore.link(
-        __MODULE__,
-        original,
-        pid,
+      AttrStore.link(__MODULE__, original, pid)
+
+      AttrStore.add(__MODULE__, pid,
         trace_process_spawns: {:list, {pid, timestamp, original}},
         trace_process_names: {:list, {pid, NewRelic.Util.process_name(pid)}}
       )
-
-      AttrStore.incr(__MODULE__, original, process_spawns: 1)
     end
   end
 
@@ -137,17 +140,13 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
+  # Try really hard not to leak memory if any async reporting trickles in late
   def ensure_purge(pid) do
     Process.send_after(
       __MODULE__,
-      {:purge, AttrStore.find_root(__MODULE__, pid)},
-      Application.get_env(:new_relic_agent, :tx_pid_expire, 2_000)
+      {:ensure_purge, AttrStore.root(__MODULE__, pid)},
+      Application.get_env(:new_relic_agent, :ensure_purge_after, 2_000)
     )
-  end
-
-  def collect_and_complete(pid) do
-    AttrStore.collect(__MODULE__, pid)
-    |> Transaction.Complete.run(pid)
   end
 
   # GenServer
@@ -163,7 +162,7 @@ defmodule NewRelic.Transaction.Reporter do
     {:ok, %{timers: %{}}}
   end
 
-  def handle_info({:purge, pid}, state) do
+  def handle_info({:ensure_purge, pid}, state) do
     AttrStore.purge(__MODULE__, pid)
     {:noreply, %{state | timers: Map.drop(state.timers, [pid])}}
   end
@@ -173,5 +172,5 @@ defmodule NewRelic.Transaction.Reporter do
 
   def tracking?(pid), do: AttrStore.tracking?(__MODULE__, pid)
 
-  def root(pid), do: AttrStore.find_root(__MODULE__, pid)
+  def root(pid), do: AttrStore.root(__MODULE__, pid)
 end

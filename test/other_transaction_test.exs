@@ -80,8 +80,27 @@ defmodule OtherTransactionTest do
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
+  test "Rename an Other transaction" do
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    Task.async(fn ->
+      NewRelic.start_transaction("TransactionCategory", "MyTaskName")
+
+      NewRelic.set_transaction_name("DifferentCategory/DifferentName")
+
+      Process.sleep(15)
+    end)
+    |> Task.await()
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+    assert TestHelper.find_metric(metrics, "OtherTransaction/DifferentCategory/DifferentName")
+
+    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+  end
+
   @tag :capture_log
   test "Error in Other Transaction" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     start_supervised({Task.Supervisor, name: TestSupervisor})
 
@@ -106,6 +125,11 @@ defmodule OtherTransactionTest do
 
     assert name =~ "OtherTransaction"
 
+    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert event[:error]
+
     TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 end

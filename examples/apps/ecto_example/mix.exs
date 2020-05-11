@@ -28,7 +28,8 @@ defmodule EctoExample.MixProject do
   defp deps do
     [
       {:new_relic_agent, path: "../../../"},
-      {:ecto_sql, "~> 3.0"},
+      {:plug_cowboy, "~> 2.0"},
+      {:ecto_sql, "~> 3.4"},
       {:postgrex, ">= 0.0.0"},
       {:myxql, ">= 0.0.0"}
     ]

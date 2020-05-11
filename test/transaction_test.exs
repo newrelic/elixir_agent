@@ -37,6 +37,32 @@ defmodule TransactionTest do
       send_resp(conn, 200, "incr")
     end
 
+    get "/funky_attrs" do
+      NewRelic.add_attributes(
+        # allowed:
+        one: 1,
+        half: 0.5,
+        string: "A string",
+        bool: true,
+        nilValue: nil,
+        atom: :atom,
+        pid: self(),
+        ref: make_ref(),
+        port: :erlang.list_to_port('#Port<0.4>'),
+        date: Date.utc_today(),
+        date_time: DateTime.utc_now(),
+        naive_date_time: NaiveDateTime.utc_now(),
+        time: Time.utc_now(),
+        # not allowed:
+        binary: "fooo" |> :zlib.gzip(),
+        struct: %NewRelic.Metric{},
+        tuple: {:one, :two},
+        function: fn -> :fun! end
+      )
+
+      send_resp(conn, 200, "funky_attrs")
+    end
+
     get "/service" do
       NewRelic.set_transaction_name("/service")
       NewRelic.add_attributes(query: "query{}")
@@ -111,9 +137,18 @@ defmodule TransactionTest do
     end
 
     get "/total_time" do
-      t1 = Task.async(fn -> ExternalService.query(200) end)
+      Process.sleep(10)
+
+      t1 =
+        Task.async(fn ->
+          Process.sleep(10)
+          ExternalService.query(200)
+        end)
+
       ExternalService.query(200)
       Task.await(t1)
+
+      Process.sleep(10)
       send_resp(conn, 200, "ok")
     end
   end
@@ -132,6 +167,45 @@ defmodule TransactionTest do
                event[:start_time_mono] == nil && event[:test_attribute] == "test_value" &&
                event[:"nr.apdexPerfZone"] == "S" && event[:status] == 200
            end)
+  end
+
+  @bad "[BAD_VALUE]"
+  test "Attribute coercion" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/funky_attrs"))
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    [_, event] = Enum.find(events, fn [_, event] -> event[:name] == "/Plug/GET//funky_attrs" end)
+
+    # Basic values
+    assert event[:one] == 1
+    assert event[:half] == 0.5
+    assert event[:bool] == true
+    assert event[:string] == "A string"
+    assert event[:atom] == "atom"
+
+    # Fancy values
+    assert event[:pid] =~ "#PID"
+    assert event[:ref] =~ "#Reference"
+    assert event[:port] =~ "#Port"
+    assert {:ok, _, _} = DateTime.from_iso8601(event[:date_time])
+    assert {:ok, _} = NaiveDateTime.from_iso8601(event[:naive_date_time])
+    assert {:ok, _} = Date.from_iso8601(event[:date])
+    assert {:ok, _} = Time.from_iso8601(event[:time])
+
+    # Bad values
+    assert event[:binary] == @bad
+    assert event[:tuple] == @bad
+    assert event[:function] == @bad
+    assert event[:struct] == @bad
+
+    # Don't report nil values
+    refute Map.has_key?(event, :nilValue)
+
+    # Make sure it can serialize to JSON
+    Jason.encode!(events)
   end
 
   test "Incrementing attribute counters" do
@@ -213,32 +287,6 @@ defmodule TransactionTest do
            end)
   end
 
-  test "Multiple sequential transactions in the same process" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
-    Task.async(fn ->
-      TestPlugApp.call(conn(:get, "/sequential/1"), [])
-      TestPlugApp.call(conn(:get, "/sequential/2"), [])
-      TestPlugApp.call(conn(:get, "/sequential/3"), [])
-    end)
-    |> Task.await()
-
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-
-    assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/sequential/1" && event[:order] == "1" && event[:status] == 200
-           end)
-
-    assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/sequential/2" && event[:order] == "2" && event[:status] == 200
-           end)
-
-    assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/sequential/3" && event[:order] == "3" && event[:status] == 200
-           end)
-  end
-
   test "Track attrs inside proccesses spawned by the transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     Task.Supervisor.start_link(name: TestTaskSup)
@@ -291,11 +339,10 @@ defmodule TransactionTest do
 
     [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert event[:duration_s] >= 0.2
-    assert event[:duration_s] < 0.3
+    assert_in_delta event[:duration_s], 0.2, 0.1
+    assert_in_delta event[:total_time_s], 0.4, 0.1
 
-    assert event[:total_time_s] > 0.3
-    assert event[:total_time_s] < 0.5
+    assert event[:total_time_s] > event[:duration_s]
   end
 
   describe "Request queueing" do

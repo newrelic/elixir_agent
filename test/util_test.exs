@@ -124,46 +124,114 @@ defmodule UtilTest do
     assert is_binary(hostname)
   end
 
-  describe "Verify SSL setup" do
-    test "reject bad domains" do
-      assert {:error,
-              {:failed_connect,
-               [
-                 {:to_address, {'wrong.host.badssl.com', 443}},
-                 {:inet, [:inet], {:tls_alert, _}}
-               ]}} = NewRelic.Util.HTTP.post("https://wrong.host.badssl.com/", "", [])
+  test "docker cgroup file container ID detection" do
+    # docker-0.9.1
+    assert_docker_container_id(
+      """
+      9:cpu,cpuacct:/kubepods/besteffort/pod88ba95f5-37f2-4a9d-a9f4-585b20f006cc/1dfca6ba5656
+      1:cpu,cpuacct:/kubepods/besteffort/pod88ba95f5-37f2-4a9d-a9f4-585b20f006cc/d77a1dfca6ba5656b1e1c77fa67cedad49c583cdba6ab95d111935c31005ffe7
+      """,
+      "d77a1dfca6ba5656b1e1c77fa67cedad49c583cdba6ab95d111935c31005ffe7"
+    )
 
-      assert {:error,
-              {:failed_connect,
-               [
-                 {:to_address, {'expired.badssl.com', 443}},
-                 {:inet, [:inet], {:tls_alert, _}}
-               ]}} = NewRelic.Util.HTTP.post("https://expired.badssl.com/", "", [])
+    # docker-1.3
+    assert_docker_container_id(
+      """
+      3:cpuacct:/docker/47cbd16b77c50cbf71401c069cd2189f0e659af17d5a2daca3bddf59d8a870b2
+      2:cpu:/docker/47cbd16b77c50cbf71401c069cd2189f0e659af17d5a2daca3bddf59d8a870b2
+      1:cpuset:/
+      """,
+      "47cbd16b77c50cbf71401c069cd2189f0e659af17d5a2daca3bddf59d8a870b2"
+    )
 
-      assert {:error,
-              {:failed_connect,
-               [
-                 {:to_address, {'self-signed.badssl.com', 443}},
-                 {:inet, [:inet], {:tls_alert, _}}
-               ]}} = NewRelic.Util.HTTP.post("https://self-signed.badssl.com/", "", [])
+    # docker-custom-prefix
+    assert_docker_container_id(
+      """
+      4:cpu:/custom-foobar/e6aaf072b17c345d900987ce04e37031d198b02314f8636df2c0edf6538c08c7
+      """,
+      "e6aaf072b17c345d900987ce04e37031d198b02314f8636df2c0edf6538c08c7"
+    )
 
-      assert {:error,
-              {:failed_connect,
-               [
-                 {:to_address, {'untrusted-root.badssl.com', 443}},
-                 {:inet, [:inet], {:tls_alert, _}}
-               ]}} = NewRelic.Util.HTTP.post("https://untrusted-root.badssl.com/", "", [])
+    # docker-gcp
+    assert_docker_container_id(
+      """
+      2:cpu:/f96c541a87e1376f25461f1386cb60208cea35750eac1e24e11566f078715920
+      """,
+      "f96c541a87e1376f25461f1386cb60208cea35750eac1e24e11566f078715920"
+    )
 
-      assert {:error,
-              {:failed_connect,
-               [
-                 {:to_address, {'incomplete-chain.badssl.com', 443}},
-                 {:inet, [:inet], {:tls_alert, _}}
-               ]}} = NewRelic.Util.HTTP.post("https://incomplete-chain.badssl.com/", "", [])
-    end
+    # ubuntu-14.04-lxc-container
+    assert_docker_container_id(
+      """
+      4:cpu:/lxc/p1
+      """,
+      :none
+    )
 
-    test "allows good domains" do
-      assert {:ok, _} = NewRelic.Util.HTTP.post("https://sha512.badssl.com/", "", [])
-    end
+    # ubuntu-14.04-no-container
+    assert_docker_container_id(
+      """
+      4:cpu:/user/1000.user/2.session
+      """,
+      :none
+    )
+
+    # invalid-characters
+    assert_docker_container_id(
+      """
+      3:cpuacct:/docker/WRONGINCORRECTINVALIDCHARSERRONEOUSBADPHONYBROKEN2TERRIBLENOPE55
+      2:cpu:/docker/WRONGINCORRECTINVALIDCHARSERRONEOUSBADPHONYBROKEN2TERRIBLENOPE55
+      """,
+      :none
+    )
+
+    # invalid-length
+    assert_docker_container_id(
+      """
+      3:cpuacct:/docker/47cbd16b77c5
+      2:cpu:/docker/47cbd16b77c5
+      """,
+      :none
+    )
+
+    # no_cpu_subsystem
+    assert_docker_container_id(
+      """
+      6:memory:/docker/f37a7e4d17017e7bf774656b19ca4360c6cdc4951c86700a464101d0d9ce97ee
+      5:cpuacct:/docker/f37a7e4d17017e7bf774656b19ca4360c6cdc4951c86700a464101d0d9ce97ee
+      4:cpu:/
+      """,
+      :none
+    )
+
+    # heroku
+    assert_docker_container_id(
+      """
+      1:hugetlb,perf_event,blkio,freezer,devices,memory,cpuacct,cpu,cpuset:/lxc/b6d196c1-50f2-4949-abdb-5d4909864487
+      """,
+      :none
+    )
+
+    # empty
+    assert_docker_container_id(
+      "",
+      :none
+    )
+  end
+
+  @test_cgroup_filename "/tmp/nr_agent_test_cgroup"
+  def assert_docker_container_id(cgroup_file, id) do
+    File.write!(@test_cgroup_filename, cgroup_file)
+
+    expected =
+      case id do
+        :none -> %{}
+        id -> %{docker: %{"id" => id}}
+      end
+
+    assert expected ==
+             NewRelic.Util.Vendor.maybe_add_docker(%{}, cgroup_filename: @test_cgroup_filename)
+
+    File.rm!(@test_cgroup_filename)
   end
 end

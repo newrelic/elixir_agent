@@ -85,7 +85,7 @@ defmodule NewRelic.DistributedTrace do
 
   def maybe_generate_sampling(context), do: context
 
-  def maybe_generate_trace_id(%Context{parent_id: nil} = context) do
+  def maybe_generate_trace_id(%Context{trace_id: nil} = context) do
     %{context | trace_id: generate_guid(16)}
   end
 
@@ -112,7 +112,10 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def report_attributes(
-        %Context{parent_id: nil} = context,
+        %Context{
+          parent_id: nil,
+          span_guid: nil
+        } = context,
         transport_type: _type
       ) do
     [
@@ -156,20 +159,6 @@ defmodule NewRelic.DistributedTrace do
 
   def report_attributes(context, :w3c) do
     context
-  end
-
-  def convert_to_outbound(%Context{parent_id: nil} = context) do
-    %Context{
-      source: context.source,
-      account_id: AgentRun.account_id(),
-      app_id: AgentRun.primary_application_id(),
-      parent_id: nil,
-      trust_key: context.trust_key,
-      guid: context.guid,
-      trace_id: context.trace_id,
-      priority: context.priority,
-      sampled: context.sampled
-    }
   end
 
   def convert_to_outbound(%Context{} = context) do

@@ -6,16 +6,20 @@ defmodule NewRelic.Telemetry.EctoTest do
   defmodule TestRepo do
   end
 
-  # Simulate an app configuring instrumentation
-  @url_config [url: "ecto://postgres:password@localhost:5432/test_db"]
+  # Simulate detection of an Ecto Repo
   setup_all do
-    Application.put_env(:test_app, :ecto_repos, [__MODULE__.TestRepo])
-    Application.put_env(:test_app, __MODULE__.TestRepo, @url_config)
-    start_supervised({NewRelic.Telemetry.Ecto, :test_app})
+    start_supervised(
+      {NewRelic.Telemetry.Ecto,
+       [
+         repo: __MODULE__.TestRepo,
+         opts: [telemetry_prefix: [:new_relic_ecto_test]]
+       ]}
+    )
+
     :ok
   end
 
-  @event_name [:new_relic, :telemetry, :ecto_test, :test_repo, :query]
+  @event_name [:new_relic_ecto_test, :query]
   @measurements %{total_time: 965_000}
   @metadata %{
     query: "SELECT i0.\"id\", i0.\"name\" FROM \"items\" AS i0",

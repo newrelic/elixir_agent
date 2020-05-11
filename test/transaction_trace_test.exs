@@ -154,7 +154,7 @@ defmodule TransactionTraceTest do
   end
 
   test "Prepare a payload" do
-    TestPlugApp.call(conn(:get, "/supremely_custom_name"), [])
+    TestHelper.request(TestPlugApp, conn(:get, "/supremely_custom_name"))
 
     start_time = 1_440_435_088
     metric_name = "WebTransaction/supremely/unique/name"

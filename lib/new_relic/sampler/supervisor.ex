@@ -9,6 +9,7 @@ defmodule NewRelic.Sampler.Supervisor do
 
   def init(_) do
     children = [
+      worker(NewRelic.Sampler.Agent, []),
       worker(NewRelic.Sampler.Beam, []),
       worker(NewRelic.Sampler.Process, []),
       worker(NewRelic.Sampler.TopProcess, []),
