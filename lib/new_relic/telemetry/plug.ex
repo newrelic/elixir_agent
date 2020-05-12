@@ -34,10 +34,16 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   @plug_start [:plug_adapter, :call, :start]
+  @plug_router_start [:plug, :router_dispatch, :start]
   @plug_stop [:plug_adapter, :call, :stop]
   @plug_exception [:plug_adapter, :call, :exception]
 
-  @plug_events [@plug_start, @plug_stop, @plug_exception]
+  @plug_events [
+    @plug_start,
+    @plug_router_start,
+    @plug_stop,
+    @plug_exception
+  ]
 
   @doc false
   def init(:ok) do
@@ -65,6 +71,10 @@ defmodule NewRelic.Telemetry.Plug do
   def handle_event(@plug_start, _measurements, %{conn: conn}, _config) do
     start_transaction(conn)
     start_distributed_trace(conn)
+  end
+
+  def handle_event(@plug_router_start, _measurements, %{conn: conn, route: route}, _config) do
+    NewRelic.add_attributes(plug_name: plug_name(conn, route))
   end
 
   def handle_event(
@@ -139,7 +149,6 @@ defmodule NewRelic.Telemetry.Plug do
     info = Process.info(self(), [:memory, :reductions])
 
     [
-      plug_name: plug_name(conn),
       status: conn.status,
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions]
@@ -147,18 +156,11 @@ defmodule NewRelic.Telemetry.Plug do
     |> NewRelic.add_attributes()
   end
 
-  defp plug_name(conn),
+  defp plug_name(conn, match_path),
     do:
-      "/Plug/#{conn.method}/#{match_path(conn)}"
+      "/Plug/#{conn.method}/#{match_path}"
       |> String.replace("/*glob", "")
       |> String.replace("/*_path", "")
-
-  defp match_path(conn) do
-    case conn.private[:plug_route] do
-      {match_path, _fun} -> match_path
-      _ -> nil
-    end
-  end
 
   @request_start_header "x-request-start"
   defp maybe_report_queueing(conn) do

@@ -18,7 +18,6 @@ defmodule TransactionTest do
 
   defmodule TestPlugApp do
     use Plug.Router
-    use NewRelic.Transaction
 
     plug(:match)
     plug(:dispatch)
@@ -230,8 +229,11 @@ defmodule TransactionTest do
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
     assert Enum.find(events, fn [_, event] ->
-             event[:status] == 500 && event[:query] =~ "query{}" &&
-               event[:error_reason] =~ "TransactionError" && event[:error_kind] == :error &&
+             event[:status] == 500 &&
+               event[:query] =~ "query{}" &&
+               event[:name] == "/Plug/GET//error" &&
+               event[:error_reason] =~ "TransactionError" &&
+               event[:error_kind] == :error &&
                event[:error_stack] =~ "test/transaction_test.exs"
            end)
   end
