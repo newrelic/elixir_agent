@@ -51,16 +51,13 @@ defmodule NewRelic.Telemetry.Broadway do
   end
 
   def handle_event(@processor_start, _measurements, metadata, _config) do
-    Transaction.start_transaction("Broadway", processor_name(metadata))
+    NewRelic.start_transaction("Broadway", processor_name(metadata))
     NewRelic.add_attributes(processor_start_attributes(metadata))
-
-    DistributedTrace.generate_new_context()
-    |> DistributedTrace.track_transaction(transport_type: "HTTP")
   end
 
   def handle_event(@processor_stop, _measurements, metadata, _config) do
     NewRelic.add_attributes(processor_stop_attributes(metadata))
-    Transaction.stop_transaction()
+    NewRelic.stop_transaction()
   end
 
   def handle_event(@message_stop, measurements, metadata, _config) do
@@ -76,13 +73,13 @@ defmodule NewRelic.Telemetry.Broadway do
   end
 
   def handle_event(@consumer_start, _measurements, metadata, _config) do
-    Transaction.start_transaction("Broadway", consumer_name(metadata))
+    NewRelic.start_transaction("Broadway", consumer_name(metadata))
     NewRelic.add_attributes(consumer_start_attributes(metadata))
   end
 
   def handle_event(@consumer_stop, _measurements, metadata, _config) do
     NewRelic.add_attributes(consumer_stop_attributes(metadata))
-    Transaction.stop_transaction()
+    NewRelic.stop_transaction()
   end
 
   defp extract_callback_module_name(name) do
@@ -100,7 +97,7 @@ defmodule NewRelic.Telemetry.Broadway do
     [
       "broadway.module": extract_callback_module_name(name),
       "broadway.stage": :processor,
-      "broadway.processor_message_count": length(messages)
+      "broadway.processor.message_count": length(messages)
     ]
   end
 
@@ -108,10 +105,10 @@ defmodule NewRelic.Telemetry.Broadway do
     info = Process.info(self(), [:memory, :reductions])
 
     [
-      "broadway.processor_successful_to_ack_count": length(metadata.successful_messages_to_ack),
-      "broadway.processor_successful_to_forward_count":
+      "broadway.processor.successful_to_ack_count": length(metadata.successful_messages_to_ack),
+      "broadway.processor.successful_to_forward_count":
         length(metadata.successful_messages_to_forward),
-      "broadway.processor_failed_count": length(metadata.failed_messages),
+      "broadway.processor.failed_count": length(metadata.failed_messages),
       memory_kb: _bytes_to_kilobytes = info[:memory] / 1024,
       reductions: info[:reductions]
     ]
