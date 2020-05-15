@@ -41,6 +41,7 @@ defmodule NewRelic.Mixfile do
       {:telemetry, "~> 0.4"},
       {:plug, "~> 1.0"},
       # Instrumentation:
+      {:plug, ">= 1.10.1"},
       {:plug_cowboy, ">= 2.2.1", optional: true},
       {:ecto_sql, ">= 3.4.0", optional: true},
       {:ecto, ">= 3.4.1", optional: true},
