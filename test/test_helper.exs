@@ -1,3 +1,5 @@
+Application.ensure_all_started(:plug)
+
 unless System.get_env("NR_INT_TEST") do
   {:ok, _} = NewRelic.EnabledSupervisor.start_link(:ok)
 end

@@ -3,7 +3,7 @@ defmodule NewRelic.Telemetry.Plug do
 
   @moduledoc """
   `Plug` based HTTP servers are auto-instrumented based on the `telemetry` integration
-  built into `Plug.Cowboy`.
+  built into `Plug.Cowboy` and `Plug`.
 
   To prevent reporting the current transaction, call:
   ```elixir
@@ -136,9 +136,9 @@ defmodule NewRelic.Telemetry.Plug do
       host: conn.host,
       path: conn.request_path,
       remote_ip: conn.remote_ip |> :inet_parse.ntoa() |> to_string(),
-      referer: Plug.Conn.get_req_header(conn, "referer") |> List.first(),
-      user_agent: Plug.Conn.get_req_header(conn, "user-agent") |> List.first(),
-      content_type: Plug.Conn.get_req_header(conn, "content-type") |> List.first(),
+      referer: Util.get_req_header(conn, "referer") |> List.first(),
+      user_agent: Util.get_req_header(conn, "user-agent") |> List.first(),
+      content_type: Util.get_req_header(conn, "content-type") |> List.first(),
       request_method: conn.method
     ]
     |> NewRelic.add_attributes()
@@ -164,7 +164,7 @@ defmodule NewRelic.Telemetry.Plug do
 
   @request_start_header "x-request-start"
   defp maybe_report_queueing(conn) do
-    with [request_start | _] <- Plug.Conn.get_req_header(conn, @request_start_header),
+    with [request_start | _] <- Util.get_req_header(conn, @request_start_header),
          {:ok, request_start_s} <- Util.RequestStart.parse(request_start) do
       NewRelic.add_attributes(request_start_s: request_start_s)
     else

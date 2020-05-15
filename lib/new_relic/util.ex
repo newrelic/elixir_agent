@@ -20,6 +20,10 @@ defmodule NewRelic.Util do
     end
   end
 
+  def get_req_header(%{req_headers: headers}, key) when is_binary(key) do
+    for {^key, value} <- headers, do: value
+  end
+
   def metric_join(segments) when is_list(segments) do
     segments
     |> Enum.filter(& &1)

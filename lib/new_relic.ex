@@ -68,9 +68,8 @@ defmodule NewRelic do
 
   **Notes:**
 
-  * Don't use this to track Web Transactions - for that,
-  `use NewRelic.Transaction` in your Plug pipeline so that we can properly
-  categorize as Web Transactions in the UI.
+  * Don't use this to track Web Transactions - Plug based HTTP servers
+  are auto-instrumented based on `telemetry` events.
   * Do _not_ use this for processes that live a very long time, doing so
   will risk a memory leak tracking attributes in the transaction!
   * You can't start a new transaction within an existing one. Any process
