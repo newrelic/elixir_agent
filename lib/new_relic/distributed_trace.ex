@@ -7,7 +7,7 @@ defmodule NewRelic.DistributedTrace do
 
   alias NewRelic.DistributedTrace.{Context, Tracker}
   alias NewRelic.Harvest.Collector.AgentRun
-  alias NewRelic.Transaction
+  alias NewRelic.{Transaction, Util}
 
   def start(conn) do
     determine_context(conn)
@@ -26,7 +26,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   defp w3c_headers(conn) do
-    with [_traceparent | _] <- Plug.Conn.get_req_header(conn, @w3c_traceparent),
+    with [_traceparent | _] <- Util.get_req_header(conn, @w3c_traceparent),
          %Context{} = context <- __MODULE__.W3CTraceContext.extract(conn) do
       context
     else
@@ -35,7 +35,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   defp newrelic_header(conn) do
-    with [trace_payload | _] <- Plug.Conn.get_req_header(conn, @nr_header),
+    with [trace_payload | _] <- Util.get_req_header(conn, @nr_header),
          %Context{} = context <- __MODULE__.NewRelicContext.extract(trace_payload) do
       context
     else
