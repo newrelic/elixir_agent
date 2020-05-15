@@ -1,43 +1,94 @@
 defmodule NewRelic.Telemetry.Broadway do
-  @moduledoc false
+  @moduledoc """
+  `Broadway` pipelines are auto-instrumented based on the `telemetry`.
+
+  When you create some `Broadway`-based pipeline, it translates into a topology
+  of `GenStage` processes. The agent wraps each `GenStage` work unit of work into
+  their own Transactions. Example, the following topology:
+
+  ```elixir
+  defmodule MyBroadway do
+    use Broadway
+
+    def start_link(_opts) do
+      Broadway.start_link(MyBroadway,
+        name: MyBroadwayExample,
+        producer: [
+          module: {Counter, []},
+          concurrency: 1
+        ],
+        processors: [
+          default: [concurrency: 2]
+        ],
+        batchers: [
+          sqs: [concurrency: 2, batch_size: 10],
+          s3: [concurrency: 1, batch_size: 10]
+        ]
+      )
+    end
+
+    ...callbacks...
+  end
+  ```
+
+  You can expected the following Transactions:
+  - Broadway/MyBroadway/Processor/default: one Transaction per message processed by `:default`.
+  - Broadway/MyBroadway/Consumer/sqs: one Transaction per batch of messages forwarded to `:sqs`.
+  - Broadway/MyBroadway/Consumer/s3: one Transaction per batch os messages forwarded to `:s3`.
+
+  The nomenclature adopted here, Consumer instead of Batcher, maps the underlying `Broadway`
+  topology, as you can read on their [architecture guides](https://hexdocs.pm/broadway/architecture.html).
+
+  To prevent reporting the current transaction, call:
+
+  ```elixir
+  NewRelic.ignore_transaction()
+  ```
+
+  Inside a Transaction, the agent will track work across processes that are spawned as
+  well as work done inside a Task Supervisor. When using `Task.Supervisor.async_nolink`
+  you can signal to the agent not to track the work done inside the Task, which will
+  exclude it from the current Transaction. To do this, send in an additional option:
+
+  ```elixir
+  Task.Supervisor.async_nolink(
+    MyTaskSupervisor,
+    fn -> do_work() end,
+    new_relic: :no_track
+  )
+  ```
+  """
   use GenServer
 
-  alias NewRelic.Transaction
-  alias NewRelic.DistributedTrace
+  @doc false
+  def start_link() do
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  end
 
-  require Logger
-
-  @processor_start [:broadway, :processor, :start]
-  @processor_stop [:broadway, :processor, :stop]
-
+  @message_start [:broadway, :processor, :message, :start]
   @message_stop [:broadway, :processor, :message, :stop]
-  @message_fail [:broadway, :processor, :message, :failure]
+  @message_failure [:broadway, :processor, :message, :failure]
 
   @consumer_start [:broadway, :consumer, :start]
   @consumer_stop [:broadway, :consumer, :stop]
 
-  def start_link() do
-    enabled = true
-    GenServer.start_link(__MODULE__, [enabled: enabled], name: __MODULE__)
-  end
+  @broadway_events [
+    @message_start,
+    @message_stop,
+    @message_failure,
+    @consumer_start,
+    @consumer_stop
+  ]
 
-  def init(enabled: false), do: :ignore
-
-  def init(enabled: true) do
+  @doc false
+  def init(:ok) do
     config = %{
-      handler_id: :new_relic_broadway
+      handler_id: {:new_relic, :broadway}
     }
 
     :telemetry.attach_many(
       config.handler_id,
-      [
-        @processor_start,
-        @processor_stop,
-        @message_stop,
-        @message_fail,
-        @consumer_start,
-        @consumer_stop
-      ],
+      @broadway_events,
       &__MODULE__.handle_event/4,
       config
     )
@@ -46,142 +97,120 @@ defmodule NewRelic.Telemetry.Broadway do
     {:ok, config}
   end
 
+  @doc false
   def terminate(_reason, %{handler_id: handler_id}) do
     :telemetry.detach(handler_id)
   end
 
-  def handle_event(@processor_start, _measurements, metadata, _config) do
-    NewRelic.start_transaction("Broadway", processor_name(metadata))
-    NewRelic.add_attributes(processor_start_attributes(metadata))
-  end
+  @doc false
+  def handle_event(_event, _measurements, _metadata, _config)
 
-  def handle_event(@processor_stop, _measurements, metadata, _config) do
-    NewRelic.add_attributes(processor_stop_attributes(metadata))
-    NewRelic.stop_transaction()
-  end
-
-  def handle_event(@message_stop, measurements, metadata, _config) do
-    track_message_segment(measurements, metadata)
-  end
-
-  def handle_event(@message_fail, measurements, metadata, _config) do
-    track_message_segment(measurements, metadata, %{
-      kind: metadata.kind,
-      reason: metadata.reason,
-      stack: metadata.stacktrace
-    })
-  end
-
-  def handle_event(@consumer_start, _measurements, metadata, _config) do
-    NewRelic.start_transaction("Broadway", consumer_name(metadata))
-    NewRelic.add_attributes(consumer_start_attributes(metadata))
-  end
-
-  def handle_event(@consumer_stop, _measurements, metadata, _config) do
-    NewRelic.add_attributes(consumer_stop_attributes(metadata))
-    NewRelic.stop_transaction()
-  end
-
-  defp extract_callback_module_name(name) do
-    Module.split(name) |> :lists.reverse() |> Enum.drop(2) |> :lists.reverse() |> Enum.join(".")
-  end
-
-  defp processor_name(%{name: name}) do
-    %{"processor_key" => processor_key} =
-      Regex.named_captures(~r/Processor_(?<processor_key>\w+)_\d+$/, to_string(name))
-
-    "#{extract_callback_module_name(name)}/Processor/#{processor_key}"
-  end
-
-  defp processor_start_attributes(%{name: name, messages: messages}) do
-    [
-      "broadway.module": extract_callback_module_name(name),
-      "broadway.stage": :processor,
-      "broadway.processor.message_count": length(messages)
-    ]
-  end
-
-  defp processor_stop_attributes(metadata) do
-    info = Process.info(self(), [:memory, :reductions])
-
-    [
-      "broadway.processor.successful_to_ack_count": length(metadata.successful_messages_to_ack),
-      "broadway.processor.successful_to_forward_count":
-        length(metadata.successful_messages_to_forward),
-      "broadway.processor.failed_count": length(metadata.failed_messages),
-      memory_kb: _bytes_to_kilobytes = info[:memory] / 1024,
-      reductions: info[:reductions]
-    ]
-  end
-
-  def track_message_segment(
-        %{duration: duration},
+  def handle_event(
+        @message_start,
+        %{time: system_time},
         %{name: name, processor_key: processor_key},
-        error \\ nil
+        _config
       ) do
-    end_time_ms = System.system_time(:millisecond)
-    duration_ms = System.convert_time_unit(duration, :native, :millisecond)
-    duration_s = duration_ms / 1000
-    start_time_ms = end_time_ms - duration_ms
-
-    pid = inspect(self())
-    id = {:broadway_message, make_ref()}
-    parent_id = Process.get(:nr_current_span) || :root
-
-    metric_name = "#{extract_callback_module_name(name)}/Processor/#{processor_key}/Message"
-
-    if error, do: Transaction.Reporter.fail(error)
-
-    Transaction.Reporter.add_trace_segment(%{
-      primary_name: metric_name,
-      secondary_name: metric_name,
-      attributes: %{
-        "broadway.processor_key": processor_key
-      },
-      error: !!error,
-      pid: pid,
-      id: id,
-      parent_id: parent_id,
-      start_time: start_time_ms,
-      end_time: end_time_ms
-    })
-
-    NewRelic.report_span(
-      timestamp_ms: start_time_ms,
-      duration_s: duration_s,
-      name: metric_name,
-      edge: [span: id, parent: parent_id],
-      category: "generic",
-      attributes: %{
-        component: "Broadway",
-        "broadway.processor_key": processor_key
-      }
-    )
+    module_name = extract_callback_module_name(name)
+    NewRelic.start_transaction("Broadway", processor_name(module_name, processor_key))
+    NewRelic.add_attributes(processor_start_attrs(module_name, processor_key, system_time))
   end
 
-  defp consumer_name(%{name: name, batch_info: batch_info}) do
-    "#{extract_callback_module_name(name)}/Consumer/#{batch_info.batcher}"
+  def handle_event(
+        @message_stop,
+        %{duration: duration},
+        _metadata,
+        _config
+      ) do
+    NewRelic.add_attributes(processor_stop_attrs(duration))
+    NewRelic.stop_transaction()
   end
 
-  defp consumer_start_attributes(metadata) do
+  def handle_event(
+        @message_failure,
+        %{duration: duration},
+        %{kind: kind, reason: reason, stacktrace: stack},
+        _config
+      ) do
+    NewRelic.Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
+    NewRelic.add_attributes(processor_stop_attrs(duration))
+    NewRelic.stop_transaction()
+  end
+
+  def handle_event(
+        @consumer_start,
+        %{time: system_time},
+        %{name: name, batch_info: batch_info},
+        _config
+      ) do
+    module_name = extract_callback_module_name(name)
+    NewRelic.start_transaction("Broadway", consumer_name(module_name, batch_info.batcher))
+    NewRelic.add_attributes(consumer_start_attrs(module_name, batch_info, system_time))
+  end
+
+  def handle_event(
+        @consumer_stop,
+        %{duration: duration},
+        %{successful_messages: successful_messages, failed_messages: failed_messages},
+        _config
+      ) do
+    NewRelic.add_attributes(consumer_stop_attrs(duration, successful_messages, failed_messages))
+    NewRelic.stop_transaction()
+  end
+
+  def handle_event(_event, _measurements, _meta, _config) do
+    :ignore
+  end
+
+  defp extract_callback_module_name(name),
+    do: name |> Module.split() |> Enum.drop(-2) |> Enum.join(".")
+
+  defp processor_name(module_name, processor_key),
+    do: "#{module_name}/Processor/#{processor_key}"
+
+  defp processor_start_attrs(module_name, processor_key, system_time) do
     [
-      "broadway.module": extract_callback_module_name(metadata.name),
-      "broadway.stage": :consumer,
-      "broadway.batcher": metadata.batch_info.batcher,
-      "broadway.batch_key": metadata.batch_info.batch_key,
-      "broadway.batch_partition": metadata.batch_info.partition,
-      "broadway.batch_size": metadata.batch_info.size
+      system_time: system_time,
+      "broadway.module": module_name,
+      "broadway.stage": :processor,
+      "broadway.processor_key": processor_key
     ]
   end
 
-  defp consumer_stop_attributes(metadata) do
+  defp processor_stop_attrs(duration) do
     info = Process.info(self(), [:memory, :reductions])
 
     [
-      "broadway.batch_successful_count": length(metadata.successful_messages),
-      "broadway.batch_failed_count": length(metadata.failed_messages),
+      duration: duration,
       memory_kb: _bytes_to_kilobytes = info[:memory] / 1024,
       reductions: info[:reductions]
+    ]
+  end
+
+  defp consumer_name(module_name, batcher),
+    do: "#{module_name}/Consumer/#{batcher}"
+
+  defp consumer_start_attrs(module_name, batch_info, system_time) do
+    [
+      system_time: system_time,
+      "broadway.module": module_name,
+      "broadway.stage": :consumer,
+      "broadway.batcher": batch_info.batcher,
+      "broadway.batch_info.batch_key": batch_info.batch_key,
+      "broadway.batch_info.partition": batch_info.partition,
+      "broadway.batch_info.size": batch_info.size
+    ]
+  end
+
+  defp consumer_stop_attrs(duration, successful_messages, failed_messages) do
+    info = Process.info(self(), [:memory, :reductions])
+
+    [
+      duration: duration,
+      memory_kb: _bytes_to_kilobytes = info[:memory] / 1024,
+      reductions: info[:reductions],
+      "broadway.successful_messages_count": length(successful_messages),
+      "broadway.failed_messages_count": length(failed_messages)
     ]
   end
 end
