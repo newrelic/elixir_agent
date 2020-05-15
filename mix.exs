@@ -38,10 +38,9 @@ defmodule NewRelic.Mixfile do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:jason, "~> 1.0"},
-      # {:plug, "~> 1.0"},
-      {:plug, github: "elixir-plug/plug", branch: "master", override: true},
       {:telemetry, "~> 0.4"},
       # Instrumentation:
+      {:plug, ">= 1.10.1"},
       {:plug_cowboy, ">= 2.2.1", optional: true},
       {:ecto_sql, ">= 3.4.0", optional: true},
       {:ecto, ">= 3.4.1", optional: true}
