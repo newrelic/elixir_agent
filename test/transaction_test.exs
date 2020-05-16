@@ -171,7 +171,7 @@ defmodule TransactionTest do
 
     assert Enum.find(events, fn [_, event] ->
              event[:path] == "/foo/1" && event[:name] == "/Plug/GET//foo/:blah" &&
-               event[:foo] == "BAR" && event[:duration_us] > 0 && event[:duration_us] < 10_000 &&
+               event[:foo] == "BAR" && event[:duration_us] > 0 && event[:duration_us] < 30_000 &&
                event[:start_time] < 2_000_000_000_000 && event[:start_time] > 1_400_000_000_000 &&
                event[:start_time_mono] == nil && event[:test_attribute] == "test_value" &&
                event[:"nr.apdexPerfZone"] == "S" && event[:status] == 200
