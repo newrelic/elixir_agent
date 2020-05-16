@@ -61,7 +61,7 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   def stop_other_transaction() do
-      complete(self(), :sync)
+    complete(self(), :sync)
   end
 
   def ignore_transaction() do

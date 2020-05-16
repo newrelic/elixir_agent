@@ -9,7 +9,6 @@ defmodule DistributedTraceTest do
 
   defmodule TestPlugApp do
     use Plug.Router
-    use NewRelic.Transaction
     use NewRelic.Tracer
 
     plug(:match)
