@@ -6,10 +6,7 @@ defmodule NewRelic.Transaction.Complete do
   alias NewRelic.DistributedTrace
   alias NewRelic.Transaction
 
-  def run(
-        %{start_time: _, start_time_mono: _, end_time_mono: _} = tx_attrs,
-        pid
-      ) do
+  def run(tx_attrs, pid) do
     {tx_segments, tx_attrs, tx_error, span_events, apdex, tx_metrics} =
       tx_attrs
       |> transform_name_attrs
@@ -31,11 +28,6 @@ defmodule NewRelic.Transaction.Complete do
     report_span_events(span_events)
   end
 
-  def run(tx_attrs, _pid) do
-    NewRelic.report_metric(:supportability, [:transaction, :missing_attributes])
-    NewRelic.log(:debug, "Missing required transaction attributes. #{inspect(tx_attrs)}")
-  end
-
   defp transform_name_attrs(%{custom_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{framework_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{plug_name: name} = tx), do: Map.put(tx, :name, name)
@@ -47,6 +39,22 @@ defmodule NewRelic.Transaction.Complete do
 
   defp identify_transaction_type(tx),
     do: Map.put(tx, :transactionType, :Web)
+
+  defp transform_time_attrs(%{system_time: system_time, duration: duration} = tx) do
+    start_time_ms = System.convert_time_unit(system_time, :native, :millisecond)
+    duration_us = System.convert_time_unit(duration, :native, :microsecond)
+    duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+
+    tx
+    |> Map.drop([:system_time, :duration, :end_time_mono])
+    |> Map.merge(%{
+      start_time: start_time_ms,
+      end_time: start_time_ms + duration_ms,
+      duration_us: duration_us,
+      duration_ms: duration_ms,
+      duration_s: duration_ms / 1000
+    })
+  end
 
   defp transform_time_attrs(
          %{start_time: start_time, end_time_mono: end_time_mono, start_time_mono: start_time_mono} =

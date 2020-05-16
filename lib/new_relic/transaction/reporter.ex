@@ -45,19 +45,23 @@ defmodule NewRelic.Transaction.Reporter do
   def start() do
     Transaction.Monitor.add(self())
     AttrStore.track(__MODULE__, self())
-
-    AttrStore.add(__MODULE__, self(),
-      pid: inspect(self()),
-      start_time: System.system_time(),
-      start_time_mono: System.monotonic_time()
-    )
+    AttrStore.add(__MODULE__, self(), pid: inspect(self()))
   end
 
   def start_other_transaction(category, name) do
     unless tracking?(self()) do
       start()
-      AttrStore.add(__MODULE__, self(), other_transaction_name: "#{category}/#{name}")
+
+      AttrStore.add(__MODULE__, self(),
+        start_time: System.system_time(),
+        start_time_mono: System.monotonic_time(),
+        other_transaction_name: "#{category}/#{name}"
+      )
     end
+  end
+
+  def stop_other_transaction() do
+      complete(self(), :sync)
   end
 
   def ignore_transaction() do
@@ -98,8 +102,8 @@ defmodule NewRelic.Transaction.Reporter do
 
   def complete(pid, mode) do
     if tracking?(pid) do
-      AttrStore.add(__MODULE__, pid, end_time_mono: System.monotonic_time())
       AttrStore.untrack(__MODULE__, pid)
+      AttrStore.add(__MODULE__, pid, end_time_mono: System.monotonic_time())
 
       case mode do
         :sync ->

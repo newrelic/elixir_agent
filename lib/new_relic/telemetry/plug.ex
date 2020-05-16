@@ -68,37 +68,45 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   @doc false
-  def handle_event(@plug_start, _measurements, %{conn: conn}, _config) do
-    start_transaction(conn)
+  def handle_event(
+        @plug_start,
+        %{system_time: system_time},
+        %{conn: conn},
+        _config
+      ) do
+    start_transaction(conn, system_time)
     start_distributed_trace(conn)
   end
 
-  def handle_event(@plug_router_start, _measurements, %{conn: conn, route: route}, _config) do
+  def handle_event(
+        @plug_router_start,
+        _measurements,
+        %{conn: conn, route: route},
+        _config
+      ) do
     NewRelic.add_attributes(plug_name: plug_name(conn, route))
   end
 
   def handle_event(
         @plug_stop,
-        %{duration: _duration},
+        %{duration: duration},
         %{conn: conn},
         _config
       ) do
-    # TODO: use duration
-    stop_transaction(conn)
+    stop_transaction(conn, duration)
     stop_distributed_trace(conn)
   end
 
   def handle_event(
         @plug_exception,
-        %{duration: _duration},
+        %{duration: duration},
         %{conn: conn, kind: kind, reason: reason, stacktrace: stack},
         _config
       ) do
-    # TODO: use duration
     conn = %{conn | status: 500}
     error = %{kind: kind, reason: reason, stack: stack}
 
-    stop_transaction(conn, error)
+    stop_transaction(conn, error, duration)
     stop_distributed_trace(conn)
   end
 
@@ -106,9 +114,9 @@ defmodule NewRelic.Telemetry.Plug do
     :ignore
   end
 
-  defp start_transaction(conn) do
+  defp start_transaction(conn, system_time) do
     Transaction.Reporter.start()
-    add_start_attrs(conn)
+    add_start_attrs(conn, system_time)
     maybe_report_queueing(conn)
   end
 
@@ -116,13 +124,13 @@ defmodule NewRelic.Telemetry.Plug do
     DistributedTrace.start(conn)
   end
 
-  defp stop_transaction(conn) do
-    add_stop_attrs(conn)
+  defp stop_transaction(conn, duration) do
+    add_stop_attrs(conn, duration)
     Transaction.Reporter.complete(self(), :async)
   end
 
-  defp stop_transaction(conn, error) do
-    add_stop_attrs(conn)
+  defp stop_transaction(conn, error, duration) do
+    add_stop_attrs(conn, duration)
     Transaction.Reporter.fail(error)
     Transaction.Reporter.complete(self(), :async)
   end
@@ -131,8 +139,9 @@ defmodule NewRelic.Telemetry.Plug do
     DistributedTrace.cleanup_context()
   end
 
-  defp add_start_attrs(conn) do
+  defp add_start_attrs(conn, system_time) do
     [
+      system_time: system_time,
       host: conn.host,
       path: conn.request_path,
       remote_ip: conn.remote_ip |> :inet_parse.ntoa() |> to_string(),
@@ -145,10 +154,11 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   @kb 1024
-  defp add_stop_attrs(conn) do
+  defp add_stop_attrs(conn, duration) do
     info = Process.info(self(), [:memory, :reductions])
 
     [
+      duration: duration,
       status: conn.status,
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions]
