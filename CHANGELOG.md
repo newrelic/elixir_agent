@@ -1,5 +1,14 @@
 ## CHANGELOG
 
+### `v1.19.0`
+
+Features
+
+* `Plug` instrumentation is now fully automatic based on `telemetry` events! [#219](https://github.com/newrelic/elixir_agent/pull/219)
+  * Please remove deprecated calls to `use NewRelic.Transaction`
+
+------
+
 ### `v1.18.1`
 
 Tweaks
