@@ -71,7 +71,7 @@ defmodule NewRelic.Telemetry.Plug do
   def handle_event(
         @plug_start,
         %{system_time: system_time},
-        %{conn: conn},
+        %{adapter: :plug_cowboy, conn: conn},
         _config
       ) do
     start_transaction(conn, system_time)
@@ -90,7 +90,7 @@ defmodule NewRelic.Telemetry.Plug do
   def handle_event(
         @plug_stop,
         %{duration: duration},
-        %{conn: conn},
+        %{adapter: :plug_cowboy, conn: conn},
         _config
       ) do
     stop_transaction(conn, duration)
@@ -100,7 +100,7 @@ defmodule NewRelic.Telemetry.Plug do
   def handle_event(
         @plug_exception,
         %{duration: duration},
-        %{conn: conn, kind: kind, reason: reason, stacktrace: stack},
+        %{adapter: :plug_cowboy, conn: conn, kind: kind, reason: reason, stacktrace: stack},
         _config
       ) do
     conn = %{conn | status: 500}
