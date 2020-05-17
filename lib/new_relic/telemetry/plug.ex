@@ -32,15 +32,18 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   @plug_start [:plug_adapter, :call, :start]
-  @plug_router_start [:plug, :router_dispatch, :start]
   @plug_stop [:plug_adapter, :call, :stop]
   @plug_exception [:plug_adapter, :call, :exception]
 
+  @plug_router_start [:plug, :router_dispatch, :start]
+  @phoenix_router_start [:phoenix, :router_dispatch, :start]
+
   @plug_events [
     @plug_start,
-    @plug_router_start,
     @plug_stop,
-    @plug_exception
+    @plug_exception,
+    @plug_router_start,
+    @phoenix_router_start
   ]
 
   @doc false
@@ -83,6 +86,22 @@ defmodule NewRelic.Telemetry.Plug do
         _config
       ) do
     NewRelic.add_attributes(plug_name: plug_name(conn, route))
+  end
+
+  def handle_event(
+        @phoenix_router_start,
+        _measurements,
+        %{conn: conn, route: route} = meta,
+        _config
+      ) do
+    [
+      phoenix_name: phoenix_name(conn, route),
+      "phoenix.endpoint": conn.private[:phoenix_endpoint] |> inspect(),
+      "phoenix.router": conn.private[:phoenix_router] |> inspect(),
+      "phoenix.controller": meta.plug |> inspect(),
+      "phoenix.action": meta.plug_opts |> to_string()
+    ]
+    |> NewRelic.add_attributes()
   end
 
   def handle_event(
@@ -164,9 +183,15 @@ defmodule NewRelic.Telemetry.Plug do
     |> NewRelic.add_attributes()
   end
 
-  defp plug_name(conn, match_path),
+  defp plug_name(conn, route),
     do:
-      "/Plug/#{conn.method}/#{match_path}"
+      "/Plug/#{conn.method}/#{route}"
+      |> String.replace("/*glob", "")
+      |> String.replace("/*_path", "")
+
+  defp phoenix_name(conn, route),
+    do:
+      "/Phoenix/#{conn.method}/#{route}"
       |> String.replace("/*glob", "")
       |> String.replace("/*_path", "")
 

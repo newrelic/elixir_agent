@@ -30,6 +30,7 @@ defmodule NewRelic.Transaction.Complete do
 
   defp transform_name_attrs(%{custom_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{framework_name: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{phoenix_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{plug_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{other_transaction_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(tx), do: Map.put(tx, :name, "Unknown/Unknown")

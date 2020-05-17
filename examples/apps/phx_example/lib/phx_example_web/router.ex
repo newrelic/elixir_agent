@@ -5,9 +5,9 @@ defmodule PhxExampleWeb.Router do
     plug :accepts, ["html"]
   end
 
-  scope "/", PhxExampleWeb do
+  scope "/phx", PhxExampleWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    get "/:foo", PageController, :index
   end
 end

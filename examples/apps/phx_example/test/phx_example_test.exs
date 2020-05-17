@@ -13,11 +13,25 @@ defmodule PhxExampleTest do
 
   test "Phoenix metrics generated" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    {:ok, %{body: body}} = request("/")
+    {:ok, %{body: body}} = request("/phx/bar")
     assert body =~ "Welcome to Phoenix"
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestHelper.find_metric(
+             metrics,
+             "WebTransaction/Phoenix/GET//phx/:foo"
+           )
+
+    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert event[:"phoenix.endpoint"] == "PhxExampleWeb.Endpoint"
+    assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
+    assert event[:"phoenix.controller"] == "PhxExampleWeb.PageController"
+    assert event[:"phoenix.action"] == "index"
+    assert event[:status] == 200
   end
 
   def request(path) do
