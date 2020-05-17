@@ -75,6 +75,10 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
+  defp transform_time_attrs(%{start_time: _, end_time: _} = tx) do
+    tx
+  end
+
   defp transform_queue_duration(%{request_start_s: request_start_s, start_time: start_time} = tx) do
     start_time_s = start_time / 1000.0
     queue_duration = max(0, start_time_s - request_start_s)
