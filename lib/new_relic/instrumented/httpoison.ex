@@ -33,100 +33,112 @@ if Code.ensure_loaded?(HTTPoison) do
       headers ++ NewRelic.distributed_trace_headers(:http)
     end
 
+    defp maybe_add_status_code({:ok, %HTTPoison.Response{status_code: status_code}} = result) do
+      NewRelic.DistributedTrace.put_span_attrs(:http, status_code: status_code)
+      result
+    end
+
+    defp maybe_add_status_code(%HTTPoison.Response{status_code: status_code} = result) do
+      NewRelic.DistributedTrace.put_span_attrs(:http, status_code: status_code)
+      result
+    end
+
+    defp maybe_add_status_code(result), do: result
+
     @trace {:get, category: :external}
     def get(url, headers \\ [], options \\ []) do
       headers = instrument("GET", url, headers)
-      HTTPoison.get(url, headers, options)
+      HTTPoison.get(url, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:get!, category: :external}
     def get!(url, headers \\ [], options \\ []) do
       headers = instrument("GET", url, headers)
-      HTTPoison.get!(url, headers, options)
+      HTTPoison.get!(url, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:put, category: :external}
     def put(url, body \\ "", headers \\ [], options \\ []) do
       headers = instrument("PUT", url, headers)
-      HTTPoison.put(url, body, headers, options)
+      HTTPoison.put(url, body, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:put!, category: :external}
     def put!(url, body \\ "", headers \\ [], options \\ []) do
       headers = instrument("PUT", url, headers)
-      HTTPoison.put!(url, body, headers, options)
+      HTTPoison.put!(url, body, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:head, category: :external}
     def head(url, headers \\ [], options \\ []) do
       headers = instrument("HEAD", url, headers)
-      HTTPoison.head(url, headers, options)
+      HTTPoison.head(url, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:head!, category: :external}
     def head!(url, headers \\ [], options \\ []) do
       headers = instrument("HEAD", url, headers)
-      HTTPoison.head!(url, headers, options)
+      HTTPoison.head!(url, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:post, category: :external}
     def post(url, body, headers \\ [], options \\ []) do
       headers = instrument("POST", url, headers)
-      HTTPoison.post(url, body, headers, options)
+      HTTPoison.post(url, body, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:post!, category: :external}
     def post!(url, body, headers \\ [], options \\ []) do
       headers = instrument("POST", url, headers)
-      HTTPoison.post!(url, body, headers, options)
+      HTTPoison.post!(url, body, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:patch, category: :external}
     def patch(url, body, headers \\ [], options \\ []) do
       headers = instrument("PATCH", url, headers)
-      HTTPoison.patch(url, body, headers, options)
+      HTTPoison.patch(url, body, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:patch!, category: :external}
     def patch!(url, body, headers \\ [], options \\ []) do
       headers = instrument("PATCH", url, headers)
-      HTTPoison.patch!(url, body, headers, options)
+      HTTPoison.patch!(url, body, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:delete, category: :external}
     def delete(url, headers \\ [], options \\ []) do
       headers = instrument("DELETE", url, headers)
-      HTTPoison.delete(url, headers, options)
+      HTTPoison.delete(url, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:delete!, category: :external}
     def delete!(url, headers \\ [], options \\ []) do
       headers = instrument("DELETE", url, headers)
-      HTTPoison.delete!(url, headers, options)
+      HTTPoison.delete!(url, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:options, category: :external}
     def options(url, headers \\ [], options \\ []) do
       headers = instrument("OPTIONS", url, headers)
-      HTTPoison.options(url, headers, options)
+      HTTPoison.options(url, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:options!, category: :external}
     def options!(url, headers \\ [], options \\ []) do
       headers = instrument("OPTIONS", url, headers)
-      HTTPoison.options!(url, headers, options)
+      HTTPoison.options!(url, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:request, category: :external}
     def request(method, url, body \\ "", headers \\ [], options \\ []) do
       headers = instrument(String.upcase(to_string(method)), url, headers)
-      HTTPoison.request(method, url, body, headers, options)
+      HTTPoison.request(method, url, body, headers, options) |> maybe_add_status_code()
     end
 
     @trace {:request!, category: :external}
     def request!(method, url, body \\ "", headers \\ [], options \\ []) do
       headers = instrument(String.upcase(to_string(method)), url, headers)
-      HTTPoison.request!(method, url, body, headers, options)
+      HTTPoison.request!(method, url, body, headers, options) |> maybe_add_status_code()
     end
   end
 end

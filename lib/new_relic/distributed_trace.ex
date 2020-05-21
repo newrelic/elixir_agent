@@ -220,6 +220,11 @@ defmodule NewRelic.DistributedTrace do
     Process.get(:nr_current_span_attrs) || %{}
   end
 
+  def put_span_attrs(:http, status_code: status_code) do
+    attrs = Process.get(:nr_current_span_attrs, %{})
+    Process.put(:nr_current_span_attrs, Map.put(attrs, :status_code, status_code))
+  end
+
   def set_current_span(label: label, ref: ref) do
     current = {label, ref}
     previous_span = Process.get(:nr_current_span)

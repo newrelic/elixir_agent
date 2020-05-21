@@ -63,12 +63,13 @@ defmodule NewRelic.Span.Event do
   end
 
   def merge_category_attributes(%{category: "http"} = span, category_attributes) do
-    {category, custom} = Map.split(category_attributes, [:url, :method, :component])
+    {category, custom} = Map.split(category_attributes, [:url, :method, :status_code, :component])
 
     span
     |> Map.merge(%{
       "http.url": category[:url] || "url",
       "http.method": category[:method] || "method",
+      "http.statusCode": category[:status_code] || "statusCode",
       component: category[:component] || "component",
       "span.kind": "client"
     })
