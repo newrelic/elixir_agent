@@ -64,6 +64,24 @@ defmodule EctoExampleTest do
              metrics,
              "Datastore/statement/MySQL/counts/delete"
            )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/MySQL/allWeb",
+             12
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/Postgres/allWeb",
+             12
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/allWeb",
+             24
+           )
   end
 
   def request() do
