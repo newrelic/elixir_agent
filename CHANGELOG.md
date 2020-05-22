@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.18.1`
+
+Tweaks
+
+* Report additional Datastore metrics. [#224](https://github.com/newrelic/elixir_agent/pull/224)
+
 ### `v1.18.0`
 
 Features
