@@ -1,4 +1,4 @@
-defmodule NewRelic.TelemetrySupervisor do
+defmodule NewRelic.Telemetry.Supervisor do
   use Supervisor
 
   @moduledoc false
