@@ -26,8 +26,6 @@ defmodule NewRelic.Telemetry.Plug do
 
   alias NewRelic.{Transaction, DistributedTrace, Util}
 
-  # TODO: Should Telemetry GenServers only be started if NewRelic.Config.enabled?()
-
   @doc false
   def start_link() do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
