@@ -118,6 +118,7 @@ defmodule NewRelic.Transaction.Monitor do
     pids
   end
 
+  # Question: does calling .trace 2 times cause 2 trace messages?
   def enable_trace_flags(pid) do
     # Trace process events to notice when a process is spawned
     # Trace function calls so we can install specific trace_patterns

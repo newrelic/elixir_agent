@@ -1,3 +1,4 @@
+# NAME: Transaction.Sidecar?
 defmodule NewRelic.Transaction.Store do
   @moduledoc false
   use GenServer
@@ -5,7 +6,7 @@ defmodule NewRelic.Transaction.Store do
   @supervisor NewRelic.Transaction.StoreSupervisor
   @registry NewRelic.Transaction.Registry
 
-  def new() do
+  def track() do
     DynamicSupervisor.start_child(@supervisor, {__MODULE__, pid: self()})
   end
 
@@ -14,8 +15,23 @@ defmodule NewRelic.Transaction.Store do
     GenServer.call(parent_store, {:link, child})
   end
 
-  def add_attributes(attrs) do
+  def add(attrs) do
     GenServer.cast(via(self()), {:add_attributes, attrs})
+  end
+
+  def incr(attrs) do
+    attrs
+    |> Enum.map(fn {key, value} -> {key, {:counter, value}} end)
+    |> add
+  end
+
+  def ignore() do
+    # Shut down w/o sending data
+  end
+
+  def complete() do
+    # Shut down & log data
+    # :sync version - must await til finished
   end
 
   def dump() do
@@ -61,6 +77,12 @@ defmodule NewRelic.Transaction.Store do
 
     # Kick off the Transaction complete process
     #  :continue ?
+    IO.inspect({:DOWN, :complete, parent, state})
+
+    state.attributes
+    |> Enum.reduce(%{}, &collect_attr/2)
+    |> NewRelic.Transaction.Complete.run(parent)
+
     {:noreply, state}
   end
 
@@ -74,4 +96,8 @@ defmodule NewRelic.Transaction.Store do
   def via(pid) do
     {:via, Registry, {@registry, pid}}
   end
+
+  def collect_attr({k, {:list, item}}, acc), do: Map.update(acc, k, [item], &[item | &1])
+  def collect_attr({k, {:counter, n}}, acc), do: Map.update(acc, k, n, &(&1 + n))
+  def collect_attr({k, v}, acc), do: Map.put(acc, k, v)
 end

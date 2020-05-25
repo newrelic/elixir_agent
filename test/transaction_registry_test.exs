@@ -3,27 +3,25 @@ defmodule TransactionRegistryTest do
 
   alias NewRelic.Transaction.Store
 
-  test "asdofkj" do
+  test "Get Transaction.Store working" do
     task =
       Task.async(fn ->
-        parent = self()
-        Store.new()
+        NewRelic.start_transaction("Test", "Tx")
 
-        Store.add_attributes(foo: :BAR)
+        NewRelic.add_attributes(foo: "BAR")
 
         Task.async(fn ->
-          # Do this from Transaction.Monitor!
-          child = self()
-          NewRelic.Transaction.Store.link(parent, child)
-
-          Store.add_attributes(baz: :QUX)
+          Process.sleep(10)
+          NewRelic.add_attributes(baz: "QUX")
         end)
         |> Task.await()
 
         %{attributes: attributes} = Store.dump()
 
-        assert attributes[:foo] == :BAR
-        assert attributes[:baz] == :QUX
+        NewRelic.stop_transaction()
+
+        assert attributes[:foo] == "BAR"
+        assert attributes[:baz] == "QUX"
       end)
 
     Task.await(task)

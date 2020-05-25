@@ -18,6 +18,12 @@ defmodule NewRelic.Transaction.Reporter do
 
   def add_attributes(attrs) when is_list(attrs) do
     if tracking?(self()) do
+      Transaction.Store.add(
+        attrs
+        |> NewRelic.Util.deep_flatten()
+        |> NewRelic.Util.coerce_attributes()
+      )
+
       AttrStore.add(
         __MODULE__,
         self(),
@@ -30,12 +36,16 @@ defmodule NewRelic.Transaction.Reporter do
 
   def incr_attributes(attrs) do
     if tracking?(self()) do
+      Transaction.Store.incr(attrs)
+
       AttrStore.incr(__MODULE__, self(), attrs)
     end
   end
 
   def set_transaction_name(custom_name) when is_binary(custom_name) do
     if tracking?(self()) do
+      Transaction.Store.add(custom_name: custom_name)
+
       AttrStore.add(__MODULE__, self(), custom_name: custom_name)
     end
   end
@@ -44,6 +54,10 @@ defmodule NewRelic.Transaction.Reporter do
 
   def start() do
     Transaction.Monitor.add(self())
+
+    Transaction.Store.track()
+    Transaction.Store.add(pid: inspect(self()))
+
     AttrStore.track(__MODULE__, self())
     AttrStore.add(__MODULE__, self(), pid: inspect(self()))
   end
@@ -51,6 +65,12 @@ defmodule NewRelic.Transaction.Reporter do
   def start_other_transaction(category, name) do
     unless tracking?(self()) do
       start()
+
+      Transaction.Store.add(
+        start_time: System.system_time(),
+        start_time_mono: System.monotonic_time(),
+        other_transaction_name: "#{category}/#{name}"
+      )
 
       AttrStore.add(__MODULE__, self(),
         start_time: System.system_time(),
@@ -66,6 +86,8 @@ defmodule NewRelic.Transaction.Reporter do
 
   def ignore_transaction() do
     if tracking?(self()) do
+      Transaction.Store.ignore()
+
       ensure_purge(self())
       AttrStore.untrack(__MODULE__, self())
       AttrStore.purge(__MODULE__, self())
@@ -81,6 +103,14 @@ defmodule NewRelic.Transaction.Reporter do
   def fail(pid, %{kind: kind, reason: reason, stack: stack} = error) do
     if tracking?(pid) do
       if NewRelic.Config.feature?(:error_collector) do
+        Transaction.Store.add(
+          error: true,
+          transaction_error: {:error, error},
+          error_kind: kind,
+          error_reason: inspect(reason),
+          error_stack: inspect(stack)
+        )
+
         AttrStore.add(__MODULE__, pid,
           error: true,
           error_kind: kind,
@@ -88,6 +118,8 @@ defmodule NewRelic.Transaction.Reporter do
           error_stack: inspect(stack)
         )
       else
+        Transaction.Store.add(error: true)
+
         AttrStore.add(__MODULE__, pid, error: true)
       end
     end
@@ -95,18 +127,24 @@ defmodule NewRelic.Transaction.Reporter do
 
   def add_trace_segment(segment) do
     if tracking?(self()) do
+      Transaction.Store.add(trace_function_segments: {:list, segment})
+
       AttrStore.add(__MODULE__, self(), trace_function_segments: {:list, segment})
     end
   end
 
   def track_metric(metric) do
     if tracking?(self()) do
+      Transaction.Store.add(transaction_metrics: {:list, metric})
+
       AttrStore.add(__MODULE__, self(), transaction_metrics: {:list, metric})
     end
   end
 
   def complete(pid, mode) do
     if tracking?(pid) do
+      Transaction.Store.add(end_time_mono: System.monotonic_time())
+
       AttrStore.untrack(__MODULE__, pid)
       AttrStore.add(__MODULE__, pid, end_time_mono: System.monotonic_time())
 
@@ -123,8 +161,8 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   defp complete_and_purge(pid) do
-    AttrStore.collect(__MODULE__, pid)
-    |> Transaction.Complete.run(pid)
+    # AttrStore.collect(__MODULE__, pid)
+    # |> Transaction.Complete.run(pid)
 
     AttrStore.purge(__MODULE__, pid)
   end
@@ -134,6 +172,13 @@ defmodule NewRelic.Transaction.Reporter do
 
   def track_spawn(original, pid, timestamp) do
     if tracking?(original) do
+      Transaction.Store.link(original, pid)
+
+      Transaction.Store.add(
+        trace_process_spawns: {:list, {pid, timestamp, original}},
+        trace_process_names: {:list, {pid, NewRelic.Util.process_name(pid)}}
+      )
+
       AttrStore.link(__MODULE__, original, pid)
 
       AttrStore.add(__MODULE__, pid,
@@ -145,6 +190,8 @@ defmodule NewRelic.Transaction.Reporter do
 
   def track_exit(pid, timestamp) do
     if tracking?(pid) do
+      Transaction.Store.add(trace_process_exits: {:list, {pid, timestamp}})
+
       AttrStore.add(__MODULE__, pid, trace_process_exits: {:list, {pid, timestamp}})
     end
   end

@@ -120,9 +120,9 @@ defmodule NewRelic.Util.AttrStore do
     end)
   end
 
-  defp collect_attr({_pid, {k, {:list, item}}}, acc), do: Map.update(acc, k, [item], &[item | &1])
-  defp collect_attr({_pid, {k, {:counter, n}}}, acc), do: Map.update(acc, k, n, &(&1 + n))
-  defp collect_attr({_pid, {k, v}}, acc), do: Map.put(acc, k, v)
+  def collect_attr({_pid, {k, {:list, item}}}, acc), do: Map.update(acc, k, [item], &[item | &1])
+  def collect_attr({_pid, {k, {:counter, n}}}, acc), do: Map.update(acc, k, n, &(&1 + n))
+  def collect_attr({_pid, {k, v}}, acc), do: Map.put(acc, k, v)
 
   defp collecting(table), do: Module.concat(table, Collecting)
   defp tracking(table), do: Module.concat(table, Tracking)
