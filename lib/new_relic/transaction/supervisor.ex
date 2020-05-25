@@ -11,7 +11,18 @@ defmodule NewRelic.Transaction.Supervisor do
     children = [
       supervisor(Task.Supervisor, [[name: NewRelic.Transaction.TaskSupervisor]]),
       worker(NewRelic.Transaction.Monitor, []),
-      worker(NewRelic.Transaction.Reporter, [])
+      worker(NewRelic.Transaction.Reporter, []),
+      supervisor(NewRelic.Transaction.StoreSupervisor, []),
+      worker(
+        Registry,
+        [
+          [
+            keys: :unique,
+            name: NewRelic.Transaction.Registry,
+            partitions: System.schedulers_online()
+          ]
+        ]
+      )
     ]
 
     supervise(children, strategy: :one_for_one)
