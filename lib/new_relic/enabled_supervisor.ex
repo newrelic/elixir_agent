@@ -13,7 +13,6 @@ defmodule NewRelic.EnabledSupervisor do
   def init(:ok) do
     children = [
       supervisor(NewRelic.Harvest.Supervisor, []),
-      supervisor(NewRelic.Telemetry.Supervisor, []),
       supervisor(NewRelic.Sampler.Supervisor, []),
       supervisor(NewRelic.Error.Supervisor, []),
       supervisor(NewRelic.Aggregate.Supervisor, [])
