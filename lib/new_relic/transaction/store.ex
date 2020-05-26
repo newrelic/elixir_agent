@@ -1,7 +1,7 @@
 # NAME: Transaction.Sidecar?
 defmodule NewRelic.Transaction.Store do
   @moduledoc false
-  use GenServer
+  use GenServer, restart: :temporary
 
   @supervisor NewRelic.Transaction.StoreSupervisor
   @registry NewRelic.Transaction.Registry
@@ -12,7 +12,7 @@ defmodule NewRelic.Transaction.Store do
 
   def link(parent, child) do
     [{parent_store, _}] = Registry.lookup(@registry, parent)
-    GenServer.call(parent_store, {:link, child})
+    GenServer.cast(parent_store, {:link, child})
   end
 
   def add(attrs) do
@@ -25,13 +25,18 @@ defmodule NewRelic.Transaction.Store do
     |> add
   end
 
+  def append(attrs) do
+    attrs
+    |> Enum.map(fn {key, value} -> {key, {:list, value}} end)
+    |> add
+  end
+
   def ignore() do
-    # Shut down w/o sending data
+    GenServer.cast(via(self()), :ignore)
   end
 
   def complete() do
-    # Shut down & log data
-    # :sync version - must await til finished
+    GenServer.call(via(self()), :complete)
   end
 
   def dump() do
@@ -45,45 +50,40 @@ defmodule NewRelic.Transaction.Store do
   def init(parent) do
     Process.monitor(parent)
 
-    {:ok,
-     %{
-       parent: parent,
-       offspring: MapSet.new(),
-       attributes: []
-     }}
+    {:ok, %{parent: parent, offspring: MapSet.new(), attributes: []}}
   end
 
   def handle_cast({:add_attributes, attrs}, state) do
     {:noreply, %{state | attributes: attrs ++ state.attributes}}
   end
 
-  def handle_call({:link, child}, _from, state) do
+  def handle_cast(:ignore, _state) do
+    {:stop, :normal, :ignored}
+  end
+
+  def handle_cast({:link, child}, state) do
     Process.monitor(child)
     Registry.register(@registry, child, nil)
     state = %{state | offspring: MapSet.put(state.offspring, child)}
 
-    {:reply, :ok, state}
+    {:noreply, state}
   end
 
   def handle_call(:dump, _from, state) do
     {:reply, state, state}
   end
 
-  # TODO: handle non-process Transaction complete
+  def handle_call(:complete, _from, state) do
+    run_complete(state)
+
+    {:stop, :normal, :ok, :completed}
+  end
 
   def handle_info({:DOWN, _, _, parent, _}, %{parent: parent} = state) do
     Registry.unregister(@registry, parent)
     Enum.each(state.offspring, &Registry.unregister(@registry, &1))
 
-    # Kick off the Transaction complete process
-    #  :continue ?
-    IO.inspect({:DOWN, :complete, parent, state})
-
-    state.attributes
-    |> Enum.reduce(%{}, &collect_attr/2)
-    |> NewRelic.Transaction.Complete.run(parent)
-
-    {:noreply, state}
+    {:noreply, state, {:continue, :complete}}
   end
 
   def handle_info({:DOWN, _, _, child, _}, state) do
@@ -93,8 +93,22 @@ defmodule NewRelic.Transaction.Store do
     {:noreply, state}
   end
 
+  def handle_continue(:complete, state) do
+    run_complete(state)
+
+    {:stop, :normal, :completed}
+  end
+
   def via(pid) do
     {:via, Registry, {@registry, pid}}
+  end
+
+  def run_complete(%{parent: parent, attributes: attributes}) do
+    attributes
+    |> Enum.reduce(%{}, &collect_attr/2)
+    # could do deep flatten, etc here
+    # could save attrs in a map inline instead of list
+    |> NewRelic.Transaction.Complete.run(parent)
   end
 
   def collect_attr({k, {:list, item}}, acc), do: Map.update(acc, k, [item], &[item | &1])

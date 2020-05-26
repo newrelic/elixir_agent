@@ -150,7 +150,7 @@ defmodule NewRelic.Transaction.Reporter do
 
       case mode do
         :sync ->
-          complete_and_purge(pid)
+          Transaction.Store.complete()
 
         :async ->
           Task.Supervisor.start_child(Transaction.TaskSupervisor, fn ->

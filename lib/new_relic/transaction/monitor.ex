@@ -96,7 +96,7 @@ defmodule NewRelic.Transaction.Monitor do
     end
 
     Transaction.Reporter.ensure_purge(pid)
-    Transaction.Reporter.complete(pid, :async)
+    # Transaction.Reporter.complete(pid, :async)
     DistributedTrace.Tracker.cleanup(pid)
     {:noreply, %{state | pids: Map.delete(state.pids, pid)}}
   end
