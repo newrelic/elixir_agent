@@ -8,6 +8,7 @@ defmodule PhxExampleWeb.Router do
   scope "/phx", PhxExampleWeb do
     pipe_through :browser
 
+    get "/error", PageController, :error
     get "/:foo", PageController, :index
   end
 end

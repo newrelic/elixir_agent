@@ -30,7 +30,7 @@ defmodule PhxExample.MixProject do
   defp deps do
     [
       {:new_relic_agent, path: "../../../"},
-      {:phoenix, "~> 1.5.1"},
+      {:phoenix, "~> 1.5"},
       {:phoenix_html, "~> 2.11"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"}

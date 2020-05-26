@@ -34,6 +34,35 @@ defmodule PhxExampleTest do
     assert event[:status] == 200
   end
 
+  test "Phoenix error" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    {:ok, %{body: body, status_code: 500}} = request("/phx/error")
+    assert body =~ "Internal Server Error"
+
+    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert event[:status] == 500
+    assert event[:"phoenix.endpoint"] == "PhxExampleWeb.Endpoint"
+    assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
+    assert event[:"phoenix.controller"] == "PhxExampleWeb.PageController"
+    assert event[:"phoenix.action"] == "error"
+    assert event[:error]
+  end
+
+  test "Phoenix route not found" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    {:ok, %{body: body, status_code: 404}} = request("/not_found")
+    assert body =~ "Not Found"
+
+    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert event[:status] == 404
+    refute event[:"phoenix.controller"]
+    refute event[:error]
+  end
+
   def request(path) do
     config = Application.get_env(:phx_example, PhxExampleWeb.Endpoint)
 
