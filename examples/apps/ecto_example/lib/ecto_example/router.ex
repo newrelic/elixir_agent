@@ -1,6 +1,5 @@
 defmodule EctoExample.Router do
   use Plug.Router
-  use NewRelic.Transaction
 
   plug(:match)
   plug(:dispatch)
