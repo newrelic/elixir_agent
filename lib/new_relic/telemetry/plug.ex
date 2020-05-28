@@ -135,6 +135,9 @@ defmodule NewRelic.Telemetry.Plug do
         %{conn: conn, kind: kind, reason: reason, stacktrace: stack},
         _config
       ) do
+    # Quick hack to avoid process terminating
+    Process.flag(:trap_exit, true)
+
     conn = %{conn | status: 500}
     error = %{kind: kind, reason: reason, stack: stack}
 
