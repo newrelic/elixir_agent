@@ -229,6 +229,8 @@ defmodule NewRelic.Tracer.Macro do
   # Drop the de-structuring side of a pattern match
   def rewrite_call_term({:=, _, [left, right]}) do
     cond do
+      :__ignored__ == left -> right
+      :__ignored__ == right -> left
       is_variable?(right) -> right
       is_variable?(left) -> left
     end
