@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.18.2`
+
+Fixes
+
+* Fix a tracer compilation bug. [#228](https://github.com/newrelic/elixir_agent/pull/228)
+
 ### `v1.18.1`
 
 Tweaks
