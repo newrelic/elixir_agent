@@ -92,5 +92,19 @@ defmodule NewRelic.Tracer.MacroTest do
 
       assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
     end
+
+    test "Handle a struct with enforced_keys" do
+      ast =
+        quote do
+          [%NaiveDateTime{year: year}]
+        end
+
+      expected =
+        quote do
+          [%{__struct__: NaiveDateTime, year: year}]
+        end
+
+      assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
+    end
   end
 end

@@ -223,6 +223,12 @@ defmodule NewRelic.Tracer.Macro do
     Macro.postwalk(args, &rewrite_call_term/1)
   end
 
+  # Unwrap Structs into Maps when reporting
+  # They can't always be re-referenced directly since they can have enforced_keys
+  def rewrite_call_term({:%, _, [{:__aliases__, _, _} = struct, {:%{}, line, members}]}) do
+    {:%{}, line, [{:__struct__, struct}] ++ members}
+  end
+
   # Strip default arguments
   def rewrite_call_term({:\\, _, [arg, _default]}), do: arg
 
