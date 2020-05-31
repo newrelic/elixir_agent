@@ -68,9 +68,8 @@ defmodule NewRelic.Transaction.Store do
   def handle_cast({:link, child}, state) do
     Process.monitor(child)
     Registry.register(@registry, child, nil)
-    state = %{state | offspring: MapSet.put(state.offspring, child)}
 
-    {:noreply, state}
+    {:noreply, %{state | offspring: MapSet.put(state.offspring, child)}}
   end
 
   def handle_call(:dump, _from, state) do
@@ -84,9 +83,6 @@ defmodule NewRelic.Transaction.Store do
   end
 
   def handle_info({:DOWN, _, _, parent, _}, %{parent: parent} = state) do
-    Registry.unregister(@registry, parent)
-    Enum.each(state.offspring, &Registry.unregister(@registry, &1))
-
     {:noreply, state, {:continue, :complete}}
   end
 
