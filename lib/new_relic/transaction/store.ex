@@ -104,6 +104,8 @@ defmodule NewRelic.Transaction.Store do
     attributes
     |> Enum.reverse()
     |> Enum.reduce(%{}, &collect_attr/2)
+    # tx that ends via DOWN doesn't get needed closing attributes, so:
+    |> Map.put_new(:end_time_mono, System.monotonic_time())
     # could do deep flatten, etc here
     # could save attrs in a map inline instead of list
     |> NewRelic.Transaction.Complete.run(parent)
