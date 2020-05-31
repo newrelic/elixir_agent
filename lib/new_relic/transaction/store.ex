@@ -90,10 +90,7 @@ defmodule NewRelic.Transaction.Store do
     {:noreply, state, {:continue, :complete}}
   end
 
-  def handle_info({:DOWN, _, _, child, _}, state) do
-    Registry.unregister(@registry, child)
-    state = %{state | offspring: MapSet.put(state.offspring, child)}
-
+  def handle_info({:DOWN, _, _, _child, _}, state) do
     {:noreply, state}
   end
 
