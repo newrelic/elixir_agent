@@ -102,6 +102,7 @@ defmodule NewRelic.Transaction.Store do
 
   def run_complete(%{parent: parent, attributes: attributes}) do
     attributes
+    |> Enum.reverse()
     |> Enum.reduce(%{}, &collect_attr/2)
     # could do deep flatten, etc here
     # could save attrs in a map inline instead of list
