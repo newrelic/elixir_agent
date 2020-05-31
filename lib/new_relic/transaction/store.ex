@@ -19,6 +19,10 @@ defmodule NewRelic.Transaction.Store do
     GenServer.cast(via(self()), {:add_attributes, attrs})
   end
 
+  def add(pid, attrs) do
+    GenServer.cast(via(pid), {:add_attributes, attrs})
+  end
+
   def incr(attrs) do
     attrs
     |> Enum.map(fn {key, value} -> {key, {:counter, value}} end)

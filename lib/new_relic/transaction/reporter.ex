@@ -174,7 +174,7 @@ defmodule NewRelic.Transaction.Reporter do
     if tracking?(original) do
       Transaction.Store.link(original, pid)
 
-      Transaction.Store.add(
+      Transaction.Store.add(original,
         trace_process_spawns: {:list, {pid, timestamp, original}},
         trace_process_names: {:list, {pid, NewRelic.Util.process_name(pid)}}
       )
@@ -190,7 +190,7 @@ defmodule NewRelic.Transaction.Reporter do
 
   def track_exit(pid, timestamp) do
     if tracking?(pid) do
-      Transaction.Store.add(trace_process_exits: {:list, {pid, timestamp}})
+      Transaction.Store.add(pid, trace_process_exits: {:list, {pid, timestamp}})
 
       AttrStore.add(__MODULE__, pid, trace_process_exits: {:list, {pid, timestamp}})
     end
