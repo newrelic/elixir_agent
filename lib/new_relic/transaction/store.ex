@@ -10,9 +10,9 @@ defmodule NewRelic.Transaction.Store do
     DynamicSupervisor.start_child(@supervisor, {__MODULE__, pid: self()})
   end
 
-  def link(parent, child) do
+  def connect(parent, child) do
     [{parent_store, _}] = Registry.lookup(@registry, parent)
-    GenServer.cast(parent_store, {:link, child})
+    GenServer.cast(parent_store, {:connect, child})
   end
 
   def add(attrs) do
@@ -65,7 +65,7 @@ defmodule NewRelic.Transaction.Store do
     {:stop, :normal, :ignored}
   end
 
-  def handle_cast({:link, child}, state) do
+  def handle_cast({:connect, child}, state) do
     Process.monitor(child)
     Registry.register(@registry, child, nil)
 

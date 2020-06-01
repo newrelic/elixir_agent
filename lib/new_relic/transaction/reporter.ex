@@ -172,7 +172,7 @@ defmodule NewRelic.Transaction.Reporter do
 
   def track_spawn(original, pid, timestamp) do
     if tracking?(original) do
-      Transaction.Store.link(original, pid)
+      Transaction.Store.connect(original, pid)
 
       Transaction.Store.add(original,
         trace_process_spawns: {:list, {pid, timestamp, original}},
