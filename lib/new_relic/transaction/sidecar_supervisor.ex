@@ -1,4 +1,4 @@
-defmodule NewRelic.Transaction.StoreSupervisor do
+defmodule NewRelic.Transaction.SidecarSupervisor do
   use DynamicSupervisor
 
   @moduledoc false

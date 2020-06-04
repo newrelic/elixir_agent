@@ -1,9 +1,7 @@
 defmodule TransactionRegistryTest do
   use ExUnit.Case
 
-  alias NewRelic.Transaction.Store
-
-  test "Get Transaction.Store working" do
+  test "Get Transaction.Sidecar working" do
     task =
       Task.async(fn ->
         NewRelic.start_transaction("Test", "Tx")
@@ -29,7 +27,7 @@ defmodule TransactionRegistryTest do
         end)
         |> Task.await()
 
-        %{attributes: attributes} = Store.dump()
+        %{attributes: attributes} = NewRelic.Transaction.Sidecar.dump()
 
         NewRelic.stop_transaction()
 

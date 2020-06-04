@@ -1,8 +1,6 @@
 defmodule NewRelic.Sampler.Agent do
   use GenServer
 
-  alias NewRelic.Transaction
-
   # Takes samples of the state of the Agent
 
   @moduledoc false
@@ -30,8 +28,8 @@ defmodule NewRelic.Sampler.Agent do
   end
 
   def record_sample do
-    # TODO report stats based on Transaction.Store
-    # num of active Transaction.Store
+    # TODO report stats based on Transaction.Sidecar
+    # num of active Transaction.Sidecar
   end
 
   def ets_size(table) do

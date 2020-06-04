@@ -19,7 +19,7 @@ defmodule NewRelic.Error.LoggerHandler do
         },
         _config
       ) do
-    if NewRelic.Transaction.Store.tracking?() do
+    if NewRelic.Transaction.Sidecar.tracking?() do
       NewRelic.Error.Reporter.report_error(:transaction, report)
     else
       NewRelic.Error.Reporter.report_error(:process, report)

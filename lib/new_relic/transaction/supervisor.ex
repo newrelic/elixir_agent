@@ -11,7 +11,7 @@ defmodule NewRelic.Transaction.Supervisor do
     children = [
       supervisor(Task.Supervisor, [[name: NewRelic.Transaction.TaskSupervisor]]),
       worker(NewRelic.Transaction.Monitor, []),
-      supervisor(NewRelic.Transaction.StoreSupervisor, []),
+      supervisor(NewRelic.Transaction.SidecarSupervisor, []),
       worker(
         Registry,
         [

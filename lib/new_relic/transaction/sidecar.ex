@@ -1,9 +1,9 @@
 # NAME: Transaction.Sidecar?
-defmodule NewRelic.Transaction.Store do
+defmodule NewRelic.Transaction.Sidecar do
   @moduledoc false
   use GenServer, restart: :temporary
 
-  @supervisor NewRelic.Transaction.StoreSupervisor
+  @supervisor NewRelic.Transaction.SidecarSupervisor
   @registry NewRelic.Transaction.Registry
 
   def start_link(pid: pid) do

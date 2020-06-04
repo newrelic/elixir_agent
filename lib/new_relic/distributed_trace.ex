@@ -5,7 +5,7 @@ defmodule NewRelic.DistributedTrace do
 
   @moduledoc false
 
-  alias NewRelic.DistributedTrace.{Context, Tracker}
+  alias NewRelic.DistributedTrace.Context
   alias NewRelic.Harvest.Collector.AgentRun
   alias NewRelic.{Transaction, Util}
 
@@ -188,12 +188,12 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def set_tracing_context(context) do
-    Transaction.Store.set(:context, context)
+    Transaction.Sidecar.set(:context, context)
   end
 
   def get_tracing_context() do
-    if Transaction.Store.tracking?() do
-      Transaction.Store.get(:context)
+    if Transaction.Sidecar.tracking?() do
+      Transaction.Sidecar.get(:context)
     end
   end
 
