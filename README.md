@@ -52,6 +52,8 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 * `NEW_RELIC_APP_NAME`
 * `NEW_RELIC_LICENSE_KEY`
 
+For further configuration, please see the `NewRelic.Config` module documentation.
+
 ## Instrumentation
 
 Out of the box, we will report Error Traces & some general BEAM VM stats. For further visibility, you'll need to add some basic instrumentation.

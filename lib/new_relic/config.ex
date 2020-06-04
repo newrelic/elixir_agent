@@ -2,45 +2,67 @@ defmodule NewRelic.Config do
   @moduledoc """
   New Relic Agent Configuration
 
-  All configuration items can be set via `ENV` variable _or_ via `Application` config
-  """
+  All configuration items can be set via `ENV` variable _or_ via `Application` config.
 
-  @doc """
-  Configure your application name. **Required**
+  The following variables can be configured:
 
-  May contain up to 3 names seperated by `;`
-  """
-  def app_name do
-    (System.get_env("NEW_RELIC_APP_NAME") || Application.get_env(:new_relic_agent, :app_name))
-    |> parse_app_names
-  end
+  ## App Name ***Required***
+    * Application key: `:app_name`
+    * Env variable: `NEW_RELIC_APP_NAME`
 
-  @doc "Configure your New Relic License Key. **Required**"
-  def license_key,
-    do:
-      System.get_env("NEW_RELIC_LICENSE_KEY") ||
-        Application.get_env(:new_relic_agent, :license_key)
+    The application name.
+    May contain up to 3 names seperated by `;`
 
-  @doc "Configure the host to report to. Most customers have no need to set this."
-  def host,
-    do: System.get_env("NEW_RELIC_HOST") || Application.get_env(:new_relic_agent, :host)
+  ## License key ***Required***
+    * Application key: `:license_key`
+    * Env variable: `NEW_RELIC_LICENSE_KEY`
 
-  @doc """
-  Configure the Agent logging mechanism.
+    The application license key
 
-  Defaults to `"tmp/new_relic.log"`.
+  ## Host
+    * Application key: `:host`
+    * Env variable: `NEW_RELIC_HOST`
 
-  Options:
-  - `"stdout"`
-  - `"Logger"` Elixir's Logger
-  - `"memory"` (Useful for testing)
-  - `"file_name.log"`
-  """
-  def logger,
-    do: System.get_env("NEW_RELIC_LOG") || Application.get_env(:new_relic_agent, :log)
+    The host to resport to. Most customers have no need to set this
 
-  @doc """
-  An optional list of key/value pairs that will be automatic custom attributes
+  ## Labels
+    * Application key: `:labels`
+    * Env variable: `NEW_RELIC_LABELS`
+
+    An optional list of labels that will be applied to the application.
+
+    Configured with a single string containing a list of key-value pairs:
+
+    ```elixir
+    "key1:value1;key2:value2"
+    ```
+
+    The delimiting characters `;` and `:` are not allowed in the `key` or `value`.
+
+    Example:
+
+    ```elixir
+    config :new_relic_agent, labels: "region:west;env:prod"
+    ```
+
+  ## Log
+    * Application key: :log
+    * Env variable: `NEW_RELIC_LOG`
+
+    Configure the Agent logging mechanism.
+
+    Defaults to `"tmp/new_relic.log"`.
+
+    Options:
+    - `"stdout"`
+    - `"Logger"` Elixir's Logger
+    - `"memory"` (Useful for testing)
+    - `"file_name.log"`
+
+  ## Automatic Attributes
+    * Application key: :automatic_attributes
+
+    An optional list of key/value pairs that will be automatic custom attributes
   on all event types reported (Transactions, etc).
 
   Options:
@@ -58,6 +80,47 @@ defmodule NewRelic.Config do
       team_name: "Afterlife"
     ]
   ```
+
+  ## Feature toggles
+    Some Agent features can be controlled via configuration
+
+    * `:error_collector_enabled` (default `true`)
+      * Controls collecting any Error traces or metrics
+    * `:sql_collection_enabled` (default `true`)
+      * Controls collection of SQL query strings
+    * `:ecto_instrumentation_enabled` (default `true`)
+      * Controls all Ecto instrumentation
+    * `function_argument_collection_enabled` (default `true`)
+      * Controls collection of traced function arguments
+
+  """
+
+  @doc """
+  Returns your application name.
+  """
+  def app_name do
+    (System.get_env("NEW_RELIC_APP_NAME") || Application.get_env(:new_relic_agent, :app_name))
+    |> parse_app_names
+  end
+
+  @doc "Returns your New Relic License Key."
+  def license_key,
+    do:
+      System.get_env("NEW_RELIC_LICENSE_KEY") ||
+        Application.get_env(:new_relic_agent, :license_key)
+
+  @doc "Returns the host to report to if set to something that isn't the default."
+  def host,
+    do: System.get_env("NEW_RELIC_HOST") || Application.get_env(:new_relic_agent, :host)
+
+  @doc """
+  Returns the Agent logging mechanism behaviour
+  """
+  def logger,
+    do: System.get_env("NEW_RELIC_LOG") || Application.get_env(:new_relic_agent, :log)
+
+  @doc """
+  Returns the automatic attributes
   """
   def automatic_attributes do
     Application.get_env(:new_relic_agent, :automatic_attributes, [])
@@ -69,19 +132,7 @@ defmodule NewRelic.Config do
   end
 
   @doc """
-  An optional list of labels that will be applied to the application.
-
-  Configured with a single string containing a list of key-value pairs:
-
-  `key1:value1;key2:value2`
-
-  The delimiting characters `;` and `:` are not allowed in the `key` or `value`
-
-  Example:
-
-  ```
-  config :new_relic_agent, labels: "region:west;env:prod"
-  ```
+  Returns the labels
   """
   def labels do
     (System.get_env("NEW_RELIC_LABELS") || Application.get_env(:new_relic_agent, :labels))
@@ -89,16 +140,7 @@ defmodule NewRelic.Config do
   end
 
   @doc """
-  Some Agent features can be controlled via configuration
-
-  * `:error_collector_enabled` (default `true`)
-    * Controls collecting any Error traces or metrics
-  * `:sql_collection_enabled` (default `true`)
-    * Controls collection of SQL query strings
-  * `:ecto_instrumentation_enabled` (default `true`)
-    * Controls all Ecto instrumentation
-  * `function_argument_collection_enabled` (default `true`)
-    * Controls collection of traced function arguments
+  Returns if a feature is enabled
   """
   def feature?(:error_collector) do
     feature_check?("NEW_RELIC_ERROR_COLLECTOR_ENABLED", :error_collector_enabled)
