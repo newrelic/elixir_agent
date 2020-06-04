@@ -1,6 +1,4 @@
 defmodule NewRelic.Transaction.Reporter do
-  use GenServer
-
   alias NewRelic.Transaction
 
   # This GenServer collects and reports Transaction related data
@@ -53,7 +51,8 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   def stop_other_transaction() do
-    complete(self(), :sync)
+    Transaction.Store.add(end_time_mono: System.monotonic_time())
+    Transaction.Store.complete()
   end
 
   def ignore_transaction() do
@@ -85,18 +84,6 @@ defmodule NewRelic.Transaction.Reporter do
     Transaction.Store.add(transaction_metrics: {:list, metric})
   end
 
-  def complete(pid, mode) do
-    Transaction.Store.add(end_time_mono: System.monotonic_time())
-
-    case mode do
-      :sync ->
-        Transaction.Store.complete()
-
-      :async ->
-        :nothin
-    end
-  end
-
   # Internal Transaction.Monitor API
   #
 
@@ -111,17 +98,5 @@ defmodule NewRelic.Transaction.Reporter do
 
   def track_exit(pid, timestamp) do
     Transaction.Store.add(pid, trace_process_exits: {:list, {pid, timestamp}})
-  end
-
-  # GenServer
-  #
-
-  def start_link do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
-  end
-
-  def init(:ok) do
-    NewRelic.sample_process()
-    {:ok, %{timers: %{}}}
   end
 end

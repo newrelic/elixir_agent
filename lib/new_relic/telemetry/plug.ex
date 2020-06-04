@@ -135,13 +135,11 @@ defmodule NewRelic.Telemetry.Plug do
 
   defp stop_transaction(conn, duration) do
     add_stop_attrs(conn, duration)
-    Transaction.Reporter.complete(self(), :async)
   end
 
   defp stop_transaction(conn, error, duration) do
     add_stop_attrs(conn, duration)
     Transaction.Reporter.fail(error)
-    Transaction.Reporter.complete(self(), :async)
   end
 
   defp stop_distributed_trace(_conn) do

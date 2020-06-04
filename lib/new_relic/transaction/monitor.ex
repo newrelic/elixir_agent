@@ -1,7 +1,7 @@
 defmodule NewRelic.Transaction.Monitor do
   use GenServer
+
   alias NewRelic.Transaction
-  alias NewRelic.DistributedTrace
 
   # This GenServer watches transaction processes for
   #  - :trace messages

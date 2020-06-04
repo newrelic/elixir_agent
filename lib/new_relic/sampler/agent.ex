@@ -30,20 +30,8 @@ defmodule NewRelic.Sampler.Agent do
   end
 
   def record_sample do
-    NewRelic.report_metric(
-      {:supportability, :agent, "ReporterCollectingSize"},
-      value: ets_size(NewRelic.Transaction.Reporter.Collecting)
-    )
-
-    NewRelic.report_metric(
-      {:supportability, :agent, "ReporterTrackingSize"},
-      value: ets_size(NewRelic.Transaction.Reporter.Tracking)
-    )
-
-    NewRelic.report_metric(
-      {:supportability, :agent, "ReporterCompleteTasksActive"},
-      value: length(Task.Supervisor.children(Transaction.TaskSupervisor))
-    )
+    # TODO report stats based on Transaction.Store
+    # num of active Transaction.Store
   end
 
   def ets_size(table) do
