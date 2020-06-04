@@ -43,7 +43,12 @@ defmodule TracerTest do
     defp priv(), do: :priv
 
     @trace :ignored
+    def ignored(:left = _ignored), do: :left
+    def ignored(_ignored = :right), do: :right
     def ignored(_ignored), do: :ignored
+
+    @trace :naive
+    def naive(%NaiveDateTime{}), do: :naive
 
     @trace :error
     def error(exception) do
@@ -154,6 +159,35 @@ defmodule TracerTest do
     assert Enum.find(events, fn [_, event, _] ->
              event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.ignored/1" &&
                event[:call_count] == 1
+           end)
+  end
+
+  test "Handle a struct argument with enforced_keys" do
+    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+
+    assert Traced.naive(NaiveDateTime.utc_now()) == :naive
+
+    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
+    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+
+    assert Enum.find(events, fn [_, event, _] ->
+             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.naive/1" &&
+               event[:call_count] == 1
+           end)
+  end
+
+  test "Handle an assigned & ignored pattern match" do
+    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+
+    assert Traced.ignored(:left) == :left
+    assert Traced.ignored(:right) == :right
+
+    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
+    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+
+    assert Enum.find(events, fn [_, event, _] ->
+             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.ignored/1" &&
+               event[:call_count] == 2
            end)
   end
 
