@@ -6,13 +6,29 @@ defmodule NewRelic.Transaction.Store do
   @supervisor NewRelic.Transaction.StoreSupervisor
   @registry NewRelic.Transaction.Registry
 
+  def start_link(pid: pid) do
+    GenServer.start_link(__MODULE__, pid, name: via(pid))
+  end
+
+  def init(parent) do
+    Process.monitor(parent)
+
+    {:ok, %{parent: parent, offspring: MapSet.new(), attributes: [], store: %{}}}
+  end
+
   def track() do
     DynamicSupervisor.start_child(@supervisor, {__MODULE__, pid: self()})
   end
 
   def connect(parent, child) do
-    [{parent_store, _}] = Registry.lookup(@registry, parent)
-    GenServer.cast(parent_store, {:connect, child})
+    case Registry.lookup(@registry, parent) do
+      [{parent_store, _}] -> GenServer.cast(parent_store, {:connect, child})
+      [] -> :not_tracking
+    end
+  end
+
+  def tracking?() do
+    Registry.lookup(@registry, self()) != []
   end
 
   def add(attrs) do
@@ -35,8 +51,16 @@ defmodule NewRelic.Transaction.Store do
     |> add
   end
 
+  def set(key, value) do
+    GenServer.call(via(self()), {:set, key, value})
+  end
+
+  def get(key) do
+    GenServer.call(via(self()), {:get, key})
+  end
+
   def ignore() do
-    GenServer.cast(via(self()), :ignore)
+    GenServer.call(via(self()), :ignore)
   end
 
   def complete() do
@@ -47,22 +71,8 @@ defmodule NewRelic.Transaction.Store do
     GenServer.call(via(self()), :dump)
   end
 
-  def start_link(pid: pid) do
-    GenServer.start_link(__MODULE__, pid, name: via(pid))
-  end
-
-  def init(parent) do
-    Process.monitor(parent)
-
-    {:ok, %{parent: parent, offspring: MapSet.new(), attributes: []}}
-  end
-
   def handle_cast({:add_attributes, attrs}, state) do
     {:noreply, %{state | attributes: attrs ++ state.attributes}}
-  end
-
-  def handle_cast(:ignore, _state) do
-    {:stop, :normal, :ignored}
   end
 
   def handle_cast({:connect, child}, state) do
@@ -72,8 +82,20 @@ defmodule NewRelic.Transaction.Store do
     {:noreply, %{state | offspring: MapSet.put(state.offspring, child)}}
   end
 
+  def handle_call({:set, key, value}, _from, state) do
+    {:reply, :ok, put_in(state, [:store, key], value)}
+  end
+
+  def handle_call({:get, key}, _from, state) do
+    {:reply, Map.get(state.store, key), state}
+  end
+
   def handle_call(:dump, _from, state) do
     {:reply, state, state}
+  end
+
+  def handle_call(:ignore, _from, _state) do
+    {:stop, :normal, :ok, :ignored}
   end
 
   def handle_call(:complete, _from, state) do

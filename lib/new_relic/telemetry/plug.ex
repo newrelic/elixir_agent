@@ -145,7 +145,7 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   defp stop_distributed_trace(_conn) do
-    DistributedTrace.cleanup_context()
+    :done
   end
 
   defp add_start_attrs(conn, system_time) do

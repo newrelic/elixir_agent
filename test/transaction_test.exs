@@ -350,7 +350,7 @@ defmodule TransactionTest do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     Task.Supervisor.start_link(name: TestTaskSup)
 
-    TestHelper.request(TestPlugApp, conn(:get, "/ignored"))
+    assert %{status: 200} = TestHelper.request(TestPlugApp, conn(:get, "/ignored"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 

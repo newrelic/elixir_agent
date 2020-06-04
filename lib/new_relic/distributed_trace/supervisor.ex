@@ -9,7 +9,6 @@ defmodule NewRelic.DistributedTrace.Supervisor do
 
   def init(_) do
     children = [
-      worker(NewRelic.DistributedTrace.Tracker, []),
       worker(NewRelic.DistributedTrace.BackoffSampler, [])
     ]
 

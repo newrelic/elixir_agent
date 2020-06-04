@@ -36,6 +36,8 @@ defmodule OtherTransactionTest do
         Process.sleep(100)
       end)
       |> Task.await()
+
+      Process.sleep(10)
     end)
     |> Task.await()
 
@@ -96,22 +98,6 @@ defmodule OtherTransactionTest do
     assert TestHelper.find_metric(metrics, "OtherTransaction/DifferentCategory/DifferentName")
 
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
-  end
-
-  test "Cleanup context when stopped manually" do
-    task =
-      Task.async(fn ->
-        NewRelic.start_transaction("TransactionCategory", "Cleanup")
-
-        assert NewRelic.DistributedTrace.Tracker.fetch(self())
-
-        Process.sleep(100)
-        NewRelic.stop_transaction()
-      end)
-
-    Task.await(task)
-
-    refute NewRelic.DistributedTrace.Tracker.fetch(task.pid)
   end
 
   @tag :capture_log

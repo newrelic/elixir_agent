@@ -109,7 +109,6 @@ defmodule NewRelic.Transaction.Monitor do
   # Helpers
 
   defp setup_monitor(false, pids, pid) do
-    Process.monitor(pid)
     enable_trace_flags(pid)
     Map.put(pids, pid, true)
   end
@@ -119,6 +118,7 @@ defmodule NewRelic.Transaction.Monitor do
   end
 
   # Question: does calling .trace 2 times cause 2 trace messages?
+  #  if it's OK to duplicate, we can remove pid tracking here
   def enable_trace_flags(pid) do
     # Trace process events to notice when a process is spawned
     # Trace function calls so we can install specific trace_patterns

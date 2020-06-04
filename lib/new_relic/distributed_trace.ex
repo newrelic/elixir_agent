@@ -188,18 +188,12 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def set_tracing_context(context) do
-    Tracker.store(self(), context: context)
-  end
-
-  def cleanup_context() do
-    Tracker.cleanup(self())
+    Transaction.Store.set(:context, context)
   end
 
   def get_tracing_context() do
-    if Transaction.Reporter.tracking?(self()) do
-      self()
-      |> Transaction.Reporter.root()
-      |> Tracker.fetch()
+    if Transaction.Store.tracking?() do
+      Transaction.Store.get(:context)
     end
   end
 

@@ -25,8 +25,6 @@ defmodule NewRelic.Transaction do
 
   @doc false
   def stop_transaction() do
-    NewRelic.DistributedTrace.Tracker.cleanup(self())
-
     NewRelic.Transaction.Reporter.stop_other_transaction()
 
     :ok
@@ -35,6 +33,7 @@ defmodule NewRelic.Transaction do
   @doc false
   def ignore_transaction() do
     NewRelic.Transaction.Reporter.ignore_transaction()
-    NewRelic.DistributedTrace.Tracker.cleanup(self())
+
+    :ok
   end
 end
