@@ -60,6 +60,11 @@ defmodule TracerTest do
     def default_multiclause(:case_1), do: :case_1_return
     def default_multiclause(value), do: value
 
+    defstruct [:key]
+
+    @trace :mod
+    def mod(%__MODULE__{key: val}), do: val
+
     @trace :rescuer
     def rescuer() do
       :do_something
@@ -188,6 +193,19 @@ defmodule TracerTest do
     assert Enum.find(events, fn [_, event, _] ->
              event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.ignored/1" &&
                event[:call_count] == 2
+           end)
+  end
+
+  test "Handle module pattern match" do
+    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+
+    assert Traced.mod(%Traced{key: :val}) == :val
+
+    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
+    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+
+    assert Enum.find(events, fn [_, event, _] ->
+             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.mod/1"
            end)
   end
 
