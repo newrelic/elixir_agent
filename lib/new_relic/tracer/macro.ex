@@ -245,7 +245,8 @@ defmodule NewRelic.Tracer.Macro do
   # Replace ignored variables with an atom
   def rewrite_call_term({name, _, context} = term) when is_variable(name, context) do
     case Atom.to_string(name) do
-      "_" <> _rest -> :__ignored__
+      "__" <> _special_form -> term
+      "_" <> _ignored_var -> :__ignored__
       _ -> term
     end
   end
