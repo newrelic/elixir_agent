@@ -42,7 +42,8 @@ defmodule NewRelic.Mixfile do
       {:plug, "~> 1.0"},
       # Instrumentation:
       {:plug, ">= 1.10.1", optional: true},
-      {:plug_cowboy, ">= 2.2.2", optional: true},
+      # {:plug_cowboy, ">= 2.2.3", optional: true},
+      {:plug_cowboy, path: "/Users/vince/dev/elixir/open-source/plug_cowboy", override: true},
       {:ecto_sql, ">= 3.4.0", optional: true},
       {:ecto, ">= 3.4.1", optional: true},
       {:redix, ">= 0.11.0", optional: true}

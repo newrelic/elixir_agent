@@ -148,7 +148,7 @@ defmodule W3CTraceContextTest do
     assert tx_attrs[:parentSpanId] == "5f474d64b9cc9b2a"
     assert tx_attrs[:traceId] == "eb970877cfd349b4dcf5eb9957283bca"
 
-    [[span_attrs, _, _]] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+    [[span_attrs, _, _] | _] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
     assert span_attrs[:traceId] == "eb970877cfd349b4dcf5eb9957283bca"
     assert span_attrs[:parentId] == "5f474d64b9cc9b2a"
@@ -189,7 +189,7 @@ defmodule W3CTraceContextTest do
     assert tx_attrs[:priority] == 1.1273
     assert tx_attrs[:traceId] == "74be672b84ddc4e4b28be285632bbc0a"
 
-    [[span_attrs, _, _]] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+    [[span_attrs, _, _] | _] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
     assert span_attrs[:traceId] == "74be672b84ddc4e4b28be285632bbc0a"
     assert span_attrs[:parentId] == "27ddd2d8890283b4"
@@ -225,7 +225,7 @@ defmodule W3CTraceContextTest do
     assert tx_attrs[:parentSpanId] == "27ddd2d8890283b4"
     assert tx_attrs[:traceId] == "74be672b84ddc4e4b28be285632bbc0a"
 
-    [[span_attrs, _, _]] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+    [[span_attrs, _, _] | _] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
     assert span_attrs[:traceId] == "74be672b84ddc4e4b28be285632bbc0a"
     assert span_attrs[:parentId] == "27ddd2d8890283b4"
@@ -266,7 +266,7 @@ defmodule W3CTraceContextTest do
     assert tx_attrs[:priority] == 1.23456
     assert tx_attrs[:traceId] == "87b1c9a429205b25e5b687d890d4821f"
 
-    [[span_attrs, _, _]] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+    [[span_attrs, _, _] | _] = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
     assert span_attrs[:traceId] == "87b1c9a429205b25e5b687d890d4821f"
     assert span_attrs[:parentId] == "7d3efb1b173fecfa"

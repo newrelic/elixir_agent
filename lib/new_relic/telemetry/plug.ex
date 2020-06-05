@@ -31,16 +31,17 @@ defmodule NewRelic.Telemetry.Plug do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  @plug_start [:plug_adapter, :call, :start]
+  @plug_start [:plug_cowboy, :stream_handler, :start]
+  @plug_stop [:plug_cowboy, :stream_handler, :stop]
+  @plug_exception [:plug_cowboy, :stream_handler, :exception]
+
   @plug_router_start [:plug, :router_dispatch, :start]
-  @plug_stop [:plug_adapter, :call, :stop]
-  @plug_exception [:plug_adapter, :call, :exception]
 
   @plug_events [
     @plug_start,
-    @plug_router_start,
     @plug_stop,
-    @plug_exception
+    @plug_exception,
+    @plug_router_start
   ]
 
   @doc false
@@ -69,11 +70,11 @@ defmodule NewRelic.Telemetry.Plug do
   def handle_event(
         @plug_start,
         %{system_time: system_time},
-        %{adapter: :plug_cowboy, conn: conn},
+        meta,
         _config
       ) do
-    start_transaction(conn, system_time)
-    start_distributed_trace(conn)
+    start_transaction(meta, system_time)
+    start_distributed_trace(meta)
   end
 
   def handle_event(
@@ -82,27 +83,37 @@ defmodule NewRelic.Telemetry.Plug do
         %{conn: conn, route: route},
         _config
       ) do
+    # Work around a race condition with spawn tracking:
+    [connection_proc | _] = Process.get(:"$ancestors")
+    Util.AttrStore.link(NewRelic.Transaction.Reporter, connection_proc, self())
+
     NewRelic.add_attributes(plug_name: plug_name(conn, route))
   end
 
   def handle_event(
         @plug_stop,
         %{duration: duration},
-        %{adapter: :plug_cowboy, conn: conn},
+        meta,
         _config
       ) do
-    stop_transaction(conn, duration)
-    stop_distributed_trace(conn)
+    stop_transaction(meta, duration)
+    stop_distributed_trace(meta)
   end
 
   def handle_event(
         @plug_exception,
         %{duration: duration},
-        %{adapter: :plug_cowboy, conn: conn, kind: kind, reason: reason, stacktrace: stack},
+        %{kind: kind, reason: exit_reason},
         _config
       ) do
-    conn = %{conn | status: 500}
+    {reason, stack} =
+      case exit_reason do
+        {{{reason, stack}, _init_call}, _exit_stack} -> {reason, stack}
+        _other -> {:unknown, []}
+      end
+
     error = %{kind: kind, reason: reason, stack: stack}
+    conn = %{status: 500}
 
     stop_transaction(conn, error, duration)
     stop_distributed_trace(conn)

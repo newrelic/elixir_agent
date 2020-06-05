@@ -171,7 +171,7 @@ defmodule TransactionTest do
 
     assert Enum.find(events, fn [_, event] ->
              event[:path] == "/foo/1" && event[:name] == "/Plug/GET//foo/:blah" &&
-               event[:foo] == "BAR" && event[:duration_us] > 0 && event[:duration_us] < 30_000 &&
+               event[:foo] == "BAR" && event[:duration_us] > 0 && event[:duration_us] < 50_000 &&
                event[:start_time] < 2_000_000_000_000 && event[:start_time] > 1_400_000_000_000 &&
                event[:start_time_mono] == nil && event[:test_attribute] == "test_value" &&
                event[:"nr.apdexPerfZone"] == "S" && event[:status] == 200
@@ -244,7 +244,7 @@ defmodule TransactionTest do
                event[:error] &&
                event[:name] == "/Plug/GET//error" &&
                event[:error_reason] =~ "TransactionError" &&
-               event[:error_kind] == :error &&
+               event[:error_kind] == :exit &&
                event[:error_stack] =~ "test/transaction_test.exs"
            end)
   end
@@ -324,7 +324,7 @@ defmodule TransactionTest do
       Enum.find(events, fn [_, event] ->
         event[:path] == "/spawn" && event[:inside] == "spawned" && event[:nested] == "spawn" &&
           event[:not_linked] == "still_tracked" && event[:nested_inside] == "nolink" &&
-          event[:rabbit] == "hole" && event[:process_spawns] == 5 && event[:status] == 200
+          event[:rabbit] == "hole" && event[:process_spawns] == 6 && event[:status] == 200
       end)
 
     assert event
