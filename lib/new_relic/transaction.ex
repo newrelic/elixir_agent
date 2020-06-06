@@ -15,10 +15,17 @@ defmodule NewRelic.Transaction do
 
   @doc false
   def start_transaction(category, name) do
-    NewRelic.Transaction.Reporter.start_other_transaction(category, name)
+    NewRelic.Transaction.Reporter.start_other_transaction()
 
     NewRelic.DistributedTrace.generate_new_context()
     |> NewRelic.DistributedTrace.track_transaction(transport_type: "Other")
+
+    NewRelic.add_attributes(
+      pid: inspect(self()),
+      start_time: System.system_time(),
+      start_time_mono: System.monotonic_time(),
+      other_transaction_name: "#{category}/#{name}"
+    )
 
     :ok
   end

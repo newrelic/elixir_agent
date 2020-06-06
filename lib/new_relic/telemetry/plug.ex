@@ -148,6 +148,7 @@ defmodule NewRelic.Telemetry.Plug do
 
   defp add_start_attrs(conn, system_time) do
     [
+      pid: inspect(self()),
       system_time: system_time,
       host: conn.host,
       path: conn.request_path,

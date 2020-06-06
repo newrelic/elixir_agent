@@ -28,7 +28,7 @@ defmodule NewRelic.Transaction.Monitor do
 
   # API
 
-  def add(pid), do: GenServer.call(__MODULE__, {:add, pid})
+  def add(), do: GenServer.call(__MODULE__, {:add, self()})
 
   # Server
 

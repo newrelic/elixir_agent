@@ -32,21 +32,13 @@ defmodule NewRelic.Transaction.Reporter do
   # Internal Agent API
 
   def start() do
-    Transaction.Monitor.add(self())
-
+    Transaction.Monitor.add()
     Transaction.Sidecar.track()
-    Transaction.Sidecar.add(pid: inspect(self()))
   end
 
-  def start_other_transaction(category, name) do
+  def start_other_transaction() do
     unless Transaction.Sidecar.tracking?() do
       start()
-
-      Transaction.Sidecar.add(
-        start_time: System.system_time(),
-        start_time_mono: System.monotonic_time(),
-        other_transaction_name: "#{category}/#{name}"
-      )
     end
   end
 
