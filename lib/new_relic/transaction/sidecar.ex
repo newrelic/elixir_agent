@@ -27,6 +27,13 @@ defmodule NewRelic.Transaction.Sidecar do
     end
   end
 
+  def call_connect(parent, child) do
+    case Registry.lookup(@registry, parent) do
+      [{parent_store, _}] -> GenServer.call(parent_store, {:connect, child})
+      [] -> :not_tracking
+    end
+  end
+
   def tracking?() do
     Registry.lookup(@registry, self()) != []
   end
@@ -80,6 +87,13 @@ defmodule NewRelic.Transaction.Sidecar do
     Registry.register(@registry, child, nil)
 
     {:noreply, %{state | offspring: MapSet.put(state.offspring, child)}}
+  end
+
+  def handle_call({:connect, child}, _from, state) do
+    Process.monitor(child)
+    Registry.register(@registry, child, nil)
+
+    {:reply, :ok, %{state | offspring: MapSet.put(state.offspring, child)}}
   end
 
   def handle_call({:set, key, value}, _from, state) do
