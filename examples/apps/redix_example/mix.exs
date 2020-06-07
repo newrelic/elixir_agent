@@ -29,8 +29,7 @@ defmodule RedixExample.MixProject do
     [
       {:new_relic_agent, path: "../../../"},
       {:plug_cowboy, "~> 2.0"},
-      # {:redix, "~> 0.10"}
-      {:redix, github: "whatyouhide/redix", branch: "master", override: true}
+      {:redix, "~> 0.11"}
     ]
   end
 end
