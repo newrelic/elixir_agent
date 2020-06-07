@@ -3,7 +3,7 @@ defmodule EctoExampleTest do
 
   alias NewRelic.Harvest.Collector
 
-  setup_all context, do: TestHelper.simulate_startup(context)
+  setup_all context, do: TestHelper.simulate_agent_enabled(context)
 
   test "Datastore metrics generated" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)

@@ -3,7 +3,7 @@ defmodule RedixExampleTest do
 
   alias NewRelic.Harvest.Collector
 
-  setup_all context, do: TestHelper.simulate_startup(context)
+  setup_all context, do: TestHelper.simulate_agent_enabled(context)
   setup_all context, do: TestHelper.simulate_agent_run(context)
 
   test "Redis stuff" do
