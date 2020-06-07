@@ -127,6 +127,8 @@ defmodule NewRelic.Telemetry.Redix do
         |> maybe_add("redix.error", meta[:error])
     )
 
+    NewRelic.report_metric({:datastore, datastore, operation}, duration_s: duration_s)
+
     NewRelic.Transaction.Reporter.track_metric({
       {:datastore, datastore, operation},
       duration_s: duration_s
