@@ -48,7 +48,8 @@ defmodule NewRelic.Transaction.Monitor do
     {:noreply, state}
   end
 
-  def handle_info({:trace_ts, pid, :exit, _reason, timestamp}, state) do
+  def handle_info({:trace_ts, pid, :exit, _reason, timestamp}=ts, state) do
+    IO.inspect ts
     Transaction.Reporter.track_exit(pid, NewRelic.Util.time_to_ms(timestamp))
     {:noreply, state}
   end

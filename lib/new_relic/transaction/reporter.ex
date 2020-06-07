@@ -89,6 +89,11 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   def track_exit(pid, timestamp) do
+    # Problem
+    # when using in process storage, we don't know where to send the exit
+    # since the process is gone
+
+    # could: use DOWN messages to mark exit
     Transaction.Sidecar.add(pid, trace_process_exits: {:list, {pid, timestamp}})
   end
 end
