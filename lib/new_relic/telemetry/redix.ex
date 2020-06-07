@@ -76,6 +76,7 @@ defmodule NewRelic.Telemetry.Redix do
     duration_s = duration_ms / 1000
     start_time_ms = end_time_ms - duration_ms
 
+    datastore = "Redis"
     {operation, query} = parse_command(commands, collect: config.collect_db_query?)
 
     pid = inspect(self())
@@ -88,7 +89,7 @@ defmodule NewRelic.Telemetry.Redix do
     hostname = instance[:host] || "unknown"
     port = instance[:port] || "unknown"
 
-    metric_name = "Datastore/operation/Redis/#{operation}"
+    metric_name = "Datastore/operation/#{datastore}/#{operation}"
     secondary_name = "#{inspect(connection)} #{address}"
 
     NewRelic.Transaction.Reporter.add_trace_segment(%{
@@ -115,7 +116,7 @@ defmodule NewRelic.Telemetry.Redix do
       category: "datastore",
       attributes:
         %{
-          component: "Redis",
+          component: datastore,
           "span.kind": :client,
           "db.statement": query,
           "peer.address": address,
@@ -126,10 +127,8 @@ defmodule NewRelic.Telemetry.Redix do
         |> maybe_add("redix.error", meta[:error])
     )
 
-    NewRelic.report_metric({:datastore, "Redis", operation}, duration_s: duration_s)
-
     NewRelic.Transaction.Reporter.track_metric({
-      {:datastore, "Redis", operation},
+      {:datastore, datastore, operation},
       duration_s: duration_s
     })
 
