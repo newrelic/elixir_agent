@@ -120,23 +120,7 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       do: [
         %Metric{
           name: join(["Datastore/statement", datastore, table, operation]),
-          call_count: 1,
-          total_call_time: duration_s,
-          total_exclusive_time: duration_s,
-          min_call_time: duration_s,
-          max_call_time: duration_s
-        },
-        %Metric{
-          name: join(["Datastore/statement", datastore, table, operation]),
           scope: join(["#{type}Transaction", scope]),
-          call_count: 1,
-          total_call_time: duration_s,
-          total_exclusive_time: duration_s,
-          min_call_time: duration_s,
-          max_call_time: duration_s
-        },
-        %Metric{
-          name: join(["Datastore/operation", datastore, operation]),
           call_count: 1,
           total_call_time: duration_s,
           total_exclusive_time: duration_s,
@@ -161,14 +145,6 @@ defmodule NewRelic.Harvest.Collector.MetricData do
           max_call_time: duration_s
         },
         %Metric{
-          name: join(["Datastore", datastore, "all"]),
-          call_count: 1,
-          total_call_time: duration_s,
-          total_exclusive_time: duration_s,
-          min_call_time: duration_s,
-          max_call_time: duration_s
-        },
-        %Metric{
           name: "Datastore/all#{type}",
           call_count: 1,
           total_call_time: duration_s,
@@ -177,6 +153,42 @@ defmodule NewRelic.Harvest.Collector.MetricData do
           max_call_time: duration_s
         }
       ]
+
+  def transform({:datastore, datastore, table, operation}, duration_s: duration_s),
+    do: [
+      %Metric{
+        name: join(["Datastore/statement", datastore, table, operation]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      },
+      %Metric{
+        name: join(["Datastore/operation", datastore, operation]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      },
+      %Metric{
+        name: join(["Datastore", datastore, "all"]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      },
+      %Metric{
+        name: join(["Datastore", "all"]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      }
+    ]
 
   def transform({:datastore, datastore, operation},
         type: type,
@@ -215,6 +227,14 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       },
       %Metric{
         name: join(["Datastore", datastore, "all"]),
+        call_count: 1,
+        total_call_time: duration_s,
+        total_exclusive_time: duration_s,
+        min_call_time: duration_s,
+        max_call_time: duration_s
+      },
+      %Metric{
+        name: join(["Datastore", "all"]),
         call_count: 1,
         total_call_time: duration_s,
         total_exclusive_time: duration_s,

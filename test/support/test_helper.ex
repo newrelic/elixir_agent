@@ -40,7 +40,7 @@ defmodule TestHelper do
 
   def find_metric(metrics, name, call_count) do
     Enum.find(metrics, fn
-      [%{name: ^name}, [^call_count, _, _, _, _, _]] -> true
+      [%{name: ^name, scope: ""}, [^call_count, _, _, _, _, _]] -> true
       _ -> false
     end)
   end

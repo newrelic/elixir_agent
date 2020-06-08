@@ -72,6 +72,11 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
           |> maybe_add("ecto.decode_time.ms", decode_time_ms)
       )
 
+      NewRelic.report_metric(
+        {:datastore, datastore, table, operation},
+        duration_s: duration_s
+      )
+
       NewRelic.Transaction.Reporter.track_metric({
         {:datastore, datastore, table, operation},
         duration_s: duration_s
