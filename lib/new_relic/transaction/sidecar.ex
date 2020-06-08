@@ -39,14 +39,6 @@ defmodule NewRelic.Transaction.Sidecar do
     |> GenServer.cast({:connect, child})
   end
 
-
-  def call_connect(parent, child) do
-    # case Registry.lookup(@registry, parent) do
-    #   [{parent_store, _}] -> GenServer.call(parent_store, {:connect, child})
-    #   [] -> :not_tracking
-    # end
-  end
-
   def tracking?() do
     # Registry.lookup(@registry, self()) != []
     find_tx_sidecar() != nil
@@ -112,16 +104,8 @@ defmodule NewRelic.Transaction.Sidecar do
 
   def handle_cast({:connect, child}, state) do
     Process.monitor(child)
-    # Registry.register(@registry, child, nil)
 
     {:noreply, %{state | offspring: MapSet.put(state.offspring, child)}}
-  end
-
-  def handle_call({:connect, child}, _from, state) do
-    Process.monitor(child)
-    # Registry.register(@registry, child, nil)
-
-    {:reply, :ok, %{state | offspring: MapSet.put(state.offspring, child)}}
   end
 
   def handle_call({:set, key, value}, _from, state) do
@@ -150,9 +134,10 @@ defmodule NewRelic.Transaction.Sidecar do
     {:noreply, state, {:continue, :complete}}
   end
 
-  def handle_info({:DOWN, _, _, _child, _}=down, state) do
-    IO.inspect down
-    {:noreply, state}
+  def handle_info({:DOWN, _, _, child, _}, state) do
+    exit_attrs = [trace_process_exits: {:list, {child, System.system_time(:millisecond)}}]
+
+    {:noreply, %{state | attributes: exit_attrs ++ state.attributes}}
   end
 
   def handle_continue(:complete, state) do
@@ -161,20 +146,14 @@ defmodule NewRelic.Transaction.Sidecar do
     {:stop, :normal, :completed}
   end
 
-  # Find parent first:
-  #  - :nr_tx_sidecar
-  #  - OR
-  #    - walk up $callers
-  #    - walk up $ancestors
-  # def via(pid) do
-  #   {:via, Registry, {@registry, pid}}
-  # end
-
   def find_tx_sidecar(pid) do
     # IO.inspect({:find_tx_sidecar, pid})
 
     with {:dictionary, dictionary} <- Process.info(pid, :dictionary) do
-      Enum.find_value(Keyword.get(dictionary, :"$callers", []), &look_for_sidecar/1) ||
+      # IO.inspect({:find_tx_sidecar, pid, dictionary})
+
+      Keyword.get(dictionary, :nr_tx_sidecar, nil) ||
+        Enum.find_value(Keyword.get(dictionary, :"$callers", []), &look_for_sidecar/1) ||
         Enum.find_value(Keyword.get(dictionary, :"$ancestors", []), &look_for_sidecar/1)
     end
   end
@@ -190,12 +169,13 @@ defmodule NewRelic.Transaction.Sidecar do
 
   def determine_tx_sidecar() do
     # IO.inspect {:determine_tx_sidecar, self()}
-    res = Enum.find_value(Process.get(:"$callers"), &look_for_sidecar_and_save/1) ||
-      Enum.find_value(Process.get(:"$ancestors"), &look_for_sidecar_and_save/1) ||
-      no_tx_sidecar_found()
+    res =
+      Enum.find_value(Process.get(:"$callers") || [], &look_for_sidecar_and_save/1) ||
+        Enum.find_value(Process.get(:"$ancestors") || [], &look_for_sidecar_and_save/1) ||
+        no_tx_sidecar_found()
 
-       # IO.inspect(res, label: "determine_tx_sidecar #{inspect self()}")
-       res
+    # IO.inspect(res, label: "determine_tx_sidecar #{inspect self()}")
+    res
   end
 
   def no_tx_sidecar_found() do

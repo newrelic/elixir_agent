@@ -33,7 +33,7 @@ defmodule OtherTransactionTest do
       External.call()
 
       Task.async(fn ->
-        Process.sleep(100)
+        Process.sleep(50) # min duration for collecting trace
       end)
       |> Task.await()
 

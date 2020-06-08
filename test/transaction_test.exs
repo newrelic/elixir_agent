@@ -98,45 +98,56 @@ defmodule TransactionTest do
     end
 
     get "/spawn" do
-      # We need to sleep here & there because spawn tracking is async
       Task.async(fn ->
-        Process.sleep(20)
         NewRelic.add_attributes(inside: "spawned")
 
         Task.async(fn ->
-          Process.sleep(20)
           NewRelic.add_attributes(nested: "spawn")
 
           Task.Supervisor.async_nolink(
             TestTaskSup,
             fn ->
-              Process.sleep(20)
               NewRelic.add_attributes(not_linked: "still_tracked")
+              Process.sleep(5)
 
               Task.async(fn ->
-                Process.sleep(20)
                 NewRelic.add_attributes(nested_inside: "nolink")
+
+                Process.sleep(5)
               end)
+              |> Task.await()
             end
           )
 
           Task.Supervisor.async_nolink(
             TestTaskSup,
             fn ->
-              Process.sleep(20)
+              # TODO:
+              # Need to make this nicer, args don't do anything
+              # maybe the arg signals to the Sidecar to exclued a PID
+              Process.put(:nr_tx_sidecar, :no_track)
               NewRelic.add_attributes(not_tracked: "not_tracked")
+
+              Process.sleep(5)
             end,
             new_relic: :no_track
           )
 
           Task.async(fn ->
-            Process.sleep(20)
             NewRelic.add_attributes(rabbit: "hole")
-          end)
-        end)
-      end)
 
-      Process.sleep(100)
+            Process.sleep(5)
+          end)
+          |> Task.await()
+
+          Process.sleep(5)
+        end)
+
+        Process.sleep(5)
+      end)
+      |> Task.await()
+
+      Process.sleep(50)
       send_resp(conn, 200, "spawn")
     end
 

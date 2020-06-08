@@ -147,7 +147,7 @@ defmodule NewRelic.Transaction.Complete do
       tx_attrs
       |> Map.merge(NewRelic.Config.automatic_attributes())
       |> Map.put(:"nr.apdexPerfZone", Util.Apdex.label(apdex))
-      |> Map.put(:total_time_s, tx_attrs.duration_s + concurrent_process_time_ms / 1000)
+      |> Map.put(:total_time_s, concurrent_process_time_ms / 1000)
       |> Map.put(:process_spawns, length(process_spawns))
 
     {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}

@@ -83,10 +83,6 @@ defmodule NewRelic.Telemetry.Plug do
         %{conn: conn, route: route},
         _config
       ) do
-    # Work around a race condition with spawn tracking:
-    [connection_proc | _] = Process.get(:"$ancestors")
-    Transaction.Sidecar.call_connect(connection_proc, self())
-
     NewRelic.add_attributes(plug_name: plug_name(conn, route))
   end
 

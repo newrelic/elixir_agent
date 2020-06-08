@@ -94,6 +94,6 @@ defmodule NewRelic.Transaction.Reporter do
     # since the process is gone
 
     # could: use DOWN messages to mark exit
-    Transaction.Sidecar.add(pid, trace_process_exits: {:list, {pid, timestamp}})
+    # Transaction.Sidecar.add(pid, trace_process_exits: {:list, {pid, timestamp}})
   end
 end
