@@ -2,41 +2,34 @@ defmodule TransactionRegistryTest do
   use ExUnit.Case
 
   test "Get Transaction.Sidecar working" do
-    task =
+    Task.async(fn ->
+      NewRelic.start_transaction("Test", "Tx")
+      NewRelic.add_attributes(foo: "BAR")
+
       Task.async(fn ->
-        NewRelic.start_transaction("Test", "Tx")
-        NewRelic.add_attributes(foo: "BAR")
+        NewRelic.add_attributes(baz: "QUX")
 
         Task.async(fn ->
-          NewRelic.add_attributes(baz: "QUX")
+          NewRelic.add_attributes(blah: "BLAH")
 
           Task.async(fn ->
-            NewRelic.add_attributes(blah: "BLAH")
-
-            Task.async(fn ->
-              NewRelic.add_attributes(deep: "DEEP")
-
-              # assert 1 == Registry.count(NewRelic.Transaction.Registry)
-            end)
-            |> Task.await()
+            NewRelic.add_attributes(deep: "DEEP")
           end)
           |> Task.await()
         end)
         |> Task.await()
-
-        %{attributes: attributes} = NewRelic.Transaction.Sidecar.dump() |> IO.inspect
-
-        NewRelic.stop_transaction()
-
-        assert attributes[:foo] == "BAR"
-        assert attributes[:baz] == "QUX"
-        assert attributes[:blah] == "BLAH"
-        assert attributes[:deep] == "DEEP"
       end)
+      |> Task.await()
 
-    Task.await(task)
+      %{attributes: attributes} = NewRelic.Transaction.Sidecar.dump()
 
-    Process.sleep(200)
-    # assert 0 == Registry.count(NewRelic.Transaction.Registry)
+      NewRelic.stop_transaction()
+
+      assert attributes[:foo] == "BAR"
+      assert attributes[:baz] == "QUX"
+      assert attributes[:blah] == "BLAH"
+      assert attributes[:deep] == "DEEP"
+    end)
+    |> Task.await()
   end
 end

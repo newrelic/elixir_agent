@@ -198,7 +198,7 @@ defmodule NewRelic.Transaction.Sidecar do
     end
   end
 
-  def look_for_sidecar(pid) do
+  def look_for_sidecar(pid) when is_pid(pid) do
     # IO.inspect({:look_for_sidecar, pid})
     # case Registry.lookup(@registry, pid) do
     #   [{sidecar, _}] -> sidecar
@@ -214,6 +214,8 @@ defmodule NewRelic.Transaction.Sidecar do
       # |> IO.inspect(label: "nr_tx_sidecar #{inspect(pid)}")
     end
   end
+
+  def look_for_sidecar(_named_process), do: nil
 
   def run_complete(%{parent: parent, attributes: attributes}) do
     attributes
