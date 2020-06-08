@@ -32,7 +32,7 @@ defmodule NewRelic.Transaction.Reporter do
   # Internal Agent API
 
   def start() do
-    Transaction.Monitor.add()
+    Transaction.ErlangTrace.trace()
     Transaction.Sidecar.track()
   end
 
@@ -76,24 +76,10 @@ defmodule NewRelic.Transaction.Reporter do
     Transaction.Sidecar.add(transaction_metrics: {:list, metric})
   end
 
-  # Internal Transaction.Monitor API
+  # Internal Transaction.ErlangTrace API
   #
 
-  def track_spawn(original, pid, timestamp) do
-    Transaction.Sidecar.connect(original, pid)
-
-    Transaction.Sidecar.add(original,
-      trace_process_spawns: {:list, {pid, timestamp, original}},
-      trace_process_names: {:list, {pid, NewRelic.Util.process_name(pid)}}
-    )
-  end
-
-  def track_exit(pid, timestamp) do
-    # Problem
-    # when using in process storage, we don't know where to send the exit
-    # since the process is gone
-
-    # could: use DOWN messages to mark exit
-    # Transaction.Sidecar.add(pid, trace_process_exits: {:list, {pid, timestamp}})
+  def track_spawn(parent, child, timestamp) do
+    Transaction.Sidecar.spawn(parent, child, timestamp)
   end
 end

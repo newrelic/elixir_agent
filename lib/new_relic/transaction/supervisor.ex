@@ -10,7 +10,7 @@ defmodule NewRelic.Transaction.Supervisor do
   def init(_) do
     children = [
       supervisor(Task.Supervisor, [[name: NewRelic.Transaction.TaskSupervisor]]),
-      worker(NewRelic.Transaction.Monitor, []),
+      worker(NewRelic.Transaction.ErlangTrace, []),
       supervisor(NewRelic.Transaction.SidecarSupervisor, []),
       worker(
         Registry,

@@ -1,4 +1,4 @@
-defmodule NewRelic.Transaction.Monitor do
+defmodule NewRelic.Transaction.ErlangTrace do
   use GenServer
 
   alias NewRelic.Transaction
@@ -21,11 +21,11 @@ defmodule NewRelic.Transaction.Monitor do
 
   # API
 
-  def add(), do: GenServer.call(__MODULE__, {:add, self()})
+  def trace(), do: GenServer.call(__MODULE__, {:trace, self()})
 
   # Server
 
-  def handle_call({:add, pid}, _from, state) do
+  def handle_call({:trace, pid}, _from, state) do
     enable_trace_flags(pid)
 
     {:reply, :ok, state}

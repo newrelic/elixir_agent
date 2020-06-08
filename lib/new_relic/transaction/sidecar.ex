@@ -30,13 +30,9 @@ defmodule NewRelic.Transaction.Sidecar do
     end
   end
 
-  def connect(parent, child) do
-    # case Registry.lookup(@registry, parent) do
-    #   [{parent_store, _}] -> GenServer.cast(parent_store, {:connect, child})
-    #   [] -> :not_tracking
-    # end
+  def spawn(parent, child, timestamp) do
     find_tx_sidecar(parent)
-    |> GenServer.cast({:connect, child})
+    |> GenServer.cast({:spawn, parent, child, timestamp})
   end
 
   def tracking?() do
@@ -102,10 +98,20 @@ defmodule NewRelic.Transaction.Sidecar do
     {:noreply, %{state | attributes: attrs ++ state.attributes}}
   end
 
-  def handle_cast({:connect, child}, state) do
+  def handle_cast({:spawn, parent, child, timestamp}, state) do
     Process.monitor(child)
 
-    {:noreply, %{state | offspring: MapSet.put(state.offspring, child)}}
+    spawn_attrs = [
+      trace_process_spawns: {:list, {child, timestamp, parent}},
+      trace_process_names: {:list, {child, NewRelic.Util.process_name(child)}}
+    ]
+
+    {:noreply,
+     %{
+       state
+       | attributes: spawn_attrs ++ state.attributes,
+         offspring: MapSet.put(state.offspring, child)
+     }}
   end
 
   def handle_call({:set, key, value}, _from, state) do
