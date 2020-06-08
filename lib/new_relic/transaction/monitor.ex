@@ -4,15 +4,8 @@ defmodule NewRelic.Transaction.Monitor do
   alias NewRelic.Transaction
 
   # This GenServer watches transaction processes for
-  #  - :trace messages
-  #  - :DOWN messages
-  #
   # :trace messages signal that a transaction process has
-  # spwaned another process. We want to track that process
-  # so we can track attributes on the original transaction
-  #
-  # :DOWN signals that the transaction process is complete, so
-  # we tell the reporter to purge its data
+  # spwaned another process that we track as a Span
 
   @moduledoc false
 
@@ -32,24 +25,20 @@ defmodule NewRelic.Transaction.Monitor do
 
   # Server
 
-  def handle_call({:add, pid}, _from, %{pids: pids} = state) do
-    pids =
-      pids
-      |> Map.has_key?(pid)
-      |> setup_monitor(pids, pid)
+  def handle_call({:add, pid}, _from, state) do
+    enable_trace_flags(pid)
 
-    {:reply, :ok, %{state | pids: pids}}
+    {:reply, :ok, state}
   end
 
   # Trace messages
 
-  def handle_info({:trace_ts, source, :spawn, pid, _mfa, timestamp}, state) do
+  def handle_info(
+        {:trace_ts, source, :spawn, pid, _mfa, timestamp},
+        state
+      ) do
     Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
-    {:noreply, state}
-  end
 
-  def handle_info({:trace_ts, pid, :exit, _reason, timestamp}=ts, state) do
-    Transaction.Reporter.track_exit(pid, NewRelic.Util.time_to_ms(timestamp))
     {:noreply, state}
   end
 
@@ -108,17 +97,6 @@ defmodule NewRelic.Transaction.Monitor do
 
   # Helpers
 
-  defp setup_monitor(false, pids, pid) do
-    enable_trace_flags(pid)
-    Map.put(pids, pid, true)
-  end
-
-  defp setup_monitor(true, pids, _) do
-    pids
-  end
-
-  # Question: does calling .trace 2 times cause 2 trace messages?
-  #  if it's OK to duplicate, we can remove pid tracking here
   def enable_trace_flags(pid) do
     # Trace process events to notice when a process is spawned
     # Trace function calls so we can install specific trace_patterns
