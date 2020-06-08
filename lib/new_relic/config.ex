@@ -91,16 +91,21 @@ defmodule NewRelic.Config do
   @doc """
   Some Agent features can be controlled via configuration
 
+  ### Security
+
   * `:error_collector_enabled` (default `true`)
     * Controls collecting any Error traces or metrics
   * `:db_query_collection_enabled` (default `true`)
     * Controls collection of Database query strings
-  * `:ecto_instrumentation_enabled` (default `true`)
-    * Controls all Ecto instrumentation
-  * `:ecto_instrumentation_enabled` (default `true`)
-    * Controls all Ecto instrumentation
   * `function_argument_collection_enabled` (default `true`)
     * Controls collection of traced function arguments
+
+  ### Instrumentation
+
+  * `:ecto_instrumentation_enabled` (default `true`)
+    * Controls all Ecto instrumentation
+  * `:redix_instrumentation_enabled` (default `true`)
+    * Controls all Redix instrumentation
   """
   def feature?(:error_collector) do
     feature_check?("NEW_RELIC_ERROR_COLLECTOR_ENABLED", :error_collector_enabled)
@@ -116,7 +121,7 @@ defmodule NewRelic.Config do
   end
 
   def feature?(:redix_instrumentation) do
-    feature_check?("NEW_RELIC_REDIX_INSTRUMENTATION_ENABLED", :ecto_instrumentation_enabled)
+    feature_check?("NEW_RELIC_REDIX_INSTRUMENTATION_ENABLED", :redix_instrumentation_enabled)
   end
 
   def feature?(:function_argument_collection) do
