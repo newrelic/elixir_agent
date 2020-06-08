@@ -30,6 +30,12 @@ defmodule RedixExampleTest do
 
     assert TestHelper.find_metric(
              metrics,
+             "Datastore/allWeb",
+             4
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
              "Datastore/operation/Redis/SET",
              1
            )

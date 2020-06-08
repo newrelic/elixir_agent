@@ -76,6 +76,12 @@ defmodule EctoExampleTest do
              "Datastore/allWeb",
              24
            )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/all",
+             24
+           )
   end
 
   def request() do
