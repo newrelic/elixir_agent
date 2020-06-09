@@ -1,96 +1,103 @@
-# NAME: Transaction.Sidecar?
 defmodule NewRelic.Transaction.Sidecar do
   @moduledoc false
   use GenServer, restart: :temporary
 
-  @supervisor NewRelic.Transaction.SidecarSupervisor
-  # @registry NewRelic.Transaction.Registry
+  alias NewRelic.Transaction.SidecarSupervisor
 
   def start_link(pid: pid) do
-    # GenServer.start_link(__MODULE__, pid, name: via(pid))
     GenServer.start_link(__MODULE__, pid)
   end
 
   def init(parent) do
     Process.monitor(parent)
-    # IO.inspect({:SIDECAR, self()})
-    # IO.inspect({:parent, parent})
-    # Registry.register(@registry, parent, nil)
-    send(parent, :ready!)
+    send(parent, :sidecar_ready)
 
-    {:ok, %{parent: parent, offspring: MapSet.new(), attributes: [], store: %{}}}
+    {:ok,
+     %{
+       parent: parent,
+       offspring: MapSet.new(),
+       attributes: [],
+       store: %{}
+     }}
   end
 
   def track() do
-    {:ok, sidecar} = DynamicSupervisor.start_child(@supervisor, {__MODULE__, pid: self()})
-    Process.put(:nr_tx_sidecar, sidecar)
+    {:ok, sidecar} =
+      DynamicSupervisor.start_child(
+        SidecarSupervisor,
+        {__MODULE__, pid: self()}
+      )
+
+    set_sidecar(sidecar)
 
     receive do
-      :ready! -> :ready!
+      :sidecar_ready -> :sidecar_ready
     end
   end
 
-  def spawn(parent, child, timestamp) do
-    find_tx_sidecar(parent)
-    |> GenServer.cast({:spawn, parent, child, timestamp})
+  def tracking?() do
+    get_sidecar() != nil
   end
 
-  def tracking?() do
-    # Registry.lookup(@registry, self()) != []
-    find_tx_sidecar() != nil
+  def track_spawn(parent, child, timestamp) do
+    cast(parent, {:spawn, parent, child, timestamp})
   end
 
   def add(attrs) do
-    find_tx_sidecar()
-    |> IO.inspect(label: "add #{inspect(attrs)}")
-    |> GenServer.cast({:add_attributes, attrs})
+    cast({:add_attributes, attrs})
   end
 
   def add(pid, attrs) do
-    find_tx_sidecar(pid)
-    |> IO.inspect(label: "add #{inspect(attrs)}")
-    |> GenServer.cast({:add_attributes, attrs})
+    cast(pid, {:add_attributes, attrs})
   end
 
   def incr(attrs) do
     attrs
-    |> Enum.map(fn {key, value} -> {key, {:counter, value}} end)
-    |> add
+    |> wrap(:counter)
+    |> add()
   end
 
   def append(attrs) do
     attrs
-    |> Enum.map(fn {key, value} -> {key, {:list, value}} end)
-    |> add
+    |> wrap(:list)
+    |> add()
   end
 
   def set(key, value) do
-    with sidecar when is_pid(sidecar) <- find_tx_sidecar() do
-      GenServer.call(sidecar, {:set, key, value})
-    end
+    call({:set, key, value})
   end
 
   def get(key) do
-    with sidecar when is_pid(sidecar) <- find_tx_sidecar() do
-      GenServer.call(sidecar, {:get, key})
-    end
+    call({:get, key})
   end
 
   def ignore() do
-    with sidecar when is_pid(sidecar) <- find_tx_sidecar() do
-      GenServer.call(sidecar, :ignore)
-    end
+    call(:ignore)
   end
 
   def complete() do
-    with sidecar when is_pid(sidecar) <- find_tx_sidecar() do
-      GenServer.call(sidecar, :complete)
-    end
+    call(:complete)
   end
 
   def dump() do
-    with sidecar when is_pid(sidecar) <- find_tx_sidecar() do
-      GenServer.call(sidecar, :dump)
+    call(:dump)
+  end
+
+  defp wrap(attrs, tag) do
+    Enum.map(attrs, fn {key, value} -> {key, {tag, value}} end)
+  end
+
+  defp cast(message) do
+    GenServer.cast(get_sidecar(), message)
+  end
+
+  defp cast(pid, message) do
+    GenServer.cast(get_sidecar(pid), message)
+  end
+
+  defp call(message) do
+    with sidecar when is_pid(sidecar) <- get_sidecar() do
+      GenServer.call(sidecar, message)
     end
   end
 
@@ -137,7 +144,10 @@ defmodule NewRelic.Transaction.Sidecar do
   end
 
   def handle_info({:DOWN, _, _, parent, _}, %{parent: parent} = state) do
-    {:noreply, state, {:continue, :complete}}
+    attributes =
+      Keyword.put_new(state.attributes, :end_time_mono, System.system_time(:millisecond))
+
+    {:noreply, %{state | attributes: attributes}, {:continue, :complete}}
   end
 
   def handle_info({:DOWN, _, _, child, _}, state) do
@@ -152,83 +162,56 @@ defmodule NewRelic.Transaction.Sidecar do
     {:stop, :normal, :completed}
   end
 
-  def find_tx_sidecar(pid) do
-    # IO.inspect({:find_tx_sidecar, pid})
+  defp set_sidecar(nil), do: nil
 
-    with {:dictionary, dictionary} <- Process.info(pid, :dictionary) do
-      # IO.inspect({:find_tx_sidecar, pid, dictionary})
-
-      Keyword.get(dictionary, :nr_tx_sidecar, nil) ||
-        Enum.find_value(Keyword.get(dictionary, :"$callers", []), &look_for_sidecar/1) ||
-        Enum.find_value(Keyword.get(dictionary, :"$ancestors", []), &look_for_sidecar/1)
-    end
+  defp set_sidecar(pid) do
+    Process.put(:nr_tx_sidecar, pid)
+    pid
   end
 
-  def find_tx_sidecar() do
-    # IO.inspect :find_tx_sidecar
+  defp get_sidecar() do
     case Process.get(:nr_tx_sidecar) do
-      nil -> determine_tx_sidecar()
-      :no_track -> nil
-      pid -> pid
+      nil ->
+        (Enum.find_value(Process.get(:"$callers", []), &lookup_sidecar/1) ||
+           Enum.find_value(Process.get(:"$ancestors", []), &lookup_sidecar/1))
+        |> set_sidecar()
+
+      :no_track ->
+        nil
+
+      pid ->
+        pid
     end
   end
 
-  def determine_tx_sidecar() do
-    # IO.inspect {:determine_tx_sidecar, self()}
-    res =
-      Enum.find_value(Process.get(:"$callers") || [], &look_for_sidecar_and_save/1) ||
-        Enum.find_value(Process.get(:"$ancestors") || [], &look_for_sidecar_and_save/1) ||
-        no_tx_sidecar_found()
-
-    # IO.inspect(res, label: "determine_tx_sidecar #{inspect self()}")
-    res
-  end
-
-  def no_tx_sidecar_found() do
-    # Process.put(:nr_tx_sidecar, :no_track)
-    nil
-  end
-
-  def look_for_sidecar_and_save(pid) do
-    # IO.inspect {:look_for_sidecar_and_save, pid}
-    with sidecar when is_pid(sidecar) <- look_for_sidecar(pid) do
-      # IO.inspect {:FOUND, :in, self(), :sidecar, sidecar}
-      Process.put(:nr_tx_sidecar, sidecar)
-      sidecar
-    end
-  end
-
-  def look_for_sidecar(pid) when is_pid(pid) do
-    # IO.inspect({:look_for_sidecar, pid})
-    # case Registry.lookup(@registry, pid) do
-    #   [{sidecar, _}] -> sidecar
-    #   [] -> nil
-    # end
+  defp get_sidecar(pid) do
     with {:dictionary, dictionary} <- Process.info(pid, :dictionary) do
-      # IO.inspect dictionary, label: inspect(pid)
+      Keyword.get(dictionary, :nr_tx_sidecar) ||
+        Enum.find_value(Keyword.get(dictionary, :"$callers", []), &lookup_sidecar/1) ||
+        Enum.find_value(Keyword.get(dictionary, :"$ancestors", []), &lookup_sidecar/1)
+    end
+  end
+
+  defp lookup_sidecar(pid) when is_pid(pid) do
+    with {:dictionary, dictionary} <- Process.info(pid, :dictionary) do
       case Keyword.get(dictionary, :nr_tx_sidecar) do
         nil -> nil
         :no_track -> nil
         sidecar -> sidecar
       end
-      # |> IO.inspect(label: "nr_tx_sidecar #{inspect(pid)}")
     end
   end
 
-  def look_for_sidecar(_named_process), do: nil
+  defp lookup_sidecar(_named_process), do: nil
 
-  def run_complete(%{parent: parent, attributes: attributes}) do
+  defp run_complete(%{parent: parent, attributes: attributes}) do
     attributes
     |> Enum.reverse()
     |> Enum.reduce(%{}, &collect_attr/2)
-    # tx that ends via DOWN doesn't get needed closing attributes, so:
-    |> Map.put_new(:end_time_mono, System.monotonic_time())
-    # could do deep flatten, etc here
-    # could save attrs in a map inline instead of list
     |> NewRelic.Transaction.Complete.run(parent)
   end
 
-  def collect_attr({k, {:list, item}}, acc), do: Map.update(acc, k, [item], &[item | &1])
-  def collect_attr({k, {:counter, n}}, acc), do: Map.update(acc, k, n, &(&1 + n))
-  def collect_attr({k, v}, acc), do: Map.put(acc, k, v)
+  defp collect_attr({k, {:list, item}}, acc), do: Map.update(acc, k, [item], &[item | &1])
+  defp collect_attr({k, {:counter, n}}, acc), do: Map.update(acc, k, n, &(&1 + n))
+  defp collect_attr({k, v}, acc), do: Map.put(acc, k, v)
 end

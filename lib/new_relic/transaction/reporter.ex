@@ -1,5 +1,5 @@
 defmodule NewRelic.Transaction.Reporter do
-  alias NewRelic.Transaction
+  alias NewRelic.{Transaction, Util}
 
   # This GenServer collects and reports Transaction related data
   #  - Transaction Events
@@ -14,11 +14,10 @@ defmodule NewRelic.Transaction.Reporter do
   # Customer Exposed API
 
   def add_attributes(attrs) when is_list(attrs) do
-    Transaction.Sidecar.add(
-      attrs
-      |> NewRelic.Util.deep_flatten()
-      |> NewRelic.Util.coerce_attributes()
-    )
+    attrs
+    |> Util.deep_flatten()
+    |> Util.coerce_attributes()
+    |> Transaction.Sidecar.add()
   end
 
   def incr_attributes(attrs) do
@@ -80,6 +79,6 @@ defmodule NewRelic.Transaction.Reporter do
   #
 
   def track_spawn(parent, child, timestamp) do
-    Transaction.Sidecar.spawn(parent, child, timestamp)
+    Transaction.Sidecar.track_spawn(parent, child, timestamp)
   end
 end
