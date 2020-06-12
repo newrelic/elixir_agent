@@ -60,10 +60,11 @@ defmodule TracerTest do
     def default_multiclause(:case_1), do: :case_1_return
     def default_multiclause(value), do: value
 
-    defstruct [:key]
+    @enforce_keys [:key, :second_key]
+    defstruct [:key, :second_key]
 
     @trace :mod
-    def mod(%__MODULE__{key: val}), do: val
+    def mod(%Traced{key: val}), do: val
 
     @trace :rescuer
     def rescuer() do
