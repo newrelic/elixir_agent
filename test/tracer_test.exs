@@ -60,7 +60,8 @@ defmodule TracerTest do
     def default_multiclause(:case_1), do: :case_1_return
     def default_multiclause(value), do: value
 
-    defstruct [:key]
+    @enforce_keys [:key, :second_key]
+    defstruct [:key, :second_key]
 
     @trace :mod
     def mod(%__MODULE__{key: val}), do: val
@@ -199,7 +200,7 @@ defmodule TracerTest do
   test "Handle module pattern match" do
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
-    assert Traced.mod(%Traced{key: :val}) == :val
+    assert Traced.mod(%Traced{key: :val, second_key: :bla}) == :val
 
     TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
