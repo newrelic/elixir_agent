@@ -184,6 +184,9 @@ defmodule NewRelic.Telemetry.Redix do
   end
 
   defp maybe_add(map, _, nil), do: map
-  defp maybe_add(map, key, %{__exception__: true} = value), do: Map.put(map, key, Exception.message(value))
+
+  defp maybe_add(map, key, %{__exception__: true} = value),
+    do: Map.put(map, key, Exception.message(value))
+
   defp maybe_add(map, key, value), do: Map.put(map, key, inspect(value))
 end
