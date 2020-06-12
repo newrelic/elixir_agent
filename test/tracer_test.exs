@@ -64,7 +64,7 @@ defmodule TracerTest do
     defstruct [:key, :second_key]
 
     @trace :mod
-    def mod(%Traced{key: val}), do: val
+    def mod(%__MODULE__{key: val}), do: val
 
     @trace :rescuer
     def rescuer() do
@@ -200,7 +200,7 @@ defmodule TracerTest do
   test "Handle module pattern match" do
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
-    assert Traced.mod(%Traced{key: :val}) == :val
+    assert Traced.mod(%Traced{key: :val, second_key: :bla}) == :val
 
     TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
