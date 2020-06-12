@@ -24,6 +24,12 @@ defmodule RedixExample.Router do
     send_resp(conn, 200, Jason.encode!(%{hello: "world"}))
   end
 
+  get "/err" do
+    {:error, _} = Redix.pipeline(:redix, [["PING"], ["PING"]], timeout: 0)
+
+    send_resp(conn, 200, Jason.encode!(%{bad: "news"}))
+  end
+
   match _ do
     send_resp(conn, 404, "oops")
   end

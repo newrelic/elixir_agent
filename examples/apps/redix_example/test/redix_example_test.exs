@@ -6,7 +6,7 @@ defmodule RedixExampleTest do
   setup_all context, do: TestHelper.simulate_agent_enabled(context)
   setup_all context, do: TestHelper.simulate_agent_run(context)
 
-  test "Redis stuff" do
+  test "Redix queries" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
 
@@ -59,6 +59,8 @@ defmodule RedixExampleTest do
 
     assert get_event[:"peer.address"] == "localhost:6379"
     assert get_event[:"db.statement"] == "GET mykey"
+    assert get_event[:"redix.connection"] =~ "PID"
+    assert get_event[:"redix.connection_name"] == ":redix"
 
     [pipeline_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] ->
@@ -74,5 +76,23 @@ defmodule RedixExampleTest do
       Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "Datastore/operation/Redis/HSET" end)
 
     assert hset_event[:"peer.address"] == "localhost:6379"
+  end
+
+  test "Redix error" do
+    TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+
+    http_port = Application.get_env(:redix_example, :http_port)
+    {:ok, %{body: body}} = TestHelper.http_request("/err", http_port)
+    assert body =~ "bad"
+
+    span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+
+    [err_event, _, _] =
+      Enum.find(span_events, fn [ev, _, _] ->
+        ev[:name] == "Datastore/operation/Redis/PIPELINE"
+      end)
+
+    assert err_event[:"peer.address"] == "localhost:6379"
+    assert err_event[:"redix.error"] == ":timeout"
   end
 end

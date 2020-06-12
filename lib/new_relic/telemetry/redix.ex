@@ -1,6 +1,22 @@
 defmodule NewRelic.Telemetry.Redix do
   use GenServer
 
+  @moduledoc """
+  `NewRelic.Telemetry.Redix` provides `Redix` instrumentation via `telemetry`.
+
+  Redix connections are auto-discovered and instrumented.
+
+  We automatically gather:
+
+  * Datastore metrics
+  * Transaction Trace segments
+  * Transaction datastore attributes
+  * Distributed Trace span events
+
+  You can opt-out of this instrumentation as a whole and specifically of
+  query collection via configuration. See `NewRelic.Config` for details.
+  """
+
   def start_link() do
     enabled = NewRelic.Config.feature?(:redix_instrumentation)
     GenServer.start_link(__MODULE__, [enabled: enabled], name: __MODULE__)
@@ -40,7 +56,7 @@ defmodule NewRelic.Telemetry.Redix do
         config.connections,
         &Map.put(
           &1,
-          meta.connection,
+          meta[:connection_name] || meta[:connection],
           %{address: meta.address, host: host, port: port}
         )
       )
@@ -68,7 +84,7 @@ defmodule NewRelic.Telemetry.Redix do
   def handle_event(
         @redix_pipeline_stop,
         %{duration: duration},
-        %{commands: commands, connection: connection} = meta,
+        %{commands: commands} = meta,
         config
       ) do
     end_time_ms = System.system_time(:millisecond)
@@ -78,6 +94,7 @@ defmodule NewRelic.Telemetry.Redix do
 
     datastore = "Redis"
     {operation, query} = parse_command(commands, collect: config.collect_db_query?)
+    connection = meta[:connection_name] || meta[:connection]
 
     pid = inspect(self())
     id = {:redix, make_ref()}
@@ -121,10 +138,11 @@ defmodule NewRelic.Telemetry.Redix do
           "db.statement": query,
           "peer.address": address,
           "peer.hostname": hostname,
-          "db.operation": operation,
-          "redix.connection": inspect(connection)
+          "db.operation": operation
         }
-        |> maybe_add("redix.error", meta[:error])
+        |> maybe_add(:"redix.error", meta[:reason])
+        |> maybe_add(:"redix.connection", meta[:connection])
+        |> maybe_add(:"redix.connection_name", meta[:connection_name])
     )
 
     NewRelic.report_metric({:datastore, datastore, operation}, duration_s: duration_s)
@@ -166,5 +184,6 @@ defmodule NewRelic.Telemetry.Redix do
   end
 
   defp maybe_add(map, _, nil), do: map
-  defp maybe_add(map, key, value), do: Map.put(map, key, value)
+  defp maybe_add(map, key, %{__exception__: true} = value), do: Map.put(map, key, Exception.message(value))
+  defp maybe_add(map, key, value), do: Map.put(map, key, inspect(value))
 end
