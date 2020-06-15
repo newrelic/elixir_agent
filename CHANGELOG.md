@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.19.0`
+
+Features
+* Automatic `Redix` instrumentation based on `telemetry` events! [#210](https://github.com/newrelic/elixir_agent/pull/210)
+
+------
+
 ### `v1.18.5`
 
 Fixes
