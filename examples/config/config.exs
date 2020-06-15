@@ -2,7 +2,7 @@ use Mix.Config
 
 config :logger, level: :warn
 
-# Pretend the agent is connected
+# Pretend the agent is configured
 config :new_relic_agent,
   app_name: "ExampleApps",
   license_key: "license_key",
@@ -10,4 +10,4 @@ config :new_relic_agent,
 
 import_config "../apps/*/config/config.exs"
 
-if File.exists?("config/secret.exs"), do: import_config("secret.exs")
+if File.exists?("../../config/secret.exs"), do: import_config("secret.exs")

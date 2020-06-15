@@ -25,7 +25,7 @@ Point to the agent
 ```elixir
   def project do
     [
-      elixirc_paths: elixirc_paths(Mix.env()),
+      elixirc_paths: ["lib", Path.expand("../../../test/support")],
     ]
   end
 
@@ -34,7 +34,4 @@ Point to the agent
       {:new_relic_agent, path: "../../../"},
     ]
   end
-
-  defp elixirc_paths(:test), do: ["lib", Path.expand("../../../test/support")]
-  defp elixirc_paths(_), do: ["lib"]
 ```
