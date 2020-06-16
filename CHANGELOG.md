@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.19.1`
+
+Fixes
+* Fix a regression from 1.18 with Transaction error attribute. [#240](https://github.com/newrelic/elixir_agent/pull/240)
+
 ### `v1.19.0`
 
 Features
