@@ -90,7 +90,11 @@ defmodule NewRelic.Transaction.Monitor do
     {:noreply, state}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
+  def handle_info({:DOWN, _ref, :process, pid, down_reason}, state) do
+    with {reason, stack} when reason != :shutdown <- down_reason do
+      Transaction.Reporter.fail(pid, %{kind: :exit, reason: reason, stack: stack})
+    end
+
     Transaction.Reporter.ensure_purge(pid)
     Transaction.Reporter.complete(pid, :async)
     DistributedTrace.Tracker.cleanup(pid)
