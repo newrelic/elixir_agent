@@ -74,7 +74,7 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
-  def fail(pid, %{kind: kind, reason: reason, stack: stack} = error) do
+  def fail(pid, %{kind: kind, reason: reason, stack: stack}) do
     if tracking?(pid) do
       if NewRelic.Config.feature?(:error_collector) do
         AttrStore.add(__MODULE__, pid,
