@@ -82,10 +82,20 @@ defmodule TransactionTest do
       send_resp(conn, 200, "sequential")
     end
 
-    get "/error" do
+    get "/fail" do
       NewRelic.add_attributes(query: "query{}")
       raise "TransactionError"
       send_resp(conn, 200, "won't get here")
+    end
+
+    get "/error" do
+      Task.Supervisor.async_nolink(TestTaskSup, fn ->
+        Process.sleep(20)
+        raise "Oops"
+      end)
+
+      Process.sleep(30)
+      send_resp(conn, 200, "this is fine")
     end
 
     get "/spawn" do
@@ -221,30 +231,40 @@ defmodule TransactionTest do
            end)
   end
 
-  test "Error in Transaction" do
+  test "Failure of the Transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    assert_raise Plug.Conn.WrapperError, fn ->
-      TestPlugApp.call(conn(:get, "/error"), [])
-    end
+    TestHelper.request(TestPlugApp, conn(:get, "/fail"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
     assert Enum.find(events, fn [_, event] ->
-             event[:status] == 500 && event[:query] =~ "query{}" &&
+             event[:status] == 500 && event[:query] =~ "query{}" && event[:error] &&
                event[:error_reason] =~ "TransactionError" && event[:error_kind] == :error &&
                event[:error_stack] =~ "test/transaction_test.exs"
            end)
   end
 
-  test "Allow disabling error collection" do
+  @tag :capture_log
+  test "Error in Transaction" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    Task.Supervisor.start_link(name: TestTaskSup)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/error"))
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert Enum.find(events, fn [_, event] ->
+             event[:status] == 200 && event[:error] == nil
+           end)
+  end
+
+  test "Allow disabling error detail collection" do
     Application.put_env(:new_relic_agent, :error_collector_enabled, false)
 
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    assert_raise Plug.Conn.WrapperError, fn ->
-      TestPlugApp.call(conn(:get, "/error"), [])
-    end
+    TestHelper.request(TestPlugApp, conn(:get, "/fail"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
