@@ -79,17 +79,6 @@ defmodule NewRelic.Transaction.ErlangTrace do
     {:noreply, state}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, down_reason}, state) do
-    with {reason, stack} when reason != :shutdown <- down_reason do
-      Transaction.Reporter.fail(pid, %{kind: :exit, reason: reason, stack: stack})
-    end
-
-    Transaction.Reporter.ensure_purge(pid)
-    # Transaction.Reporter.complete(pid, :async)
-    DistributedTrace.Tracker.cleanup(pid)
-    {:noreply, %{state | pids: Map.delete(state.pids, pid)}}
-  end
-
   def handle_info(_msg, state) do
     # Ignore other :trace messages
     {:noreply, state}

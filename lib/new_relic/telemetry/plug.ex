@@ -31,16 +31,16 @@ defmodule NewRelic.Telemetry.Plug do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  @plug_start [:plug_cowboy, :stream_handler, :start]
-  @plug_stop [:plug_cowboy, :stream_handler, :stop]
-  @plug_exception [:plug_cowboy, :stream_handler, :exception]
+  @cowboy_start [:cowboy, :request, :start]
+  @cowboy_stop [:cowboy, :request, :stop]
+  @cowboy_exception [:cowboy, :request, :exception]
 
   @plug_router_start [:plug, :router_dispatch, :start]
 
   @plug_events [
-    @plug_start,
-    @plug_stop,
-    @plug_exception,
+    @cowboy_start,
+    @cowboy_stop,
+    @cowboy_exception,
     @plug_router_start
   ]
 
@@ -68,7 +68,7 @@ defmodule NewRelic.Telemetry.Plug do
 
   @doc false
   def handle_event(
-        @plug_start,
+        @cowboy_start,
         %{system_time: system_time},
         meta,
         _config
@@ -87,7 +87,7 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   def handle_event(
-        @plug_stop,
+        @cowboy_stop,
         %{duration: duration},
         meta,
         _config
@@ -97,9 +97,9 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   def handle_event(
-        @plug_exception,
+        @cowboy_exception,
         %{duration: duration},
-        %{kind: kind, reason: exit_reason},
+        %{kind: kind, reason: exit_reason} = meta,
         _config
       ) do
     {reason, stack} =
@@ -109,10 +109,10 @@ defmodule NewRelic.Telemetry.Plug do
       end
 
     error = %{kind: kind, reason: reason, stack: stack}
-    conn = %{status: 500}
+    # conn = %{status: 500}
 
-    stop_transaction(conn, error, duration)
-    stop_distributed_trace(conn)
+    stop_transaction(meta, error, duration)
+    stop_distributed_trace(:foo)
   end
 
   def handle_event(_event, _measurements, _meta, _config) do
@@ -125,8 +125,10 @@ defmodule NewRelic.Telemetry.Plug do
     maybe_report_queueing(conn)
   end
 
-  defp start_distributed_trace(conn) do
-    DistributedTrace.start(conn)
+  defp start_distributed_trace(meta) do
+    # TODO: what data structure should we use
+    headers = meta.req.headers |> Enum.map(fn {k, v} -> {k, List.wrap(v)} end)
+    DistributedTrace.start(%{req_headers: headers})
   end
 
   defp stop_transaction(conn, duration) do
@@ -142,28 +144,37 @@ defmodule NewRelic.Telemetry.Plug do
     :done
   end
 
-  defp add_start_attrs(conn, system_time) do
+  defp add_start_attrs(meta, system_time) do
     [
       pid: inspect(self()),
       system_time: system_time,
-      host: conn.host,
-      path: conn.request_path,
-      remote_ip: conn.remote_ip |> :inet_parse.ntoa() |> to_string(),
-      referer: Util.get_req_header(conn, "referer") |> List.first(),
-      user_agent: Util.get_req_header(conn, "user-agent") |> List.first(),
-      content_type: Util.get_req_header(conn, "content-type") |> List.first(),
-      request_method: conn.method
+      host: meta.req.host,
+      path: meta.req.path,
+      remote_ip: meta.req.peer |> elem(0) |> :inet_parse.ntoa() |> to_string(),
+      referer: meta.req.headers["referer"],
+      user_agent: meta.req.headers["user-agent"],
+      content_type: meta.req.headers["content-type"],
+      request_method: meta.req.method
     ]
     |> NewRelic.add_attributes()
   end
 
   @kb 1024
-  defp add_stop_attrs(conn, duration) do
+  defp add_stop_attrs(meta, duration) do
     info = Process.info(self(), [:memory, :reductions])
+
+    status_code =
+      case meta do
+        %{response: {:response, status, _, _}} ->
+          String.split(status) |> List.first() |> String.to_integer()
+
+        %{error_response: {:error_response, status, _, _}} ->
+          status
+      end
 
     [
       duration: duration,
-      status: conn.status,
+      status: status_code,
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions]
     ]
@@ -177,8 +188,8 @@ defmodule NewRelic.Telemetry.Plug do
       |> String.replace("/*_path", "")
 
   @request_start_header "x-request-start"
-  defp maybe_report_queueing(conn) do
-    with [request_start | _] <- Util.get_req_header(conn, @request_start_header),
+  defp maybe_report_queueing(meta) do
+    with request_start when is_binary(request_start) <- meta.req.headers[@request_start_header],
          {:ok, request_start_s} <- Util.RequestStart.parse(request_start) do
       NewRelic.add_attributes(request_start_s: request_start_s)
     else

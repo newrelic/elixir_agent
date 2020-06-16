@@ -31,7 +31,7 @@ defmodule NewRelic.Error.Reporter do
 
     NewRelic.add_attributes(process: process_name)
 
-    NewRelic.Transaction.Reporter.error(report[:pid], %{
+    NewRelic.Transaction.Reporter.error(%{
       kind: kind,
       reason: exception,
       stack: stacktrace

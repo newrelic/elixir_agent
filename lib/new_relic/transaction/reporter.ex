@@ -50,11 +50,11 @@ defmodule NewRelic.Transaction.Reporter do
     Transaction.Sidecar.ignore()
   end
 
-  def error(pid, error) do
-    Transaction.Store.add(transaction_error: {:error, error})
+  def error(error) do
+    Transaction.Sidecar.add(transaction_error: {:error, error})
   end
 
-  def fail(%{kind: kind, reason: reason, stack: stack} = error) do
+  def fail(%{kind: kind, reason: reason, stack: stack}) do
     if NewRelic.Config.feature?(:error_collector) do
       Transaction.Sidecar.add(
         error: true,

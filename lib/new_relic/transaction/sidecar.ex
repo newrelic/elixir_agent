@@ -143,9 +143,24 @@ defmodule NewRelic.Transaction.Sidecar do
     {:stop, :normal, :ok, :completed}
   end
 
-  def handle_info({:DOWN, _, _, parent, _}, %{parent: parent} = state) do
+  def handle_info({:DOWN, _, _, parent, down_reason}, %{parent: parent} = state) do
+    attributes = state.attributes
+
     attributes =
-      Keyword.put_new(state.attributes, :end_time_mono, System.system_time(:millisecond))
+      with {reason, stack} when reason != :shutdown <- down_reason do
+        error_attrs = [
+          error: true,
+          error_kind: :error,
+          error_reason: inspect(reason),
+          error_stack: inspect(stack)
+        ]
+
+        error_attrs ++ attributes
+      else
+        _ -> attributes
+      end
+
+    attributes = Keyword.put_new(attributes, :end_time_mono, System.system_time(:millisecond))
 
     {:noreply, %{state | attributes: attributes}, {:continue, :complete}}
   end

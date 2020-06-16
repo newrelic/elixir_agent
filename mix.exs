@@ -39,7 +39,6 @@ defmodule NewRelic.Mixfile do
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:jason, "~> 1.0"},
       {:telemetry, "~> 0.4"},
-      {:plug, "~> 1.0"},
       # Instrumentation:
       {:plug, ">= 1.10.1", optional: true},
       # {:plug_cowboy, ">= 2.2.3", optional: true},

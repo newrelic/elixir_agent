@@ -21,7 +21,10 @@ defmodule NewRelic.Util do
   end
 
   def get_req_header(%{req_headers: headers}, key) when is_binary(key) do
-    for {^key, value} <- headers, do: value
+    for {^key, value} <- headers do
+      value
+    end
+    |> List.flatten()
   end
 
   def metric_join(segments) when is_list(segments) do

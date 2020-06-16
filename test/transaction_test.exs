@@ -253,7 +253,7 @@ defmodule TransactionTest do
              event[:status] == 500 &&
                event[:query] =~ "query{}" &&
                event[:error] &&
-               event[:name] == "/Plug/GET//error" &&
+               event[:name] == "/Plug/GET//fail" &&
                event[:error_reason] =~ "TransactionError" &&
                event[:error_kind] == :exit &&
                event[:error_stack] =~ "test/transaction_test.exs"
