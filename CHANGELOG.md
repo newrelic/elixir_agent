@@ -5,6 +5,7 @@
 Features
 * `Plug` instrumentation is now fully automatic based on `telemetry` events! [#219](https://github.com/newrelic/elixir_agent/pull/219)
   * Please remove deprecated calls to `use NewRelic.Transaction`
+* Transaction tracking is now faster and better
 
 ------
 
@@ -12,7 +13,6 @@ Features
 
 Fixes
 * Fix a regression from 1.18 with Transaction error attribute. [#240](https://github.com/newrelic/elixir_agent/pull/240)
->>>>>>> master
 
 ### `v1.19.0`
 
