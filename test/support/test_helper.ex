@@ -1,6 +1,9 @@
 defmodule TestHelper do
   def request(module, conn) do
-    Plug.Cowboy.http(module, [], port: 8000)
+    Plug.Cowboy.http(module, [],
+      port: 8000,
+      stream_handlers: [:cowboy_telemetry_h, :cowboy_stream_h]
+    )
 
     {:ok, response} =
       NewRelic.Util.HTTP.get(
