@@ -60,22 +60,22 @@ defmodule W3CTraceContextTest do
   end
 
   test "TraceState parsing" do
-    assert %{members: []} = TraceState.decode([""])
-    assert %{members: []} = TraceState.decode([" "])
+    assert %{members: []} = TraceState.decode("")
+    assert %{members: []} = TraceState.decode(" ")
 
     # Don't allow duplicates
-    assert %{members: []} = TraceState.decode(["foo=bar,foo=baz"])
+    assert %{members: []} = TraceState.decode("foo=bar,foo=baz")
 
     # Invalid format
-    assert %{members: []} = TraceState.decode(["foo=bar=baz"])
-    assert %{members: []} = TraceState.decode(["foo=,bar=3"])
-    assert %{members: []} = TraceState.decode(["foo@bar@baz=1,bar=2"])
-    assert %{members: []} = TraceState.decode(["foo@=1,bar=2"])
-    assert %{members: []} = TraceState.decode(["foo =1"])
-    assert %{members: []} = TraceState.decode(["foo.bar=1"])
+    assert %{members: []} = TraceState.decode("foo=bar=baz")
+    assert %{members: []} = TraceState.decode("foo=,bar=3")
+    assert %{members: []} = TraceState.decode("foo@bar@baz=1,bar=2")
+    assert %{members: []} = TraceState.decode("foo@=1,bar=2")
+    assert %{members: []} = TraceState.decode("foo =1")
+    assert %{members: []} = TraceState.decode("foo.bar=1")
 
     # Optional white space
-    assert %{members: [%{key: "foo"}, %{key: "bar"}]} = TraceState.decode(["foo=1 , bar=2"])
+    assert %{members: [%{key: "foo"}, %{key: "bar"}]} = TraceState.decode("foo=1 , bar=2")
 
     assert_valid(
       TraceState,
@@ -97,12 +97,7 @@ defmodule W3CTraceContextTest do
     tracestate_no_time = "190@nr=0-0-1349956-41346604-27ddd2d8890283b4-b28be285632bbc0a-1-1.1273-"
     tracestate_other_vendor = ",foo@vendor=value"
 
-    conn =
-      Plug.Test.conn(:get, "/w3c")
-      |> Plug.Conn.put_req_header("traceparent", traceparent)
-      |> Plug.Conn.put_req_header("tracestate", tracestate)
-
-    context = W3CTraceContext.extract(conn)
+    context = W3CTraceContext.extract(%{"traceparent" => traceparent, "tracestate" => tracestate})
 
     {new_traceparent, new_tracestate} = W3CTraceContext.generate(context)
 
@@ -113,7 +108,7 @@ defmodule W3CTraceContextTest do
 
   def assert_valid(module, header) do
     assert String.downcase(header) ==
-             [header]
+             header
              |> module.decode()
              |> module.encode()
   end

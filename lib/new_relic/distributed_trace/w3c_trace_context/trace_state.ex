@@ -51,9 +51,9 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
     "#{key}=#{value}"
   end
 
-  def decode([]), do: %__MODULE__{members: []}
+  def decode(nil), do: %__MODULE__{members: []}
 
-  def decode([header]) when is_binary(header) do
+  def decode(header) when is_binary(header) do
     members =
       header
       |> String.split(",")

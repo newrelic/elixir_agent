@@ -73,8 +73,11 @@ defmodule NewRelic.Telemetry.Plug do
         meta,
         _config
       ) do
-    start_transaction(meta, system_time)
-    start_distributed_trace(meta)
+    Transaction.Reporter.start()
+    DistributedTrace.start(:http, meta.req.headers)
+
+    add_start_attrs(meta, system_time)
+    maybe_report_queueing(meta)
   end
 
   def handle_event(
@@ -92,56 +95,23 @@ defmodule NewRelic.Telemetry.Plug do
         meta,
         _config
       ) do
-    stop_transaction(meta, duration)
-    stop_distributed_trace(meta)
+    add_stop_attrs(meta, duration)
   end
 
   def handle_event(
         @cowboy_exception,
         %{duration: duration},
-        %{kind: kind, reason: exit_reason} = meta,
+        %{kind: kind, reason: exception_reason} = meta,
         _config
       ) do
-    {reason, stack} =
-      case exit_reason do
-        {{{reason, stack}, _init_call}, _exit_stack} -> {reason, stack}
-        _other -> {:unknown, []}
-      end
+    add_stop_attrs(meta, duration)
 
-    error = %{kind: kind, reason: reason, stack: stack}
-    # conn = %{status: 500}
-
-    stop_transaction(meta, error, duration)
-    stop_distributed_trace(:foo)
+    {reason, stack} = error_reason(exception_reason)
+    Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
   end
 
   def handle_event(_event, _measurements, _meta, _config) do
     :ignore
-  end
-
-  defp start_transaction(conn, system_time) do
-    Transaction.Reporter.start()
-    add_start_attrs(conn, system_time)
-    maybe_report_queueing(conn)
-  end
-
-  defp start_distributed_trace(meta) do
-    # TODO: what data structure should we use
-    headers = meta.req.headers |> Enum.map(fn {k, v} -> {k, List.wrap(v)} end)
-    DistributedTrace.start(%{req_headers: headers})
-  end
-
-  defp stop_transaction(conn, duration) do
-    add_stop_attrs(conn, duration)
-  end
-
-  defp stop_transaction(conn, error, duration) do
-    add_stop_attrs(conn, duration)
-    Transaction.Reporter.fail(error)
-  end
-
-  defp stop_distributed_trace(_conn) do
-    :done
   end
 
   defp add_start_attrs(meta, system_time) do
@@ -163,23 +133,23 @@ defmodule NewRelic.Telemetry.Plug do
   defp add_stop_attrs(meta, duration) do
     info = Process.info(self(), [:memory, :reductions])
 
-    status_code =
-      case meta do
-        %{response: {:response, status, _, _}} ->
-          String.split(status) |> List.first() |> String.to_integer()
-
-        %{error_response: {:error_response, status, _, _}} ->
-          status
-      end
-
     [
       duration: duration,
-      status: status_code,
+      status: status_code(meta),
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions]
     ]
     |> NewRelic.add_attributes()
   end
+
+  defp status_code(%{response: {:response, status, _, _}}),
+    do: String.split(status) |> List.first() |> String.to_integer()
+
+  defp status_code(%{error_response: {:error_response, status, _, _}}),
+    do: status
+
+  defp error_reason({{{reason, stack}, _init_call}, _exit_stack}), do: {reason, stack}
+  defp error_reason(_), do: {:unknown, []}
 
   defp plug_name(conn, match_path),
     do:
