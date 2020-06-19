@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.19.2`
+
+Tweaks
+* Optimize memory usage in Metric harvester. [#242](https://github.com/newrelic/elixir_agent/pull/242)
+* Silence warnings in Elixir 1.10. [#243](https://github.com/newrelic/elixir_agent/pull/243)
+
 ### `v1.19.1`
 
 Fixes
