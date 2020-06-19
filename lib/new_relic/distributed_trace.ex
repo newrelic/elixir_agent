@@ -26,7 +26,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   defp w3c_headers(headers) do
-    with {:ok, _traceparent } <- Map.fetch(headers, @w3c_traceparent),
+    with {:ok, _traceparent} <- Map.fetch(headers, @w3c_traceparent),
          %Context{} = context <- __MODULE__.W3CTraceContext.extract(headers) do
       context
     else
@@ -35,7 +35,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   defp newrelic_header(headers) do
-    with {:ok, trace_payload } <- Map.fetch(headers, @nr_header),
+    with {:ok, trace_payload} <- Map.fetch(headers, @nr_header),
          %Context{} = context <- __MODULE__.NewRelicContext.extract(trace_payload) do
       context
     else
