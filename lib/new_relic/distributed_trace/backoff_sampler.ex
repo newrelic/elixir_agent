@@ -7,7 +7,7 @@ defmodule NewRelic.DistributedTrace.BackoffSampler do
 
   @moduledoc false
 
-  def start_link() do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 

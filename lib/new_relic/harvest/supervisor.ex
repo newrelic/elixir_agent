@@ -14,17 +14,17 @@ defmodule NewRelic.Harvest.Supervisor do
     Collector.ErrorTrace.HarvestCycle
   ]
 
-  def start_link do
+  def start_link(_) do
     Supervisor.start_link(__MODULE__, [])
   end
 
   def init(_) do
     children = [
-      supervisor(Task.Supervisor, [[name: Collector.TaskSupervisor]]),
-      supervisor(Collector.Supervisor, [])
+      {Task.Supervisor, name: Collector.TaskSupervisor},
+      Collector.Supervisor
     ]
 
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 
   def manual_shutdown do

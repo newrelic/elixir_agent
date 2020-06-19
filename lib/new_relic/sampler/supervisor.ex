@@ -3,19 +3,19 @@ defmodule NewRelic.Sampler.Supervisor do
 
   @moduledoc false
 
-  def start_link do
+  def start_link(_) do
     Supervisor.start_link(__MODULE__, [])
   end
 
   def init(_) do
     children = [
-      worker(NewRelic.Sampler.Agent, []),
-      worker(NewRelic.Sampler.Beam, []),
-      worker(NewRelic.Sampler.Process, []),
-      worker(NewRelic.Sampler.TopProcess, []),
-      worker(NewRelic.Sampler.Ets, [])
+      NewRelic.Sampler.Agent,
+      NewRelic.Sampler.Beam,
+      NewRelic.Sampler.Process,
+      NewRelic.Sampler.TopProcess,
+      NewRelic.Sampler.Ets
     ]
 
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end
