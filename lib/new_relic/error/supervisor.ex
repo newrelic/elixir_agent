@@ -6,20 +6,20 @@ defmodule NewRelic.Error.Supervisor do
 
   @moduledoc false
 
-  def start_link do
+  def start_link(_) do
     Supervisor.start_link(__MODULE__, [])
   end
 
   def init(_) do
     children = [
-      supervisor(Task.Supervisor, [[name: Error.TaskSupervisor]])
+      {Task.Supervisor, name: Error.TaskSupervisor}
     ]
 
     if NewRelic.Config.feature?(:error_collector) do
       add_handler()
     end
 
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 
   def add_handler(),

@@ -17,7 +17,7 @@ defmodule NewRelic.Telemetry.Redix do
   query collection via configuration. See `NewRelic.Config` for details.
   """
 
-  def start_link() do
+  def start_link(_) do
     enabled = NewRelic.Config.feature?(:redix_instrumentation)
     GenServer.start_link(__MODULE__, [enabled: enabled], name: __MODULE__)
   end

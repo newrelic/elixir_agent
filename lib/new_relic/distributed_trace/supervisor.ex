@@ -3,16 +3,16 @@ defmodule NewRelic.DistributedTrace.Supervisor do
 
   @moduledoc false
 
-  def start_link do
+  def start_link(_) do
     Supervisor.start_link(__MODULE__, [])
   end
 
   def init(_) do
     children = [
-      worker(NewRelic.DistributedTrace.Tracker, []),
-      worker(NewRelic.DistributedTrace.BackoffSampler, [])
+      NewRelic.DistributedTrace.Tracker,
+      NewRelic.DistributedTrace.BackoffSampler
     ]
 
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end

@@ -15,19 +15,14 @@ defmodule NewRelic.Harvest.Collector.DataSupervisor do
     harvester_cycle = Module.concat(namespace, HarvestCycle)
 
     children = [
-      supervisor(Collector.HarvesterSupervisor, [
-        [harvester: harvester, name: harvester_supervisor]
-      ]),
-      worker(Collector.HarvestCycle, [
-        [
-          name: harvester_cycle,
-          child_spec: harvester,
-          harvest_cycle_key: harvest_cycle_key,
-          supervisor: harvester_supervisor
-        ]
-      ])
+      {Collector.HarvesterSupervisor, harvester: harvester, name: harvester_supervisor},
+      {Collector.HarvestCycle,
+       name: harvester_cycle,
+       child_spec: harvester,
+       harvest_cycle_key: harvest_cycle_key,
+       supervisor: harvester_supervisor}
     ]
 
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end

@@ -5,7 +5,7 @@ defmodule NewRelic.Telemetry.Ecto.Supervisor do
 
   @ecto_repo_init [:ecto, :repo, :init]
 
-  def start_link() do
+  def start_link(_) do
     DynamicSupervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 

@@ -3,15 +3,15 @@ defmodule NewRelic.Aggregate.Supervisor do
 
   @moduledoc false
 
-  def start_link do
+  def start_link(_) do
     Supervisor.start_link(__MODULE__, [])
   end
 
   def init(_) do
     children = [
-      worker(NewRelic.Aggregate.Reporter, [])
+      NewRelic.Aggregate.Reporter
     ]
 
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end
