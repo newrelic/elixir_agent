@@ -1,8 +1,9 @@
 language: elixir
 elixir:
   - 1.9.4
-  - 1.10.2
+  - 1.10.3
 otp_release:
+  - 23.0
   - 22.2
   - 21.3
 notifications:
