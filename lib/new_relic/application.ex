@@ -4,8 +4,6 @@ defmodule NewRelic.Application do
   @moduledoc false
 
   def start(_type, _args) do
-    import Supervisor.Spec
-
     NewRelic.Init.run()
 
     children = [
@@ -16,7 +14,6 @@ defmodule NewRelic.Application do
       NewRelic.GracefulShutdown
     ]
 
-    opts = [strategy: :one_for_one, name: NewRelic.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children, strategy: :one_for_one, name: NewRelic.Supervisor)
   end
 end
