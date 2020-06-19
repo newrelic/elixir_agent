@@ -5,7 +5,7 @@ defmodule NewRelic.Harvest.Collector.Supervisor do
 
   alias NewRelic.Harvest.Collector
 
-  def start_link do
+  def start_link(_) do
     Supervisor.start_link(__MODULE__, [])
   end
 
@@ -20,10 +20,13 @@ defmodule NewRelic.Harvest.Collector.Supervisor do
       data_supervisor(Collector.SpanEvent, :span_event_harvest_cycle)
     ]
 
-    supervise(children, strategy: :one_for_all)
+    Supervisor.init(children, strategy: :one_for_all)
   end
 
   def data_supervisor(namespace, key) do
-    supervisor(Collector.DataSupervisor, [[namespace: namespace, key: key]], id: make_ref())
+    Supervisor.child_spec(
+      {Collector.DataSupervisor, [namespace: namespace, key: key]},
+      id: make_ref()
+    )
   end
 end

@@ -12,12 +12,12 @@ defmodule NewRelic.EnabledSupervisor do
 
   def init(:ok) do
     children = [
-      supervisor(NewRelic.Harvest.Supervisor, []),
-      supervisor(NewRelic.Sampler.Supervisor, []),
-      supervisor(NewRelic.Error.Supervisor, []),
-      supervisor(NewRelic.Aggregate.Supervisor, [])
+      NewRelic.Harvest.Supervisor,
+      NewRelic.Sampler.Supervisor,
+      NewRelic.Error.Supervisor,
+      NewRelic.Aggregate.Supervisor
     ]
 
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end

@@ -1,5 +1,29 @@
 ## CHANGELOG
 
+### `v1.19.1`
+
+Fixes
+* Fix a regression from 1.18 with Transaction error attribute. [#240](https://github.com/newrelic/elixir_agent/pull/240)
+
+### `v1.19.0`
+
+Features
+* Automatic `Redix` instrumentation based on `telemetry` events! [#210](https://github.com/newrelic/elixir_agent/pull/210)
+
+------
+
+### `v1.18.5`
+
+Fixes
+
+* Fix one more tracer compilation bug. [#239](https://github.com/newrelic/elixir_agent/pull/239)
+
+### `v1.18.4`
+
+Fixes
+
+* Fix another interesting tracer compilation bug. [#235](https://github.com/newrelic/elixir_agent/pull/235)
+
 ### `v1.18.3`
 
 Fixes

@@ -21,7 +21,7 @@ defmodule NewRelic.Telemetry.Ecto do
   def start_link(repo: repo, opts: opts) do
     config = %{
       enabled?: NewRelic.Config.feature?(:ecto_instrumentation),
-      collect_sql?: NewRelic.Config.feature?(:sql_collection),
+      collect_db_query?: NewRelic.Config.feature?(:db_query_collection),
       handler_id: {:new_relic_ecto, repo},
       event: opts[:telemetry_prefix] ++ [:query],
       opts: opts

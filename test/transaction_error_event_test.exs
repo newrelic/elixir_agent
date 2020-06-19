@@ -192,6 +192,7 @@ defmodule TransactionErrorEventTest do
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     {:ok, _sup} = Task.Supervisor.start_link(name: TestSup)
 
     response = TestHelper.request(TestPlugApp, conn(:get, "/caught/error"))
@@ -216,11 +217,15 @@ defmodule TransactionErrorEventTest do
     traces = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
     assert length(traces) == 1
 
+    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    refute event[:error]
+
     Process.sleep(50)
     Logger.add_backend(:console)
     TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   defmodule CustomError do

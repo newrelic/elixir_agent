@@ -213,8 +213,8 @@ defmodule NewRelic.Tracer.Macro do
 
   def build_function_args(args) when is_list(args), do: Enum.map(args, &build_function_args/1)
 
+  # Don't try to re-declare the default argument
   def build_function_args({:\\, _, [arg, _default]}),
-    # Don't try to re-declare the default argument
     do: arg
 
   def build_function_args(arg), do: arg
@@ -223,9 +223,10 @@ defmodule NewRelic.Tracer.Macro do
     Macro.postwalk(args, &rewrite_call_term/1)
   end
 
-  # Unwrap Structs into Maps when reporting
-  # They can't always be re-referenced directly since they can have enforced_keys
-  def rewrite_call_term({:%, _, [{:__aliases__, _, _} = struct, {:%{}, line, members}]}) do
+  # Unwrap Struct literals into a Map, they can't be re-referenced directly due to enforced_keys
+  @struct_keys [:__aliases__, :__MODULE__]
+  def rewrite_call_term({:%, line, [{key, _, _} = struct, {:%{}, _, members}]})
+      when key in @struct_keys do
     {:%{}, line, [{:__struct__, struct}] ++ members}
   end
 
@@ -245,7 +246,8 @@ defmodule NewRelic.Tracer.Macro do
   # Replace ignored variables with an atom
   def rewrite_call_term({name, _, context} = term) when is_variable(name, context) do
     case Atom.to_string(name) do
-      "_" <> _rest -> :__ignored__
+      "__" <> _special_form -> term
+      "_" <> _ignored_var -> :__ignored__
       _ -> term
     end
   end

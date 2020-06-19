@@ -68,18 +68,23 @@ defmodule NewRelic.Transaction.Reporter do
     end
   end
 
-  def fail(%{kind: kind, reason: reason, stack: stack} = error) do
-    if tracking?(self()) do
+  def error(pid, error) do
+    if tracking?(pid) do
+      AttrStore.add(__MODULE__, pid, transaction_error: {:error, error})
+    end
+  end
+
+  def fail(pid, %{kind: kind, reason: reason, stack: stack}) do
+    if tracking?(pid) do
       if NewRelic.Config.feature?(:error_collector) do
-        AttrStore.add(__MODULE__, self(),
+        AttrStore.add(__MODULE__, pid,
           error: true,
-          transaction_error: {:error, error},
           error_kind: kind,
           error_reason: inspect(reason),
           error_stack: inspect(stack)
         )
       else
-        AttrStore.add(__MODULE__, self(), error: true)
+        AttrStore.add(__MODULE__, pid, error: true)
       end
     end
   end
@@ -152,7 +157,7 @@ defmodule NewRelic.Transaction.Reporter do
   # GenServer
   #
 
-  def start_link do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
