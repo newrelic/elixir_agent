@@ -15,7 +15,7 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
        start_time: System.system_time(),
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
-       metrics: []
+       metrics: %{}
      }}
   end
 
@@ -37,12 +37,17 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
 
   def handle_cast(_late_msg, :completed), do: {:noreply, :completed}
 
-  def handle_cast({:report, metrics}, state) when is_list(metrics) do
-    {:noreply, %{state | metrics: metrics ++ state.metrics}}
-  end
+  def handle_cast({:report, report_metrics}, state) do
+    metrics =
+      report_metrics
+      |> List.wrap()
+      |> Enum.reduce(state.metrics, fn %{name: name, scope: scope} = metric, acc ->
+        Map.update(acc, {name, scope}, metric, fn existing ->
+          NewRelic.Metric.merge(existing, metric)
+        end)
+      end)
 
-  def handle_cast({:report, metric}, state) do
-    {:noreply, %{state | metrics: [metric | state.metrics]}}
+    {:noreply, %{state | metrics: metrics}}
   end
 
   def handle_call(_late_msg, _from, :completed), do: {:reply, :completed, :completed}
@@ -78,19 +83,14 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
     NewRelic.log(:debug, "Completed Metric harvest - size: #{harvest_size}")
   end
 
-  defp build_metric_data(metrics),
-    do:
-      metrics
-      |> Enum.group_by(&metric_ident/1)
-      |> Enum.map(&aggregate/1)
-      |> Enum.map(&encode/1)
+  defp build_metric_data(metrics) do
+    metrics
+    |> Map.values()
+    |> Enum.map(&encode/1)
+  end
 
-  def metric_ident(metric), do: {metric.name, metric.scope}
-
-  def aggregate({_ident, metrics}), do: NewRelic.Metric.reduce(metrics)
-
-  def encode(%NewRelic.Metric{name: name, scope: scope} = m),
-    do: [
+  def encode(%NewRelic.Metric{name: name, scope: scope} = m) do
+    [
       %{name: to_string(name), scope: to_string(scope)},
       [
         m.call_count,
@@ -101,4 +101,5 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
         m.sum_of_squares
       ]
     ]
+  end
 end
