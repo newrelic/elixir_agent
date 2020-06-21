@@ -27,7 +27,7 @@ defmodule NewRelic.Telemetry.Plug do
   alias NewRelic.{Transaction, DistributedTrace, Util}
 
   @doc false
-  def start_link() do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
