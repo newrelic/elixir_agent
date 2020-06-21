@@ -9,7 +9,7 @@ defmodule NewRelic.Sampler.TopProcess do
 
   alias NewRelic.Util.PriorityQueue, as: PQ
 
-  def start_link do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 

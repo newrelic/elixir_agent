@@ -3,27 +3,17 @@ defmodule NewRelic.Transaction.Supervisor do
 
   @moduledoc false
 
-  def start_link do
+  def start_link(_) do
     Supervisor.start_link(__MODULE__, [])
   end
 
   def init(_) do
     children = [
-      supervisor(Task.Supervisor, [[name: NewRelic.Transaction.TaskSupervisor]]),
-      worker(NewRelic.Transaction.ErlangTrace, []),
-      supervisor(NewRelic.Transaction.SidecarSupervisor, []),
-      worker(
-        Registry,
-        [
-          [
-            keys: :unique,
-            name: NewRelic.Transaction.Registry,
-            partitions: System.schedulers_online()
-          ]
-        ]
-      )
+      {Task.Supervisor, name: NewRelic.Transaction.TaskSupervisor},
+      NewRelic.Transaction.ErlangTrace,
+      NewRelic.Transaction.SidecarSupervisor
     ]
 
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end

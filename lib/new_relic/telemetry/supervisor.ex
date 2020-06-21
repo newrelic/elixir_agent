@@ -3,17 +3,17 @@ defmodule NewRelic.Telemetry.Supervisor do
 
   @moduledoc false
 
-  def start_link do
+  def start_link(_) do
     Supervisor.start_link(__MODULE__, [])
   end
 
   def init(_) do
     children = [
-      supervisor(NewRelic.Telemetry.Ecto.Supervisor, []),
-      supervisor(NewRelic.Telemetry.Redix, []),
-      supervisor(NewRelic.Telemetry.Plug, [])
+      NewRelic.Telemetry.Ecto.Supervisor,
+      NewRelic.Telemetry.Redix,
+      NewRelic.Telemetry.Plug,
     ]
 
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end
