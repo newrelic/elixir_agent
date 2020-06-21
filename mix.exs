@@ -44,7 +44,9 @@ defmodule NewRelic.Mixfile do
       {:plug_cowboy, ">= 2.3.0", optional: true},
       {:ecto_sql, ">= 3.4.0", optional: true},
       {:ecto, ">= 3.4.1", optional: true},
-      {:redix, ">= 0.11.0", optional: true}
+      {:redix, ">= 0.11.0", optional: true},
+      # temp, will be part of plug_cowboy
+      {:cowboy_telemetry, "~> 0.1"}
     ]
   end
 
