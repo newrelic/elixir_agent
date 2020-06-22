@@ -11,7 +11,7 @@ defmodule NewRelic.Telemetry.Supervisor do
     children = [
       NewRelic.Telemetry.Ecto.Supervisor,
       NewRelic.Telemetry.Redix,
-      NewRelic.Telemetry.Plug,
+      NewRelic.Telemetry.Plug
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
