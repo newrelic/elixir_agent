@@ -16,7 +16,7 @@ defmodule NewRelic.Transaction.ErlangTrace do
   def init(:ok) do
     NewRelic.sample_process()
     enable_trace_patterns()
-    {:ok, %{pids: %{}, tasks: %{}}}
+    {:ok, %{tasks: %{}}}
   end
 
   # API

@@ -35,6 +35,10 @@ defmodule NewRelic.Transaction.Reporter do
     Transaction.Sidecar.track()
   end
 
+  def stop() do
+    Transaction.Sidecar.complete()
+  end
+
   def start_other_transaction() do
     unless Transaction.Sidecar.tracking?() do
       start()

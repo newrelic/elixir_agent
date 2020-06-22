@@ -96,6 +96,7 @@ defmodule NewRelic.Telemetry.Plug do
         _config
       ) do
     add_stop_attrs(meta, duration)
+    Transaction.Reporter.stop()
   end
 
   def handle_event(

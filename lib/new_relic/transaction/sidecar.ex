@@ -31,7 +31,7 @@ defmodule NewRelic.Transaction.Sidecar do
     set_sidecar(sidecar)
 
     receive do
-      :sidecar_ready -> :sidecar_ready
+      :sidecar_ready -> :ok
     end
   end
 
