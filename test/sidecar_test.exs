@@ -1,7 +1,7 @@
-defmodule TransactionRegistryTest do
+defmodule SidecarTest do
   use ExUnit.Case
 
-  test "Get Transaction.Sidecar working" do
+  test "Transaction.Sidecar" do
     Task.async(fn ->
       NewRelic.start_transaction("Test", "Tx")
       NewRelic.add_attributes(foo: "BAR")
