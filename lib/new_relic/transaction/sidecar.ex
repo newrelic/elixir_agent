@@ -96,9 +96,10 @@ defmodule NewRelic.Transaction.Sidecar do
   end
 
   defp call(message) do
-    with sidecar when is_pid(sidecar) <- get_sidecar() do
-      GenServer.call(sidecar, message)
-    end
+    GenServer.call(get_sidecar(), message)
+  catch
+    :exit, {:noproc, {GenServer, :call, _args}} ->
+      {:error, :no_sidecar}
   end
 
   def handle_cast({:add_attributes, attrs}, state) do
@@ -133,14 +134,14 @@ defmodule NewRelic.Transaction.Sidecar do
     {:reply, state, state}
   end
 
-  def handle_call(:ignore, _from, _state) do
-    {:stop, :normal, :ok, :ignored}
+  def handle_call(:ignore, _from, state) do
+    {:stop, :normal, :ok, state}
   end
 
   def handle_call(:complete, _from, state) do
     run_complete(state)
 
-    {:stop, :normal, :ok, :completed}
+    {:stop, :normal, :ok, state}
   end
 
   def handle_info({:DOWN, _, _, parent, down_reason}, %{parent: parent} = state) do
