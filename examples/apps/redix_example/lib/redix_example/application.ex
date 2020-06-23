@@ -6,7 +6,11 @@ defmodule RedixExample.Application do
 
     children = [
       {Redix, host: "localhost", name: :redix, sync_connect: true},
-      Plug.Cowboy.child_spec(scheme: :http, plug: RedixExample.Router, options: [port: http_port])
+      Plug.Cowboy.child_spec(
+        scheme: :http,
+        plug: RedixExample.Router,
+        options: [stream_handlers: [:cowboy_telemetry_h, :cowboy_stream_h], port: http_port]
+      )
     ]
 
     opts = [strategy: :one_for_one, name: RedixExample.Supervisor]
