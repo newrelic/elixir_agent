@@ -6,6 +6,7 @@ defmodule NewRelic.Telemetry.Plug do
   built into `Plug.Cowboy` and `Plug`.
 
   To prevent reporting the current transaction, call:
+
   ```elixir
   NewRelic.ignore_transaction()
   ```
@@ -109,6 +110,7 @@ defmodule NewRelic.Telemetry.Plug do
 
     {reason, stack} = error_reason(exception_reason)
     Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
+    Transaction.Reporter.stop()
   end
 
   def handle_event(_event, _measurements, _meta, _config) do
@@ -149,8 +151,10 @@ defmodule NewRelic.Telemetry.Plug do
   defp status_code(%{error_response: {:error_response, status, _, _}}),
     do: status
 
+  defp status_code(_), do: nil
+
   defp error_reason({{{reason, stack}, _init_call}, _exit_stack}), do: {reason, stack}
-  defp error_reason(_), do: {:unknown, []}
+  defp error_reason(reason), do: {reason, []}
 
   defp plug_name(conn, match_path),
     do:

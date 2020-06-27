@@ -46,7 +46,9 @@ defmodule NewRelic.Mixfile do
       {:ecto, ">= 3.4.1", optional: true},
       {:redix, ">= 0.11.0", optional: true},
       # temp, will be part of plug_cowboy
-      {:cowboy_telemetry, "~> 0.1"}
+      # {:cowboy_telemetry, "~> 0.1"}
+      # {:cowboy_telemetry, path: "/Users/vince/dev/elixir/open-source/cowboy_telemetry"}
+      {:cowboy_telemetry, github: "beam-telemetry/cowboy_telemetry", branch: "socket-error-stop"}
     ]
   end
 
