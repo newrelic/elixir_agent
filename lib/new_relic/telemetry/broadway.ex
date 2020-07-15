@@ -132,7 +132,7 @@ defmodule NewRelic.Telemetry.Broadway do
         %{kind: kind, reason: reason, stacktrace: stack},
         _config
       ) do
-    NewRelic.Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
+    NewRelic.Transaction.Reporter.fail(self(), %{kind: kind, reason: reason, stack: stack})
     NewRelic.add_attributes(processor_stop_attrs(duration))
     NewRelic.stop_transaction()
   end
