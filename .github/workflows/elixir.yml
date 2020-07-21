@@ -1,4 +1,4 @@
-name: Elixir CI
+name: CI
 
 on:
   push:
@@ -7,9 +7,9 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  test:
 
-    name: Tests
+    name: Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
     runs-on: ubuntu-latest
     
     strategy:
@@ -18,10 +18,9 @@ jobs:
         otp: ['21.3', '22.3']
 
     steps:
-    - uses: actions/checkout@v2
-
     - name: Set up Elixir
-      uses: actions/setup-elixir@v1
+    - uses: actions/checkout@v2
+    - uses: actions/setup-elixir@v1
       with:
         elixir-version: ${{ matrix.elixir }}
         otp-version: ${{ matrix.otp }}
