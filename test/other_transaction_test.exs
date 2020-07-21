@@ -118,6 +118,7 @@ defmodule OtherTransactionTest do
   test "Error in Other Transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+    TestHelper.restart_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
     start_supervised({Task.Supervisor, name: TestSupervisor})
 
     {:exit, {_exception, _stacktrace}} =
@@ -145,6 +146,12 @@ defmodule OtherTransactionTest do
 
     assert event[:error]
 
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestHelper.find_metric(metrics, "Errors/all")
+    assert TestHelper.find_metric(metrics, "Errors/allOther")
+
+    TestHelper.pause_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end

@@ -413,7 +413,7 @@ defmodule NewRelic.Transaction.Complete do
 
     unless expected do
       NewRelic.report_metric({:supportability, :error_event}, error_count: 1)
-      NewRelic.report_metric(:error, error_count: 1)
+      NewRelic.report_metric(:error, type: tx_attrs.transactionType, error_count: 1)
     end
   end
 

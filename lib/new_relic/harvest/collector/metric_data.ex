@@ -368,6 +368,18 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         max_call_time: duration_s
       }
 
+  def transform(:error, type: type, error_count: error_count),
+    do: [
+      %Metric{
+        name: "Errors/all#{type}",
+        call_count: error_count
+      },
+      %Metric{
+        name: :"Errors/all",
+        call_count: error_count
+      }
+    ]
+
   def transform(:error, error_count: error_count),
     do: %Metric{
       name: :"Errors/all",

@@ -175,6 +175,8 @@ defmodule MetricTransactionTest do
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
     assert TestHelper.find_metric(metrics, "Errors/all")
+    assert TestHelper.find_metric(metrics, "Errors/allWeb")
+
     apdex = TestHelper.find_metric(metrics, "Apdex", 0)
 
     assert [_, [_, _, 1, _, _, _]] = apdex
