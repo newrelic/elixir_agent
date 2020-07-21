@@ -247,7 +247,9 @@ defmodule TransactionTest do
 
     TestHelper.request(TestPlugApp, conn(:get, "/fail"))
 
-    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events =
+      TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      # |> IO.inspect()
 
     assert Enum.find(events, fn [_, event] ->
              event[:status] == 500 &&

@@ -103,12 +103,12 @@ defmodule NewRelic.Telemetry.Plug do
   def handle_event(
         @cowboy_exception,
         %{duration: duration},
-        %{kind: kind, reason: exception_reason} = meta,
+        %{kind: kind, reason: reason} = meta,
         _config
       ) do
     add_stop_attrs(meta, duration)
 
-    {reason, stack} = error_reason(exception_reason)
+    {reason, stack} = reason_and_stack(reason)
     Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
     Transaction.Reporter.stop()
   end
@@ -145,23 +145,6 @@ defmodule NewRelic.Telemetry.Plug do
     |> NewRelic.add_attributes()
   end
 
-  defp status_code(%{response: {:response, status, _, _}}),
-    do: String.split(status) |> List.first() |> String.to_integer()
-
-  defp status_code(%{error_response: {:error_response, status, _, _}}),
-    do: status
-
-  defp status_code(_), do: nil
-
-  defp error_reason({{{reason, stack}, _init_call}, _exit_stack}), do: {reason, stack}
-  defp error_reason(reason), do: {reason, []}
-
-  defp plug_name(conn, match_path),
-    do:
-      "/Plug/#{conn.method}/#{match_path}"
-      |> String.replace("/*glob", "")
-      |> String.replace("/*_path", "")
-
   @request_start_header "x-request-start"
   defp maybe_report_queueing(meta) do
     with request_start when is_binary(request_start) <- meta.req.headers[@request_start_header],
@@ -171,4 +154,31 @@ defmodule NewRelic.Telemetry.Plug do
       _ -> :ignore
     end
   end
+
+  defp status_code(%{resp_status: status}) when is_integer(status), do: status
+
+  defp status_code(%{resp_status: status}) when is_binary(status) do
+    String.split(status) |> List.first() |> String.to_integer()
+  end
+
+  # defp status_code(%{response: {:response, status, _, _}}),
+  #   do: String.split(status) |> List.first() |> String.to_integer()
+
+  # defp status_code(%{error_response: {:error_response, status, _, _}}),
+  #   do: status
+
+  # defp status_code(_), do: nil
+
+  defp reason_and_stack(
+         {:internal_error, {:EXIT, _pid, {{{reason, stack}, _init_call}, _exit_stack}}, _msg}
+       ) do
+    {reason, stack}
+  end
+
+  # defp reason_and_stack(reason), do: {reason, []}
+
+  defp plug_name(conn, match_path),
+    do:
+      "/Plug/#{conn.method}/#{match_path}"
+      |> String.replace("/*glob", "")
 end
