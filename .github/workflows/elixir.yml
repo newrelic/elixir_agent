@@ -8,7 +8,6 @@ on:
 
 jobs:
   test:
-
     name: Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
     runs-on: ubuntu-latest
     
