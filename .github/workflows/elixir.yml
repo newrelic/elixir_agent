@@ -9,7 +9,7 @@ on:
 jobs:
   test:
 
-    name: Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
+    name: Tests
     runs-on: ubuntu-latest
     
     strategy:
