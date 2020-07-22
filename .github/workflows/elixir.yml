@@ -10,7 +10,7 @@ jobs:
   test:
     name: Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         include:
@@ -36,13 +36,17 @@ jobs:
     - name: Restore deps cache
       uses: actions/cache@v2
       with:
-        path: deps
+        path: |
+          deps
+          examples/deps
         key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
 
     - name: Restore _build cache
       uses: actions/cache@v2
       with:
-        path: _build
+        path: |
+          _build
+          examples/_build
         key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
 
     - name: Install deps
