@@ -18,9 +18,11 @@ jobs:
         otp: ['21.3', '22.3']
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
     - name: Set up Elixir
-    - uses: actions/checkout@v2
-    - uses: actions/setup-elixir@v1
+      uses: actions/setup-elixir@v1
       with:
         elixir-version: ${{ matrix.elixir }}
         otp-version: ${{ matrix.otp }}
