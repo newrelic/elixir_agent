@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.19.3`
+
+Features
+* Report more Error metrics based on transaction type. [#251](https://github.com/newrelic/elixir_agent/pull/251)
+
 ### `v1.19.2`
 
 Tweaks
