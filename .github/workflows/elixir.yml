@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        elixir: ['1.9.4', '1.10.3']
+        otp: ['21.3', '22.3']
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Set up Elixir
+      uses: actions/setup-elixir@v1
+      with:
+        elixir-version: ${{ matrix.elixir }}
+        otp-version: ${{ matrix.otp }}
+
+    - name: Restore deps cache
+      uses: actions/cache@v2
+      with:
+        path: deps
+        key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+
+    - name: Restore _build cache
+      uses: actions/cache@v2
+      with:
+        path: _build
+        key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+
+    - name: Install deps
+      run: mix deps.get
+
+    - name: Check Formatting
+      run: mix format --check-formatted
+
+    - name: Run unit tests
+      run: mix test
+
+    - name: Run integration tests
+      run: |
+        cd examples
+        docker-compose up -d
+        mix deps.get
+        mix format --check-formatted
+        mix test
+        mix instrumented_task.example_task
