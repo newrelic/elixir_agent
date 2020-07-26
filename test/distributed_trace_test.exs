@@ -172,6 +172,19 @@ defmodule DistributedTraceTest do
     assert get_in(outbound_payload, ["d", "pr"]) > 1.0
   end
 
+  test "asking for DT context when there is none" do
+    headers = NewRelic.DistributedTrace.distributed_trace_headers(:http)
+    assert length(headers) == 0
+
+    Task.async(fn ->
+      NewRelic.start_transaction("TransactionCategory", "MyTaskName")
+
+      headers = NewRelic.DistributedTrace.distributed_trace_headers(:http)
+      assert length(headers) > 0
+    end)
+    |> Task.await()
+  end
+
   describe "Context decoding" do
     test "ignore unknown version" do
       assert DistributedTrace.NewRelicContext.validate(%{"v" => [666]}) == :invalid

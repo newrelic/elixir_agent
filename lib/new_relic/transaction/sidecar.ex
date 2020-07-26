@@ -63,12 +63,16 @@ defmodule NewRelic.Transaction.Sidecar do
     |> add()
   end
 
-  def set(key, value) do
-    call({:set, key, value})
+  def context(context) do
+    call({:set, :context, context})
   end
 
-  def get(key) do
-    call({:get, key})
+  def context() do
+    call({:get, :context})
+    |> case do
+      {:error, :no_sidecar} -> nil
+      context -> context
+    end
   end
 
   def ignore() do

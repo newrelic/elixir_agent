@@ -188,13 +188,11 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def set_tracing_context(context) do
-    Transaction.Sidecar.set(:context, context)
+    Transaction.Sidecar.context(context)
   end
 
   def get_tracing_context() do
-    if Transaction.Sidecar.tracking?() do
-      Transaction.Sidecar.get(:context)
-    end
+    Transaction.Sidecar.context()
   end
 
   def set_span(:generic, attrs) do
