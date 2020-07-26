@@ -168,10 +168,22 @@ defmodule NewRelic.Telemetry.Plug do
     String.split(status) |> List.first() |> String.to_integer()
   end
 
-  defp reason_and_stack(
-         {:internal_error, {:EXIT, _pid, {{{reason, stack}, _init_call}, _exit_stack}}, _msg}
-       ) do
+  defp reason_and_stack({:internal_error, {:EXIT, _pid, exit_reason}, _msg}) do
+    reason_and_stack(exit_reason)
+  end
+
+  defp reason_and_stack({{{reason, stack}, _init_call}, _exit_stack}) do
     {reason, stack}
+  end
+
+  defp reason_and_stack({{reason, _init_call}, stack}) do
+    {reason, stack}
+  end
+
+  defp reason_and_stack(unknown_exit_reason) do
+    # TODO: remove debuggin stuff:
+    NewRelic.log(:debug, "unknown_exit_reason: #{inspect(unknown_exit_reason)}")
+    {:unknown_exit_reason, []}
   end
 
   defp plug_name(conn, match_path),

@@ -97,6 +97,12 @@ defmodule TransactionTest do
       send_resp(conn, 200, "this is fine")
     end
 
+    get "/erlang_exit" do
+      NewRelic.add_attributes(query: "query{}")
+      :erlang.exit(:something_bad)
+      send_resp(conn, 200, "won't get here")
+    end
+
     get "/spawn" do
       Task.async(fn ->
         NewRelic.add_attributes(inside: "spawned")
@@ -257,6 +263,24 @@ defmodule TransactionTest do
                event[:error_reason] =~ "TransactionError" &&
                event[:error_kind] == :exit &&
                event[:error_stack] =~ "test/transaction_test.exs"
+           end)
+  end
+
+  @tag capture_log: true
+  test "Failure of the Transaction - erlang exit" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/erlang_exit"))
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert Enum.find(events, fn [_, event] ->
+             event[:status] == 500 &&
+               event[:query] =~ "query{}" &&
+               event[:error] &&
+               event[:name] == "/Plug/GET//erlang_exit" &&
+               event[:error_reason] =~ "something_bad" &&
+               event[:error_kind] == :exit
            end)
   end
 
