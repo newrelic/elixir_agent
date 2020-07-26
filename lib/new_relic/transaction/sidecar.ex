@@ -196,13 +196,17 @@ defmodule NewRelic.Transaction.Sidecar do
           lookup_sidecar_in(process_callers()) ||
             lookup_sidecar_in(process_ancestors())
 
-        IO.puts("LOOKUP_SIDECAR(#{inspect self()}) = #{inspect(sidecar)}")
+        if sidecar == nil do
+          IO.puts("LOOKUP_SIDECAR(#{inspect(self())}) = nil}")
+        end
+
         set_sidecar(sidecar)
 
       :no_track ->
         nil
 
       pid ->
+        IO.puts("FOUND_SIDECAR(#{inspect(self())}) = #{inspect(pid)}")
         pid
     end
   end
