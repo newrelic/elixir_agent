@@ -196,6 +196,7 @@ defmodule NewRelic.Transaction.Sidecar do
           lookup_sidecar_in(process_callers()) ||
             lookup_sidecar_in(process_ancestors())
 
+        IO.puts("LOOKUP_SIDECAR(#{inspect self()}) = #{inspect(sidecar)}")
         set_sidecar(sidecar)
 
       :no_track ->
