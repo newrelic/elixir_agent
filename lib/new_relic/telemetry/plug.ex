@@ -92,21 +92,22 @@ defmodule NewRelic.Telemetry.Plug do
 
   def handle_event(
         @cowboy_stop,
-        %{duration: duration},
+        %{duration: duration} = meas,
         meta,
         _config
       ) do
-    add_stop_attrs(meta, duration)
+    add_stop_attrs(meas, meta, duration)
+
     Transaction.Reporter.stop()
   end
 
   def handle_event(
         @cowboy_exception,
-        %{duration: duration},
+        %{duration: duration} = meas,
         %{kind: kind, reason: reason} = meta,
         _config
       ) do
-    add_stop_attrs(meta, duration)
+    add_stop_attrs(meas, meta, duration)
 
     {reason, stack} = reason_and_stack(reason)
     Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
@@ -133,17 +134,23 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   @kb 1024
-  defp add_stop_attrs(meta, duration) do
+  defp add_stop_attrs(meas, meta, duration) do
     info = Process.info(self(), [:memory, :reductions])
 
     [
       duration: duration,
       status: status_code(meta),
       memory_kb: info[:memory] / @kb,
-      reductions: info[:reductions]
+      reductions: info[:reductions],
+      "cowboy.req_body_duration_ms": meas[:req_body_duration] |> to_ms,
+      "cowboy.resp_duration_ms": meas[:resp_duration] |> to_ms,
+      "cowboy.req_body_length": meas[:req_body_length],
+      "cowboy.resp_body_length": meas[:resp_body_length]
     ]
     |> NewRelic.add_attributes()
   end
+
+  defp to_ms(duration), do: System.convert_time_unit(duration, :native, :millisecond)
 
   @request_start_header "x-request-start"
   defp maybe_report_queueing(meta) do
