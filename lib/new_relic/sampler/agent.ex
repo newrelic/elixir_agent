@@ -28,7 +28,7 @@ defmodule NewRelic.Sampler.Agent do
   end
 
   def record_sample do
-    %{active: active} = DynamicSupervisor.count_children(SidecarSupervisor)
+    %{active: active} = DynamicSupervisor.count_children(NewRelic.Transaction.SidecarSupervisor)
     NewRelic.report_sample(:AgentStat, %{sidecar_count: active})
   end
 
