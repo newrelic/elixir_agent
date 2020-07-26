@@ -28,8 +28,8 @@ defmodule NewRelic.Sampler.Agent do
   end
 
   def record_sample do
-    # TODO report stats based on Transaction.Sidecar
-    # num of active Transaction.Sidecar
+    %{active: active} = DynamicSupervisor.count_children(SidecarSupervisor)
+    NewRelic.report_sample(:AgentStat, %{sidecar_count: active})
   end
 
   def ets_size(table) do
