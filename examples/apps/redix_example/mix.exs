@@ -28,7 +28,8 @@ defmodule RedixExample.MixProject do
   defp deps do
     [
       {:new_relic_agent, path: "../../../"},
-      {:plug_cowboy, "~> 2.0"},
+      # {:plug_cowboy, "~> 2.0"},
+      {:plug_cowboy, github: "binaryseed/plug_cowboy", branch: "cowboy_telemetry"},
       {:redix, "~> 0.11"}
     ]
   end

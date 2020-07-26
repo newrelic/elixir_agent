@@ -9,7 +9,7 @@ defmodule RedixExample.Application do
       Plug.Cowboy.child_spec(
         scheme: :http,
         plug: RedixExample.Router,
-        options: [stream_handlers: [:cowboy_telemetry_h, :cowboy_stream_h], port: http_port]
+        options: [port: http_port]
       )
     ]
 
