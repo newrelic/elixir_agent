@@ -161,24 +161,15 @@ defmodule NewRelic.Telemetry.Plug do
     String.split(status) |> List.first() |> String.to_integer()
   end
 
-  # defp status_code(%{response: {:response, status, _, _}}),
-  #   do: String.split(status) |> List.first() |> String.to_integer()
-
-  # defp status_code(%{error_response: {:error_response, status, _, _}}),
-  #   do: status
-
-  # defp status_code(_), do: nil
-
   defp reason_and_stack(
          {:internal_error, {:EXIT, _pid, {{{reason, stack}, _init_call}, _exit_stack}}, _msg}
        ) do
     {reason, stack}
   end
 
-  # defp reason_and_stack(reason), do: {reason, []}
-
   defp plug_name(conn, match_path),
     do:
       "/Plug/#{conn.method}/#{match_path}"
       |> String.replace("/*glob", "")
+      |> String.replace("/*_path", "")
 end
