@@ -32,4 +32,5 @@ defmodule SidecarTest do
     end)
     |> Task.await()
   end
+
 end

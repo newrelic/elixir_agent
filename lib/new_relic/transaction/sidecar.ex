@@ -188,9 +188,11 @@ defmodule NewRelic.Transaction.Sidecar do
   defp get_sidecar() do
     case Process.get(:nr_tx_sidecar) do
       nil ->
-        (Enum.find_value(Process.get(:"$callers", []), &lookup_sidecar/1) ||
-           Enum.find_value(Process.get(:"$ancestors", []), &lookup_sidecar/1))
-        |> set_sidecar()
+        sidecar =
+          lookup_sidecar_in(process_callers()) ||
+            lookup_sidecar_in(process_ancestors())
+
+        set_sidecar(sidecar)
 
       :no_track ->
         nil
@@ -203,9 +205,13 @@ defmodule NewRelic.Transaction.Sidecar do
   defp get_sidecar(pid) do
     with {:dictionary, dictionary} <- Process.info(pid, :dictionary) do
       Keyword.get(dictionary, :nr_tx_sidecar) ||
-        Enum.find_value(Keyword.get(dictionary, :"$callers", []), &lookup_sidecar/1) ||
-        Enum.find_value(Keyword.get(dictionary, :"$ancestors", []), &lookup_sidecar/1)
+        lookup_sidecar_in(process_callers(dictionary)) ||
+        lookup_sidecar_in(process_ancestors(dictionary))
     end
+  end
+
+  defp lookup_sidecar_in(processes) do
+    Enum.find_value(processes, &lookup_sidecar/1)
   end
 
   defp lookup_sidecar(pid) when is_pid(pid) do
@@ -219,6 +225,18 @@ defmodule NewRelic.Transaction.Sidecar do
   end
 
   defp lookup_sidecar(_named_process), do: nil
+
+  defp process_callers(),
+    do: Process.get(:"$callers", []) |> Enum.reverse()
+
+  defp process_callers(dictionary),
+    do: Keyword.get(dictionary, :"$callers", []) |> Enum.reverse()
+
+  defp process_ancestors(),
+    do: Process.get(:"$ancestors", []) |> Enum.reverse()
+
+  defp process_ancestors(dictionary),
+    do: Keyword.get(dictionary, :"$ancestors", []) |> Enum.reverse()
 
   defp run_complete(%{parent: parent, attributes: attributes}) do
     attributes
