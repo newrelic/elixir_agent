@@ -19,13 +19,6 @@ defmodule NewRelic.Tracer.Macro do
   def __on_definition__(_env, _access, _name, _args, _guards, nil), do: nil
   def __on_definition__(_env, _access, _name, _args, _guards, []), do: nil
 
-  # Take no action if there is a top-level rescue clause
-  def __on_definition__(env, _access, name, _args, _guards, do: _, rescue: _) do
-    Logger.warn(
-      "[New Relic] Unable to trace `#{inspect(env.module)}.#{name}` due to top-level rescue clause -- please remove @trace"
-    )
-  end
-
   def __on_definition__(%{module: module}, access, name, args, guards, do: body) do
     if trace_info =
          trace_function?(module, name, length(args))
@@ -43,6 +36,21 @@ defmodule NewRelic.Tracer.Macro do
       Module.put_attribute(module, :nr_last_tracer, {name, length(args), trace_info})
       Module.delete_attribute(module, :trace)
     end
+  end
+
+  # Take no action if there are other function-level clauses
+  def __on_definition__(env, _access, name, args, _guards, clauses) do
+    found =
+      clauses
+      |> Keyword.drop([:do])
+      |> Keyword.keys()
+      |> Enum.map(&"`#{&1}`")
+      |> Enum.join(", ")
+
+    Logger.warn(
+      "[New Relic] Unable to trace `#{inspect(env.module)}.#{name}/#{length(args)}` " <>
+        "due to additional function-level clauses: #{found} -- please remove @trace"
+    )
   end
 
   defmacro __before_compile__(%{module: module}) do

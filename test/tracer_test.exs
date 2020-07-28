@@ -72,6 +72,15 @@ defmodule TracerTest do
     rescue
       error -> error
     end
+
+    @trace :afterer
+    def afterer() do
+      :do_something
+    rescue
+      error -> error
+    after
+      :do_after
+    end
   end
 
   test "function that has error" do
