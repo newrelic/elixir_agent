@@ -4,6 +4,13 @@ defmodule NewRelic.Init do
   def run() do
     verify_erlang_otp_version()
     init_collector_host()
+    setup_logs_in_context()
+  end
+
+  def setup_logs_in_context() do
+    # TODO: setup only if agent enabled & feature is on & Elixir 1.10+
+    :logger.add_primary_filter(:nr_process_metadata, {&NewRelic.LogsInContext.primary_filter/2, []})
+    Logger.configure_backend(:console, format: {NewRelic.LogsInContext, :format})
   end
 
   @erlang_version_requirement ">= 21.0.0"

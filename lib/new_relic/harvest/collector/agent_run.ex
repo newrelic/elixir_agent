@@ -28,6 +28,7 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
   end
 
   def agent_run_id, do: lookup(:agent_run_id)
+  def entity_guid, do: lookup(:entity_guid)
   def trusted_account_key, do: lookup(:trusted_account_key)
   def account_id, do: lookup(:account_id)
   def primary_application_id, do: lookup(:primary_application_id)
@@ -75,7 +76,15 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
   end
 
   defp store_agent_run({:ok, %{"agent_run_id" => _} = connect_response}) do
+    :persistent_term.put(:nr_entity_metadata, %{
+      hostname: NewRelic.Util.hostname(),
+      "entity.type": "SERVICE",
+      "entity.guid": connect_response["entity_guid"],
+      "entity.name": NewRelic.Config.app_name() |> List.first()
+    })
+
     store(:agent_run_id, connect_response["agent_run_id"])
+    store(:entity_guid, connect_response["entity_guid"])
     store(:trusted_account_key, connect_response["trusted_account_key"])
     store(:account_id, connect_response["account_id"])
     store(:primary_application_id, connect_response["primary_application_id"])
@@ -134,6 +143,15 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
 
   defp store_agent_run(_bad_connect_response) do
     :bad_connect_response
+  end
+
+  @empty_entity_metadata %{
+    "entity.type": "SERVICE",
+    "entity.guid": nil,
+    "entity.name": nil
+  }
+  def entity_metadata() do
+    :persistent_term.get(:nr_entity_metadata, @empty_entity_metadata)
   end
 
   def store(key, value) do
