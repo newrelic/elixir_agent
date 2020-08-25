@@ -94,9 +94,9 @@ defmodule NewRelic do
   Call within a transaction to prevent it from reporting.
 
   ```elixir
-  def index(conn, %{}) do
+  def index(conn, _) do
     NewRelic.ignore_transaction()
-    send_resp(conn, :ok, '')
+    send_resp(conn, 200, "Health check OK")
   end
   ```
   """
@@ -129,9 +129,7 @@ defmodule NewRelic do
   """
   defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
 
-  @doc """
-  Deprecated, please use `distributed_trace_headers`
-  """
+  @deprecated "Use distributed_trace_headers/1 instead"
   defdelegate create_distributed_trace_payload(type),
     to: NewRelic.DistributedTrace,
     as: :distributed_trace_headers
