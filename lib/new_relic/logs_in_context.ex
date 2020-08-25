@@ -35,10 +35,16 @@ defmodule NewRelic.LogsInContext do
   end
 
   defp logger_metadata() do
-    [metadata: :logger.get_process_metadata()]
-    |> NewRelic.Util.deep_flatten()
-    |> NewRelic.Util.coerce_attributes()
-    |> Map.new()
+    case :logger.get_process_metadata() do
+      :undefined ->
+        %{}
+
+      metadata ->
+        [metadata: metadata]
+        |> NewRelic.Util.deep_flatten()
+        |> NewRelic.Util.coerce_attributes()
+        |> Map.new()
+    end
   end
 
   defp linking_metadata() do
