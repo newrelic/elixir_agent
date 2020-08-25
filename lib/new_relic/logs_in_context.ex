@@ -44,6 +44,7 @@ defmodule NewRelic.LogsInContext do
         |> NewRelic.Util.deep_flatten()
         |> NewRelic.Util.coerce_attributes()
         |> Map.new()
+        |> Map.delete("metadata.size")
     end
   end
 
