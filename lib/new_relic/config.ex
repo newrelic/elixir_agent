@@ -2,39 +2,58 @@ defmodule NewRelic.Config do
   @moduledoc """
   New Relic Agent Configuration
 
-  All configuration items can be set via `ENV` variable _or_ via `Application` config
+  All configuration items can be set via Environment variables _or_ via `Application` config
   """
 
   @doc """
-  Configure your application name. **Required**
+  **Required**
 
-  May contain up to 3 names seperated by `;`
+  Configure your application name. May contain up to 3 names seperated by `;`
+
+  Application name can be configured in two ways:
+  * Environment variable: `NEW_RELIC_APP_NAME=MyApp`
+  * Application config: `config :new_relic_agent, app_name: "MyApp"`
   """
   def app_name do
     (System.get_env("NEW_RELIC_APP_NAME") || Application.get_env(:new_relic_agent, :app_name))
     |> parse_app_names
   end
 
-  @doc "Configure your New Relic License Key. **Required**"
+  @doc """
+  **Required**
+
+  Configure your New Relic License Key.
+
+  License Key can be configured in two ways, though using Environment Variables is strongly
+  recommended to keep secrets out of source code:
+  * Environment variables: `NEW_RELIC_LICENSE_KEY=abc123`
+  * Application config: `config :new_relic_agent, license_key: "abc123"`
+  """
   def license_key,
     do:
       System.get_env("NEW_RELIC_LICENSE_KEY") ||
         Application.get_env(:new_relic_agent, :license_key)
 
-  @doc "Configure the host to report to. Most customers have no need to set this."
+  @doc false
   def host,
     do: System.get_env("NEW_RELIC_HOST") || Application.get_env(:new_relic_agent, :host)
 
   @doc """
   Configure the Agent logging mechanism.
 
-  Defaults to `"tmp/new_relic.log"`.
+  This controls how the Agent logs it's own behavior, and doesn't impact your
+  applications own logging at all.
+
+  Defaults to the File `"tmp/new_relic.log"`.
 
   Options:
-  - `"stdout"`
-  - `"Logger"` Elixir's Logger
-  - `"memory"` (Useful for testing)
-  - `"file_name.log"`
+  - `"stdout"` Write directly to Standard Out
+  - `"Logger"` Send Agent logs to Elixir's Logger
+  - `"file_name.log"` Write to a chosen file
+
+  Agent logging can be configured in two ways:
+  * Environment variable: `NEW_RELIC_LOG=stdout`
+  * Application config: `config :new_relic_agent, log: "stdout"`
   """
   def logger,
     do: System.get_env("NEW_RELIC_LOG") || Application.get_env(:new_relic_agent, :log)
@@ -47,6 +66,8 @@ defmodule NewRelic.Config do
   - `{:system, "ENV_NAME"}` Read a System ENV variable
   - `{module, function, args}` Call a function. Warning: Be very careful, this will get called a lot!
   - `"foo"` A direct value
+
+  This feature is only configurable with `Application` config.
 
   Example:
 
@@ -77,11 +98,9 @@ defmodule NewRelic.Config do
 
   The delimiting characters `;` and `:` are not allowed in the `key` or `value`
 
-  Example:
-
-  ```
-  config :new_relic_agent, labels: "region:west;env:prod"
-  ```
+  Labels can be configured in two ways:
+  * Environment variables: `NEW_RELIC_LABELS=region:west;env:prod`
+  * Application config: `config :new_relic_agent, labels: "region:west;env:prod"`
   """
   def labels do
     (System.get_env("NEW_RELIC_LABELS") || Application.get_env(:new_relic_agent, :labels))
@@ -89,23 +108,32 @@ defmodule NewRelic.Config do
   end
 
   @doc """
-  Some Agent features can be controlled via configuration
+  Some Agent features can be toggled via configuration
 
   ### Security
 
   * `:error_collector_enabled` (default `true`)
-    * Controls collecting any Error traces or metrics
+    * Toggles collection of any Error traces or metrics
   * `:db_query_collection_enabled` (default `true`)
-    * Controls collection of Database query strings
+    * Toggles collection of Database query strings
   * `function_argument_collection_enabled` (default `true`)
-    * Controls collection of traced function arguments
+    * Toggles collection of traced function arguments
 
   ### Instrumentation
+
+  Opting out of Instrumentation means that `:telemetry` handlers
+  will not be attached, reducing the performance impact to zero.
 
   * `:ecto_instrumentation_enabled` (default `true`)
     * Controls all Ecto instrumentation
   * `:redix_instrumentation_enabled` (default `true`)
     * Controls all Redix instrumentation
+
+  ### Configuration
+
+  Each of these features can be configured in two ways, for example:
+  * Environment variables: `NEW_RELIC_ERROR_COLLECTOR_ENABLED=false`
+  * Application config: `config :new_relic_agent, error_collector_enabled: false`
   """
   def feature?(:error_collector) do
     feature_check?("NEW_RELIC_ERROR_COLLECTOR_ENABLED", :error_collector_enabled)
@@ -171,6 +199,7 @@ defmodule NewRelic.Config do
   def region_prefix,
     do: Application.get_env(:new_relic_agent, :region_prefix)
 
+  @doc false
   def event_harvest_config() do
     %{
       harvest_limits: %{
