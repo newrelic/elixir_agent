@@ -2,6 +2,7 @@ defmodule ErrorTraceTest do
   use ExUnit.Case
 
   alias NewRelic.Error.Trace
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
 
   test "post an error trace" do
@@ -48,7 +49,7 @@ defmodule ErrorTraceTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.HarvestCycle.send_harvest(Collector.ErrorTrace.HarvesterSupervisor, harvester)
+    Harvest.HarvestCycle.send_harvest(Collector.ErrorTrace.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
   end
 
@@ -56,13 +57,13 @@ defmodule ErrorTraceTest do
     Application.put_env(:new_relic_agent, :data_report_period, 300)
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
 
-    first = Collector.HarvestCycle.current_harvester(Collector.ErrorTrace.HarvestCycle)
+    first = Harvest.HarvestCycle.current_harvester(Collector.ErrorTrace.HarvestCycle)
     Process.monitor(first)
 
     # Wait until harvest swap
     assert_receive {:DOWN, _ref, _, ^first, :shutdown}, 1000
 
-    second = Collector.HarvestCycle.current_harvester(Collector.ErrorTrace.HarvestCycle)
+    second = Harvest.HarvestCycle.current_harvester(Collector.ErrorTrace.HarvestCycle)
     Process.monitor(second)
 
     refute first == second
@@ -91,7 +92,7 @@ defmodule ErrorTraceTest do
 
     harvester =
       Collector.ErrorTrace.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
 
     assert :ok == GenServer.call(harvester, :send_harvest)
 

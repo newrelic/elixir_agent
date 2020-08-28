@@ -3,7 +3,9 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
 
   @moduledoc false
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
+  alias NewRelic.Metric.MetricData
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, [])
@@ -24,13 +26,13 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
   def report_metric(identifier, values),
     do:
       Collector.Metric.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
-      |> GenServer.cast({:report, Collector.MetricData.transform(identifier, values)})
+      |> Harvest.HarvestCycle.current_harvester()
+      |> GenServer.cast({:report, MetricData.transform(identifier, values)})
 
   def gather_harvest,
     do:
       Collector.Metric.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.call(:gather_harvest)
 
   # Server

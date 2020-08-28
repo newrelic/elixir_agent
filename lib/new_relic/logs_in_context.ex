@@ -2,16 +2,20 @@ defmodule NewRelic.LogsInContext do
   @moduledoc false
 
   alias NewRelic.Harvest.Collector.AgentRun
+  alias NewRelic.Harvest.TelemetrySdk
 
-  def primary_filter(%{msg: {:string, msg}} = log, _config) do
+  def primary_filter(%{msg: {:string, _msg}} = log, %{mode: :direct}) do
+    log
+    |> prepare_log()
+    |> TelemetrySdk.Logs.Harvester.report_log()
+
+    log
+  end
+
+  def primary_filter(%{msg: {:string, _msg}} = log, %{mode: :forward}) do
     message =
-      %{
-        message: msg,
-        timestamp: System.convert_time_unit(log.meta.time, :microsecond, :millisecond),
-        "log.level": log.level
-      }
-      |> Map.merge(log_metadata(log))
-      |> Map.merge(logger_metadata())
+      log
+      |> prepare_log()
       |> Map.merge(linking_metadata())
       |> Jason.encode!()
 
@@ -20,6 +24,17 @@ defmodule NewRelic.LogsInContext do
 
   def primary_filter(_log, _config) do
     :ignore
+  end
+
+  defp prepare_log(%{msg: {:string, msg}} = log) do
+    %{
+      message: msg,
+      timestamp: System.convert_time_unit(log.meta.time, :microsecond, :millisecond),
+      "log.level": log.level
+    }
+    |> Map.merge(log_metadata(log))
+    |> Map.merge(logger_metadata())
+    |> Map.merge(tracing_metadata())
   end
 
   defp log_metadata(log) do
@@ -48,16 +63,17 @@ defmodule NewRelic.LogsInContext do
     end
   end
 
-  defp linking_metadata() do
+  def linking_metadata() do
+    AgentRun.entity_metadata()
+  end
+
+  def tracing_metadata() do
     context = NewRelic.DistributedTrace.get_tracing_context() || %{}
 
-    Map.merge(
-      AgentRun.entity_metadata(),
-      %{
-        "trace.id": Map.get(context, :trace_id),
-        "span.id": Map.get(context, :guid)
-      }
-    )
+    %{
+      "trace.id": Map.get(context, :trace_id),
+      "span.id": Map.get(context, :guid)
+    }
   end
 
   def format(_level, message, _timestamp, _metadata) when is_binary(message) do

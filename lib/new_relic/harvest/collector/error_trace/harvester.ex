@@ -3,6 +3,7 @@ defmodule NewRelic.Harvest.Collector.ErrorTrace.Harvester do
 
   @moduledoc false
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Error.Trace
 
@@ -26,13 +27,13 @@ defmodule NewRelic.Harvest.Collector.ErrorTrace.Harvester do
   def report_error(%Trace{} = trace),
     do:
       Collector.ErrorTrace.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.cast({:report, trace})
 
   def gather_harvest,
     do:
       Collector.ErrorTrace.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.call(:gather_harvest)
 
   # Server

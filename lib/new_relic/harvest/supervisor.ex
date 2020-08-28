@@ -1,17 +1,18 @@
 defmodule NewRelic.Harvest.Supervisor do
   use Supervisor
-  alias NewRelic.Harvest.Collector
+
+  alias NewRelic.Harvest
 
   @moduledoc false
 
   @all_harvesters [
-    Collector.Metric.HarvestCycle,
-    Collector.TransactionTrace.HarvestCycle,
-    Collector.TransactionEvent.HarvestCycle,
-    Collector.SpanEvent.HarvestCycle,
-    Collector.TransactionErrorEvent.HarvestCycle,
-    Collector.CustomEvent.HarvestCycle,
-    Collector.ErrorTrace.HarvestCycle
+    Harvest.Collector.Metric.HarvestCycle,
+    Harvest.Collector.TransactionTrace.HarvestCycle,
+    Harvest.Collector.TransactionEvent.HarvestCycle,
+    Harvest.Collector.SpanEvent.HarvestCycle,
+    Harvest.Collector.TransactionErrorEvent.HarvestCycle,
+    Harvest.Collector.CustomEvent.HarvestCycle,
+    Harvest.Collector.ErrorTrace.HarvestCycle
   ]
 
   def start_link(_) do
@@ -20,8 +21,9 @@ defmodule NewRelic.Harvest.Supervisor do
 
   def init(_) do
     children = [
-      {Task.Supervisor, name: Collector.TaskSupervisor},
-      Collector.Supervisor
+      {Task.Supervisor, name: Harvest.TaskSupervisor},
+      Harvest.Collector.Supervisor,
+      Harvest.TelemetrySdk.Supervisor
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
@@ -32,7 +34,7 @@ defmodule NewRelic.Harvest.Supervisor do
       @all_harvesters
       |> Enum.map(
         &Task.async(fn ->
-          Collector.HarvestCycle.manual_shutdown(&1)
+          Harvest.HarvestCycle.manual_shutdown(&1)
         end)
       )
       |> Enum.map(&Task.await/1)

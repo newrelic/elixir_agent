@@ -3,6 +3,7 @@ defmodule NewRelic.Harvest.Collector.Supervisor do
 
   @moduledoc false
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
 
   def start_link(_) do
@@ -25,7 +26,8 @@ defmodule NewRelic.Harvest.Collector.Supervisor do
 
   def data_supervisor(namespace, key) do
     Supervisor.child_spec(
-      {Collector.DataSupervisor, [namespace: namespace, key: key]},
+      {Harvest.DataSupervisor,
+       [namespace: namespace, key: key, lookup_module: Collector.AgentRun]},
       id: make_ref()
     )
   end

@@ -2,6 +2,7 @@ defmodule SpanEventTest do
   use ExUnit.Case
   use Plug.Test
 
+  alias NewRelic.Harvest
   alias NewRelic.DistributedTrace
   alias NewRelic.Harvest.Collector
 
@@ -67,7 +68,7 @@ defmodule SpanEventTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.HarvestCycle.send_harvest(Collector.SpanEvent.HarvesterSupervisor, harvester)
+    Harvest.HarvestCycle.send_harvest(Collector.SpanEvent.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
 
     Application.delete_env(:new_relic_agent, :span_event_reservoir_size)

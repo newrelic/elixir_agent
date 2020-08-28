@@ -3,6 +3,7 @@ defmodule NewRelic.Harvest.Collector.TransactionErrorEvent.Harvester do
 
   @moduledoc false
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Error.Event
 
@@ -29,13 +30,13 @@ defmodule NewRelic.Harvest.Collector.TransactionErrorEvent.Harvester do
   def report_error(%Event{} = event),
     do:
       Collector.TransactionErrorEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.cast({:report, event})
 
   def gather_harvest,
     do:
       Collector.TransactionErrorEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.call(:gather_harvest)
 
   # Server

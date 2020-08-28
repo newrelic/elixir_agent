@@ -55,7 +55,7 @@ defmodule TestHelper do
   alias NewRelic.Harvest.Collector
 
   def simulate_agent_enabled(_context) do
-    Process.whereis(Collector.TaskSupervisor) ||
+    Process.whereis(Harvest.TaskSupervisor) ||
       NewRelic.EnabledSupervisor.start_link(:ok)
 
     :ok

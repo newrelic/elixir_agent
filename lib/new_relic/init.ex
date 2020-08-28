@@ -9,8 +9,26 @@ defmodule NewRelic.Init do
 
   def setup_logs_in_context() do
     # TODO: setup only if agent enabled & feature is on & Elixir 1.10+
-    :logger.add_primary_filter(:nr_process_metadata, {&NewRelic.LogsInContext.primary_filter/2, []})
-    Logger.configure_backend(:console, format: {NewRelic.LogsInContext, :format})
+
+    Application.get_env(:new_relic_agent, :logs_in_context, :disabled)
+    |> case do
+      :disabled ->
+        :skip
+
+      :direct ->
+        :logger.add_primary_filter(
+          :nr_logs_in_context,
+          {&NewRelic.LogsInContext.primary_filter/2, %{mode: :direct}}
+        )
+
+      :forward ->
+        :logger.add_primary_filter(
+          :nr_logs_in_context,
+          {&NewRelic.LogsInContext.primary_filter/2, %{mode: :forward}}
+        )
+
+        Logger.configure_backend(:console, format: {NewRelic.LogsInContext, :format})
+    end
   end
 
   @erlang_version_requirement ">= 21.0.0"
@@ -23,19 +41,22 @@ defmodule NewRelic.Init do
   end
 
   def init_collector_host() do
-    Application.put_env(:new_relic_agent, :collector_host, determine_collector_host())
+    {collector_host, region_prefix} = determine_collector_host()
+
+    Application.put_env(:new_relic_agent, :collector_host, collector_host)
+    Application.put_env(:new_relic_agent, :region_prefix, region_prefix)
   end
 
   def determine_collector_host() do
     cond do
       manual_config_host = NewRelic.Config.host() ->
-        manual_config_host
+        {manual_config_host, nil}
 
       region_prefix = determine_region(NewRelic.Config.license_key()) ->
-        "collector.#{region_prefix}.nr-data.net"
+        {"collector.#{region_prefix}.nr-data.net", region_prefix}
 
       true ->
-        "collector.newrelic.com"
+        {"collector.newrelic.com", nil}
     end
   end
 

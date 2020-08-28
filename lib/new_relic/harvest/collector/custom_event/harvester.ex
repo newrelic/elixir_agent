@@ -3,6 +3,7 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
 
   @moduledoc false
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Custom.Event
 
@@ -38,13 +39,13 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
   def report_custom_event(%Event{} = event),
     do:
       Collector.CustomEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.cast({:report, event})
 
   def gather_harvest,
     do:
       Collector.CustomEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.call(:gather_harvest)
 
   # Server

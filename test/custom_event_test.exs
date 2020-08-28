@@ -1,6 +1,7 @@
 defmodule CustomEventTest do
   use ExUnit.Case
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Custom.Event
 
@@ -52,7 +53,7 @@ defmodule CustomEventTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.HarvestCycle.send_harvest(Collector.CustomEvent.HarvesterSupervisor, harvester)
+    Harvest.HarvestCycle.send_harvest(Collector.CustomEvent.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
   end
 
@@ -71,13 +72,13 @@ defmodule CustomEventTest do
     Application.put_env(:new_relic_agent, :custom_event_harvest_cycle, 300)
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
-    first = Collector.HarvestCycle.current_harvester(Collector.CustomEvent.HarvestCycle)
+    first = Harvest.HarvestCycle.current_harvester(Collector.CustomEvent.HarvestCycle)
     Process.monitor(first)
 
     # Wait until harvest swap
     assert_receive {:DOWN, _ref, _, ^first, :shutdown}, 1000
 
-    second = Collector.HarvestCycle.current_harvester(Collector.CustomEvent.HarvestCycle)
+    second = Harvest.HarvestCycle.current_harvester(Collector.CustomEvent.HarvestCycle)
     Process.monitor(second)
 
     refute first == second
@@ -107,7 +108,7 @@ defmodule CustomEventTest do
 
     harvester =
       Collector.CustomEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
 
     assert :ok == GenServer.call(harvester, :send_harvest)
 

@@ -69,6 +69,15 @@ defmodule IntegrationTest do
       Collector.Protocol.metric_data([agent_run_id, ts_start, ts_end, data_array])
   end
 
+  test "Can post a Log" do
+    {:ok, resp} = NewRelic.Harvest.TelemetrySdk.API.post(
+      :log,
+      [%{logs: [%{message: "TEST"}], common: %{}}]
+    )
+
+    assert resp.status_code == 202
+  end
+
   test "EnabledSupervisor starts" do
     # make sure a process under EnabledSupervisor started
     assert Process.whereis(NewRelic.Sampler.Beam)
