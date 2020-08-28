@@ -13,6 +13,7 @@ defmodule NewRelic.EnabledSupervisor do
   def init(:ok) do
     children = [
       NewRelic.Harvest.Supervisor,
+      NewRelic.LogsInContext.Supervisor,
       NewRelic.Sampler.Supervisor,
       NewRelic.Error.Supervisor,
       NewRelic.Aggregate.Supervisor

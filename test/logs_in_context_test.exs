@@ -66,6 +66,6 @@ defmodule LogsInContextTest do
     Application.put_env(:new_relic_agent, :logs_in_context, mode)
     :logger.remove_primary_filter(:nr_logs_in_context)
     Logger.configure_backend(:console, format: @default_pattern)
-    NewRelic.Init.setup_logs_in_context()
+    NewRelic.LogsInContext.Supervisor.setup_logs_in_context()
   end
 end
