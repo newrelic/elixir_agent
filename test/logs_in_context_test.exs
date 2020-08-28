@@ -5,8 +5,12 @@ defmodule LogsInContextTest do
 
   alias NewRelic.Harvest.TelemetrySdk
 
+  unless NewRelic.LogsInContext.elixir_version_supported?() do
+    @moduletag :skip
+  end
+
   test "LogsInContext formats log messages" do
-    configure_logs_in_context(:forward)
+    configure_logs_in_context(:forwarder)
 
     log_line =
       capture_log([colors: [enabled: false]], fn ->
@@ -29,6 +33,8 @@ defmodule LogsInContextTest do
     assert log["trace.id"] |> is_binary
     assert log["metadata.foo"] == "bar"
     assert log["metadata.now"] |> is_binary
+
+    configure_logs_in_context(:disabled)
   end
 
   test "LogsInContext in :direct mode" do
@@ -59,13 +65,15 @@ defmodule LogsInContextTest do
 
     assert harvest[:logs] |> length > 0
     assert harvest[:common][:attributes] |> Map.has_key?(:"entity.guid")
+
+    configure_logs_in_context(:disabled)
   end
 
   @default_pattern "\n$time $metadata[$level] $levelpad$message\n"
   def configure_logs_in_context(mode) do
-    Application.put_env(:new_relic_agent, :logs_in_context, mode)
     :logger.remove_primary_filter(:nr_logs_in_context)
     Logger.configure_backend(:console, format: @default_pattern)
-    NewRelic.LogsInContext.Supervisor.setup_logs_in_context()
+
+    NewRelic.LogsInContext.configure(mode)
   end
 end

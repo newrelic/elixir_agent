@@ -4,6 +4,24 @@ defmodule NewRelic.LogsInContext do
   alias NewRelic.Harvest.Collector.AgentRun
   alias NewRelic.Harvest.TelemetrySdk
 
+  @elixir_version_requirement ">= 1.10.0"
+  def elixir_version_supported?() do
+    Version.match?(System.version(), @elixir_version_requirement)
+  end
+
+  def configure(:direct) do
+    :logger.add_primary_filter(:nr_logs_in_context, {&primary_filter/2, %{mode: :direct}})
+  end
+
+  def configure(:forwarder) do
+    :logger.add_primary_filter(:nr_logs_in_context, {&primary_filter/2, %{mode: :forwarder}})
+    Logger.configure_backend(:console, format: {NewRelic.LogsInContext, :format})
+  end
+
+  def configure(:disabled) do
+    :skip
+  end
+
   def primary_filter(%{msg: {:string, _msg}} = log, %{mode: :direct}) do
     log
     |> prepare_log()
@@ -12,7 +30,7 @@ defmodule NewRelic.LogsInContext do
     log
   end
 
-  def primary_filter(%{msg: {:string, _msg}} = log, %{mode: :forward}) do
+  def primary_filter(%{msg: {:string, _msg}} = log, %{mode: :forwarder}) do
     message =
       log
       |> prepare_log()
@@ -35,6 +53,16 @@ defmodule NewRelic.LogsInContext do
     |> Map.merge(log_metadata(log))
     |> Map.merge(logger_metadata())
     |> Map.merge(tracing_metadata())
+  end
+
+  def format(_level, message, _timestamp, _metadata) when is_binary(message) do
+    message <> "\n"
+  end
+
+  # Fallback to default formatter for future compatibility with Elixir structured logging
+  def format(level, message, timestamp, metadata) do
+    config = Logger.Formatter.compile(nil)
+    Logger.Formatter.format(config, level, message, timestamp, metadata)
   end
 
   defp log_metadata(log) do
@@ -74,15 +102,5 @@ defmodule NewRelic.LogsInContext do
       "trace.id": Map.get(context, :trace_id),
       "span.id": Map.get(context, :guid)
     }
-  end
-
-  def format(_level, message, _timestamp, _metadata) when is_binary(message) do
-    message <> "\n"
-  end
-
-  # Fallback to default formatter for future compatibility with Elixir structured logging
-  def format(level, message, timestamp, metadata) do
-    config = Logger.Formatter.compile(nil)
-    Logger.Formatter.format(config, level, message, timestamp, metadata)
   end
 end

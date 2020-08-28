@@ -131,6 +131,31 @@ defmodule NewRelic.Config do
     )
   end
 
+  @doc """
+  Some Agent features can be controlled via configuration
+
+  ### Logs In Context
+
+  This feature can be run in multiple "modes":
+  * `forwarder` The recommended mode which formats outgoing logs as JSON objects
+  ready to be picked up by a [Log Forwarder](https://docs.newrelic.com/docs/logs/enable-log-management-new-relic/enable-log-monitoring-new-relic/enable-log-management-new-relic)
+  * `direct` Logs are buffered in the agent and shipped directly to New Relic. Your logs
+  will continue being output to their normal destination.
+  * `disabled` (default)
+
+  Logs In Context can be configured in two ways:
+  * Environment variable `NEW_RELIC_LOGS_IN_CONTEXT=forwarder`
+  * Application config `config :new_relic_agent, logs_in_context: :forwarder`
+  """
+  def feature(:logs_in_context) do
+    case System.get_env("NEW_RELIC_LOGS_IN_CONTEXT") do
+      nil -> Application.get_env(:new_relic_agent, :logs_in_context, :disabled)
+      "forwarder" -> :forwarder
+      "direct" -> :direct
+      _ -> :disabled
+    end
+  end
+
   defp feature_check?(env, config, default \\ true) do
     case System.get_env(env) do
       "true" -> true
