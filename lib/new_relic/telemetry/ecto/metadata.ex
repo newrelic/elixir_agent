@@ -53,6 +53,30 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
     {"MySQL", table, operation}
   end
 
+  @tds_select ~r/FROM \[(?<table>\w+)\]/
+  @tds_insert ~r/INSERT INTO \[(?<table>\w+)\]/
+  @tds_update ~r/UPDATE \[(?<table>\w+)\]/
+  @tds_delete ~r/FROM \[(?<table>\w+)\]/
+  def parse(%{
+        query: query,
+        result: {_ok_or_error, %{__struct__: struct}}
+      })
+      when struct in [Tds.Result, Tds.Error] do
+    {operation, table} =
+      case query do
+        "SELECT" <> _ -> {"select", capture(@tds_select, query, "table")}
+        "INSERT" <> _ -> {"insert", capture(@tds_insert, query, "table")}
+        "UPDATE" <> _ -> {"update", capture(@tds_update, query, "table")}
+        "DELETE" <> _ -> {"delete", capture(@tds_delete, query, "table")}
+        "begin" -> {"begin", "other"}
+        "commit" -> {"commit", "other"}
+        "rollback" -> {"rollback", "other"}
+        _ -> {"other", "other"}
+      end
+
+    {"TDS", table, operation}
+  end
+
   def parse(%{result: {:ok, %{__struct__: Postgrex.Cursor}}}), do: :ignore
   def parse(%{result: {:ok, %{__struct__: MyXQL.Cursor}}}), do: :ignore
   def parse(%{result: {:ok, nil}}), do: :ignore
