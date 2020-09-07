@@ -27,11 +27,13 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     GenServer.call(__MODULE__, :ping)
   end
 
-  def agent_run_id, do: lookup(:agent_run_id)
-  def entity_guid, do: lookup(:entity_guid)
-  def trusted_account_key, do: lookup(:trusted_account_key)
-  def account_id, do: lookup(:account_id)
-  def primary_application_id, do: lookup(:primary_application_id)
+  def agent_run_id, do: get(:agent_run_id)
+  def entity_guid, do: get(:entity_guid)
+  def trusted_account_key, do: get(:trusted_account_key)
+  def account_id, do: get(:account_id)
+  def primary_application_id, do: get(:primary_application_id)
+  def apdex_t, do: get(:apdex_t)
+  def request_headers, do: get(:request_headers)
 
   def reconnect, do: send(__MODULE__, :reconnect)
 
@@ -75,6 +77,9 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     |> store_agent_run()
   end
 
+  def get(key),
+    do: :persistent_term.get(:nr_agent_run, %{})[key]
+
   defp store_agent_run({:ok, %{"agent_run_id" => _} = connect_response}) do
     :persistent_term.put(:nr_entity_metadata, %{
       hostname: NewRelic.Util.hostname(),
@@ -83,13 +88,15 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
       "entity.name": NewRelic.Config.app_name() |> List.first()
     })
 
-    store(:agent_run_id, connect_response["agent_run_id"])
-    store(:entity_guid, connect_response["entity_guid"])
-    store(:trusted_account_key, connect_response["trusted_account_key"])
-    store(:account_id, connect_response["account_id"])
-    store(:primary_application_id, connect_response["primary_application_id"])
-
-    store(:request_headers, connect_response["request_headers_map"] |> Map.to_list())
+    :persistent_term.put(:nr_agent_run, %{
+      agent_run_id: connect_response["agent_run_id"],
+      entity_guid: connect_response["entity_guid"],
+      trusted_account_key: connect_response["trusted_account_key"],
+      account_id: connect_response["account_id"],
+      primary_application_id: connect_response["primary_application_id"],
+      apdex_t: connect_response["apdex_t"],
+      request_headers: connect_response["request_headers_map"] |> Map.to_list()
+    })
 
     store(:sampling_target, connect_response["sampling_target"])
     store(:sampling_target_period, connect_response["sampling_target_period_in_seconds"] * 1000)
@@ -136,8 +143,6 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
 
     store(:data_report_period, connect_response["data_report_period"] * 1000)
 
-    store(:apdex_t, connect_response["apdex_t"])
-
     :connected
   end
 
@@ -154,7 +159,7 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     :persistent_term.get(:nr_entity_metadata, @empty_entity_metadata)
   end
 
-  def store(key, value) do
+  defp store(key, value) do
     :ets.insert(__MODULE__, {key, value})
   end
 

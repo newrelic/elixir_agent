@@ -9,13 +9,13 @@ defmodule SpanEventTest do
   @dt_header "newrelic"
 
   setup do
-    prev_key = Collector.AgentRun.trusted_account_key()
-    Collector.AgentRun.store(:trusted_account_key, "190")
+    reset_agent_run = TestHelper.update(:nr_agent_run, trusted_account_key: "190")
     reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+
     send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
-      Collector.AgentRun.store(:trusted_account_key, prev_key)
+      reset_agent_run.()
       reset_config.()
     end)
 

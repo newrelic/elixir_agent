@@ -71,9 +71,7 @@ defmodule IntegrationTest do
 
   test "Can post a Log" do
     {:ok, resp} =
-      NewRelic.Harvest.TelemetrySdk.API.log(
-        [%{logs: [%{message: "TEST"}], common: %{}}]
-      )
+      NewRelic.Harvest.TelemetrySdk.API.log([%{logs: [%{message: "TEST"}], common: %{}}])
 
     assert resp.status_code == 202
   end

@@ -181,7 +181,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
 
   defp collector_headers do
     ["user-agent": "NewRelic-ElixirAgent/#{NewRelic.Config.agent_version()}"] ++
-      Collector.AgentRun.lookup(:request_headers, [])
+      (Collector.AgentRun.request_headers() || [])
   end
 
   defp default_collector_params,

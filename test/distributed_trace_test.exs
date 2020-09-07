@@ -44,19 +44,24 @@ defmodule DistributedTraceTest do
   end
 
   setup do
-    prev_key = Collector.AgentRun.trusted_account_key()
-    Collector.AgentRun.store(:trusted_account_key, "190")
-    prev_acct = Collector.AgentRun.account_id()
-    Collector.AgentRun.store(:account_id, 190)
-    Collector.AgentRun.store(:primary_application_id, 1441)
+    reset_config =
+      TestHelper.update(:nr_config,
+        license_key: "dummy_key",
+        harvest_enabled: true
+      )
 
-    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+    reset_agent_run =
+      TestHelper.update(:nr_agent_run,
+        trusted_account_key: "190",
+        account_id: 190,
+        primary_application_id: 1441
+      )
+
     send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
-      Collector.AgentRun.store(:trusted_account_key, prev_key)
-      Collector.AgentRun.store(:account_id, prev_acct)
       reset_config.()
+      reset_agent_run.()
     end)
 
     :ok
