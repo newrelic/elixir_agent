@@ -21,7 +21,7 @@ defmodule NewRelic.Init do
     {collector_host, region_prefix} = determine_collector_host(host, license_key)
     telemetry_hosts = determine_telemetry_hosts(host, region_prefix)
 
-    :persistent_term.put(:nr_config, %{
+    NewRelic.Config.put(%{
       host: host,
       port: determine_config(:port, 443),
       scheme: determine_config(:scheme, "https"),

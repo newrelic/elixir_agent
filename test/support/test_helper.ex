@@ -75,16 +75,12 @@ defmodule TestHelper do
     :ok
   end
 
-  def update(key, items) do
+  def update(key, updates) do
     original = :persistent_term.get(key)
-    items = Map.new(items)
+    updates = Map.new(updates)
 
-    :persistent_term.put(key, Map.merge(original, items))
+    :persistent_term.put(key, Map.merge(original, updates))
 
-    Map.take(original, Map.keys(items))
-
-    fn ->
-      :persistent_term.put(key, original)
-    end
+    fn -> :persistent_term.put(key, original) end
   end
 end

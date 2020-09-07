@@ -71,8 +71,7 @@ defmodule IntegrationTest do
 
   test "Can post a Log" do
     {:ok, resp} =
-      NewRelic.Harvest.TelemetrySdk.API.post(
-        :log,
+      NewRelic.Harvest.TelemetrySdk.API.log(
         [%{logs: [%{message: "TEST"}], common: %{}}]
       )
 
@@ -80,6 +79,8 @@ defmodule IntegrationTest do
   end
 
   test "EnabledSupervisor starts" do
+    NewRelic.EnabledSupervisorManager.start_child()
+
     # make sure a process under EnabledSupervisor started
     assert Process.whereis(NewRelic.Sampler.Beam)
   end

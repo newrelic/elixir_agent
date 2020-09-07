@@ -15,7 +15,7 @@ defmodule NewRelic.Config do
   * Application config: `config :new_relic_agent, app_name: "MyApp"`
   """
   def app_name,
-    do: get_config(:app_name)
+    do: get(:app_name)
 
   @doc """
   **Required**
@@ -28,11 +28,11 @@ defmodule NewRelic.Config do
   * Application config: `config :new_relic_agent, license_key: "abc123"`
   """
   def license_key,
-    do: get_config(:license_key)
+    do: get(:license_key)
 
   @doc false
   def host,
-    do: get_config(:host)
+    do: get(:host)
 
   @doc """
   Configure the Agent logging mechanism.
@@ -52,7 +52,7 @@ defmodule NewRelic.Config do
   * Application config: `config :new_relic_agent, log: "stdout"`
   """
   def logger,
-    do: get_config(:log)
+    do: get(:log)
 
   @doc """
   An optional list of key/value pairs that will be automatic custom attributes
@@ -78,7 +78,7 @@ defmodule NewRelic.Config do
   ```
   """
   def automatic_attributes,
-    do: get_config(:automatic_attributes)
+    do: get(:automatic_attributes)
 
   @doc """
   An optional list of labels that will be applied to the application.
@@ -94,10 +94,10 @@ defmodule NewRelic.Config do
   * Application config: `config :new_relic_agent, labels: "region:west;env:prod"`
   """
   def labels,
-    do: get_config(:labels)
+    do: get(:labels)
 
   @doc """
-  Some Agent features can be toggled via configuration
+  Some Agent features can be toggled via configuration.
 
   ### Security
 
@@ -149,7 +149,7 @@ defmodule NewRelic.Config do
   end
 
   @doc """
-  Some Agent features can be controlled via configuration
+  Some Agent features can be controlled via configuration.
 
   ### Logs In Context
 
@@ -187,7 +187,7 @@ defmodule NewRelic.Config do
 
   @doc false
   def region_prefix,
-    do: get_config(:region_prefix)
+    do: get(:region_prefix)
 
   @doc false
   def event_harvest_config() do
@@ -202,14 +202,16 @@ defmodule NewRelic.Config do
     }
   end
 
-  defp harvest_enabled?, do: get_config(:harvest_enabled)
+  defp harvest_enabled?, do: get(:harvest_enabled)
 
-  def get_config(key),
+  def get(key),
     do: :persistent_term.get(:nr_config)[key]
+
+  def put(items),
+    do: :persistent_term.put(:nr_config, items)
 
   @external_resource "VERSION"
   @agent_version "VERSION" |> File.read!() |> String.trim()
-
   @doc false
   def agent_version, do: @agent_version
 end

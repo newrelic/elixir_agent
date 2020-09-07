@@ -166,4 +166,13 @@ defmodule NewRelic.Util do
   defp get_hostname do
     with {:ok, name} <- :inet.gethostname(), do: to_string(name)
   end
+
+  def uuid4() do
+    "#{u(4)}-#{u(2)}-4a#{u(1)}-#{u(2)}-#{u(6)}"
+  end
+
+  defp u(len) do
+    :crypto.strong_rand_bytes(len)
+    |> Base.encode16(case: :lower)
+  end
 end

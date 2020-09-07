@@ -1,30 +1,55 @@
 defmodule NewRelic.Harvest.TelemetrySdk.API do
-  def post(type, payload) do
-    region_prefix = NewRelic.Config.region_prefix()
+  @moduledoc false
 
-    NewRelic.Util.HTTP.post(
-      url(type, region_prefix),
-      payload,
-      headers()
-    )
+  def log(logs) do
+    url = url(:log)
+    payload = {:logs, logs, generate_request_id()}
+
+    request(url, payload)
+    |> maybe_retry(url, payload)
   end
 
-  defp headers() do
+  def request(url, payload) do
+    post(url, payload)
+  end
+
+  @success 200..299
+  @drop [400, 401, 403, 405, 409, 410, 411]
+  def maybe_retry({:ok, %{status_code: status_code}} = result, _, _)
+      when status_code in @success
+      when status_code in @drop do
+    result
+  end
+
+  # 413 split
+
+  # 408, 500+
+  def maybe_retry(_result, url, payload) do
+    post(url, payload)
+  end
+
+  def post(url, {_, payload, request_id}) do
+    NewRelic.Util.HTTP.post(url, payload, headers(request_id))
+  end
+
+  defp url(type) do
+    NewRelic.Config.get(:telemetry_hosts)[type]
+  end
+
+  defp headers(request_id) do
     [
-      "X-License-Key": NewRelic.Config.license_key()
+      "X-Request-Id": request_id,
+      "X-License-Key": NewRelic.Config.license_key(),
+      "User-Agent": user_agent()
     ]
   end
 
-  defp url(type, nil),
-    do: "https://#{env()}#{type}-api.newrelic.com/#{type}/v1"
+  defp user_agent() do
+    "NewRelic-Elixir-TelemetrySDK/0.1.0 " <>
+      "NewRelic-Elixir-Agent/#{NewRelic.Config.agent_version()}"
+  end
 
-  defp url(type, region_prefix),
-    do: "https://#{env()}#{type}-api.#{region_prefix}.newrelic.com/#{type}/v1"
-
-  defp env() do
-    case Application.get_env(:new_relic_agent, :melt_env) do
-      nil -> nil
-      env -> "#{env}-"
-    end
+  defp generate_request_id() do
+    NewRelic.Util.uuid4()
   end
 end

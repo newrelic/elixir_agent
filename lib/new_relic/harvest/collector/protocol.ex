@@ -71,14 +71,14 @@ defmodule NewRelic.Harvest.Collector.Protocol do
 
     host =
       Application.get_env(:new_relic_agent, :collector_instance_host) ||
-        NewRelic.Config.get_config(:collector_host)
+        NewRelic.Config.get(:collector_host)
 
     %URI{
       host: host,
       path: "/agent_listener/invoke_raw_method",
       query: URI.encode_query(params),
-      scheme: NewRelic.Config.get_config(:scheme),
-      port: NewRelic.Config.get_config(:port)
+      scheme: NewRelic.Config.get(:scheme),
+      port: NewRelic.Config.get(:port)
     }
     |> URI.to_string()
   end
