@@ -31,15 +31,13 @@ defmodule W3CTraceContextTest do
     prev_acct = Collector.AgentRun.account_id()
     Collector.AgentRun.store(:account_id, 190)
 
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
     send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
       Collector.AgentRun.store(:trusted_account_key, prev_key)
       Collector.AgentRun.store(:account_id, prev_acct)
-      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-      System.delete_env("NEW_RELIC_LICENSE_KEY")
+      reset_config.()
     end)
 
     :ok

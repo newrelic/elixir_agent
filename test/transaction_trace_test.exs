@@ -310,8 +310,7 @@ defmodule TransactionTraceTest do
   end
 
   test "Ensure that huge argument terms don't blow out memory" do
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
@@ -323,13 +322,12 @@ defmodule TransactionTraceTest do
 
     assert String.length(span[:args]) < 500
 
-    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-    System.delete_env("NEW_RELIC_LICENSE_KEY")
+    reset_config.()
   end
 
   test "Don't trace arguments when disabled" do
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+
     Application.put_env(:new_relic_agent, :function_argument_collection_enabled, false)
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
@@ -343,13 +341,11 @@ defmodule TransactionTraceTest do
     assert span[:args] == "[DISABLED]"
 
     Application.delete_env(:new_relic_agent, :function_argument_collection_enabled)
-    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-    System.delete_env("NEW_RELIC_LICENSE_KEY")
+    reset_config.()
   end
 
   test "Don't trace arguments when opted-out on individual function" do
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
@@ -369,13 +365,11 @@ defmodule TransactionTraceTest do
 
     refute span[:args] == "[DISABLED]"
 
-    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-    System.delete_env("NEW_RELIC_LICENSE_KEY")
+    reset_config.()
   end
 
   test "Don't trace arguments when opted-out on individual external" do
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
 
     TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
 
@@ -395,7 +389,6 @@ defmodule TransactionTraceTest do
 
     refute span[:args] == "[DISABLED]"
 
-    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-    System.delete_env("NEW_RELIC_LICENSE_KEY")
+    reset_config.()
   end
 end

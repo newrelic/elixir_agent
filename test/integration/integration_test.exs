@@ -7,12 +7,12 @@ defmodule IntegrationTest do
   # env NR_INT_TEST=true mix test test/integration --include skip
 
   setup do
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
+    reset_config = TestHelper.update(:nr_config, harvest_enabled: true)
     Collector.AgentRun.reconnect()
     GenServer.call(Collector.AgentRun, :ping)
 
     on_exit(fn ->
-      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+      reset_config.()
     end)
 
     :ok
@@ -70,10 +70,11 @@ defmodule IntegrationTest do
   end
 
   test "Can post a Log" do
-    {:ok, resp} = NewRelic.Harvest.TelemetrySdk.API.post(
-      :log,
-      [%{logs: [%{message: "TEST"}], common: %{}}]
-    )
+    {:ok, resp} =
+      NewRelic.Harvest.TelemetrySdk.API.post(
+        :log,
+        [%{logs: [%{message: "TEST"}], common: %{}}]
+      )
 
     assert resp.status_code == 202
   end

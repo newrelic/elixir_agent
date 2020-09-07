@@ -14,16 +14,15 @@ defmodule NewRelic.Harvest.DataSupervisor do
     harvester_supervisor = Module.concat(namespace, HarvesterSupervisor)
     harvester_cycle = Module.concat(namespace, HarvestCycle)
 
-    children =
-      [
-        {Harvest.HarvesterSupervisor, harvester: harvester, name: harvester_supervisor},
-        {Harvest.HarvestCycle,
-         name: harvester_cycle,
-         child_spec: harvester,
-         harvest_cycle_key: harvest_cycle_key,
-         supervisor: harvester_supervisor,
-         lookup_module: lookup_module}
-      ]
+    children = [
+      {Harvest.HarvesterSupervisor, harvester: harvester, name: harvester_supervisor},
+      {Harvest.HarvestCycle,
+       name: harvester_cycle,
+       child_spec: harvester,
+       harvest_cycle_key: harvest_cycle_key,
+       supervisor: harvester_supervisor,
+       lookup_module: lookup_module}
+    ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end

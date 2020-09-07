@@ -14,10 +14,8 @@ defmodule NewRelic.Config do
   * Environment variable: `NEW_RELIC_APP_NAME=MyApp`
   * Application config: `config :new_relic_agent, app_name: "MyApp"`
   """
-  def app_name do
-    (System.get_env("NEW_RELIC_APP_NAME") || Application.get_env(:new_relic_agent, :app_name))
-    |> parse_app_names
-  end
+  def app_name,
+    do: get_config(:app_name)
 
   @doc """
   **Required**
@@ -30,13 +28,11 @@ defmodule NewRelic.Config do
   * Application config: `config :new_relic_agent, license_key: "abc123"`
   """
   def license_key,
-    do:
-      System.get_env("NEW_RELIC_LICENSE_KEY") ||
-        Application.get_env(:new_relic_agent, :license_key)
+    do: get_config(:license_key)
 
   @doc false
   def host,
-    do: System.get_env("NEW_RELIC_HOST") || Application.get_env(:new_relic_agent, :host)
+    do: get_config(:host)
 
   @doc """
   Configure the Agent logging mechanism.
@@ -56,15 +52,16 @@ defmodule NewRelic.Config do
   * Application config: `config :new_relic_agent, log: "stdout"`
   """
   def logger,
-    do: System.get_env("NEW_RELIC_LOG") || Application.get_env(:new_relic_agent, :log)
+    do: get_config(:log)
 
   @doc """
   An optional list of key/value pairs that will be automatic custom attributes
-  on all event types reported (Transactions, etc).
+  on all event types reported (Transactions, etc). Values are determined at Agent
+  start.
 
   Options:
   - `{:system, "ENV_NAME"}` Read a System ENV variable
-  - `{module, function, args}` Call a function. Warning: Be very careful, this will get called a lot!
+  - `{module, function, args}` Call a function.
   - `"foo"` A direct value
 
   This feature is only configurable with `Application` config.
@@ -80,14 +77,8 @@ defmodule NewRelic.Config do
     ]
   ```
   """
-  def automatic_attributes do
-    Application.get_env(:new_relic_agent, :automatic_attributes, [])
-    |> Enum.into(%{}, fn
-      {name, {:system, env_var}} -> {name, System.get_env(env_var)}
-      {name, {m, f, a}} -> {name, apply(m, f, a)}
-      {name, value} -> {name, value}
-    end)
-  end
+  def automatic_attributes,
+    do: get_config(:automatic_attributes)
 
   @doc """
   An optional list of labels that will be applied to the application.
@@ -102,10 +93,8 @@ defmodule NewRelic.Config do
   * Environment variables: `NEW_RELIC_LABELS=region:west;env:prod`
   * Application config: `config :new_relic_agent, labels: "region:west;env:prod"`
   """
-  def labels do
-    (System.get_env("NEW_RELIC_LABELS") || Application.get_env(:new_relic_agent, :labels))
-    |> parse_labels()
-  end
+  def labels,
+    do: get_config(:labels)
 
   @doc """
   Some Agent features can be toggled via configuration
@@ -193,11 +182,12 @@ defmodule NewRelic.Config do
   end
 
   @doc false
-  def enabled?, do: (harvest_enabled?() && app_name() && license_key() && true) || false
+  def enabled?,
+    do: (harvest_enabled?() && app_name() && license_key() && true) || false
 
   @doc false
   def region_prefix,
-    do: Application.get_env(:new_relic_agent, :region_prefix)
+    do: get_config(:region_prefix)
 
   @doc false
   def event_harvest_config() do
@@ -212,28 +202,10 @@ defmodule NewRelic.Config do
     }
   end
 
-  defp harvest_enabled?,
-    do:
-      System.get_env("NEW_RELIC_HARVEST_ENABLED") == "true" ||
-        Application.get_env(:new_relic_agent, :harvest_enabled, true)
+  defp harvest_enabled?, do: get_config(:harvest_enabled)
 
-  defp parse_app_names(nil), do: nil
-
-  defp parse_app_names(name_string) do
-    name_string
-    |> String.split(";")
-    |> Enum.map(&String.trim/1)
-  end
-
-  defp parse_labels(nil), do: []
-
-  @label_splitter ~r/;|:/
-  defp parse_labels(label_string) do
-    label_string
-    |> String.split(@label_splitter, trim: true)
-    |> Enum.map(&String.trim/1)
-    |> Enum.chunk_every(2, 2, :discard)
-  end
+  def get_config(key),
+    do: :persistent_term.get(:nr_config)[key]
 
   @external_resource "VERSION"
   @agent_version "VERSION" |> File.read!() |> String.trim()

@@ -14,6 +14,10 @@ defmodule NewRelic.Harvest.TelemetrySdk.Logs.Harvester do
        start_time: System.system_time(),
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
+       sampling: %{
+         reservoir_size: Application.get_env(:new_relic_agent, :log_reservior_size, 5_000),
+         logs_seen: 0
+       },
        logs: []
      }}
   end
@@ -35,7 +39,12 @@ defmodule NewRelic.Harvest.TelemetrySdk.Logs.Harvester do
   def handle_cast(_late_msg, :completed), do: {:noreply, :completed}
 
   def handle_cast({:report, log}, state) do
-    {:noreply, %{state | logs: [log | state.logs]}}
+    state =
+      state
+      |> store_log(log)
+      |> store_sampling
+
+    {:noreply, state}
   end
 
   def handle_call(_late_msg, _from, :completed), do: {:reply, :completed, :completed}
@@ -49,12 +58,20 @@ defmodule NewRelic.Harvest.TelemetrySdk.Logs.Harvester do
     {:reply, build_log_data(state.logs), state}
   end
 
-  def send_harvest(state) do
-    TelemetrySdk.API.post(
-      :log,
-      build_log_data(state.logs)
-    )
+  # Helpers
 
+  def store_log(%{sampling: %{logs_seen: seen, reservoir_size: size}} = state, log)
+      when seen < size,
+      do: %{state | logs: [log | state.logs]}
+
+  def store_log(state, _log),
+    do: state
+
+  def store_sampling(%{sampling: sampling} = state),
+    do: %{state | sampling: Map.update!(sampling, :logs_seen, &(&1 + 1))}
+
+  def send_harvest(state) do
+    TelemetrySdk.API.log(build_log_data(state.logs))
     log_harvest(length(state.logs))
   end
 

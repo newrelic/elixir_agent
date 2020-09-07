@@ -4,8 +4,9 @@ defmodule CollectorProtocolTest do
 
   test "handles invalid license key" do
     previous_logger = GenServer.call(NewRelic.Logger, {:logger, :memory})
-    System.put_env("NEW_RELIC_LICENSE_KEY", "invalid_key")
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
+
+    reset_config =
+      TestHelper.update(:nr_config, license_key: "invalid_key", harvest_enabled: true)
 
     assert {:error, :force_disconnect} = Collector.Protocol.preconnect()
 
@@ -15,8 +16,7 @@ defmodule CollectorProtocolTest do
     assert log =~ "NewRelic::Agent::LicenseException"
     assert log =~ "Invalid license key"
 
-    System.delete_env("NEW_RELIC_LICENSE_KEY")
-    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+    reset_config.()
     GenServer.call(NewRelic.Logger, {:replace, previous_logger})
   end
 

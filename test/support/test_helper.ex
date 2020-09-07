@@ -64,16 +64,27 @@ defmodule TestHelper do
   def simulate_agent_run(_context) do
     prev_key = Collector.AgentRun.trusted_account_key()
     Collector.AgentRun.store(:trusted_account_key, "190")
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
     send(NewRelic.DistributedTrace.BackoffSampler, :reset)
 
     ExUnit.Callbacks.on_exit(fn ->
       Collector.AgentRun.store(:trusted_account_key, prev_key)
-      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-      System.delete_env("NEW_RELIC_LICENSE_KEY")
+      reset_config.()
     end)
 
     :ok
+  end
+
+  def update(key, items) do
+    original = :persistent_term.get(key)
+    items = Map.new(items)
+
+    :persistent_term.put(key, Map.merge(original, items))
+
+    Map.take(original, Map.keys(items))
+
+    fn ->
+      :persistent_term.put(key, original)
+    end
   end
 end

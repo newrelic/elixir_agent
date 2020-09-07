@@ -120,7 +120,7 @@ defmodule CustomEventTest do
   end
 
   test "Annotate events with user's configured attributes" do
-    System.put_env("MY_SERVICE_NAME", "crazy-service")
+    System.put_env("MY_SERVICE_NAME", "cool-service")
 
     Application.put_env(
       :new_relic_agent,
@@ -128,16 +128,20 @@ defmodule CustomEventTest do
       service_name: {:system, "MY_SERVICE_NAME"}
     )
 
+    NewRelic.Init.init_config()
+
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
     NewRelic.report_custom_event(:Event, %{key: "TestEvent"})
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:key] == "TestEvent" && event[:service_name] == "crazy-service"
+             event[:key] == "TestEvent" && event[:service_name] == "cool-service"
            end)
 
     Application.put_env(:new_relic_agent, :automatic_attributes, [])
+    NewRelic.Init.init_config()
+
     System.delete_env("MY_SERVICE_NAME")
   end
 

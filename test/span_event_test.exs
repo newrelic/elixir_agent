@@ -11,14 +11,12 @@ defmodule SpanEventTest do
   setup do
     prev_key = Collector.AgentRun.trusted_account_key()
     Collector.AgentRun.store(:trusted_account_key, "190")
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
     send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
       Collector.AgentRun.store(:trusted_account_key, prev_key)
-      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-      System.delete_env("NEW_RELIC_LICENSE_KEY")
+      reset_config.()
     end)
 
     :ok

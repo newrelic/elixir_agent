@@ -27,24 +27,19 @@ defmodule EvilCollectorTest do
   end
 
   setup_all do
-    config = [
-      collector_instance_host: "localhost",
-      port: 8881,
-      scheme: "http",
-      license_key: "key",
-      harvest_enabled: true
-    ]
+    Application.put_env(:new_relic_agent, :collector_instance_host, "localhost")
 
-    original =
-      Enum.map(config, fn {key, _} -> {key, Application.get_env(:new_relic_agent, key)} end)
-
-    Enum.each(config, fn {key, value} -> Application.put_env(:new_relic_agent, key, value) end)
+    reset_config =
+      TestHelper.update(:nr_config,
+        port: 8881,
+        scheme: "http",
+        license_key: "key",
+        harvest_enabled: true
+      )
 
     on_exit(fn ->
-      Enum.each(original, fn
-        {key, nil} -> Application.delete_env(:new_relic_agent, key)
-        {key, value} -> Application.put_env(:new_relic_agent, key, value)
-      end)
+      Application.delete_env(:new_relic_agent, :collector_instance_host)
+      reset_config.()
     end)
 
     :ok
