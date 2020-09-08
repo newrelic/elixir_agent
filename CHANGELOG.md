@@ -1,5 +1,15 @@
 ## CHANGELOG
 
+### `v1.19.6`
+
+Fixes
+* Properly handle bad values in Custom and Span Events. [#267](https://github.com/newrelic/elixir_agent/pull/267) & [#268](https://github.com/newrelic/elixir_agent/pull/268)
+
+### `v1.19.5`
+
+Fixes
+* Fix memory leak in long running transactions. [#263](https://github.com/newrelic/elixir_agent/pull/263) Thanks @mopp!
+
 ### `v1.19.4`
 
 Fixes

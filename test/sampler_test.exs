@@ -31,7 +31,7 @@ defmodule SamplerTest do
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :BeamStat && event[:reductions] > 0 && event[:process_count] > 0
+             event[:category] == "BeamStat" && event[:reductions] > 0 && event[:process_count] > 0
            end)
 
     [%{name: "Memory/Physical"}, [_, mb, _, _, _, _]] =
@@ -54,7 +54,7 @@ defmodule SamplerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :ProcessSample && event[:name] == "SamplerTest.TestProcess" &&
+             event[:category] == "ProcessSample" && event[:name] == "SamplerTest.TestProcess" &&
                event[:message_queue_length] == 0
            end)
   end
@@ -75,7 +75,7 @@ defmodule SamplerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :ProcessSample && event[:name] =~ "PID" &&
+             event[:category] == "ProcessSample" && event[:name] =~ "PID" &&
                event[:message_queue_length] == 0
            end)
   end
@@ -90,7 +90,7 @@ defmodule SamplerTest do
 
     [_, %{reductions: first_reductions}, _] =
       Enum.find(events, fn [_, event, _] ->
-        event[:category] == :ProcessSample && event[:name] == "SamplerTest.TestProcess"
+        event[:category] == "ProcessSample" && event[:name] == "SamplerTest.TestProcess"
       end)
 
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
@@ -103,7 +103,7 @@ defmodule SamplerTest do
 
     [_, %{reductions: second_reductions}, _] =
       Enum.find(events, fn [_, event, _] ->
-        event[:category] == :ProcessSample && event[:name] == "SamplerTest.TestProcess"
+        event[:category] == "ProcessSample" && event[:name] == "SamplerTest.TestProcess"
       end)
 
     assert second_reductions > first_reductions
@@ -142,7 +142,7 @@ defmodule SamplerTest do
       events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
       assert Enum.find(events, fn [_, event, _] ->
-               event[:category] == :EtsStat && event[:table_name] == ":test_table" &&
+               event[:category] == "EtsStat" && event[:table_name] == ":test_table" &&
                  event[:size] == 510
              end)
     end

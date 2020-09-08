@@ -201,7 +201,8 @@ defmodule NewRelic.Tracer.Macro do
         duration_acc = Process.get({:nr_duration_acc, parent_ref}, 0)
         Process.put({:nr_duration_acc, parent_ref}, duration_acc + duration_ms)
 
-        child_duration_ms = Process.get({:nr_duration_acc, current_ref}, 0)
+        child_duration_ms = Process.delete({:nr_duration_acc, current_ref}) || 0
+        if parent_ref == :root, do: Process.delete({:nr_duration_acc, parent_ref})
 
         Tracer.Report.call(
           {unquote(module), unquote(function), unquote(build_call_args(args))},

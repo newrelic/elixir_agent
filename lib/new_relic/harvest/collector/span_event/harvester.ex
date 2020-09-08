@@ -7,7 +7,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Span.Event
-  alias NewRelic.Util.PriorityQueue
+  alias NewRelic.Util
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, [])
@@ -23,7 +23,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
          reservoir_size: Collector.AgentRun.lookup(:span_event_reservoir_size, 100),
          events_seen: 0
        },
-       events: PriorityQueue.new()
+       events: Util.PriorityQueue.new()
      }}
   end
 
@@ -51,7 +51,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
       duration: duration_s,
       name: name,
       category: category,
-      category_attributes: attributes
+      category_attributes: Util.coerce_attributes(attributes)
     }
     |> report_span_event(DistributedTrace.get_tracing_context(), edge)
   end
@@ -118,7 +118,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   # Helpers
 
   def store_event(%{sampling: %{reservoir_size: size}} = state, %{priority: key} = event),
-    do: %{state | events: PriorityQueue.insert(state.events, size, key, event)}
+    do: %{state | events: Util.PriorityQueue.insert(state.events, size, key, event)}
 
   def store_sampling(%{sampling: sampling} = state),
     do: %{state | sampling: Map.update!(sampling, :events_seen, &(&1 + 1))}
@@ -148,7 +148,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
 
   def build_payload(state) do
     state.events
-    |> PriorityQueue.values()
+    |> Util.PriorityQueue.values()
     |> Event.format_events()
   end
 end
