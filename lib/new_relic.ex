@@ -91,6 +91,22 @@ defmodule NewRelic do
   defdelegate stop_transaction(), to: NewRelic.Transaction
 
   @doc """
+  Start a new "Other" transaction and stop the transaction after execution of the given block.
+  The return value of the block is returned.
+  """
+  defmacro transaction(category, name, do: block) do
+    quote do
+      NewRelic.start_transaction(unquote(category), unquote(name))
+
+      res = unquote(block)
+
+      NewRelic.stop_transaction()
+
+      res
+    end
+  end
+
+  @doc """
   Call within a transaction to prevent it from reporting.
 
   ```elixir
