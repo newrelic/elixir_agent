@@ -30,7 +30,7 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
     do:
       %Event{
         type: type,
-        attributes: annotate(attributes),
+        attributes: process(attributes),
         timestamp: System.system_time(:millisecond) / 1_000
       }
       |> report_custom_event
@@ -73,8 +73,10 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
 
   # Helpers
 
-  def annotate(event) do
+  def process(event) do
     event
+    |> NewRelic.Util.coerce_attributes()
+    |> Map.new()
     |> Map.merge(NewRelic.Config.automatic_attributes())
   end
 
