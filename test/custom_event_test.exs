@@ -102,6 +102,24 @@ defmodule CustomEventTest do
     TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
 
+  test "Handle non-serializable attribute values" do
+    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+
+    NewRelic.report_custom_event("CustomEventTest", %{
+      good_value: "A string",
+      bad_value: {:error, :timeout}
+    })
+
+    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    Jason.encode!(events)
+
+    [[_, attrs, _]] = events
+    assert attrs[:bad_value] == "[BAD_VALUE]"
+    assert attrs[:good_value] == "A string"
+
+    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+  end
+
   test "Ignore late reports" do
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 

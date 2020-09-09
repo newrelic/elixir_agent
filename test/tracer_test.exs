@@ -94,7 +94,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.error/1" &&
+             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.error/1" &&
                event[:call_count] == 1
            end)
   end
@@ -110,7 +110,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric &&
+             event[:category] == "Metric" &&
                event[:mfa] == "TracerTest.Traced.default_multiclause/1" && event[:call_count] == 3
            end)
   end
@@ -124,7 +124,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.fun/0" &&
+             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.fun/0" &&
                event[:call_count] == 1
            end)
   end
@@ -138,7 +138,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.foo:bar/0" &&
+             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.foo:bar/0" &&
                event[:call_count] == 1
            end)
   end
@@ -153,8 +153,8 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.query/0" &&
-               event[:metric_category] == :external && event[:call_count] == 2
+             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.query/0" &&
+               event[:metric_category] == "external" && event[:call_count] == 2
            end)
   end
 
@@ -172,7 +172,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.ignored/1" &&
+             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.ignored/1" &&
                event[:call_count] == 1
            end)
   end
@@ -186,7 +186,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.naive/1" &&
+             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.naive/1" &&
                event[:call_count] == 1
            end)
   end
@@ -201,7 +201,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.ignored/1" &&
+             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.ignored/1" &&
                event[:call_count] == 2
            end)
   end
@@ -215,7 +215,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.mod/1"
+             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.mod/1"
            end)
   end
 
@@ -228,7 +228,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.guard/1" &&
+             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.guard/1" &&
                event[:call_count] == 1
            end)
   end
@@ -243,7 +243,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric &&
+             event[:category] == "Metric" &&
                event[:mfa] == "TracerTest.Traced.multi:multiple_function_heads/2" &&
                event[:call_count] == 3
            end)
@@ -258,7 +258,7 @@ defmodule TracerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == :Metric && event[:mfa] == "TracerTest.Traced.priv/0" &&
+             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.priv/0" &&
                event[:call_count] == 1
            end)
   end
