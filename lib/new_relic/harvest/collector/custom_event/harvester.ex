@@ -76,7 +76,6 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
   def process(event) do
     event
     |> NewRelic.Util.coerce_attributes()
-    |> Map.new()
     |> Map.merge(NewRelic.Config.automatic_attributes())
   end
 

@@ -56,7 +56,15 @@ defmodule NewRelic.Util do
     [{key, value}]
   end
 
-  def coerce_attributes(attrs) do
+  def coerce_attributes(attrs) when is_map(attrs) do
+    do_coerce_attributes(attrs) |> Map.new()
+  end
+
+  def coerce_attributes(attrs) when is_list(attrs) do
+    do_coerce_attributes(attrs)
+  end
+
+  defp do_coerce_attributes(attrs) do
     Enum.flat_map(attrs, fn
       {_key, nil} ->
         []
