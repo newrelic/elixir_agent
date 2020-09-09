@@ -22,11 +22,13 @@ defmodule NewRelic.Init do
     telemetry_hosts = determine_telemetry_hosts(host, region_prefix)
 
     NewRelic.Config.put(%{
+      log: determine_config(:log),
       host: host,
       port: determine_config(:port, 443),
       scheme: determine_config(:scheme, "https"),
       app_name: determine_config(:app_name) |> parse_app_names,
       license_key: license_key,
+      harvest_enabled: determine_config(:harvest_enabled),
       collector_host: collector_host,
       region_prefix: region_prefix,
       automatic_attributes: determine_automatic_attributes(),

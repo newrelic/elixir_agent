@@ -1,6 +1,8 @@
 defmodule NewRelic.Harvest.TelemetrySdk.Logs.Harvester do
   use GenServer
 
+  @moduledoc false
+
   alias NewRelic.Harvest
   alias NewRelic.Harvest.TelemetrySdk
 

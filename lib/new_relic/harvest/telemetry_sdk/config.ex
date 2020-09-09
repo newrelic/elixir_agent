@@ -1,4 +1,6 @@
 defmodule NewRelic.Harvest.TelemetrySdk.Config do
+  @moduledoc false
+
   @default %{
     logs_harvest_cycle: 5_000
   }

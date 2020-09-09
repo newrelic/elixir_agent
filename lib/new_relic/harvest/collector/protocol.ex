@@ -144,6 +144,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
   defp handle_collector_response({:error, :force_disconnect}, _params) do
     NewRelic.log(:error, "Disabling agent harvest")
     Application.put_env(:new_relic_agent, :harvest_enabled, false)
+    NewRelic.Init.init_config()
     {:error, :force_disconnect}
   end
 
