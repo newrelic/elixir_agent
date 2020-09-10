@@ -24,7 +24,7 @@ defmodule NewRelic.Init do
     NewRelic.Config.put(%{
       log: determine_config(:log),
       host: host,
-      port: determine_config(:port, 443),
+      port: determine_config(:port, 443) |> parse_port,
       scheme: determine_config(:scheme, "https"),
       app_name: determine_config(:app_name) |> parse_app_names,
       license_key: license_key,
@@ -91,6 +91,9 @@ defmodule NewRelic.Init do
       _ -> false
     end
   end
+
+  def parse_port(port) when is_integer(port), do: port
+  def parse_port(port) when is_binary(port), do: String.to_integer(port)
 
   def parse_app_names(nil), do: nil
 
