@@ -81,6 +81,12 @@ defmodule TracerTest do
     after
       :do_after
     end
+
+    def non_traced_with_rescue() do
+      :do_somthing
+    rescue
+      error -> error
+    end
   end
 
   test "function that has error" do

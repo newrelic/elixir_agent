@@ -39,18 +39,22 @@ defmodule NewRelic.Tracer.Macro do
   end
 
   # Take no action if there are other function-level clauses
-  def __on_definition__(env, _access, name, args, _guards, clauses) do
-    found =
-      clauses
-      |> Keyword.drop([:do])
-      |> Keyword.keys()
-      |> Enum.map(&"`#{&1}`")
-      |> Enum.join(", ")
+  def __on_definition__(%{module: module}, _access, name, args, _guards, clauses) do
+    if trace_function?(module, name, length(args)) do
+      found =
+        clauses
+        |> Keyword.drop([:do])
+        |> Keyword.keys()
+        |> Enum.map(&"`#{&1}`")
+        |> Enum.join(", ")
 
-    Logger.warn(
-      "[New Relic] Unable to trace `#{inspect(env.module)}.#{name}/#{length(args)}` " <>
-        "due to additional function-level clauses: #{found} -- please remove @trace"
-    )
+      Logger.warn(
+        "[New Relic] Unable to trace `#{inspect(module)}.#{name}/#{length(args)}` " <>
+          "due to additional function-level clauses: #{found} -- please remove @trace"
+      )
+
+      Module.delete_attribute(module, :trace)
+    end
   end
 
   defmacro __before_compile__(%{module: module}) do
