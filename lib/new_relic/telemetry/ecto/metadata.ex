@@ -74,7 +74,7 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
         _ -> {"other", "other"}
       end
 
-    {"TDS", table, operation}
+    {"MSSQL", table, operation}
   end
 
   def parse(%{result: {:ok, %{__struct__: Postgrex.Cursor}}}), do: :ignore

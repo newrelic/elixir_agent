@@ -8,6 +8,7 @@ defmodule EctoExample.Database do
   def init(:ok) do
     start_and_migrate(EctoExample.PostgresRepo, Ecto.Adapters.Postgres)
     start_and_migrate(EctoExample.MySQLRepo, Ecto.Adapters.MyXQL)
+    start_and_migrate(EctoExample.MsSQLRepo, Ecto.Adapters.TDS)
 
     {:ok, %{}}
   end

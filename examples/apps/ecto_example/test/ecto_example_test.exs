@@ -27,6 +27,12 @@ defmodule EctoExampleTest do
 
     assert TestHelper.find_metric(
              metrics,
+             "Datastore/statement/MsSQL/counts/insert",
+             3
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
              {"Datastore/statement/Postgres/counts/insert", "WebTransaction/Plug/GET//hello"},
              3
            )
@@ -34,6 +40,12 @@ defmodule EctoExampleTest do
     assert TestHelper.find_metric(
              metrics,
              {"Datastore/statement/MySQL/counts/insert", "WebTransaction/Plug/GET//hello"},
+             3
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             {"Datastore/statement/MsSQL/counts/insert", "WebTransaction/Plug/GET//hello"},
              3
            )
 
@@ -51,12 +63,23 @@ defmodule EctoExampleTest do
 
     assert TestHelper.find_metric(
              metrics,
+             "Datastore/statement/MsSQL/counts/select",
+             5
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
              "Datastore/statement/Postgres/counts/delete"
            )
 
     assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/MySQL/counts/delete"
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/statement/MsSQL/counts/delete"
            )
 
     assert TestHelper.find_metric(
@@ -68,6 +91,12 @@ defmodule EctoExampleTest do
     assert TestHelper.find_metric(
              metrics,
              "Datastore/Postgres/allWeb",
+             12
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Datastore/MsSQL/allWeb",
              12
            )
 
