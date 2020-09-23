@@ -22,6 +22,11 @@ defmodule NewRelic.LogsInContext do
     :skip
   end
 
+  def configure(unknown) do
+    NewRelic.log(:error, "Unknown :logs_in_context mode: #{inspect(unknown)}")
+    :skip
+  end
+
   def primary_filter(%{msg: {:string, _msg}} = log, %{mode: :direct}) do
     log
     |> prepare_log()

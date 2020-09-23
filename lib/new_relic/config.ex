@@ -169,7 +169,7 @@ defmodule NewRelic.Config do
       nil -> Application.get_env(:new_relic_agent, :logs_in_context, :disabled)
       "forwarder" -> :forwarder
       "direct" -> :direct
-      _ -> :disabled
+      other -> other
     end
   end
 
