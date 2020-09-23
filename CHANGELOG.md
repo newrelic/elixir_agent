@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.20.0`
+
+Features
+* Logs in context - connect `Logger` messages to the current Distributed Trace / Error Trace. [#272](https://github.com/newrelic/elixir_agent/pull/272)
+
+------
+
 ### `v1.19.6`
 
 Fixes

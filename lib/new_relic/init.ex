@@ -6,12 +6,12 @@ defmodule NewRelic.Init do
     init_config()
   end
 
-  @erlang_version_requirement ">= 21.0.0"
+  @erlang_version_requirement ">= 21.2.0"
   def verify_erlang_otp_version() do
-    if Version.match?(System.otp_release() <> ".0.0", @erlang_version_requirement) do
-      :ok
-    else
-      raise "Erlang/OTP 21 required"
+    cond do
+      Code.ensure_loaded?(:persistent_term) -> :ok
+      Version.match?(System.otp_release() <> ".0.0", @erlang_version_requirement) -> :ok
+      true -> raise "Erlang/OTP 21.2 required to run the New Relic agent"
     end
   end
 
