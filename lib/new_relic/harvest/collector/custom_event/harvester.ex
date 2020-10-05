@@ -91,13 +91,22 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
   def send_harvest(state) do
     events = build_payload(state)
     Collector.Protocol.custom_event([Collector.AgentRun.agent_run_id(), state.sampling, events])
-    log_harvest(length(events), state.sampling.reservoir_size)
+    log_harvest(length(events), state.sampling.events_seen, state.sampling.reservoir_size)
   end
 
-  def log_harvest(harvest_size, reservoir_size) do
+  def log_harvest(harvest_size, events_seen, reservoir_size) do
     NewRelic.report_metric({:supportability, "CustomEventData"}, harvest_size: harvest_size)
-    NewRelic.report_metric({:supportability, "CustomEventData"}, reservoir_size: reservoir_size)
-    NewRelic.log(:debug, "Completed Custom Event harvest - size: #{harvest_size}")
+
+    NewRelic.report_metric({:supportability, "CustomEventData"},
+      events_seen: events_seen,
+      reservoir_size: reservoir_size
+    )
+
+    NewRelic.log(
+      :debug,
+      "Completed Custom Event harvest - " <>
+        "size: #{harvest_size}, seen: #{events_seen}, max: #{reservoir_size}"
+    )
   end
 
   def build_payload(state), do: Event.format_events(state.custom_events)

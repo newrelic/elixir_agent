@@ -102,6 +102,33 @@ defmodule CustomEventTest do
     TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
 
+  test "post supportability metrics" do
+    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    NewRelic.report_custom_event("CustomEventTest", %{foo: "bar"})
+    NewRelic.report_custom_event("CustomEventTest", %{foo: "baz"})
+
+    Collector.CustomEvent.HarvestCycle
+    |> Collector.HarvestCycle.current_harvester()
+    |> GenServer.call(:send_harvest)
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Supportability/Elixir/Collector/HarvestSeen/CustomEventData"
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Supportability/Elixir/Collector/HarvestSize/CustomEventData"
+           )
+
+    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+  end
+
   test "Handle non-serializable attribute values" do
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
