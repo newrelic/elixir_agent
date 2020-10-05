@@ -111,7 +111,7 @@ defmodule CustomEventTest do
     NewRelic.report_custom_event("CustomEventTest", %{foo: "baz"})
 
     Collector.CustomEvent.HarvestCycle
-    |> Collector.HarvestCycle.current_harvester()
+    |> NewRelic.Harvest.HarvestCycle.current_harvester()
     |> GenServer.call(:send_harvest)
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
