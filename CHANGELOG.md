@@ -7,6 +7,11 @@ Features
 
 ------
 
+### `v1.19.7`
+
+Tweaks
+* Log the number of events seen by harvesters. [#274](https://github.com/newrelic/elixir_agent/pull/274)
+
 ### `v1.19.6`
 
 Fixes

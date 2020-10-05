@@ -61,24 +61,43 @@ defmodule NewRelic.Harvest.Collector.ErrorTrace.Harvester do
 
   # Helpers
 
-  def store_error(%{error_traces_seen: seen} = state, _trace) when seen >= 20, do: state
+  @reservoir_size 20
 
-  def store_error(state, trace),
-    do: %{
+  def store_error(%{error_traces_seen: seen} = state, _trace)
+      when seen >= @reservoir_size do
+    %{
+      state
+      | error_traces_seen: state.error_traces_seen + 1
+    }
+  end
+
+  def store_error(state, trace) do
+    %{
       state
       | error_traces_seen: state.error_traces_seen + 1,
         error_traces: [trace | state.error_traces]
     }
+  end
 
   def send_harvest(state) do
     errors = build_payload(state)
     Collector.Protocol.error([Collector.AgentRun.agent_run_id(), errors])
-    log_harvest(length(errors))
+    log_harvest(length(errors), state.error_traces_seen)
   end
 
-  def log_harvest(harvest_size) do
+  def log_harvest(harvest_size, events_seen) do
     NewRelic.report_metric({:supportability, "ErrorData"}, harvest_size: harvest_size)
-    NewRelic.log(:debug, "Completed Error Trace harvest - size: #{harvest_size}")
+
+    NewRelic.report_metric({:supportability, "ErrorData"},
+      events_seen: events_seen,
+      reservoir_size: @reservoir_size
+    )
+
+    NewRelic.log(
+      :debug,
+      "Completed Error Trace harvest - " <>
+        "size: #{harvest_size}, seen: #{events_seen}, max: #{@reservoir_size}"
+    )
   end
 
   def build_payload(state), do: state.error_traces |> Enum.uniq() |> Trace.format_errors()
