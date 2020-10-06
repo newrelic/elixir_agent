@@ -25,7 +25,6 @@ defmodule NewRelic.Transaction.Complete do
     report_transaction_metric(tx_attrs)
     report_queue_time_metric(tx_attrs)
     report_transaction_metrics(tx_attrs, tx_metrics)
-    report_aggregate(tx_attrs)
     report_caller_metric(tx_attrs)
     report_apdex_metric(apdex)
     report_span_events(span_events)
@@ -509,22 +508,6 @@ defmodule NewRelic.Transaction.Complete do
           process: error[:process],
           stacktrace: Enum.join(exception_stacktrace, "\n")
         })
-    })
-  end
-
-  defp report_aggregate(%{transactionType: :Other} = tx) do
-    NewRelic.report_aggregate(%{type: :OtherTransaction, name: tx[:name]}, %{
-      duration_us: tx.duration_us,
-      duration_ms: tx.duration_ms,
-      call_count: 1
-    })
-  end
-
-  defp report_aggregate(tx) do
-    NewRelic.report_aggregate(%{type: :Transaction, name: tx[:name]}, %{
-      duration_us: tx.duration_us,
-      duration_ms: tx.duration_ms,
-      call_count: 1
     })
   end
 
