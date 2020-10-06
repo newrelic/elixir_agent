@@ -295,11 +295,6 @@ defmodule TransactionTest do
                event[:"external.TransactionTest.ExternalService.query.call_count"] == 2 &&
                event[:status] == 200
            end)
-
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:name] == "FunctionTrace" &&
-               event[:mfa] == "TransactionTest.ExternalService.query/1" && event[:call_count] == 2
-           end)
   end
 
   test "Track attrs inside proccesses spawned by the transaction" do
