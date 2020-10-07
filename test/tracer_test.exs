@@ -81,81 +81,65 @@ defmodule TracerTest do
     after
       :do_after
     end
+
+    def non_traced_with_rescue() do
+      :do_somthing
+    rescue
+      error -> error
+    end
+  end
+
+  setup do
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    on_exit(fn ->
+      TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+    end)
   end
 
   test "function that has error" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     assert_raise(RuntimeError, fn ->
       Traced.error(RuntimeError)
     end)
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.error/1" &&
-               event[:call_count] == 1
-           end)
+    assert TestHelper.find_metric(metrics, "Function/TracerTest.Traced.error/1")
   end
 
   test "function with function head" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     assert :default_val == Traced.default_multiclause()
     assert :case_1_return == Traced.default_multiclause(:case_1)
     assert :regular_call == Traced.default_multiclause(:regular_call)
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" &&
-               event[:mfa] == "TracerTest.Traced.default_multiclause/1" && event[:call_count] == 3
-           end)
+    assert TestHelper.find_metric(metrics, "Function/TracerTest.Traced.default_multiclause/1", 3)
   end
 
   test "Basic traced function" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     Traced.fun()
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.fun/0" &&
-               event[:call_count] == 1
-           end)
+    assert TestHelper.find_metric(metrics, "Function/TracerTest.Traced.fun/0")
   end
 
   test "Trace function with additional name" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     Traced.foo()
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.foo:bar/0" &&
-               event[:call_count] == 1
-           end)
+    assert TestHelper.find_metric(metrics, "Function/TracerTest.Traced.foo:bar/0")
   end
 
-  test "Trace function with category" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
+  test "Trace categorized as External" do
     Traced.query()
     Traced.query()
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.query/0" &&
-               event[:metric_category] == "external" && event[:call_count] == 2
-           end)
+    assert TestHelper.find_metric(metrics, "External/TracerTest.Traced.query/all", 2)
   end
 
   test "Default arguments still work as expected" do
@@ -164,108 +148,69 @@ defmodule TracerTest do
   end
 
   test "Don't warn when tracing with an ignored arg" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     assert Traced.ignored(:arg) == :ignored
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.ignored/1" &&
-               event[:call_count] == 1
-           end)
+    assert TestHelper.find_metric(metrics, "Function/TracerTest.Traced.ignored/1")
   end
 
   test "Handle a struct argument with enforced_keys" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     assert Traced.naive(NaiveDateTime.utc_now()) == :naive
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.naive/1" &&
-               event[:call_count] == 1
-           end)
+    assert TestHelper.find_metric(metrics, "Function/TracerTest.Traced.naive/1")
   end
 
   test "Handle an assigned & ignored pattern match" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     assert Traced.ignored(:left) == :left
     assert Traced.ignored(:right) == :right
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.ignored/1" &&
-               event[:call_count] == 2
-           end)
+    assert TestHelper.find_metric(metrics, "Function/TracerTest.Traced.ignored/1", 2)
   end
 
   test "Handle module pattern match" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     assert Traced.mod(%Traced{key: :val, second_key: :bla}) == :val
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.mod/1"
-           end)
+    assert TestHelper.find_metric(metrics, "Function/TracerTest.Traced.mod/1")
   end
 
   test "Trace a function with a guard" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     assert Traced.guard(:foo) == :foo
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.guard/1" &&
-               event[:call_count] == 1
-           end)
+    assert TestHelper.find_metric(metrics, "Function/TracerTest.Traced.guard/1")
   end
 
   test "Trace multiple function heads" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     assert Traced.multi(1, 2) == {10, 2}
     assert Traced.multi(2, 2) == {20, 2}
     assert Traced.multi(4, 2) == {4, 2}
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" &&
-               event[:mfa] == "TracerTest.Traced.multi:multiple_function_heads/2" &&
-               event[:call_count] == 3
-           end)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Function/TracerTest.Traced.multi:multiple_function_heads/2",
+             3
+           )
   end
 
   test "Trace a private function" do
-    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     assert Traced.call_priv() == :priv
 
-    TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:mfa] == "TracerTest.Traced.priv/0" &&
-               event[:call_count] == 1
-           end)
+    assert TestHelper.find_metric(metrics, "Function/TracerTest.Traced.priv/0")
   end
 
   test "Don't trace when trace is deprecated" do
-    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-
     assert Traced.db_query() == :result
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)

@@ -84,15 +84,6 @@ defmodule NewRelic.Tracer.Report do
       "external.#{function_name}.duration_ms": duration_ms
     )
 
-    NewRelic.report_aggregate(
-      %{
-        name: :FunctionTrace,
-        mfa: function_arity_name,
-        metric_category: :external
-      },
-      %{duration_ms: duration_ms, call_count: 1}
-    )
-
     Transaction.Reporter.track_metric({:external, duration_s})
 
     case span_attrs do
@@ -152,11 +143,6 @@ defmodule NewRelic.Tracer.Report do
       edge: [span: id, parent: parent_id],
       category: "generic",
       attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, args)
-    )
-
-    NewRelic.report_aggregate(
-      %{name: :FunctionTrace, mfa: function_name},
-      %{duration_ms: duration_ms, call_count: 1}
     )
 
     NewRelic.report_metric(

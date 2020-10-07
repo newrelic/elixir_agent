@@ -1,9 +1,23 @@
 ## CHANGELOG
 
-### `v1.20.0`
+### `v1.21.0`
 
 Features
 * Logs in context - connect `Logger` messages to the current Distributed Trace / Error Trace. [#272](https://github.com/newrelic/elixir_agent/pull/272)
+
+------
+
+### `v1.20.0`
+
+Removals:
+* Stop reporting redundant `ElixirAggregate` custom events for `Transaction`. [#276](https://github.com/newrelic/elixir_agent/pull/276)
+* Stop reporting redundant `ElixirAggregate` custom events for `FunctionTrace`. [#277](https://github.com/newrelic/elixir_agent/pull/277)
+
+Alternatives for querying this data are available and noted in the PRs.
+
+Fixes
+* Don't warn for untraced functions. [#269](https://github.com/newrelic/elixir_agent/pull/269) Thanks @barthez!
+* Spread the Samplers across the full sample cycle. [#278](https://github.com/newrelic/elixir_agent/pull/278)
 
 ------
 
