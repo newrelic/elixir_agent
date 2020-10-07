@@ -10,7 +10,7 @@ defmodule NewRelic.LogsInContext.Supervisor do
   def init(_) do
     mode = NewRelic.Config.feature(:logs_in_context)
 
-    NewRelic.LogsInContext.elixir_version_supported?() &&
+    NewRelic.LogsInContext.elixir_version_supported?(mode) &&
       NewRelic.LogsInContext.configure(mode)
 
     Supervisor.init([], strategy: :one_for_one)

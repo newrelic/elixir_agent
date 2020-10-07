@@ -5,7 +5,7 @@ defmodule LogsInContextTest do
 
   alias NewRelic.Harvest.TelemetrySdk
 
-  unless NewRelic.LogsInContext.elixir_version_supported?() do
+  unless NewRelic.LogsInContext.elixir_version_supported?(:direct) do
     @moduletag :skip
   end
 

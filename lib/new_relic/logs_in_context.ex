@@ -5,8 +5,17 @@ defmodule NewRelic.LogsInContext do
   alias NewRelic.Harvest.TelemetrySdk
 
   @elixir_version_requirement ">= 1.10.0"
-  def elixir_version_supported?() do
-    Version.match?(System.version(), @elixir_version_requirement)
+  def elixir_version_supported?(mode) do
+    case Version.match?(System.version(), @elixir_version_requirement) do
+      true ->
+        true
+
+      false ->
+        mode in [:direct, :forwarder] &&
+          NewRelic.log(:error, ":logs_in_context requires Elixir 1.10 or greater")
+
+        false
+    end
   end
 
   def configure(:direct) do

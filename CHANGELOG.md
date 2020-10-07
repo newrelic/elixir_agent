@@ -5,6 +5,8 @@
 Features
 * Logs in context - connect `Logger` messages to the current Distributed Trace / Error Trace. [#272](https://github.com/newrelic/elixir_agent/pull/272)
 
+Logs in context requires Elixir 1.10 or greater.
+
 ------
 
 ### `v1.20.0`
