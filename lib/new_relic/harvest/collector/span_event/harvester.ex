@@ -4,6 +4,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   @moduledoc false
 
   alias NewRelic.DistributedTrace
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Span.Event
   alias NewRelic.Util
@@ -81,13 +82,13 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   def report_span_event(%Event{} = event),
     do:
       Collector.SpanEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.cast({:report, event})
 
   def gather_harvest,
     do:
       Collector.SpanEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.call(:gather_harvest)
 
   # Server

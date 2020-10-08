@@ -25,7 +25,7 @@ defmodule NewRelic.Error.Trace do
         stack_trace: error.stack_trace,
         agentAttributes: format_agent_attributes(error.agent_attributes),
         userAttributes: format_user_attributes(error.user_attributes),
-        intrinsics: %{"error.expected": error.expected}
+        intrinsics: format_intrinsic_attributes(error.user_attributes, error)
       },
       error.cat_guid
     ]
@@ -39,8 +39,17 @@ defmodule NewRelic.Error.Trace do
     %{}
   end
 
-  defp format_user_attributes(attrs) do
-    Enum.into(attrs, %{}, fn {k, v} ->
+  @intrinsics [:traceId, :guid]
+  defp format_intrinsic_attributes(user_attributes, error) do
+    user_attributes
+    |> Map.take(@intrinsics)
+    |> Map.merge(%{"error.expected": error.expected})
+  end
+
+  defp format_user_attributes(user_attributes) do
+    user_attributes
+    |> Map.drop(@intrinsics)
+    |> Enum.into(%{}, fn {k, v} ->
       (String.Chars.impl_for(v) && {k, v}) || {k, inspect(v)}
     end)
   end

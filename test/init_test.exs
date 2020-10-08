@@ -12,15 +12,15 @@ defmodule InitTest do
   end
 
   test "set correct collector host" do
-    assert "collector.newrelic.com" == NewRelic.Init.determine_collector_host()
+    assert {"collector.newrelic.com", _} = NewRelic.Init.determine_collector_host(nil, nil)
 
-    System.put_env("NEW_RELIC_LICENSE_KEY", "eu01xeu02x37a29c3982469a3fe9999999999999")
-    assert "collector.eu01.nr-data.net" == NewRelic.Init.determine_collector_host()
+    assert {"collector.eu01.nr-data.net", _} =
+             NewRelic.Init.determine_collector_host(
+               nil,
+               "eu01xeu02x37a29c3982469a3fe9999999999999"
+             )
 
-    System.put_env("NEW_RELIC_HOST", "cool.newrelic.com")
-    assert "cool.newrelic.com" == NewRelic.Init.determine_collector_host()
-
-    System.delete_env("NEW_RELIC_LICENSE_KEY")
-    System.delete_env("NEW_RELIC_HOST")
+    assert {"cool.newrelic.com", _} =
+             NewRelic.Init.determine_collector_host("cool.newrelic.com", nil)
   end
 end

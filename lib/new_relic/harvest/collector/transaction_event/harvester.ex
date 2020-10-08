@@ -3,6 +3,7 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
 
   @moduledoc false
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Transaction.Event
   alias NewRelic.Util.PriorityQueue
@@ -30,13 +31,13 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
   def report_event(%Event{} = event),
     do:
       Collector.TransactionEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.cast({:report, event})
 
   def gather_harvest,
     do:
       Collector.TransactionEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.call(:gather_harvest)
 
   # Server

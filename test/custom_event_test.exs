@@ -1,6 +1,7 @@
 defmodule CustomEventTest do
   use ExUnit.Case
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Custom.Event
 
@@ -52,7 +53,7 @@ defmodule CustomEventTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.HarvestCycle.send_harvest(Collector.CustomEvent.HarvesterSupervisor, harvester)
+    Harvest.HarvestCycle.send_harvest(Collector.CustomEvent.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
   end
 
@@ -71,13 +72,13 @@ defmodule CustomEventTest do
     Application.put_env(:new_relic_agent, :custom_event_harvest_cycle, 300)
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
-    first = Collector.HarvestCycle.current_harvester(Collector.CustomEvent.HarvestCycle)
+    first = Harvest.HarvestCycle.current_harvester(Collector.CustomEvent.HarvestCycle)
     Process.monitor(first)
 
     # Wait until harvest swap
     assert_receive {:DOWN, _ref, _, ^first, :shutdown}, 1000
 
-    second = Collector.HarvestCycle.current_harvester(Collector.CustomEvent.HarvestCycle)
+    second = Harvest.HarvestCycle.current_harvester(Collector.CustomEvent.HarvestCycle)
     Process.monitor(second)
 
     refute first == second
@@ -110,7 +111,7 @@ defmodule CustomEventTest do
     NewRelic.report_custom_event("CustomEventTest", %{foo: "baz"})
 
     Collector.CustomEvent.HarvestCycle
-    |> Collector.HarvestCycle.current_harvester()
+    |> NewRelic.Harvest.HarvestCycle.current_harvester()
     |> GenServer.call(:send_harvest)
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
@@ -152,7 +153,7 @@ defmodule CustomEventTest do
 
     harvester =
       Collector.CustomEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
 
     assert :ok == GenServer.call(harvester, :send_harvest)
 
@@ -164,7 +165,7 @@ defmodule CustomEventTest do
   end
 
   test "Annotate events with user's configured attributes" do
-    System.put_env("MY_SERVICE_NAME", "crazy-service")
+    System.put_env("MY_SERVICE_NAME", "cool-service")
 
     Application.put_env(
       :new_relic_agent,
@@ -172,16 +173,20 @@ defmodule CustomEventTest do
       service_name: {:system, "MY_SERVICE_NAME"}
     )
 
+    NewRelic.Init.init_config()
+
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
     NewRelic.report_custom_event(:Event, %{key: "TestEvent"})
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:key] == "TestEvent" && event[:service_name] == "crazy-service"
+             event[:key] == "TestEvent" && event[:service_name] == "cool-service"
            end)
 
     Application.put_env(:new_relic_agent, :automatic_attributes, [])
+    NewRelic.Init.init_config()
+
     System.delete_env("MY_SERVICE_NAME")
   end
 

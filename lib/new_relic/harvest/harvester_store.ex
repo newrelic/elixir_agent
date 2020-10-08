@@ -1,4 +1,4 @@
-defmodule NewRelic.Harvest.Collector.HarvesterStore do
+defmodule NewRelic.Harvest.HarvesterStore do
   use GenServer
 
   # Wrapper around an ETS table that tracks the current harvesters

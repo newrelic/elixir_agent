@@ -3,6 +3,7 @@ defmodule NewRelic.Harvest.Collector.TransactionTrace.Harvester do
 
   @moduledoc false
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Transaction.Trace
 
@@ -31,13 +32,13 @@ defmodule NewRelic.Harvest.Collector.TransactionTrace.Harvester do
   def report_trace(%Trace{} = trace, _min_duration),
     do:
       Collector.TransactionTrace.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.cast({:report, trace})
 
   def gather_harvest,
     do:
       Collector.TransactionTrace.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.call(:gather_harvest)
 
   # Server

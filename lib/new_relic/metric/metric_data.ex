@@ -1,4 +1,4 @@
-defmodule NewRelic.Harvest.Collector.MetricData do
+defmodule NewRelic.Metric.MetricData do
   # Heper functions for generating Metrics with the correct timeslice values
 
   @moduledoc false

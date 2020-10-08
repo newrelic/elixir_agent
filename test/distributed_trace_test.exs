@@ -44,21 +44,24 @@ defmodule DistributedTraceTest do
   end
 
   setup do
-    prev_key = Collector.AgentRun.trusted_account_key()
-    Collector.AgentRun.store(:trusted_account_key, "190")
-    prev_acct = Collector.AgentRun.account_id()
-    Collector.AgentRun.store(:account_id, 190)
-    Collector.AgentRun.store(:primary_application_id, 1441)
+    reset_config =
+      TestHelper.update(:nr_config,
+        license_key: "dummy_key",
+        harvest_enabled: true
+      )
 
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_agent_run =
+      TestHelper.update(:nr_agent_run,
+        trusted_account_key: "190",
+        account_id: 190,
+        primary_application_id: 1441
+      )
+
     send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
-      Collector.AgentRun.store(:trusted_account_key, prev_key)
-      Collector.AgentRun.store(:account_id, prev_acct)
-      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-      System.delete_env("NEW_RELIC_LICENSE_KEY")
+      reset_config.()
+      reset_agent_run.()
     end)
 
     :ok

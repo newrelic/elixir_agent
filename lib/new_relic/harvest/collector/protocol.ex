@@ -69,14 +69,16 @@ defmodule NewRelic.Harvest.Collector.Protocol do
   defp collector_method_url(params) do
     params = Map.merge(default_collector_params(), params)
 
+    host =
+      Application.get_env(:new_relic_agent, :collector_instance_host) ||
+        NewRelic.Config.get(:collector_host)
+
     %URI{
-      host:
-        Application.get_env(:new_relic_agent, :collector_instance_host) ||
-          Application.get_env(:new_relic_agent, :collector_host),
+      host: host,
       path: "/agent_listener/invoke_raw_method",
       query: URI.encode_query(params),
-      scheme: Application.get_env(:new_relic_agent, :scheme, "https"),
-      port: Application.get_env(:new_relic_agent, :port, 443)
+      scheme: NewRelic.Config.get(:scheme),
+      port: NewRelic.Config.get(:port)
     }
     |> URI.to_string()
   end
@@ -142,6 +144,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
   defp handle_collector_response({:error, :force_disconnect}, _params) do
     NewRelic.log(:error, "Disabling agent harvest")
     Application.put_env(:new_relic_agent, :harvest_enabled, false)
+    NewRelic.Init.init_config()
     {:error, :force_disconnect}
   end
 
@@ -179,7 +182,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
 
   defp collector_headers do
     ["user-agent": "NewRelic-ElixirAgent/#{NewRelic.Config.agent_version()}"] ++
-      Collector.AgentRun.lookup(:request_headers, [])
+      (Collector.AgentRun.request_headers() || [])
   end
 
   defp default_collector_params,

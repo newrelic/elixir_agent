@@ -234,4 +234,16 @@ defmodule UtilTest do
 
     File.rm!(@test_cgroup_filename)
   end
+
+  test "uuid4 generation" do
+    uuid4 = NewRelic.Util.uuid4()
+
+    [u0, u1, u2, u3, u4] = String.split(uuid4, "-")
+
+    assert String.length(u0) == 8
+    assert String.length(u1) == 4
+    assert String.length(u2) == 4
+    assert String.length(u3) == 4
+    assert String.length(u4) == 12
+  end
 end

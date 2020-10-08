@@ -2,22 +2,21 @@ defmodule SpanEventTest do
   use ExUnit.Case
   use Plug.Test
 
+  alias NewRelic.Harvest
   alias NewRelic.DistributedTrace
   alias NewRelic.Harvest.Collector
 
   @dt_header "newrelic"
 
   setup do
-    prev_key = Collector.AgentRun.trusted_account_key()
-    Collector.AgentRun.store(:trusted_account_key, "190")
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_agent_run = TestHelper.update(:nr_agent_run, trusted_account_key: "190")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+
     send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
-      Collector.AgentRun.store(:trusted_account_key, prev_key)
-      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-      System.delete_env("NEW_RELIC_LICENSE_KEY")
+      reset_agent_run.()
+      reset_config.()
     end)
 
     :ok
@@ -67,7 +66,7 @@ defmodule SpanEventTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.HarvestCycle.send_harvest(Collector.SpanEvent.HarvesterSupervisor, harvester)
+    Harvest.HarvestCycle.send_harvest(Collector.SpanEvent.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
 
     Application.delete_env(:new_relic_agent, :span_event_reservoir_size)

@@ -3,13 +3,11 @@ defmodule OtherTransactionTest do
   alias NewRelic.Harvest.Collector
 
   setup do
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
     send(NewRelic.DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
-      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-      System.delete_env("NEW_RELIC_LICENSE_KEY")
+      reset_config.()
     end)
 
     :ok
