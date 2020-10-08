@@ -74,11 +74,15 @@ defmodule NewRelic.Harvest.TelemetrySdk.Logs.Harvester do
 
   def send_harvest(state) do
     TelemetrySdk.API.log(build_log_data(state.logs))
-    log_harvest(length(state.logs))
+    log_harvest(length(state.logs), state.sampling.logs_seen, state.sampling.reservoir_size)
   end
 
-  def log_harvest(harvest_size) do
-    NewRelic.log(:debug, "Completed Log harvest - size: #{harvest_size}")
+  def log_harvest(harvest_size, logs_seen, reservoir_size) do
+    NewRelic.log(
+      :debug,
+      "Completed Log harvest - " <>
+        "size: #{harvest_size}, seen: #{logs_seen}, max: #{reservoir_size}"
+    )
   end
 
   defp build_log_data(logs) do
