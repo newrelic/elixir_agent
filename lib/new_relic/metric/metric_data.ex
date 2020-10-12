@@ -488,6 +488,12 @@ defmodule NewRelic.Metric.MetricData do
       call_count: 1
     }
 
+  def transform(:supportability, [:trace_context, :tracestate, :invalid]),
+    do: %Metric{
+      name: :"Supportability/TraceContext/TraceState/Parse/Exception",
+      call_count: 1
+    }
+
   def transform(:supportability, [:trace_context, :traceparent, :invalid]),
     do: %Metric{
       name: :"Supportability/TraceContext/TraceParent/Parse/Exception",
