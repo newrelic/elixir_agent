@@ -338,7 +338,7 @@ defmodule W3CTraceContextTest do
     refute traceparent_header =~ "74be672b84ddc.....8be285632bbc0a"
   end
 
-  test "Generate expected outbound W3C headers - bad NR tracestate" do
+  test "Generate expected outbound W3C headers - bad NR tracestate - invalid priority" do
     response =
       conn(:get, "/w3c")
       |> put_req_header(
@@ -361,6 +361,72 @@ defmodule W3CTraceContextTest do
 
     # Don't accept or forward invalid priority serialization
     refute tracestate_header =~ "2.0e-5"
+  end
+
+  test "Generate expected outbound W3C headers - NR tracestate - no sampled" do
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    response =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-74be672b84ddc4e4b28be285632bbc0a-d6e4e06002e24189-01"
+      )
+      |> put_req_header(
+        @w3c_tracestate,
+        "190@nr=0-0-212311-51424-d6e4e06002e24189-27856f70d3d314b7--2.0-1482959525577"
+      )
+      |> TestPlugApp.call([])
+
+    [_traceparent_header, tracestate_header] =
+      response.resp_body
+      |> String.split("|")
+
+    # Calculate a new sampled value
+    refute tracestate_header =~ "--2.0"
+
+    # Invalid tracestate, tick a supportability metric
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Supportability/TraceContext/TraceState/Parse/Exception"
+           )
+
+    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+  end
+
+  test "Generate expected outbound W3C headers - NR tracestate - no sampled or priority" do
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    response =
+      conn(:get, "/w3c")
+      |> put_req_header(
+        @w3c_traceparent,
+        "00-74be672b84ddc4e4b28be285632bbc0a-d6e4e06002e24189-01"
+      )
+      |> put_req_header(
+        @w3c_tracestate,
+        "190@nr=0-0-212311-51424-d6e4e06002e24189----1482959525577"
+      )
+      |> TestPlugApp.call([])
+
+    [_traceparent_header, tracestate_header] =
+      response.resp_body
+      |> String.split("|")
+
+    # Calculate a new sampled value
+    refute tracestate_header =~ "---"
+
+    # Not an invalid tracestate
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    refute TestHelper.find_metric(
+             metrics,
+             "Supportability/TraceContext/TraceState/Parse/Exception"
+           )
+
+    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
   test "Generate expected outbound W3C headers - future traceparent version" do
