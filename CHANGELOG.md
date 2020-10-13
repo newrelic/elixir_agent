@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.21.1`
+
+Fixes
+* Properly handle a bad tracestate sampled / priority value. [#273](https://github.com/newrelic/elixir_agent/pull/273)
+
 ### `v1.21.0`
 
 Features
