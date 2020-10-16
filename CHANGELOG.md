@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.21.2`
+
+Fixes
+* Handle encoding an unexpected nil sampled flag. [#282](https://github.com/newrelic/elixir_agent/pull/282)
+
 ### `v1.21.1`
 
 Fixes
