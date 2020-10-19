@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.22.0`
+
+Features
+* Report a custom metric. []()
+
+------
+
 ### `v1.21.2`
 
 Fixes
