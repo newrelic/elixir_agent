@@ -3,7 +3,7 @@
 ### `v1.22.0`
 
 Features
-* Report a custom metric. []()
+* Report a custom metric. [#283](https://github.com/newrelic/elixir_agent/pull/283)
 
 ------
 
