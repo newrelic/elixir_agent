@@ -5,6 +5,15 @@ defmodule NewRelic.Metric.MetricData do
 
   alias NewRelic.Metric
 
+  def transform({:custom, name}, count: count, value: value),
+    do: %Metric{
+      name: join(["Custom", name]),
+      call_count: count,
+      total_call_time: value,
+      min_call_time: value,
+      max_call_time: value
+    }
+
   def transform(:http_dispatcher, duration_s: duration_s),
     do: %Metric{
       name: :HttpDispatcher,
