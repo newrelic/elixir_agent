@@ -169,6 +169,16 @@ defmodule NewRelic do
   defdelegate report_custom_event(type, attributes),
     to: NewRelic.Harvest.Collector.CustomEvent.Harvester
 
+  @doc """
+  Report a Custom metric.
+
+  ```elixir
+  NewRelic.report_custom_metric("My/Metric", 123)
+  ```
+  """
+  defdelegate report_custom_metric(name, value),
+    to: NewRelic.Harvest.Collector.Metric.Harvester
+
   @doc false
   defdelegate report_aggregate(meta, values), to: NewRelic.Aggregate.Reporter
 

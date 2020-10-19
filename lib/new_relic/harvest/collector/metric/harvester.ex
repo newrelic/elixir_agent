@@ -23,6 +23,9 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
 
   # API
 
+  def report_custom_metric(name, value),
+    do: report_metric({:custom, name}, count: 1, value: value)
+
   def report_metric(identifier, values),
     do:
       Collector.Metric.HarvestCycle
