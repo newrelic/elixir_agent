@@ -68,9 +68,8 @@ defmodule NewRelic do
 
   **Notes:**
 
-  * Don't use this to track Web Transactions - for that,
-  `use NewRelic.Transaction` in your Plug pipeline so that we can properly
-  categorize as Web Transactions in the UI.
+  * Don't use this to track Web Transactions - Plug based HTTP servers
+  are auto-instrumented based on `telemetry` events.
   * Do _not_ use this for processes that live a very long time, doing so
   will risk a memory leak tracking attributes in the transaction!
   * You can't start a new transaction within an existing one. Any process
@@ -91,7 +90,7 @@ defmodule NewRelic do
   defdelegate stop_transaction(), to: NewRelic.Transaction
 
   @doc """
-  Call within a transaction to prevent it from reporting.
+  Call within a Transaction to prevent it from reporting.
 
   ```elixir
   def index(conn, _) do
@@ -101,6 +100,11 @@ defmodule NewRelic do
   ```
   """
   defdelegate ignore_transaction(), to: NewRelic.Transaction
+
+  @doc """
+  Call to exclude the current process from being part of the Transaction.
+  """
+  defdelegate exclude_from_transaction(), to: NewRelic.Transaction
 
   @doc """
   Store information about the type of work the current span is doing.
@@ -178,6 +182,12 @@ defmodule NewRelic do
   """
   defdelegate report_custom_metric(name, value),
     to: NewRelic.Harvest.Collector.Metric.Harvester
+
+  @doc false
+  defdelegate enable_erlang_trace, to: NewRelic.Transaction.ErlangTraceManager
+
+  @doc false
+  defdelegate disable_erlang_trace, to: NewRelic.Transaction.ErlangTraceManager
 
   @doc false
   defdelegate report_aggregate(meta, values), to: NewRelic.Aggregate.Reporter

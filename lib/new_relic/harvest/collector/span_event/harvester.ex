@@ -56,9 +56,9 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
     |> report_span_event(DistributedTrace.get_tracing_context(), edge)
   end
 
-  def report_span_event(%Event{} = _event, nil = _context, _mfa), do: :no_transaction
+  def report_span_event(%Event{} = _event, nil = _context, _edge), do: :no_transaction
 
-  def report_span_event(%Event{} = _event, %DistributedTrace.Context{sampled: false}, _mfa),
+  def report_span_event(%Event{} = _event, %DistributedTrace.Context{sampled: false}, _edge),
     do: :not_sampled
 
   def report_span_event(

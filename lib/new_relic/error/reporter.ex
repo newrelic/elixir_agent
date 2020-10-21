@@ -4,6 +4,7 @@ defmodule NewRelic.Error.Reporter do
   alias NewRelic.Util
   alias NewRelic.Harvest.Collector
 
+  # Don't report exceptions that result in a 400 level response
   def report_error(_, [
         {:initial_call, _},
         {:pid, _},
@@ -15,13 +16,24 @@ defmodule NewRelic.Error.Reporter do
     :ignore
   end
 
+  # Don't double report exceptions re-raised by PlugCowboy
+  def report_error(_, [
+        {:initial_call, {:cowboy_stream_h, :request_process, _}},
+        {:pid, _},
+        {:registered_name, _},
+        {:error_info, {:exit, {_, [{Plug.Cowboy.Handler, :exit_on_error, _, _} | _]}, _}}
+        | _
+      ]) do
+    :ignore
+  end
+
   def report_error(:transaction, report) do
     {kind, exception, stacktrace} = parse_error_info(report[:error_info])
     process_name = parse_process_name(report[:registered_name], stacktrace)
 
     NewRelic.add_attributes(process: process_name)
 
-    NewRelic.Transaction.Reporter.error(report[:pid], %{
+    NewRelic.Transaction.Reporter.error(%{
       kind: kind,
       reason: exception,
       stack: stacktrace
@@ -74,15 +86,22 @@ defmodule NewRelic.Error.Reporter do
   defp parse_process_name([], _stacktrace), do: "UnknownProcess"
   defp parse_process_name(registered_name, _stacktrace), do: inspect(registered_name)
 
-  defp parse_error_info({kind, {{{exception, stacktrace}, _init_call}, _init_stack}, _proc_stack}) do
+  defp parse_error_info({kind, {{{exception, stacktrace}, _init_call}, _init_stack}, _proc_stack})
+       when is_list(stacktrace) do
     {kind, exception, stacktrace}
+  end
+
+  defp parse_error_info({kind, {{exception, _init_call}, _init_stack}, _proc_stack}) do
+    {kind, exception, []}
   end
 
   defp parse_error_info({kind, {exception, stacktrace}, _stack}) when is_list(stacktrace) do
     {kind, exception, stacktrace}
   end
 
-  defp parse_error_info({kind, exception, stacktrace}), do: {kind, exception, stacktrace}
+  defp parse_error_info({kind, exception, stacktrace}) do
+    {kind, exception, stacktrace}
+  end
 
   defp parse_error_expected(%{expected: true}), do: true
   defp parse_error_expected(_), do: false

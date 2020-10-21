@@ -1,13 +1,20 @@
 defmodule TestHelper do
-  def request(module, conn) do
-    Task.async(fn ->
-      try do
-        module.call(conn, [])
-      rescue
-        error -> error
-      end
-    end)
-    |> Task.await()
+  def request(module, conn, opts \\ []) do
+    Plug.Cowboy.http(module, [], port: 8000, protocol_options: [idle_timeout: 500])
+
+    response =
+      NewRelic.Util.HTTP.get(
+        "http://localhost:8000#{conn.request_path}",
+        conn.req_headers,
+        opts
+      )
+
+    Plug.Cowboy.shutdown(Module.concat(module, HTTP))
+
+    case response do
+      {:ok, response} -> response
+      response -> response
+    end
   end
 
   def trigger_report(module) do

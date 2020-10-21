@@ -10,7 +10,7 @@ defmodule NewRelic.Application do
       NewRelic.Logger,
       NewRelic.AlwaysOnSupervisor,
       NewRelic.EnabledSupervisorManager,
-      NewRelic.TelemetrySupervisor,
+      NewRelic.Telemetry.Supervisor,
       NewRelic.GracefulShutdown
     ]
 

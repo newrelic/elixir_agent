@@ -18,7 +18,6 @@ defmodule TransactionTest do
 
   defmodule TestPlugApp do
     use Plug.Router
-    use NewRelic.Transaction
 
     plug(:match)
     plug(:dispatch)
@@ -98,46 +97,68 @@ defmodule TransactionTest do
       send_resp(conn, 200, "this is fine")
     end
 
-    get "/spawn" do
-      # We need to sleep here & there because spawn tracking is async
+    get "/erlang_exit" do
+      NewRelic.add_attributes(query: "query{}")
+      :erlang.exit(:something_bad)
+      send_resp(conn, 200, "won't get here")
+    end
+
+    get "/await_timeout" do
       Task.async(fn ->
-        Process.sleep(20)
+        Process.sleep(100)
+      end)
+      |> Task.await(10)
+
+      send_resp(conn, 200, "won't get here")
+    end
+
+    get "/spawn" do
+      Task.async(fn ->
         NewRelic.add_attributes(inside: "spawned")
 
         Task.async(fn ->
-          Process.sleep(20)
           NewRelic.add_attributes(nested: "spawn")
 
           Task.Supervisor.async_nolink(
             TestTaskSup,
             fn ->
-              Process.sleep(20)
               NewRelic.add_attributes(not_linked: "still_tracked")
+              Process.sleep(5)
 
               Task.async(fn ->
-                Process.sleep(20)
                 NewRelic.add_attributes(nested_inside: "nolink")
+
+                Process.sleep(5)
               end)
+              |> Task.await()
             end
           )
 
           Task.Supervisor.async_nolink(
             TestTaskSup,
             fn ->
-              Process.sleep(20)
+              NewRelic.exclude_from_transaction()
               NewRelic.add_attributes(not_tracked: "not_tracked")
-            end,
-            new_relic: :no_track
+
+              Process.sleep(5)
+            end
           )
 
           Task.async(fn ->
-            Process.sleep(20)
             NewRelic.add_attributes(rabbit: "hole")
-          end)
-        end)
-      end)
 
-      Process.sleep(100)
+            Process.sleep(5)
+          end)
+          |> Task.await()
+
+          Process.sleep(5)
+        end)
+
+        Process.sleep(5)
+      end)
+      |> Task.await()
+
+      Process.sleep(50)
       send_resp(conn, 200, "spawn")
     end
 
@@ -161,6 +182,11 @@ defmodule TransactionTest do
       Process.sleep(10)
       send_resp(conn, 200, "ok")
     end
+
+    get "/slow" do
+      Process.sleep(1_000)
+      send_resp(conn, 200, "finally")
+    end
   end
 
   test "Basic transaction" do
@@ -172,7 +198,7 @@ defmodule TransactionTest do
 
     assert Enum.find(events, fn [_, event] ->
              event[:path] == "/foo/1" && event[:name] == "/Plug/GET//foo/:blah" &&
-               event[:foo] == "BAR" && event[:duration_us] > 0 && event[:duration_us] < 10_000 &&
+               event[:foo] == "BAR" && event[:duration_us] > 0 && event[:duration_us] < 50_000 &&
                event[:start_time] < 2_000_000_000_000 && event[:start_time] > 1_400_000_000_000 &&
                event[:start_time_mono] == nil && event[:test_attribute] == "test_value" &&
                event[:"nr.apdexPerfZone"] == "S" && event[:status] == 200
@@ -231,6 +257,7 @@ defmodule TransactionTest do
            end)
   end
 
+  @tag capture_log: true
   test "Failure of the Transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
@@ -239,9 +266,48 @@ defmodule TransactionTest do
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
     assert Enum.find(events, fn [_, event] ->
-             event[:status] == 500 && event[:query] =~ "query{}" && event[:error] &&
-               event[:error_reason] =~ "TransactionError" && event[:error_kind] == :error &&
+             event[:status] == 500 &&
+               event[:query] =~ "query{}" &&
+               event[:error] &&
+               event[:name] == "/Plug/GET//fail" &&
+               event[:error_reason] =~ "TransactionError" &&
+               event[:error_kind] == :exit &&
                event[:error_stack] =~ "test/transaction_test.exs"
+           end)
+  end
+
+  @tag capture_log: true
+  test "Failure of the Transaction - erlang exit" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/erlang_exit"))
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert Enum.find(events, fn [_, event] ->
+             event[:status] == 500 &&
+               event[:query] =~ "query{}" &&
+               event[:error] &&
+               event[:name] == "/Plug/GET//erlang_exit" &&
+               event[:error_reason] =~ "something_bad" &&
+               event[:error_kind] == :exit
+           end)
+  end
+
+  @tag capture_log: true
+  test "Failure of the Transaction - await timeout" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/await_timeout"))
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert Enum.find(events, fn [_, event] ->
+             event[:status] == 500 &&
+               event[:error] &&
+               event[:name] == "/Plug/GET//await_timeout" &&
+               event[:error_reason] =~ "timeout" &&
+               event[:error_kind] == :exit
            end)
   end
 
@@ -259,6 +325,7 @@ defmodule TransactionTest do
            end)
   end
 
+  @tag capture_log: true
   test "Allow disabling error detail collection" do
     Application.put_env(:new_relic_agent, :error_collector_enabled, false)
 
@@ -309,7 +376,7 @@ defmodule TransactionTest do
       Enum.find(events, fn [_, event] ->
         event[:path] == "/spawn" && event[:inside] == "spawned" && event[:nested] == "spawn" &&
           event[:not_linked] == "still_tracked" && event[:nested_inside] == "nolink" &&
-          event[:rabbit] == "hole" && event[:process_spawns] == 5 && event[:status] == 200
+          event[:rabbit] == "hole" && event[:status] == 200
       end)
 
     assert event
@@ -335,7 +402,7 @@ defmodule TransactionTest do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     Task.Supervisor.start_link(name: TestTaskSup)
 
-    TestHelper.request(TestPlugApp, conn(:get, "/ignored"))
+    assert %{status_code: 200} = TestHelper.request(TestPlugApp, conn(:get, "/ignored"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
@@ -349,8 +416,8 @@ defmodule TransactionTest do
 
     [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert_in_delta event[:duration_s], 0.2, 0.1
-    assert_in_delta event[:total_time_s], 0.4, 0.1
+    assert event[:duration_s] >= 0.220
+    assert event[:total_time_s] >= 0.420
 
     assert event[:total_time_s] > event[:duration_s]
   end
@@ -388,5 +455,29 @@ defmodule TransactionTest do
 
       assert event[:queueDuration] == 0
     end
+  end
+
+  test "Client timeout" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    conn = conn(:get, "/slow")
+
+    {:error, :timeout} = TestHelper.request(TestPlugApp, conn, timeout: 10)
+
+    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert event[:"cowboy.socket_error"] == "closed"
+  end
+
+  test "Server timeout" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    conn = conn(:get, "/slow")
+
+    {:error, :socket_closed_remotely} = TestHelper.request(TestPlugApp, conn)
+
+    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert event[:"cowboy.connection_error"] == "timeout"
   end
 end

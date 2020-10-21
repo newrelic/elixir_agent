@@ -129,13 +129,13 @@ defmodule SpanEventTest do
 
   defmodule TestPlugApp do
     use Plug.Router
-    use NewRelic.Transaction
 
     plug(:match)
     plug(:dispatch)
 
     get "/hello" do
       Task.async(fn ->
+        Process.register(self(), :named_process)
         Process.sleep(5)
         Traced.http_request()
       end)
@@ -193,13 +193,16 @@ defmodule SpanEventTest do
     [tx_root_process_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] -> ev[:"nr.entryPoint"] == true end)
 
+    [request_process_event, _, _] =
+      Enum.find(span_events, fn [ev, _, _] -> ev[:parentId] == tx_root_process_event[:guid] end)
+
     [function_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.hello/0" end)
 
     [nested_function_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.do_hello/0" end)
 
-    [task_event, _, _] = Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "Process" end)
+    [task_event, _, _] = Enum.find(span_events, fn [ev, _, _] -> ev[:name] == :named_process end)
 
     [nested_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] ->
@@ -212,12 +215,14 @@ defmodule SpanEventTest do
 
     assert tx_event[:traceId] == "d6b4ba0c3a712ca"
     assert tx_root_process_event[:traceId] == "d6b4ba0c3a712ca"
+    assert request_process_event[:traceId] == "d6b4ba0c3a712ca"
     assert function_event[:traceId] == "d6b4ba0c3a712ca"
     assert nested_function_event[:traceId] == "d6b4ba0c3a712ca"
     assert task_event[:traceId] == "d6b4ba0c3a712ca"
     assert nested_event[:traceId] == "d6b4ba0c3a712ca"
 
     assert tx_root_process_event[:transactionId] == tx_event[:guid]
+    assert request_process_event[:transactionId] == tx_event[:guid]
     assert function_event[:transactionId] == tx_event[:guid]
     assert nested_function_event[:transactionId] == tx_event[:guid]
     assert task_event[:transactionId] == tx_event[:guid]
@@ -225,6 +230,7 @@ defmodule SpanEventTest do
 
     assert tx_event[:sampled] == true
     assert tx_root_process_event[:sampled] == true
+    assert request_process_event[:sampled] == true
     assert function_event[:sampled] == true
     assert nested_function_event[:sampled] == true
     assert task_event[:sampled] == true
@@ -232,6 +238,7 @@ defmodule SpanEventTest do
 
     assert tx_event[:priority] == 0.987654
     assert tx_root_process_event[:priority] == 0.987654
+    assert request_process_event[:priority] == 0.987654
     assert function_event[:priority] == 0.987654
     assert nested_function_event[:priority] == 0.987654
     assert task_event[:priority] == 0.987654
@@ -241,9 +248,10 @@ defmodule SpanEventTest do
     assert function_event[:duration] < 0.020
 
     assert tx_root_process_event[:parentId] == "5f474d64b9cc9b2a"
-    assert function_event[:parentId] == tx_root_process_event[:guid]
+    assert request_process_event[:parentId] == tx_root_process_event[:guid]
+    assert function_event[:parentId] == request_process_event[:guid]
     assert nested_function_event[:parentId] == function_event[:guid]
-    assert task_event[:parentId] == tx_root_process_event[:guid]
+    assert task_event[:parentId] == request_process_event[:guid]
     assert nested_event[:parentId] == task_event[:guid]
 
     assert function_event[:duration] > 0

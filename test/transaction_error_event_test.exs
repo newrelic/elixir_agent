@@ -8,7 +8,6 @@ defmodule TransactionErrorEventTest do
 
   defmodule TestPlugApp do
     use Plug.Router
-    use NewRelic.Transaction
 
     plug(:match)
     plug(:dispatch)
@@ -196,8 +195,8 @@ defmodule TransactionErrorEventTest do
     {:ok, _sup} = Task.Supervisor.start_link(name: TestSup)
 
     response = TestHelper.request(TestPlugApp, conn(:get, "/caught/error"))
-    assert response.status == 200
-    assert response.resp_body =~ "ok, fine"
+    assert response.status_code == 200
+    assert response.body =~ "ok, fine"
 
     traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
 

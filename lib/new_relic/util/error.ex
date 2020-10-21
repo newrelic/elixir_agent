@@ -38,7 +38,7 @@ defmodule NewRelic.Util.Error do
 
   def format_stacktrace(stacktrace, initial_call),
     do:
-      stacktrace
+      List.wrap(stacktrace)
       |> prepend_initial_call(initial_call)
       |> Enum.map(&Exception.format_stacktrace_entry/1)
 

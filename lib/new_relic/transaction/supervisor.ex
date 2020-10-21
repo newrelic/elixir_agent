@@ -9,9 +9,9 @@ defmodule NewRelic.Transaction.Supervisor do
 
   def init(_) do
     children = [
-      {Task.Supervisor, name: NewRelic.Transaction.TaskSupervisor},
-      NewRelic.Transaction.Monitor,
-      NewRelic.Transaction.Reporter
+      NewRelic.Transaction.ErlangTraceManager,
+      NewRelic.Transaction.ErlangTraceSupervisor,
+      NewRelic.Transaction.SidecarStore
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

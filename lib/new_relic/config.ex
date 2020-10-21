@@ -113,6 +113,8 @@ defmodule NewRelic.Config do
   Opting out of Instrumentation means that `:telemetry` handlers
   will not be attached, reducing the performance impact to zero.
 
+  * `:plug_instrumentation_enabled` (default `true`)
+    * Controls all Plug instrumentation
   * `:ecto_instrumentation_enabled` (default `true`)
     * Controls all Ecto instrumentation
   * `:redix_instrumentation_enabled` (default `true`)
@@ -131,6 +133,10 @@ defmodule NewRelic.Config do
   def feature?(:db_query_collection) do
     feature_check?("NEW_RELIC_SQL_COLLECTION_ENABLED", :sql_collection_enabled, false) ||
       feature_check?("NEW_RELIC_DB_QUERY_COLLECTION_ENABLED", :db_query_collection_enabled)
+  end
+
+  def feature?(:plug_instrumentation) do
+    feature_check?("NEW_RELIC_PLUG_INSTRUMENTATION_ENABLED", :plug_instrumentation_enabled)
   end
 
   def feature?(:ecto_instrumentation) do

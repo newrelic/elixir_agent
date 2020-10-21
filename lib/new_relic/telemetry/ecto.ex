@@ -2,7 +2,7 @@ defmodule NewRelic.Telemetry.Ecto do
   use GenServer
 
   @moduledoc """
-  `NewRelic.Telemetry.Ecto` provides `Ecto` instrumentation via `telemetry`.
+  Provides `Ecto` instrumentation via `telemetry`.
 
   Repos are auto-discovered and instrumented. Make sure your Ecto app depends
   on `new_relic_agent` so that the agent can detect when your Repos start.
@@ -18,6 +18,7 @@ defmodule NewRelic.Telemetry.Ecto do
   SQL query collection via configuration. See `NewRelic.Config` for details.
   """
 
+  @doc false
   def start_link(repo: repo, opts: opts) do
     config = %{
       enabled?: NewRelic.Config.feature?(:ecto_instrumentation),
@@ -30,6 +31,7 @@ defmodule NewRelic.Telemetry.Ecto do
     GenServer.start_link(__MODULE__, config)
   end
 
+  @doc false
   def init(%{enabled?: false}), do: :ignore
 
   def init(%{enabled?: true} = config) do

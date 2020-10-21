@@ -1,5 +1,16 @@
 ## CHANGELOG
 
+### `v1.23.0`
+
+Features
+* `Plug` instrumentation is now fully automatic based on `telemetry` events!
+  * Please remove deprecated calls:
+    - `use NewRelic.Transaction`
+    - `NewRelic.Transaction.handle_errors/2`
+* Transaction tracking is now faster and better in the face of overload
+
+------
+
 ### `v1.22.2`
 
 Tweaks

@@ -2,7 +2,7 @@ defmodule NewRelic.Telemetry.Redix do
   use GenServer
 
   @moduledoc """
-  `NewRelic.Telemetry.Redix` provides `Redix` instrumentation via `telemetry`.
+  Provides `Redix` instrumentation via `telemetry`.
 
   Redix connections are auto-discovered and instrumented.
 
@@ -17,6 +17,7 @@ defmodule NewRelic.Telemetry.Redix do
   query collection via configuration. See `NewRelic.Config` for details.
   """
 
+  @doc false
   def start_link(_) do
     enabled = NewRelic.Config.feature?(:redix_instrumentation)
     GenServer.start_link(__MODULE__, [enabled: enabled], name: __MODULE__)
@@ -28,6 +29,7 @@ defmodule NewRelic.Telemetry.Redix do
   @init_events [@redix_connection]
   @connected_events [@redix_connection, @redix_pipeline_stop]
 
+  @doc false
   def init(enabled: false), do: :ignore
 
   def init(enabled: true) do
@@ -77,6 +79,7 @@ defmodule NewRelic.Telemetry.Redix do
     :telemetry.detach(handler_id)
   end
 
+  @doc false
   def handle_event(@redix_connection, _, meta, _config) do
     GenServer.call(__MODULE__, {@redix_connection, meta})
   end
@@ -165,21 +168,21 @@ defmodule NewRelic.Telemetry.Redix do
   end
 
   @not_collected "[NOT_COLLECTED]"
-  def parse_command([[operation | _args] = command], collect: true) do
+  defp parse_command([[operation | _args] = command], collect: true) do
     query = Enum.join(command, " ")
     {operation, query}
   end
 
-  def parse_command([[operation | _args]], collect: false) do
+  defp parse_command([[operation | _args]], collect: false) do
     {operation, @not_collected}
   end
 
-  def parse_command(pipeline, collect: true) do
+  defp parse_command(pipeline, collect: true) do
     query = pipeline |> Enum.map(&Enum.join(&1, " ")) |> Enum.join("; ")
     {"PIPELINE", query}
   end
 
-  def parse_command(_pipeline, collect: false) do
+  defp parse_command(_pipeline, collect: false) do
     {"PIPELINE", @not_collected}
   end
 

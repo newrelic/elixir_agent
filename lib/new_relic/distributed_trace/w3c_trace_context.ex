@@ -8,9 +8,9 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext do
   @w3c_traceparent "traceparent"
   @w3c_tracestate "tracestate"
 
-  def extract(conn) do
-    with traceparent_header <- Plug.Conn.get_req_header(conn, @w3c_traceparent),
-         tracestate_header <- Plug.Conn.get_req_header(conn, @w3c_tracestate),
+  def extract(headers) do
+    with traceparent_header <- Map.get(headers, @w3c_traceparent),
+         tracestate_header <- Map.get(headers, @w3c_tracestate),
          %TraceParent{} = traceparent <- TraceParent.decode(traceparent_header),
          %TraceState{} = tracestate <- TraceState.decode(tracestate_header) do
       case TraceState.restrict_access(tracestate) do

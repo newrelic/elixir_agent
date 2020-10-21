@@ -216,11 +216,4 @@ defmodule TracerTest do
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
     assert metrics == []
   end
-
-  test "Don't track trace segments that are NOT part of a process in a Transaction" do
-    Traced.funny()
-
-    assert %{} == NewRelic.Util.AttrStore.collect(NewRelic.Transaction.Reporter, self())
-    assert %{} == NewRelic.Util.AttrStore.collect(NewRelic.Transaction.Reporter.Tracking, self())
-  end
 end
