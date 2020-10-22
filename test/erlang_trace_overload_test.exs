@@ -42,7 +42,7 @@ defmodule ErlangTraceOverloadTest do
 
     assert first_pid != second_pid
 
-    Application.delete_env(:new_relic_agent, :overload_qlen)
+    Application.delete_env(:new_relic_agent, :overload_queue_len)
     Application.delete_env(:new_relic_agent, :overload_backoff)
     NewRelic.disable_erlang_trace()
     NewRelic.enable_erlang_trace()

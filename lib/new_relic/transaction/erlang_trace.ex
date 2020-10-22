@@ -57,9 +57,9 @@ defmodule NewRelic.Transaction.ErlangTrace do
          %Task{pid: pid}, timestamp},
         state
       ) do
-    overload_protection(state.overload)
-    enable_trace_flags(pid)
     Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
+    enable_trace_flags(pid)
+    overload_protection(state.overload)
     {:noreply, state}
   end
 
@@ -67,8 +67,8 @@ defmodule NewRelic.Transaction.ErlangTrace do
         {:trace_ts, source, :return_from, {:poolboy, :checkout, _}, pid, timestamp},
         state
       ) do
-    overload_protection(state.overload)
     Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
+    overload_protection(state.overload)
     {:noreply, state}
   end
 
@@ -76,8 +76,8 @@ defmodule NewRelic.Transaction.ErlangTrace do
         {:trace_ts, source, :return_from, {:proc_lib, :spawn_link, _}, pid, timestamp},
         state
       ) do
-    overload_protection(state.overload)
     Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
+    overload_protection(state.overload)
     {:noreply, state}
   end
 
