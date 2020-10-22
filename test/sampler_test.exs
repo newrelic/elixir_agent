@@ -128,7 +128,7 @@ defmodule SamplerTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert [_, [_, 2, _, _, _, _]] =
+    assert [_, [_, 2.0, _, _, _, _]] =
              TestHelper.find_metric(
                metrics,
                "Supportability/ElixirAgent/ReporterCompleteTasksActive"

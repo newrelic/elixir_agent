@@ -605,7 +605,8 @@ defmodule NewRelic.Transaction.Complete do
     NewRelic.report_metric(:apdex, apdex: apdex, threshold: apdex_t())
   end
 
-  def apdex_t, do: Collector.AgentRun.apdex_t()
+  @default_apdex_t 2.0
+  def apdex_t, do: Collector.AgentRun.apdex_t() || @default_apdex_t
 
   defp parse_error_expected(%{expected: true}), do: true
   defp parse_error_expected(_), do: false
