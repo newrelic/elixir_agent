@@ -399,14 +399,18 @@ defmodule NewRelic.Metric.MetricData do
     do: %Metric{
       name: :"Memory/Physical",
       call_count: 1,
-      total_call_time: memory_mb
+      total_call_time: memory_mb,
+      min_call_time: memory_mb,
+      max_call_time: memory_mb
     }
 
   def transform(:cpu, utilization: utilization),
     do: %Metric{
       name: :"CPU/User Time",
       call_count: 1,
-      total_call_time: utilization
+      total_call_time: utilization,
+      min_call_time: utilization,
+      max_call_time: utilization
     }
 
   def transform(:apdex, apdex: :satisfying, threshold: t),
