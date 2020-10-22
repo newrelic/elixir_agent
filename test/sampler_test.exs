@@ -147,10 +147,8 @@ defmodule SamplerTest do
     _tx_1 =
       Task.async(fn ->
         NewRelic.start_transaction("Test", "Tx")
-        Process.sleep(100)
+        Process.sleep(500)
       end)
-
-    Process.sleep(200)
 
     _tx_2 =
       Task.async(fn ->
@@ -170,10 +168,12 @@ defmodule SamplerTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert [_, [_, 2, _, _, _, _]] =
+    assert [_, [_, active, _, _, _, _]] =
              TestHelper.find_metric(
                metrics,
                "Supportability/ElixirAgent/Sidecar/ActiveCount"
              )
+
+    assert active >= 3
   end
 end
