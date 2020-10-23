@@ -175,5 +175,15 @@ defmodule SamplerTest do
              )
 
     assert active >= 3
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Supportability/ElixirAgent/Sidecar/LookupStoreSize"
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Supportability/ElixirAgent/Sidecar/ContextStoreSize"
+           )
   end
 end

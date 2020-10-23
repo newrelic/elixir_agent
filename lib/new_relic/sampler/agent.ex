@@ -34,8 +34,24 @@ defmodule NewRelic.Sampler.Agent do
     )
 
     NewRelic.report_metric(
+      {:supportability, :agent, "Sidecar/ContextStoreSize"},
+      value: ets_size(NewRelic.Transaction.Sidecar.ContextStore)
+    )
+
+    NewRelic.report_metric(
+      {:supportability, :agent, "Sidecar/LookupStoreSize"},
+      value: ets_size(NewRelic.Transaction.Sidecar.LookupStore)
+    )
+
+    NewRelic.report_metric(
       {:supportability, :agent, "ErlangTrace/Restarts"},
       value: NewRelic.Transaction.ErlangTraceManager.restart_count()
     )
+  end
+
+  defp ets_size(table) do
+    :ets.info(table, :size)
+  rescue
+    ArgumentError -> nil
   end
 end
