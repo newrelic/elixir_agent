@@ -1,12 +1,12 @@
 defmodule TestHelper do
-  def request(module, conn, opts \\ []) do
-    Plug.Cowboy.http(module, [], port: 8000, protocol_options: [idle_timeout: 500])
+  def request(module, conn, http_opts \\ [], protocol_options \\ []) do
+    Plug.Cowboy.http(module, [], port: 8000, protocol_options: protocol_options)
 
     response =
       NewRelic.Util.HTTP.get(
         "http://localhost:8000#{conn.request_path}",
         conn.req_headers,
-        opts
+        http_opts
       )
 
     Plug.Cowboy.shutdown(Module.concat(module, HTTP))

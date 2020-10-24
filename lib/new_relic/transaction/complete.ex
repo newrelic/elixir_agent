@@ -103,7 +103,7 @@ defmodule NewRelic.Transaction.Complete do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.group_by(& &1.pid)
-      |> Enum.into(%{}, &generate_process_segment_tree(&1))
+      |> Enum.into(%{}, &generate_segment_tree(&1))
 
     root_process_segment =
       tx_attrs
@@ -124,13 +124,16 @@ defmodule NewRelic.Transaction.Complete do
       |> Enum.reject(&(&1.relative_start_time == &1.relative_end_time))
       |> Enum.sort_by(& &1.relative_start_time)
 
+    {merged_process_function_segments, remaining_function_segments} =
+      merge_process_function_segments(process_segments, function_segments)
+
     segment_tree =
-      process_segments
-      |> Enum.map(&Map.put(&1, :children, function_segments[&1.pid] || []))
-      |> generate_process_tree(root: root_process_segment)
+      generate_process_tree(merged_process_function_segments, root: root_process_segment)
 
     top_children = List.wrap(function_segments[inspect(pid)])
-    segment_tree = Map.update!(segment_tree, :children, &(&1 ++ top_children))
+    stray_children = Map.values(remaining_function_segments) |> List.flatten()
+
+    segment_tree = Map.update!(segment_tree, :children, &(&1 ++ top_children ++ stray_children))
 
     span_events = extract_span_events(tx_attrs, pid, process_spawns, process_exits)
 
@@ -304,12 +307,32 @@ defmodule NewRelic.Transaction.Complete do
     |> Map.merge(%{class_name: name || "Process", method_name: nil, metric_name: pid})
   end
 
+  defp merge_process_function_segments(process_segments, function_segments) do
+    Enum.reduce(
+      process_segments,
+      {[], function_segments},
+      &reduce_process_function_segments/2
+    )
+  end
+
+  defp reduce_process_function_segments(
+         process_segment,
+         {merged_segments, remaining_function_segments}
+       ) do
+    {process_function_segments, remaining_function_segments} =
+      Map.pop(remaining_function_segments, process_segment.pid, [])
+
+    merged_process_segment = Map.put(process_segment, :children, process_function_segments)
+
+    {[merged_process_segment | merged_segments], remaining_function_segments}
+  end
+
   defp generate_process_tree(processes, root: root) do
     parent_map = Enum.group_by(processes, & &1.parent_id)
     generate_tree(root, parent_map)
   end
 
-  defp generate_process_segment_tree({pid, segments}) do
+  defp generate_segment_tree({pid, segments}) do
     parent_map = Enum.group_by(segments, & &1.parent_id)
     %{children: children} = generate_tree(%{id: :root}, parent_map)
     {pid, children}

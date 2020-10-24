@@ -474,7 +474,7 @@ defmodule TransactionTest do
 
     conn = conn(:get, "/slow")
 
-    {:error, :socket_closed_remotely} = TestHelper.request(TestPlugApp, conn)
+    {:error, :socket_closed_remotely} = TestHelper.request(TestPlugApp, conn, [], idle_timeout: 500)
 
     [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
