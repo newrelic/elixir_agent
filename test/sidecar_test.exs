@@ -2,8 +2,11 @@ defmodule SidecarTest do
   use ExUnit.Case
 
   alias NewRelic.Transaction.Sidecar
+  alias NewRelic.Harvest.Collector
 
   test "Transaction.Sidecar" do
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
     Task.async(fn ->
       NewRelic.start_transaction("Test", "Tx")
       NewRelic.add_attributes(foo: "BAR")
@@ -44,6 +47,13 @@ defmodule SidecarTest do
       refute :ets.member(Sidecar.ContextStore, {:context, sidecar})
     end)
     |> Task.await()
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Supportability/ElixirAgent/Sidecar/Process/MemoryKb"
+           )
   end
 
   test "multiple transctions in a row in a process" do

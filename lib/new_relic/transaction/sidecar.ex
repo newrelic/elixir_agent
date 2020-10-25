@@ -199,7 +199,7 @@ defmodule NewRelic.Transaction.Sidecar do
     info = Process.info(self(), [:memory, :reductions])
 
     NewRelic.report_metric(
-      {:supportability, :agent, "Sidecar/Process/Memory"},
+      {:supportability, :agent, "Sidecar/Process/MemoryKb"},
       value: info[:memory] / @kb
     )
 
