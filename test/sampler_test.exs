@@ -171,19 +171,19 @@ defmodule SamplerTest do
     assert [_, [_, active, _, _, _, _]] =
              TestHelper.find_metric(
                metrics,
-               "Supportability/ElixirAgent/Sidecar/ActiveCount"
+               "Supportability/ElixirAgent/Sidecar/Process/ActiveCount"
              )
 
     assert active >= 3
 
     assert TestHelper.find_metric(
              metrics,
-             "Supportability/ElixirAgent/Sidecar/LookupStoreSize"
+             "Supportability/ElixirAgent/Sidecar/Stores/LookupStore/Size"
            )
 
     assert TestHelper.find_metric(
              metrics,
-             "Supportability/ElixirAgent/Sidecar/ContextStoreSize"
+             "Supportability/ElixirAgent/Sidecar/Stores/ContextStore/Size"
            )
   end
 end

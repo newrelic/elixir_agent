@@ -29,17 +29,17 @@ defmodule NewRelic.Sampler.Agent do
 
   def record_sample do
     NewRelic.report_metric(
-      {:supportability, :agent, "Sidecar/ActiveCount"},
+      {:supportability, :agent, "Sidecar/Process/ActiveCount"},
       value: NewRelic.Transaction.Sidecar.counter()
     )
 
     NewRelic.report_metric(
-      {:supportability, :agent, "Sidecar/ContextStoreSize"},
+      {:supportability, :agent, "Sidecar/Stores/ContextStore/Size"},
       value: ets_size(NewRelic.Transaction.Sidecar.ContextStore)
     )
 
     NewRelic.report_metric(
-      {:supportability, :agent, "Sidecar/LookupStoreSize"},
+      {:supportability, :agent, "Sidecar/Stores/LookupStore/Size"},
       value: ets_size(NewRelic.Transaction.Sidecar.LookupStore)
     )
 

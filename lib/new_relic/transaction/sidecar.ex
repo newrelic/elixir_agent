@@ -190,7 +190,23 @@ defmodule NewRelic.Transaction.Sidecar do
     Enum.each(state.offspring, &cleanup(lookup: &1))
     run_complete(state)
     counter(:sub)
+    report_stats()
     {:stop, :normal, :completed}
+  end
+
+  @kb 1024
+  defp report_stats() do
+    info = Process.info(self(), [:memory, :reductions])
+
+    NewRelic.report_metric(
+      {:supportability, :agent, "Sidecar/Process/Memory"},
+      value: info[:memory] / @kb
+    )
+
+    NewRelic.report_metric(
+      {:supportability, :agent, "Sidecar/Process/Reductions"},
+      value: info[:reductions]
+    )
   end
 
   defp clear_sidecar() do
