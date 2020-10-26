@@ -20,7 +20,7 @@ defmodule NewRelic.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger, :inets, :ssl, :os_mon],
+      extra_applications: [:logger, :inets, :ssl, :os_mon, :runtime_tools],
       mod: {NewRelic.Application, []}
     ]
   end
