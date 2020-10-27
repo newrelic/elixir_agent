@@ -31,7 +31,11 @@ defmodule SamplerTest do
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "BeamStat" && event[:reductions] > 0 && event[:process_count] > 0
+             event[:category] == "BeamStat" &&
+               event[:reductions] > 0 &&
+               event[:process_count] > 0 &&
+               event[:scheduler_utilization] > 0.0 &&
+               event[:scheduler_utilization] < 1.0
            end)
 
     [%{name: "Memory/Physical"}, [_, mb, _, _, _, _]] =
