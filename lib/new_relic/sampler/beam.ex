@@ -15,7 +15,8 @@ defmodule NewRelic.Sampler.Beam do
     :erlang.system_flag(:scheduler_wall_time, true)
 
     # throw away first value
-    :cpu_sup.util()
+    if Application.get_env(:os_mon, :start_cpu_sup), do: :cpu_sup.util()
+
     :erlang.statistics(:scheduler_wall_time)
 
     NewRelic.sample_process()
@@ -80,7 +81,7 @@ defmodule NewRelic.Sampler.Beam do
       schedulers: :erlang.system_info(:schedulers),
       scheduler_utilization: :erlang.statistics(:scheduler_wall_time) |> Enum.sort(),
       cpu_count: :erlang.system_info(:logical_processors),
-      cpu_utilization: safe_check(:cpu_sup, :util, [])
+      cpu_utilization: maybe_get_cpu_utilization()
     }
   end
 
@@ -113,4 +114,12 @@ defmodule NewRelic.Sampler.Beam do
 
   defp safe_div(_, 0.0), do: 0.0
   defp safe_div(a, b), do: a / b
+
+  defp maybe_get_cpu_utilization() do
+    if Application.get_env(:os_mon, :start_cpu_sup) do
+      safe_check(:cpu_sup, :util, [])
+    else
+      nil
+    end
+  end
 end
