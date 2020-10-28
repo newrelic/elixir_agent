@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.22.1`
+
+Fixes
+* Fix a compile time warning about `:scheduler` [#288](https://github.com/newrelic/elixir_agent/pull/288)
+* Avoid a shutdown bug in `:cpu_sup` [#287](https://github.com/newrelic/elixir_agent/pull/287)
+
 ### `v1.22.0`
 
 Features
