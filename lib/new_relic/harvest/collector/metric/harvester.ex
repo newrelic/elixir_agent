@@ -116,10 +116,10 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
         :counters.add(counter, @total_call_time, int(metric.total_call_time))
         :counters.add(counter, @total_exclusive_time, int(metric.total_exclusive_time))
 
-        if int(metric.min_call_time) < :counters.get(counter, @min_call_time),
+        if metric.min_call_time < unint(:counters.get(counter, @min_call_time)),
           do: :counters.put(counter, @min_call_time, int(metric.max_call_time))
 
-        if int(metric.max_call_time) > :counters.get(counter, @max_call_time),
+        if metric.max_call_time > unint(:counters.get(counter, @max_call_time)),
           do: :counters.put(counter, @max_call_time, int(metric.max_call_time))
 
         :counters.add(counter, @sum_of_squares, int(metric.sum_of_squares))
