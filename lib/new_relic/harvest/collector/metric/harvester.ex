@@ -103,26 +103,26 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
         counter = :counters.new(@size, [])
 
         :counters.add(counter, @call_count, round(metric.call_count))
-        :counters.add(counter, @total_call_time, int(metric.total_call_time))
-        :counters.add(counter, @total_exclusive_time, int(metric.total_exclusive_time))
-        :counters.add(counter, @min_call_time, int(metric.min_call_time))
-        :counters.add(counter, @max_call_time, int(metric.max_call_time))
-        :counters.add(counter, @sum_of_squares, int(metric.sum_of_squares))
+        :counters.add(counter, @total_call_time, encode(metric.total_call_time))
+        :counters.add(counter, @total_exclusive_time, encode(metric.total_exclusive_time))
+        :counters.add(counter, @min_call_time, encode(metric.min_call_time))
+        :counters.add(counter, @max_call_time, encode(metric.max_call_time))
+        :counters.add(counter, @sum_of_squares, encode(metric.sum_of_squares))
 
         Map.put(metrics_acc, {metric.name, metric.scope}, counter)
 
       counter ->
         :counters.add(counter, @call_count, round(metric.call_count))
-        :counters.add(counter, @total_call_time, int(metric.total_call_time))
-        :counters.add(counter, @total_exclusive_time, int(metric.total_exclusive_time))
+        :counters.add(counter, @total_call_time, encode(metric.total_call_time))
+        :counters.add(counter, @total_exclusive_time, encode(metric.total_exclusive_time))
 
-        if metric.min_call_time < unint(:counters.get(counter, @min_call_time)),
-          do: :counters.put(counter, @min_call_time, int(metric.max_call_time))
+        if metric.min_call_time < decode(:counters.get(counter, @min_call_time)),
+          do: :counters.put(counter, @min_call_time, encode(metric.max_call_time))
 
-        if metric.max_call_time > unint(:counters.get(counter, @max_call_time)),
-          do: :counters.put(counter, @max_call_time, int(metric.max_call_time))
+        if metric.max_call_time > decode(:counters.get(counter, @max_call_time)),
+          do: :counters.put(counter, @max_call_time, encode(metric.max_call_time))
 
-        :counters.add(counter, @sum_of_squares, int(metric.sum_of_squares))
+        :counters.add(counter, @sum_of_squares, encode(metric.sum_of_squares))
 
         metrics_acc
     end
@@ -133,16 +133,18 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
       %{name: to_string(name), scope: to_string(scope)},
       [
         :counters.get(metric, @call_count),
-        unint(:counters.get(metric, @total_call_time)),
-        unint(:counters.get(metric, @total_exclusive_time)),
-        unint(:counters.get(metric, @min_call_time)),
-        unint(:counters.get(metric, @max_call_time)),
-        unint(:counters.get(metric, @sum_of_squares))
+        decode(:counters.get(metric, @total_call_time)),
+        decode(:counters.get(metric, @total_exclusive_time)),
+        decode(:counters.get(metric, @min_call_time)),
+        decode(:counters.get(metric, @max_call_time)),
+        decode(:counters.get(metric, @sum_of_squares))
       ]
     ]
   end
 
+  # counters store integers, so we encode values
+  # into integers keeping 3 decimal places of precision
   @precision 1_000
-  defp int(val), do: round(val * @precision)
-  defp unint(val), do: val / @precision
+  defp encode(val), do: round(val * @precision)
+  defp decode(val), do: val / @precision
 end
