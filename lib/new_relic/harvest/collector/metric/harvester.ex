@@ -86,7 +86,7 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
   end
 
   defp build_metric_data(metrics) do
-    Enum.map(metrics, &encode/1)
+    Enum.map(metrics, &build/1)
   end
 
   @size 6
@@ -100,51 +100,58 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
   defp merge_metric(metric, metrics_acc) do
     case Map.get(metrics_acc, {metric.name, metric.scope}) do
       nil ->
-        counter = :counters.new(@size, [])
+        counter = new(@size, [])
 
-        :counters.add(counter, @call_count, round(metric.call_count))
-        :counters.add(counter, @total_call_time, encode(metric.total_call_time))
-        :counters.add(counter, @total_exclusive_time, encode(metric.total_exclusive_time))
-        :counters.add(counter, @min_call_time, encode(metric.min_call_time))
-        :counters.add(counter, @max_call_time, encode(metric.max_call_time))
-        :counters.add(counter, @sum_of_squares, encode(metric.sum_of_squares))
+        add(counter, @call_count, round(metric.call_count))
+        add(counter, @total_call_time, encode(metric.total_call_time))
+        add(counter, @total_exclusive_time, encode(metric.total_exclusive_time))
+        add(counter, @min_call_time, encode(metric.min_call_time))
+        add(counter, @max_call_time, encode(metric.max_call_time))
+        add(counter, @sum_of_squares, encode(metric.sum_of_squares))
 
         Map.put(metrics_acc, {metric.name, metric.scope}, counter)
 
       counter ->
-        :counters.add(counter, @call_count, round(metric.call_count))
-        :counters.add(counter, @total_call_time, encode(metric.total_call_time))
-        :counters.add(counter, @total_exclusive_time, encode(metric.total_exclusive_time))
+        add(counter, @call_count, round(metric.call_count))
+        add(counter, @total_call_time, encode(metric.total_call_time))
+        add(counter, @total_exclusive_time, encode(metric.total_exclusive_time))
 
-        if metric.min_call_time < decode(:counters.get(counter, @min_call_time)),
-          do: :counters.put(counter, @min_call_time, encode(metric.max_call_time))
+        if metric.min_call_time < decode(get(counter, @min_call_time)),
+          do: put(counter, @min_call_time, encode(metric.max_call_time))
 
-        if metric.max_call_time > decode(:counters.get(counter, @max_call_time)),
-          do: :counters.put(counter, @max_call_time, encode(metric.max_call_time))
+        if metric.max_call_time > decode(get(counter, @max_call_time)),
+          do: put(counter, @max_call_time, encode(metric.max_call_time))
 
-        :counters.add(counter, @sum_of_squares, encode(metric.sum_of_squares))
+        add(counter, @sum_of_squares, encode(metric.sum_of_squares))
 
         metrics_acc
     end
   end
 
-  defp encode({{name, scope}, metric}) do
+  defp build({{name, scope}, counter}) do
     [
       %{name: to_string(name), scope: to_string(scope)},
       [
-        :counters.get(metric, @call_count),
-        decode(:counters.get(metric, @total_call_time)),
-        decode(:counters.get(metric, @total_exclusive_time)),
-        decode(:counters.get(metric, @min_call_time)),
-        decode(:counters.get(metric, @max_call_time)),
-        decode(:counters.get(metric, @sum_of_squares))
+        get(counter, @call_count),
+        decode(get(counter, @total_call_time)),
+        decode(get(counter, @total_exclusive_time)),
+        decode(get(counter, @min_call_time)),
+        decode(get(counter, @max_call_time)),
+        decode(get(counter, @sum_of_squares))
       ]
     ]
   end
 
+  @compile {:inline, new: 2, add: 3, put: 3, get: 2}
+  defp new(size, opts), do: :counters.new(size, opts)
+  defp add(counter, index, value), do: :counters.add(counter, index, value)
+  defp put(counter, index, value), do: :counters.put(counter, index, value)
+  defp get(counter, index), do: :counters.get(counter, index)
+
   # counters store integers, so we encode values
   # into integers keeping 3 decimal places of precision
   @precision 1_000
+  @compile {:inline, encode: 1, decode: 1}
   defp encode(val), do: round(val * @precision)
   defp decode(val), do: val / @precision
 end
