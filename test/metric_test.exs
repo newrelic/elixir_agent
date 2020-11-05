@@ -9,8 +9,7 @@ defmodule MetricTest do
 
     metrics = TestHelper.gather_harvest(NewRelic.Harvest.Collector.Metric.Harvester)
 
-    [_, [count, value, _, min, max, _]] =
-      TestHelper.find_metric(metrics, "Custom/Foo/Bar", 2)
+    [_, [count, value, _, min, max, _]] = TestHelper.find_metric(metrics, "Custom/Foo/Bar", 2)
 
     assert count == 2
     assert value == 150.0
