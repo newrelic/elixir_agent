@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.22.2`
+
+Tweaks
+* Optimize metric aggregation with `:counter`
+
 ### `v1.22.1`
 
 Fixes
