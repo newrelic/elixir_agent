@@ -8,10 +8,11 @@ defmodule NewRelic.Transaction.ErlangTraceSupervisor do
   end
 
   def init(_) do
-    children = [
-      NewRelic.Transaction.ErlangTrace
-    ]
+    enabled? = !Application.get_env(:new_relic_agent, :disable_erlang_trace, false)
 
-    Supervisor.init(children, strategy: :one_for_one)
+    Supervisor.init(children(enabled: enabled?), strategy: :one_for_one)
   end
+
+  def children(enabled: true), do: [NewRelic.Transaction.ErlangTrace]
+  def children(enabled: false), do: []
 end
