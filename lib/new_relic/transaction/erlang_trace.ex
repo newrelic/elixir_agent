@@ -31,7 +31,7 @@ defmodule NewRelic.Transaction.ErlangTrace do
   # API
 
   def trace() do
-    GenServer.cast(__MODULE__, {:trace, self()})
+    enable_trace_flags(:self)
   end
 
   def disable() do
@@ -39,12 +39,6 @@ defmodule NewRelic.Transaction.ErlangTrace do
   end
 
   # Server
-
-  def handle_cast({:trace, pid}, state) do
-    enable_trace_flags(pid)
-
-    {:noreply, state}
-  end
 
   def handle_call(:disable, _from, state) do
     {:stop, {:shutdown, :disable}, :ok, state}
@@ -87,14 +81,21 @@ defmodule NewRelic.Transaction.ErlangTrace do
 
   # Helpers
 
-  def enable_trace_flags(pid) do
-    # Trace function calls so we can install specific trace_patterns
-    #   http://erlang.org/doc/man/erlang.html#trace-3
+  # Trace function calls so we can install specific trace_patterns
+  #   http://erlang.org/doc/man/erlang.html#trace-3
 
+  defp enable_trace_flags(:self) do
+    with tracer when is_pid(tracer) <- Process.whereis(__MODULE__) do
+      :erlang.trace(self(), true, [:call, :set_on_spawn, :timestamp, tracer: tracer])
+    end
+  rescue
+    ArgumentError -> :process_gone
+  end
+
+  defp enable_trace_flags(pid) do
     :erlang.trace(pid, true, [:call, :set_on_spawn, :timestamp])
   rescue
-    # Process is already dead
-    ArgumentError -> nil
+    ArgumentError -> :process_gone
   end
 
   def enable_trace_patterns do

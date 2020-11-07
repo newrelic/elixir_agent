@@ -11,8 +11,6 @@ defmodule NewRelic.Transaction.Reporter do
 
   @moduledoc false
 
-  # Customer Exposed functions
-
   def add_attributes(attrs) when is_list(attrs) do
     attrs
     |> NewRelic.Util.deep_flatten()
@@ -27,8 +25,6 @@ defmodule NewRelic.Transaction.Reporter do
   def set_transaction_name(custom_name) when is_binary(custom_name) do
     Transaction.Sidecar.add(custom_name: custom_name)
   end
-
-  # Internal Agent functions
 
   def start_transaction(:web) do
     Transaction.ErlangTrace.trace()
@@ -53,10 +49,22 @@ defmodule NewRelic.Transaction.Reporter do
 
   def ignore_transaction() do
     Transaction.Sidecar.ignore()
+    :ok
   end
 
   def exclude_from_transaction() do
     Transaction.Sidecar.exclude()
+    :ok
+  end
+
+  def connect_to_transaction(pid) when is_pid(pid) do
+    Transaction.Sidecar.connect(pid)
+    :ok
+  end
+
+  def disconnect_from_transaction() do
+    Transaction.Sidecar.disconnect()
+    :ok
   end
 
   def error(error) do

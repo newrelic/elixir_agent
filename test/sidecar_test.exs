@@ -130,4 +130,38 @@ defmodule SidecarTest do
     end)
     |> Task.await()
   end
+
+  test "manually connect an individual process" do
+    Task.async(fn ->
+      NewRelic.start_transaction("Test", "manual_connection")
+      NewRelic.add_attributes(foo1: "BAR")
+
+      pid = self()
+
+      spawn(fn ->
+        NewRelic.connect_to_transaction(pid)
+        NewRelic.add_attributes(foo2: "BAZ")
+
+        NewRelic.disconnect_from_transaction()
+        NewRelic.add_attributes(foo3: "QUX")
+
+        send(pid, :carry_on)
+      end)
+
+      assert_receive :carry_on
+      Process.sleep(500)
+
+      assert :ets.member(Sidecar.LookupStore, self())
+      sidecar = Process.get(:nr_tx_sidecar)
+
+      %{attributes: attributes} = :sys.get_state(sidecar)
+      assert attributes[:foo1] == "BAR"
+      assert attributes[:foo2] == "BAZ"
+      refute attributes[:foo3]
+    end)
+    |> Task.await()
+
+    # no-op when called outside a Transaction
+    NewRelic.connect_to_transaction(self())
+  end
 end

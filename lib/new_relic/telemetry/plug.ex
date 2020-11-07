@@ -105,7 +105,6 @@ defmodule NewRelic.Telemetry.Plug do
         %{conn: conn, route: route},
         _config
       ) do
-    Transaction.Sidecar.connect_parent()
     NewRelic.add_attributes(plug_name: plug_name(conn, route))
   end
 

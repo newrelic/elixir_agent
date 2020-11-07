@@ -78,7 +78,7 @@ defmodule NewRelic do
   call `NewRelic.stop_transaction()` to mark the end of the transaction.
   """
   @spec start_transaction(String.t(), String.t()) :: :ok
-  defdelegate start_transaction(category, name), to: NewRelic.Transaction
+  defdelegate start_transaction(category, name), to: NewRelic.OtherTransaction
 
   @doc """
   Stop an "Other" Transaction.
@@ -87,7 +87,7 @@ defmodule NewRelic do
   call `NewRelic.stop_transaction()` to mark the end of the transaction.
   """
   @spec stop_transaction() :: :ok
-  defdelegate stop_transaction(), to: NewRelic.Transaction
+  defdelegate stop_transaction(), to: NewRelic.OtherTransaction
 
   @doc """
   Call within a Transaction to prevent it from reporting.
@@ -99,12 +99,30 @@ defmodule NewRelic do
   end
   ```
   """
-  defdelegate ignore_transaction(), to: NewRelic.Transaction
+  defdelegate ignore_transaction(), to: NewRelic.Transaction.Reporter
 
   @doc """
   Call to exclude the current process from being part of the Transaction.
   """
-  defdelegate exclude_from_transaction(), to: NewRelic.Transaction
+  defdelegate exclude_from_transaction(), to: NewRelic.Transaction.Reporter
+
+  @doc """
+  Advanced:
+  Call to manually connect the current process to another process's Transaction.
+
+  Only use this when there is no discoverable connection (ex: the process was
+  spawned without links or the logic is within a message handling callback).
+
+  This connection will persist until the process exits or
+  `NewRelic.disconnect_from_transaction()` is called.
+  """
+  defdelegate connect_to_transaction(pid), to: NewRelic.Transaction.Reporter
+
+  @doc """
+  Advanced:
+  Call to manually disconnect the current proccess from the current Transaction.
+  """
+  defdelegate disconnect_from_transaction(), to: NewRelic.Transaction.Reporter
 
   @doc """
   Store information about the type of work the current span is doing.

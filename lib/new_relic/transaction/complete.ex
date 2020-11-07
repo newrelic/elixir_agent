@@ -149,22 +149,27 @@ defmodule NewRelic.Transaction.Complete do
       |> Map.merge(NewRelic.Config.automatic_attributes())
       |> Map.put(:"nr.apdexPerfZone", Util.Apdex.label(apdex))
       |> Map.put(:total_time_s, total_time_s(tx_attrs, concurrent_process_time_ms))
-      |> Map.put(:process_spawns, length(process_spawns))
+      |> Map.put(:process_spawns, process_spawn_count(tx_attrs, process_spawns))
 
     {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
   end
 
-  defp total_time_s(
-         %{transactionType: :Other, duration_ms: duration_ms},
-         concurrent_process_time_ms
-       ) do
-    (duration_ms + concurrent_process_time_ms) / 1000
+  defp process_spawn_count(%{transactionType: :Web}, process_spawns) do
+    # Remove the cowboy Request process spawn
+    length(process_spawns) - 1
+  end
+
+  defp process_spawn_count(%{transactionType: :Other}, process_spawns) do
+    length(process_spawns)
   end
 
   defp total_time_s(%{transactionType: :Web}, concurrent_process_time_ms) do
-    # request duration is already a part of the `concurrent_process_time_ms`
-    # since the Transaction starts the cowboy connection process
+    # Cowboy request process is already included in concurrent time
     concurrent_process_time_ms / 1000
+  end
+
+  defp total_time_s(%{transactionType: :Other} = tx_attrs, concurrent_process_time_ms) do
+    (tx_attrs.duration_ms + concurrent_process_time_ms) / 1000
   end
 
   defp extract_span_events(%{sampled: true} = tx_attrs, pid, spawns, exits) do

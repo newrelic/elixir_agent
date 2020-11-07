@@ -39,9 +39,13 @@ defmodule NewRelic.Transaction.Sidecar do
      }}
   end
 
-  def connect_parent() do
-    store_sidecar(self(), get_sidecar())
+  def connect(pid) do
+    set_sidecar(lookup_sidecar(pid))
     cast({:add_offspring, self()})
+  end
+
+  def disconnect() do
+    set_sidecar(:no_track)
   end
 
   def tracking?() do
