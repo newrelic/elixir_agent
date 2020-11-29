@@ -52,13 +52,6 @@ defmodule TestHelper do
     end)
   end
 
-  def http_request(path, port) do
-    {:ok, {{_, _status_code, _}, _headers, body}} =
-      :httpc.request('http://localhost:#{port}/#{path}')
-
-    {:ok, %{body: to_string(body)}}
-  end
-
   def simulate_agent_enabled(_context) do
     Process.whereis(Harvest.TaskSupervisor) ||
       NewRelic.EnabledSupervisor.start_link(:ok)

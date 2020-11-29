@@ -16,7 +16,7 @@ defmodule NewRelic.Util.HTTP do
   def post(url, body, headers),
     do: post(url, Jason.encode!(body), headers)
 
-  def get(url, headers, opts \\ []) do
+  def get(url, headers \\ [], opts \\ []) do
     headers = Enum.map(headers, fn {k, v} -> {'#{k}', '#{v}'} end)
     request = {'#{url}', headers}
 

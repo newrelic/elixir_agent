@@ -120,6 +120,18 @@ defmodule NewRelic.Telemetry.Plug do
     Transaction.Reporter.stop_transaction(:web)
   end
 
+  # Don't treat 404 as an exception
+  def handle_event(
+        @cowboy_exception,
+        %{duration: duration} = meas,
+        %{resp_status: "404" <> _} = meta,
+        _config
+      ) do
+    add_stop_attrs(meas, meta, duration)
+
+    Transaction.Reporter.stop_transaction(:web)
+  end
+
   def handle_event(
         @cowboy_exception,
         %{duration: duration} = meas,

@@ -139,6 +139,10 @@ defmodule NewRelic.Config do
     feature_check?("NEW_RELIC_PLUG_INSTRUMENTATION_ENABLED", :plug_instrumentation_enabled)
   end
 
+  def feature?(:phoenix_instrumentation) do
+    feature_check?("NEW_RELIC_PHOENIX_INSTRUMENTATION_ENABLED", :plug_instrumentation_enabled)
+  end
+
   def feature?(:ecto_instrumentation) do
     feature_check?("NEW_RELIC_ECTO_INSTRUMENTATION_ENABLED", :ecto_instrumentation_enabled)
   end

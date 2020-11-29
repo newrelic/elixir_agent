@@ -84,12 +84,8 @@ defmodule EctoExampleTest do
            )
   end
 
-  def request() do
+  defp request() do
     http_port = Application.get_env(:ecto_example, :http_port)
-
-    {:ok, {{_, _status_code, _}, _headers, body}} =
-      :httpc.request('http://localhost:#{http_port}/hello')
-
-    {:ok, %{body: to_string(body)}}
+    NewRelic.Util.HTTP.get("http://localhost:#{http_port}/hello")
   end
 end

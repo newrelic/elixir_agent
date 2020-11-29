@@ -10,8 +10,7 @@ defmodule RedixExampleTest do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
 
-    http_port = Application.get_env(:redix_example, :http_port)
-    {:ok, %{body: body}} = TestHelper.http_request("/hello", http_port)
+    {:ok, %{body: body}} = request("/hello")
     assert body =~ "world"
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
@@ -81,8 +80,7 @@ defmodule RedixExampleTest do
   test "Redix error" do
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
 
-    http_port = Application.get_env(:redix_example, :http_port)
-    {:ok, %{body: body}} = TestHelper.http_request("/err", http_port)
+    {:ok, %{body: body}} = request("/err")
     assert body =~ "bad"
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
@@ -94,5 +92,10 @@ defmodule RedixExampleTest do
 
     assert err_event[:"peer.address"] == "localhost:6379"
     assert err_event[:"redix.error"] == ":timeout"
+  end
+
+  defp request(path) do
+    http_port = Application.get_env(:redix_example, :http_port)
+    NewRelic.Util.HTTP.get("http://localhost:#{http_port}#{path}")
   end
 end
