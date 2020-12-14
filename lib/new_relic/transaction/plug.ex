@@ -34,7 +34,7 @@ defmodule NewRelic.Transaction.Plug do
   defp on_call(conn) do
     Transaction.Reporter.start()
     add_start_attrs(conn)
-    maybe_report_queueing(conn)
+    maybe_report_queuing(conn)
     conn
   end
 
@@ -84,8 +84,9 @@ defmodule NewRelic.Transaction.Plug do
   end
 
   @request_start_header "x-request-start"
-  def maybe_report_queueing(conn) do
-    with [request_start | _] <- get_req_header(conn, @request_start_header),
+  def maybe_report_queuing(conn) do
+    with true <- NewRelic.Config.feature?(:request_queuing_metrics),
+         [request_start | _] <- get_req_header(conn, @request_start_header),
          {:ok, request_start_s} <- Util.RequestStart.parse(request_start) do
       NewRelic.add_attributes(request_start_s: request_start_s)
     else
