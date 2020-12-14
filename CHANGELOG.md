@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.22.3`
+
+Tweaks
+* Make request queuing collection configurable [#292](https://github.com/newrelic/elixir_agent/pull/292)
+
 ### `v1.22.2`
 
 Tweaks
