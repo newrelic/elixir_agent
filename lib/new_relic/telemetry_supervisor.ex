@@ -9,6 +9,7 @@ defmodule NewRelic.TelemetrySupervisor do
 
   def init(_) do
     children = [
+      NewRelic.Telemetry.Broadway,
       NewRelic.Telemetry.Ecto.Supervisor,
       NewRelic.Telemetry.Redix
     ]
