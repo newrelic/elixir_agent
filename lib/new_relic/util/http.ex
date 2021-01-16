@@ -13,8 +13,16 @@ defmodule NewRelic.Util.HTTP do
     end
   end
 
-  def post(url, body, headers),
-    do: post(url, Jason.encode!(body), headers)
+  def post(url, body, headers) do
+    case Jason.encode(body) do
+      {:ok, body} ->
+        post(url, body, headers)
+
+      {:error, message} ->
+        NewRelic.log(:debug, "Unable to JSON encode: #{body}")
+        {:error, message}
+    end
+  end
 
   @doc """
   Certs are pulled from Mozilla exactly as Hex does:
