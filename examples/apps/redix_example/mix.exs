@@ -29,7 +29,7 @@ defmodule RedixExample.MixProject do
     [
       {:new_relic_agent, path: "../../../"},
       {:plug_cowboy, "~> 2.0"},
-      {:redix, "~> 0.11"}
+      {:redix, "~> 1.0"}
     ]
   end
 end
