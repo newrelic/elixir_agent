@@ -53,7 +53,7 @@ defmodule NewRelic do
   defdelegate incr_attributes(attrs), to: NewRelic.Transaction.Reporter
 
   @doc """
-  Start a new "Other" Transaction.
+  Start an "Other" Transaction.
 
   This will begin monitoring the current process as an "Other" Transaction
   (ie: Not a "Web" Transaction). The first argument will be considered
@@ -91,17 +91,16 @@ defmodule NewRelic do
   defdelegate stop_transaction(), to: NewRelic.Transaction
 
   @doc """
-  Start a new "Other" transaction and stop the transaction after execution of the given block.
-  The return value of the block is returned.
+  Define an "Other" transaction within the given block. The return value of
+  the block is returned.
+
+  See `start_transaction` and `stop_transaction` for more details.
   """
-  defmacro transaction(category, name, do: block) do
+  defmacro other_transaction(category, name, do: block) do
     quote do
       NewRelic.start_transaction(unquote(category), unquote(name))
-
       res = unquote(block)
-
       NewRelic.stop_transaction()
-
       res
     end
   end

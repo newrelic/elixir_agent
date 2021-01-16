@@ -1,6 +1,5 @@
 defmodule OtherTransactionTest do
   use ExUnit.Case
-  require NewRelic
   alias NewRelic.Harvest.Collector
 
   setup do
@@ -113,10 +112,14 @@ defmodule OtherTransactionTest do
     refute NewRelic.DistributedTrace.Tracker.fetch(task.pid)
   end
 
-  test "Returns block result" do
+  test "NewRelic.other_transaction macro" do
+    require NewRelic
+
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
     task =
       Task.async(fn ->
-        NewRelic.transaction "TransactionCategory", "WithBlock" do
+        NewRelic.other_transaction "Category", "ViaMacro" do
           Process.sleep(100)
 
           :test_value
@@ -124,6 +127,11 @@ defmodule OtherTransactionTest do
       end)
 
     assert :test_value == Task.await(task)
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+    assert TestHelper.find_metric(metrics, "OtherTransaction/Category/ViaMacro")
+
+    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
   @tag :capture_log
