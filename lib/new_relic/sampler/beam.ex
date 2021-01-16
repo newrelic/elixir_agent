@@ -15,8 +15,7 @@ defmodule NewRelic.Sampler.Beam do
     :erlang.system_flag(:scheduler_wall_time, true)
 
     # throw away first value
-    if Application.get_env(:os_mon, :start_cpu_sup), do: :cpu_sup.util()
-
+    maybe_get_cpu_utilization()
     :erlang.statistics(:scheduler_wall_time)
 
     NewRelic.sample_process()
