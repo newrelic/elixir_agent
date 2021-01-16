@@ -29,7 +29,7 @@ defmodule NewRelic.Init do
       scheme: determine_config(:scheme, "https"),
       app_name: determine_config(:app_name) |> parse_app_names,
       license_key: license_key,
-      harvest_enabled: determine_config(:harvest_enabled, true),
+      harvest_enabled: determine_config(:harvest_enabled, true) |> parse_bool,
       collector_host: collector_host,
       region_prefix: region_prefix,
       automatic_attributes: determine_automatic_attributes(),
@@ -78,15 +78,11 @@ defmodule NewRelic.Init do
     })
   end
 
-  defp determine_config(key, default) do
-    determine_config(key) || default
-  end
-
-  defp determine_config(key) when is_atom(key) do
+  defp determine_config(key, default \\ nil) when is_atom(key) do
     env = key |> to_string() |> String.upcase()
 
     System.get_env("NEW_RELIC_#{env}") ||
-      Application.get_env(:new_relic_agent, key)
+      Application.get_env(:new_relic_agent, key, default)
   end
 
   defp determine_feature(env, config, default \\ true) do
@@ -140,6 +136,10 @@ defmodule NewRelic.Init do
       _ -> false
     end
   end
+
+  defp parse_bool(bool) when is_boolean(bool), do: bool
+  defp parse_bool("true"), do: true
+  defp parse_bool("false"), do: false
 
   def parse_port(port) when is_integer(port), do: port
   def parse_port(port) when is_binary(port), do: String.to_integer(port)

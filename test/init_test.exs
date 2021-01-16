@@ -23,4 +23,25 @@ defmodule InitTest do
     assert {"cool.newrelic.com", _} =
              NewRelic.Init.determine_collector_host("cool.newrelic.com", nil)
   end
+
+  test "handle config default properly" do
+    Application.put_env(:new_relic_agent, :harvest_enabled, true)
+    NewRelic.Init.init_config()
+    assert NewRelic.Config.get(:harvest_enabled)
+
+    Application.put_env(:new_relic_agent, :harvest_enabled, false)
+    NewRelic.Init.init_config()
+    refute NewRelic.Config.get(:harvest_enabled)
+
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
+    NewRelic.Init.init_config()
+    assert NewRelic.Config.get(:harvest_enabled)
+
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "false")
+    NewRelic.Init.init_config()
+    refute NewRelic.Config.get(:harvest_enabled)
+
+    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+    NewRelic.Init.init_config()
+  end
 end
