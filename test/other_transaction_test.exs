@@ -1,5 +1,6 @@
 defmodule OtherTransactionTest do
   use ExUnit.Case
+  require NewRelic
   alias NewRelic.Harvest.Collector
 
   setup do
@@ -110,6 +111,19 @@ defmodule OtherTransactionTest do
     Task.await(task)
 
     refute NewRelic.DistributedTrace.Tracker.fetch(task.pid)
+  end
+
+  test "Returns block result" do
+    task =
+      Task.async(fn ->
+        NewRelic.transaction "TransactionCategory", "WithBlock" do
+          Process.sleep(100)
+
+          :test_value
+        end
+      end)
+
+    assert :test_value == Task.await(task)
   end
 
   @tag :capture_log
