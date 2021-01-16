@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.22.4`
+
+Fixes
+* Handle when a string winds up in a stacktrace list. [#294](https://github.com/newrelic/elixir_agent/pull/294)
+* Properly handle boolean config option. [#295](https://github.com/newrelic/elixir_agent/pull/295)
+* Prevent error when bad attribute values get in. [#296](https://github.com/newrelic/elixir_agent/pull/296)
+
 ### `v1.22.3`
 
 Tweaks
