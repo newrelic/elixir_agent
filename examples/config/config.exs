@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :logger, level: :warn
+config :logger, level: :debug
 
 # Pretend the agent is configured
 config :new_relic_agent,

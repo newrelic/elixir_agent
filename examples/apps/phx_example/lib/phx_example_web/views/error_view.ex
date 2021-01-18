@@ -2,7 +2,7 @@ defmodule PhxExampleWeb.ErrorView do
   use PhxExampleWeb, :view
 
   def render("500.html", _assigns) do
-    "Internal Server Error"
+    "Opps, Internal Server Error"
   end
 
   def template_not_found(template, _assigns) do

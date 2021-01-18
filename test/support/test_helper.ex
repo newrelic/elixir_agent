@@ -17,6 +17,13 @@ defmodule TestHelper do
     end
   end
 
+  def http_request(port, path) do
+    {:ok, {{_, status_code, _}, _headers, body}} =
+      :httpc.request('http://localhost:#{port}/#{path}')
+
+    {:ok, %{status_code: status_code, body: to_string(body)}}
+  end
+
   def trigger_report(module) do
     Process.sleep(300)
     GenServer.call(module, :report)
