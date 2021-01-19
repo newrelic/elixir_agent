@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.22.5`
+
+Fixes
+* Handle formatting exit edge case. [#300](https://github.com/newrelic/elixir_agent/pull/300)
+* Work around CPU util shutdown issue. [#301](https://github.com/newrelic/elixir_agent/pull/301)
+
 ### `v1.22.4`
 
 Features
