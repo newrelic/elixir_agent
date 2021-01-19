@@ -5,6 +5,7 @@ defmodule NewRelic.Application do
 
   def start(_type, _args) do
     NewRelic.Init.run()
+    NewRelic.SignalHandler.start()
 
     children = [
       NewRelic.Logger,
