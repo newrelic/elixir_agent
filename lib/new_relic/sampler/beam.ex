@@ -15,7 +15,7 @@ defmodule NewRelic.Sampler.Beam do
     :erlang.system_flag(:scheduler_wall_time, true)
 
     # throw away first value
-    maybe_get_cpu_utilization()
+    :cpu_sup.util()
     :erlang.statistics(:scheduler_wall_time)
 
     NewRelic.sample_process()
@@ -70,7 +70,7 @@ defmodule NewRelic.Sampler.Beam do
       memory_binary_mb: memory[:binary] / @mb,
       memory_code_mb: memory[:code] / @mb,
       atom_count: :erlang.system_info(:atom_count),
-      ets_count: safe_check(:erlang, :system_info, [:ets_count]),
+      ets_count: :erlang.system_info(:ets_count),
       port_count: :erlang.system_info(:port_count),
       process_count: :erlang.system_info(:process_count),
       atom_limit: :erlang.system_info(:atom_limit),
@@ -80,15 +80,8 @@ defmodule NewRelic.Sampler.Beam do
       schedulers: :erlang.system_info(:schedulers),
       scheduler_utilization: :erlang.statistics(:scheduler_wall_time) |> Enum.sort(),
       cpu_count: :erlang.system_info(:logical_processors),
-      cpu_utilization: maybe_get_cpu_utilization()
+      cpu_utilization: :cpu_sup.util()
     }
-  end
-
-  defp safe_check(m, f, a) do
-    # Some checks only available in OTP 21+
-    apply(m, f, a)
-  rescue
-    _ -> nil
   end
 
   defp delta(previous, current) do
@@ -113,12 +106,4 @@ defmodule NewRelic.Sampler.Beam do
 
   defp safe_div(_, 0.0), do: 0.0
   defp safe_div(a, b), do: a / b
-
-  defp maybe_get_cpu_utilization() do
-    if Application.get_env(:os_mon, :start_cpu_sup) do
-      safe_check(:cpu_sup, :util, [])
-    else
-      nil
-    end
-  end
 end
