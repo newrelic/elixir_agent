@@ -103,8 +103,9 @@ defmodule NewRelic.Util do
     [
       ["Language", "Elixir"],
       ["Elixir Version", build_info[:version]],
-      ["OTP Version", build_info[:otp_release]],
-      ["Elixir build", build_info[:build]]
+      ["Elixir build", build_info[:build]],
+      ["OTP Version", :erlang.system_info(:otp_release) |> to_string],
+      ["ERTS Version", :erlang.system_info(:version) |> to_string]
     ]
   end
 
