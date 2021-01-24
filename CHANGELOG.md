@@ -7,6 +7,9 @@ Features
   * Please remove deprecated calls:
     - `use NewRelic.Transaction`
     - `NewRelic.Transaction.handle_errors/2`
+* `Phoenix` instrumentation is not fullly automatic based on `telemetry` events!
+  * Please remove deprecated instrumentation library:
+    - https://github.com/binaryseed/new_relic_phoenix
 * Transaction tracking is now faster and better in the face of overload
 
 ------
