@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.22.6`
+
+Tweaks
+* Add `ERTS Version` to environment values. [#302](https://github.com/newrelic/elixir_agent/pull/302)
+
 ### `v1.22.5`
 
 Fixes
