@@ -8,14 +8,14 @@ defmodule NewRelic.SignalHandler do
 
   def start do
     case Process.whereis(:erl_signal_server) do
-      :undefined ->
-        :ok
-
-      _ ->
+      pid when is_pid(pid) ->
         # Get our signal handler installed before erlang's
         :gen_event.delete_handler(:erl_signal_server, :erl_signal_handler, :ok)
         :gen_event.add_handler(:erl_signal_server, __MODULE__, [])
         :gen_event.add_handler(:erl_signal_server, :erl_signal_handler, [])
+
+      _ ->
+        :ok
     end
   end
 
