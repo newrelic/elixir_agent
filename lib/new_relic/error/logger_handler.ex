@@ -20,10 +20,8 @@ defmodule NewRelic.Error.LoggerHandler do
         _config
       ) do
     if NewRelic.Transaction.Sidecar.tracking?() do
-      IO.inspect :tracking
       NewRelic.Error.Reporter.report_error(:transaction, report)
     else
-      IO.inspect :NOT
       NewRelic.Error.Reporter.report_error(:process, report)
     end
   end

@@ -114,7 +114,6 @@ defmodule NewRelic.Telemetry.Plug do
         meta,
         _config
       ) do
-    IO.inspect({@cowboy_stop, meas, meta})
     add_stop_attrs(meas, meta, duration)
     add_stop_error_attrs(meta)
 
@@ -128,7 +127,6 @@ defmodule NewRelic.Telemetry.Plug do
         %{resp_status: "404" <> _} = meta,
         _config
       ) do
-    IO.inspect({@cowboy_exception, 404})
     add_stop_attrs(meas, meta, duration)
 
     Transaction.Reporter.stop_transaction(:web)
@@ -140,7 +138,6 @@ defmodule NewRelic.Telemetry.Plug do
         %{kind: kind, reason: reason} = meta,
         _config
       ) do
-    IO.inspect({@cowboy_exception})
     add_stop_attrs(meas, meta, duration)
     {reason, stack} = reason_and_stack(reason)
 
@@ -184,11 +181,7 @@ defmodule NewRelic.Telemetry.Plug do
     |> NewRelic.add_attributes()
   end
 
-  defp add_stop_error_attrs(
-         %{resp_status: "500" <> _, error: {:socket_error, error, message}} = all
-       ) do
-    IO.inspect(all)
-
+  defp add_stop_error_attrs(%{resp_status: "500" <> _, error: {:socket_error, error, message}}) do
     [
       error: true,
       "cowboy.socket_error": error,
@@ -198,9 +191,7 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   # client timeout:
-  defp add_stop_error_attrs(%{error: {:socket_error, error, message}} = all) do
-    IO.inspect(all)
-
+  defp add_stop_error_attrs(%{error: {:socket_error, error, message}}) do
     [
       "cowboy.socket_error": error,
       "cowboy.socket_error.message": message

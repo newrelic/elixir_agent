@@ -6,7 +6,6 @@ defmodule PhxExampleWeb.PageController do
   end
 
   def error(_, _) do
-    IO.inspect {:raise, BAD}
     raise "BAD"
   end
 end

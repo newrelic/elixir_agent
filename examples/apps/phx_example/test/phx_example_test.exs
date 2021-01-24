@@ -33,9 +33,7 @@ defmodule PhxExampleTest do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    {:ok, %{body: body, status_code: 500}} =
-      request("/phx/error")
-      |> IO.inspect()
+    {:ok, %{body: body, status_code: 500}} = request("/phx/error")
 
     assert body =~ "Opps, Internal Server Error"
 
@@ -59,6 +57,7 @@ defmodule PhxExampleTest do
   test "Phoenix route not found" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
 
     {:ok, %{body: body, status_code: 404}} = request("/not_found")
     assert body =~ "Not Found"
@@ -77,6 +76,9 @@ defmodule PhxExampleTest do
     assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
     refute event[:"phoenix.controller"]
     refute event[:error]
+
+    errors = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
+    assert errors == []
   end
 
   defp request(path) do

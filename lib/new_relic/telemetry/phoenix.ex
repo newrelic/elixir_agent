@@ -28,8 +28,6 @@ defmodule NewRelic.Telemetry.Phoenix do
   def init(%{enabled?: false}), do: :ignore
 
   def init(%{enabled?: true} = config) do
-    IO.inspect(:ATTACH)
-
     :telemetry.attach_many(
       config.handler_id,
       @phoenix_events,
@@ -37,7 +35,6 @@ defmodule NewRelic.Telemetry.Phoenix do
       config
     )
 
-    # Process.flag(:trap_exit, true)
     {:ok, config}
   end
 
@@ -52,53 +49,46 @@ defmodule NewRelic.Telemetry.Phoenix do
         %{conn: conn} = meta,
         _config
       ) do
-    IO.inspect({@phoenix_router_start, phoenix_name(meta)})
-    Process.flag(:trap_exit, true)
-
     [
       phoenix_name: phoenix_name(meta),
       "phoenix.endpoint": conn.private[:phoenix_endpoint] |> inspect(),
       "phoenix.router": conn.private[:phoenix_router] |> inspect(),
       "phoenix.controller": meta.plug |> inspect(),
-      "phoenix.action": meta.plug_opts |> to_string()
-      # phoenix_layout
-      # phoenix_view
+      "phoenix.action": meta.plug_opts |> to_string(),
+      "phoenix.format": conn.private[:phoenix_format],
+      "phoenix.template": conn.private[:phoenix_template],
+      "phoenix.view": conn.private[:phoenix_view] |> inspect()
     ]
     |> NewRelic.add_attributes()
   end
 
-  # todo:
-  # what can we get for a 404?
-  # def handle_event(
-  #       @phoenix_error,
-  #       _measurements,
-  #       %{conn: conn, status: 404} = meta,
-  #       _config
-  #     ) do
-  #   IO.inspect({@phoenix_error, 404})
-
-  #   [
-  #     phoenix_name: phoenix_name(meta),
-  #     "phoenix.endpoint": conn.private[:phoenix_endpoint] |> inspect(),
-  #     "phoenix.router": conn.private[:phoenix_router] |> inspect()
-  #   ]
-  #   |> NewRelic.add_attributes()
-  # end
-
   def handle_event(
         @phoenix_error,
-        measurements,
-        meta,
+        _measurements,
+        %{conn: conn, status: 404} = meta,
         _config
       ) do
-    IO.inspect({@phoenix_error,measurements, meta})
+    [
+      phoenix_name: phoenix_name(meta),
+      "phoenix.endpoint": conn.private[:phoenix_endpoint] |> inspect(),
+      "phoenix.router": conn.private[:phoenix_router] |> inspect()
+    ]
+    |> NewRelic.add_attributes()
+  end
+
+  def handle_event(_event, _measurements, _meta, _config) do
+    :ignore
   end
 
   defp phoenix_name(%{plug: controller, plug_opts: action}) do
     "/Phoenix/#{inspect(controller)}/#{action}"
   end
 
+  defp phoenix_name(%{conn: %{private: %{phoenix_endpoint: phoenix_endpoint}} = conn}) do
+    "/Phoenix/#{inspect(phoenix_endpoint)}/#{conn.method}"
+  end
+
   defp phoenix_name(%{conn: conn}) do
-    "/Phoenix/#{inspect(conn.private[:phoenix_endpoint])}/#{conn.method}"
+    "/Phoenix/#{conn.method}"
   end
 end
