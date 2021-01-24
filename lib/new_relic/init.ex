@@ -4,6 +4,7 @@ defmodule NewRelic.Init do
   def run() do
     verify_erlang_otp_version()
     init_config()
+    init_features()
   end
 
   @erlang_version_requirement ">= 21.2.0"
@@ -28,7 +29,7 @@ defmodule NewRelic.Init do
       scheme: determine_config(:scheme, "https"),
       app_name: determine_config(:app_name) |> parse_app_names,
       license_key: license_key,
-      harvest_enabled: determine_config(:harvest_enabled, true),
+      harvest_enabled: determine_config(:harvest_enabled, true) |> parse_bool,
       collector_host: collector_host,
       region_prefix: region_prefix,
       automatic_attributes: determine_automatic_attributes(),
@@ -37,15 +38,69 @@ defmodule NewRelic.Init do
     })
   end
 
-  defp determine_config(key, default) do
-    determine_config(key) || default
+  def init_features() do
+    NewRelic.Config.put(:features, %{
+      error_collector:
+        determine_feature(
+          "NEW_RELIC_ERROR_COLLECTOR_ENABLED",
+          :error_collector_enabled
+        ),
+      db_query_collection:
+        determine_feature(
+          "NEW_RELIC_SQL_COLLECTION_ENABLED",
+          :sql_collection_enabled,
+          false
+        ) ||
+          determine_feature(
+            "NEW_RELIC_DB_QUERY_COLLECTION_ENABLED",
+            :db_query_collection_enabled
+          ),
+      ecto_instrumentation:
+        determine_feature(
+          "NEW_RELIC_ECTO_INSTRUMENTATION_ENABLED",
+          :ecto_instrumentation_enabled
+        ),
+      redix_instrumentation:
+        determine_feature(
+          "NEW_RELIC_REDIX_INSTRUMENTATION_ENABLED",
+          :redix_instrumentation_enabled
+        ),
+      plug_instrumentation:
+        determine_feature(
+          "NEW_RELIC_PLUG_INSTRUMENTATION_ENABLED",
+          :plug_instrumentation_enabled
+        ),
+      phoenix_instrumentation:
+        determine_feature(
+          "NEW_RELIC_PHOENIX_INSTRUMENTATION_ENABLED",
+          :phoenix_instrumentation_enabled
+        ),
+      function_argument_collection:
+        determine_feature(
+          "NEW_RELIC_FUNCTION_ARGUMENT_COLLECTION_ENABLED",
+          :function_argument_collection_enabled
+        ),
+      request_queuing_metrics:
+        determine_feature(
+          "NEW_RELIC_REQUEST_QUEUING_METRICS_ENABLED",
+          :request_queuing_metrics_enabled
+        )
+    })
   end
 
-  defp determine_config(key) when is_atom(key) do
+  defp determine_config(key, default \\ nil) when is_atom(key) do
     env = key |> to_string() |> String.upcase()
 
     System.get_env("NEW_RELIC_#{env}") ||
-      Application.get_env(:new_relic_agent, key)
+      Application.get_env(:new_relic_agent, key, default)
+  end
+
+  defp determine_feature(env, config, default \\ true) do
+    case System.get_env(env) do
+      "true" -> true
+      "false" -> false
+      _ -> Application.get_env(:new_relic_agent, config, default)
+    end
   end
 
   @env_matcher ~r/^(?<env>.+)-collector/
@@ -91,6 +146,10 @@ defmodule NewRelic.Init do
       _ -> false
     end
   end
+
+  defp parse_bool(bool) when is_boolean(bool), do: bool
+  defp parse_bool("true"), do: true
+  defp parse_bool("false"), do: false
 
   def parse_port(port) when is_integer(port), do: port
   def parse_port(port) when is_binary(port), do: String.to_integer(port)

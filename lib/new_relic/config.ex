@@ -119,6 +119,9 @@ defmodule NewRelic.Config do
     * Controls all Ecto instrumentation
   * `:redix_instrumentation_enabled` (default `true`)
     * Controls all Redix instrumentation
+  * `:request_queuing_metrics_enabled`
+    * Controls collection of request queuing metrics
+
 
   ### Configuration
 
@@ -126,36 +129,38 @@ defmodule NewRelic.Config do
   * Environment variables: `NEW_RELIC_ERROR_COLLECTOR_ENABLED=false`
   * Application config: `config :new_relic_agent, error_collector_enabled: false`
   """
+  def feature?(toggleable_agent_feature)
+
   def feature?(:error_collector) do
-    feature_check?("NEW_RELIC_ERROR_COLLECTOR_ENABLED", :error_collector_enabled)
+    get(:features, :error_collector)
   end
 
   def feature?(:db_query_collection) do
-    feature_check?("NEW_RELIC_SQL_COLLECTION_ENABLED", :sql_collection_enabled, false) ||
-      feature_check?("NEW_RELIC_DB_QUERY_COLLECTION_ENABLED", :db_query_collection_enabled)
+    get(:features, :db_query_collection)
   end
 
   def feature?(:plug_instrumentation) do
-    feature_check?("NEW_RELIC_PLUG_INSTRUMENTATION_ENABLED", :plug_instrumentation_enabled)
+    get(:features, :plug_instrumentation)
   end
 
   def feature?(:phoenix_instrumentation) do
-    feature_check?("NEW_RELIC_PHOENIX_INSTRUMENTATION_ENABLED", :plug_instrumentation_enabled)
+    get(:features, :phoenix_instrumentation)
   end
 
   def feature?(:ecto_instrumentation) do
-    feature_check?("NEW_RELIC_ECTO_INSTRUMENTATION_ENABLED", :ecto_instrumentation_enabled)
+    get(:features, :ecto_instrumentation)
   end
 
   def feature?(:redix_instrumentation) do
-    feature_check?("NEW_RELIC_REDIX_INSTRUMENTATION_ENABLED", :redix_instrumentation_enabled)
+    get(:features, :redix_instrumentation)
   end
 
   def feature?(:function_argument_collection) do
-    feature_check?(
-      "NEW_RELIC_FUNCTION_ARGUMENT_COLLECTION_ENABLED",
-      :function_argument_collection_enabled
-    )
+    get(:features, :function_argument_collection)
+  end
+
+  def feature?(:request_queuing_metrics) do
+    get(:features, :request_queuing_metrics)
   end
 
   @doc """
@@ -174,20 +179,14 @@ defmodule NewRelic.Config do
   * Environment variable `NEW_RELIC_LOGS_IN_CONTEXT=forwarder`
   * Application config `config :new_relic_agent, logs_in_context: :forwarder`
   """
+  def feature(configurable_agent_feature)
+
   def feature(:logs_in_context) do
     case System.get_env("NEW_RELIC_LOGS_IN_CONTEXT") do
       nil -> Application.get_env(:new_relic_agent, :logs_in_context, :disabled)
       "forwarder" -> :forwarder
       "direct" -> :direct
       other -> other
-    end
-  end
-
-  defp feature_check?(env, config, default \\ true) do
-    case System.get_env(env) do
-      "true" -> true
-      "false" -> false
-      _ -> Application.get_env(:new_relic_agent, config, default)
     end
   end
 
@@ -214,11 +213,15 @@ defmodule NewRelic.Config do
 
   defp harvest_enabled?, do: get(:harvest_enabled)
 
-  def get(key),
-    do: :persistent_term.get(:nr_config)[key]
+  @doc false
+  def get(key), do: :persistent_term.get(:nr_config)[key]
+  @doc false
+  def get(:features, key), do: :persistent_term.get(:nr_features)[key]
 
-  def put(items),
-    do: :persistent_term.put(:nr_config, items)
+  @doc false
+  def put(items), do: :persistent_term.put(:nr_config, items)
+  @doc false
+  def put(:features, items), do: :persistent_term.put(:nr_features, items)
 
   @external_resource "VERSION"
   @agent_version "VERSION" |> File.read!() |> String.trim()

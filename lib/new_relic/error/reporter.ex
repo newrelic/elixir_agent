@@ -86,13 +86,15 @@ defmodule NewRelic.Error.Reporter do
   defp parse_process_name([], _stacktrace), do: "UnknownProcess"
   defp parse_process_name(registered_name, _stacktrace), do: inspect(registered_name)
 
-  defp parse_error_info({kind, {{{exception, stacktrace}, _init_call}, _init_stack}, _proc_stack})
-       when is_list(stacktrace) do
-    {kind, exception, stacktrace}
+  defguard is_mfa(value) when is_tuple(value) and tuple_size(value) == 3
+
+  defp parse_error_info({kind, {{{exception, call}, init_call}, _init_stack}, _proc_stack})
+       when is_mfa(call) and is_mfa(init_call) do
+    {kind, exception, [parse_call(call), parse_call(init_call)]}
   end
 
-  defp parse_error_info({kind, {{exception, _init_call}, _init_stack}, _proc_stack}) do
-    {kind, exception, []}
+  defp parse_error_info({kind, {{{exception, stacktrace}, _init_call}, _init_stack}, _proc_stack}) do
+    {kind, exception, stacktrace}
   end
 
   defp parse_error_info({kind, {exception, stacktrace}, _stack}) when is_list(stacktrace) do
@@ -102,6 +104,8 @@ defmodule NewRelic.Error.Reporter do
   defp parse_error_info({kind, exception, stacktrace}) do
     {kind, exception, stacktrace}
   end
+
+  defp parse_call({m, f, a}), do: {m, f, length(a), []}
 
   defp parse_error_expected(%{expected: true}), do: true
   defp parse_error_expected(_), do: false

@@ -217,11 +217,10 @@ defmodule NewRelic.Telemetry.Plug do
 
   @request_start_header "x-request-start"
   defp maybe_report_queueing(meta) do
-    with request_start when is_binary(request_start) <- meta.req.headers[@request_start_header],
+    with true <- NewRelic.Config.feature?(:request_queuing_metrics),
+         request_start when is_binary(request_start) <- meta.req.headers[@request_start_header],
          {:ok, request_start_s} <- Util.RequestStart.parse(request_start) do
       NewRelic.add_attributes(request_start_s: request_start_s)
-    else
-      _ -> :ignore
     end
   end
 

@@ -11,6 +11,32 @@ Features
 
 ------
 
+### `v1.22.6`
+
+Tweaks
+* Add `ERTS Version` to environment values. [#302](https://github.com/newrelic/elixir_agent/pull/302)
+
+### `v1.22.5`
+
+Fixes
+* Handle formatting exit edge case. [#300](https://github.com/newrelic/elixir_agent/pull/300)
+* Work around CPU util shutdown issue. [#301](https://github.com/newrelic/elixir_agent/pull/301)
+
+### `v1.22.4`
+
+Features
+* Adds a macro for defining an Other Transaction. [#264](https://github.com/newrelic/elixir_agent/pull/264)
+
+Fixes
+* Handle when a string winds up in a stacktrace list. [#294](https://github.com/newrelic/elixir_agent/pull/294)
+* Properly handle boolean config option. [#295](https://github.com/newrelic/elixir_agent/pull/295)
+* Prevent error when bad attribute values get in. [#296](https://github.com/newrelic/elixir_agent/pull/296)
+
+### `v1.22.3`
+
+Tweaks
+* Make request queuing collection configurable [#292](https://github.com/newrelic/elixir_agent/pull/292)
+
 ### `v1.22.2`
 
 Tweaks

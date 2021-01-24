@@ -346,8 +346,7 @@ defmodule TransactionTraceTest do
 
   test "Don't trace arguments when disabled" do
     reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
-
-    Application.put_env(:new_relic_agent, :function_argument_collection_enabled, false)
+    reset_features = TestHelper.update(:nr_features, function_argument_collection: false)
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
@@ -359,8 +358,8 @@ defmodule TransactionTraceTest do
 
     assert span[:args] == "[DISABLED]"
 
-    Application.delete_env(:new_relic_agent, :function_argument_collection_enabled)
     reset_config.()
+    reset_features.()
   end
 
   test "Don't trace arguments when opted-out on individual function" do

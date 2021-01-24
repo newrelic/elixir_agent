@@ -327,7 +327,7 @@ defmodule TransactionTest do
 
   @tag capture_log: true
   test "Allow disabling error detail collection" do
-    Application.put_env(:new_relic_agent, :error_collector_enabled, false)
+    reset_features = TestHelper.update(:nr_features, error_collector: false)
 
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
@@ -340,7 +340,7 @@ defmodule TransactionTest do
                event[:error_kind] == nil && event[:error_stack] == nil
            end)
 
-    Application.delete_env(:new_relic_agent, :error_collector_enabled)
+    reset_features.()
   end
 
   test "Transaction with traced external service call" do
@@ -425,7 +425,7 @@ defmodule TransactionTest do
     assert event[:process_spawns] == 1
   end
 
-  describe "Request queueing" do
+  describe "Request queuing" do
     test "queueDuration is included in the transaction (in seconds)" do
       TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
@@ -457,6 +457,25 @@ defmodule TransactionTest do
       [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
       assert event[:queueDuration] == 0
+    end
+
+    test "Controlled via config" do
+      reset_features = TestHelper.update(:nr_features, request_queuing_metrics: false)
+      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+      request_start = System.system_time(:microsecond) - 1_500_000
+
+      conn =
+        conn(:get, "/total_time")
+        |> put_req_header("x-request-start", "t=#{request_start}")
+
+      TestHelper.request(TestPlugApp, conn)
+
+      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+      refute event[:queueDuration]
+
+      reset_features.()
     end
   end
 

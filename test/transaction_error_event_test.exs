@@ -13,8 +13,15 @@ defmodule TransactionErrorEventTest do
     plug(:dispatch)
 
     get "/error" do
-      raise "CrazyTransactionError"
+      raise "TransactionError"
       send_resp(conn, 200, "won't happen")
+    end
+
+    get "/async_error" do
+      Task.async(fn -> Process.sleep(100) end)
+      |> Task.await(10)
+
+      send_resp(conn, 200, "won't happen either")
     end
 
     get "/caught/error" do
@@ -168,6 +175,22 @@ defmodule TransactionErrorEventTest do
     TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+  end
+
+  test "cowboy request process exit" do
+    TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+    Logger.remove_backend(:console)
+
+    {:ok, _} = Plug.Cowboy.http(TestPlugApp, [], port: 9999)
+    :httpc.request('http://localhost:9999/async_error')
+
+    traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
+    assert Enum.find(traces, &match?([_, _, ":timeout", "EXIT", _, _], &1))
+
+    Plug.Cowboy.shutdown(TestPlugApp.HTTP)
+
+    Logger.add_backend(:console)
+    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
   end
 
   test "Ignore late reports" do

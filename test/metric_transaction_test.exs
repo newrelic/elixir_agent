@@ -151,7 +151,7 @@ defmodule MetricTransactionTest do
            )
   end
 
-  test "Request queueing transaction" do
+  test "Request queuing transaction" do
     request_start = "t=#{System.system_time(:millisecond) - 100}"
 
     conn =

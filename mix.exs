@@ -1,6 +1,8 @@
 defmodule NewRelic.Mixfile do
   use Mix.Project
 
+  @source_url "https://github.com/newrelic/elixir_agent"
+
   def project do
     [
       app: :new_relic_agent,
@@ -10,7 +12,7 @@ defmodule NewRelic.Mixfile do
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       name: "New Relic Elixir Agent",
-      source_url: "https://github.com/newrelic/elixir_agent",
+      source_url: @source_url,
       elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
       deps: deps(),
@@ -30,7 +32,10 @@ defmodule NewRelic.Mixfile do
       files: ["lib", "priv", "mix.exs", "README.md", "CHANGELOG.md", "VERSION"],
       maintainers: ["Vince Foley"],
       licenses: ["Apache 2.0"],
-      links: %{"GitHub" => "https://github.com/newrelic/elixir_agent"}
+      links: %{
+        "Changelog" => "#{@source_url}/blob/master/CHANGELOG.md",
+        "GitHub" => @source_url
+      }
     ]
   end
 
@@ -52,6 +57,7 @@ defmodule NewRelic.Mixfile do
   defp docs do
     [
       main: "readme",
+      source_ref: "v" <> agent_version(),
       extras: ["README.md", "CHANGELOG.md"]
     ]
   end

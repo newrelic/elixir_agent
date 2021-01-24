@@ -28,5 +28,13 @@ defmodule CollectorProtocolTest do
 
     assert get_in(payload, [:metadata])
            |> is_map
+
+    assert get_in(payload, [:environment])
+           |> Enum.find(&match?(["OTP Version", _], &1))
+
+    assert get_in(payload, [:environment])
+           |> Enum.find(&match?(["ERTS Version", _], &1))
+
+    Jason.encode!(payload)
   end
 end

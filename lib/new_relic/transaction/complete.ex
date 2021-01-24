@@ -436,7 +436,7 @@ defmodule NewRelic.Transaction.Complete do
     expected = parse_error_expected(error.reason)
 
     {exception_type, exception_reason, exception_stacktrace} =
-      Util.Error.normalize(:error, error.reason, error.stack)
+      Util.Error.normalize(error.kind, error.reason, error.stack)
 
     report_error_trace(
       tx_attrs,

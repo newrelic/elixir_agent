@@ -43,20 +43,28 @@ defmodule ConfigTest do
   end
 
   test "Can configure error collecting via ENV and Application" do
+    # Via ENV
     System.put_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED", "false")
-
+    NewRelic.Init.init_features()
     refute NewRelic.Config.feature?(:error_collector)
 
+    # Via Application
     System.delete_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED")
-
+    Application.put_env(:new_relic_agent, :error_collector_enabled, true)
+    NewRelic.Init.init_features()
     assert NewRelic.Config.feature?(:error_collector)
 
+    # ENV over Application
     System.put_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED", "true")
-    Application.get_env(:new_relic_agent, :error_collector_enabled, false)
-
+    Application.put_env(:new_relic_agent, :error_collector_enabled, false)
+    NewRelic.Init.init_features()
     assert NewRelic.Config.feature?(:error_collector)
 
+    # Default
     System.delete_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED")
+    Application.delete_env(:new_relic_agent, :error_collector_enabled)
+    NewRelic.Init.init_features()
+    assert NewRelic.Config.feature?(:error_collector)
   end
 
   test "Parse multiple app names" do

@@ -103,6 +103,28 @@ defmodule OtherTransactionTest do
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
+  test "NewRelic.other_transaction macro" do
+    require NewRelic
+
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    task =
+      Task.async(fn ->
+        NewRelic.other_transaction "Category", "ViaMacro" do
+          Process.sleep(100)
+
+          :test_value
+        end
+      end)
+
+    assert :test_value == Task.await(task)
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+    assert TestHelper.find_metric(metrics, "OtherTransaction/Category/ViaMacro")
+
+    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+  end
+
   @tag :capture_log
   test "Error in Other Transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)

@@ -7,6 +7,7 @@ defmodule ErrorTest do
     use GenServer
     def init(args), do: {:ok, args}
     def start_link, do: GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+    @compile {:no_warn_undefined, Not}
     def handle_call(:nofun, _from, _state), do: Not.a_function(:one, :two)
     def handle_call(:sleep, _from, _state), do: :timer.sleep(:infinity)
     def handle_call(:raise, _from, _state), do: raise("ERROR")
