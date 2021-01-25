@@ -99,7 +99,7 @@ end
 
 #### Pre-Instrumented Modules
 
-* `NewRelic.Instrumented.Mix.Task` To enable the Agent and record a Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, record the Transaction, and shut down.
+* `NewRelic.Instrumented.Mix.Task` To enable the Agent and record an Other Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, records the Transaction, and is shut down.
 
 ```elixir
 defmodule Mix.Tasks.Example do
