@@ -185,6 +185,14 @@ defmodule NewRelic.Harvest.Collector.Protocol do
       (Collector.AgentRun.request_headers() || [])
   end
 
+  def determine_host(manual_config_host, region_prefix) do
+    cond do
+      manual_config_host -> manual_config_host
+      region_prefix -> "collector.#{region_prefix}.nr-data.net"
+      true -> "collector.newrelic.com"
+    end
+  end
+
   defp default_collector_params,
     do: %{
       license_key: NewRelic.Config.license_key(),

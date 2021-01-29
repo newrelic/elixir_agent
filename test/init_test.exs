@@ -11,19 +11,6 @@ defmodule InitTest do
     assert "eu01" == NewRelic.Init.determine_region("eu01xeu02x37a29c3982469a3fe9999999999999")
   end
 
-  test "set correct collector host" do
-    assert {"collector.newrelic.com", _} = NewRelic.Init.determine_collector_host(nil, nil)
-
-    assert {"collector.eu01.nr-data.net", _} =
-             NewRelic.Init.determine_collector_host(
-               nil,
-               "eu01xeu02x37a29c3982469a3fe9999999999999"
-             )
-
-    assert {"cool.newrelic.com", _} =
-             NewRelic.Init.determine_collector_host("cool.newrelic.com", nil)
-  end
-
   test "handle config default properly" do
     Application.put_env(:new_relic_agent, :harvest_enabled, true)
     NewRelic.Init.init_config()

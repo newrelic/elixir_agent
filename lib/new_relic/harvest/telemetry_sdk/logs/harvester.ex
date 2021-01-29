@@ -80,7 +80,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.Logs.Harvester do
   def log_harvest(harvest_size, logs_seen, reservoir_size) do
     NewRelic.log(
       :debug,
-      "Completed Log harvest - " <>
+      "Completed TelemetrySdk.Logs harvest - " <>
         "size: #{harvest_size}, seen: #{logs_seen}, max: #{reservoir_size}"
     )
   end

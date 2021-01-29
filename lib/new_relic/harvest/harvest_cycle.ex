@@ -37,6 +37,10 @@ defmodule NewRelic.Harvest.HarvestCycle do
 
   def current_harvester(harvest_cycle), do: HarvesterStore.current(harvest_cycle)
 
+  def cycle(harvest_cycle) do
+    send(harvest_cycle, :harvest_cycle)
+  end
+
   def manual_shutdown(harvest_cycle) do
     case current_harvester(harvest_cycle) do
       nil ->
@@ -69,6 +73,7 @@ defmodule NewRelic.Harvest.HarvestCycle do
   end
 
   def handle_info(:harvest_cycle, state) do
+    stop_harvest_cycle(state.timer)
     harvester = swap_harvester(state)
     timer = trigger_harvest_cycle(state)
     {:noreply, %{state | harvester: harvester, timer: timer}}

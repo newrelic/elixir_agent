@@ -12,7 +12,8 @@ defmodule NewRelic.Harvest.TelemetrySdk.Supervisor do
 
   def init(_) do
     children = [
-      data_supervisor(TelemetrySdk.Logs, :logs_harvest_cycle)
+      data_supervisor(TelemetrySdk.Logs, :logs_harvest_cycle),
+      data_supervisor(TelemetrySdk.Spans, :spans_harvest_cycle)
     ]
 
     Supervisor.init(children, strategy: :one_for_all)
