@@ -8,7 +8,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.Spans.Harvester do
   alias NewRelic.DistributedTrace
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, mode: NewRelic.Config.get(:trace_mode))
+    GenServer.start_link(__MODULE__, mode: NewRelic.Config.feature(:infinite_tracing))
   end
 
   def init(mode: mode) do
@@ -19,7 +19,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.Spans.Harvester do
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
        sampling: %{
-         reservoir_size: Application.get_env(:new_relic_agent, :span_reservior_size, 5_000),
+         reservoir_size: Application.get_env(:new_relic_agent, :span_reservoir_size, 5_000),
          spans_seen: 0
        },
        spans: []
@@ -80,7 +80,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.Spans.Harvester do
   end
 
   def report_span(span) do
-    with :infinite <- NewRelic.Config.get(:trace_mode) do
+    with :infinite <- NewRelic.Config.feature(:infinite_tracing) do
       NewRelic.report_metric({:supportability, :infinite_tracing}, spans_seen: 1)
     end
 

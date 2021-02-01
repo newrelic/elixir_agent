@@ -10,7 +10,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   alias NewRelic.Util
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, mode: NewRelic.Config.get(:trace_mode))
+    GenServer.start_link(__MODULE__, mode: NewRelic.Config.feature(:infinite_tracing))
   end
 
   def init(mode: mode) do

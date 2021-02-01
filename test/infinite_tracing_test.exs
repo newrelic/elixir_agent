@@ -256,7 +256,6 @@ defmodule InfiniteTracingTest do
   @tag :capture_log
   test "error span - exception in traced span" do
     TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     {:ok, _} = Plug.Cowboy.http(TestPlugApp, [], port: 7777)
     {:ok, {{_, 500, _}, _, _}} = :httpc.request('http://localhost:7777/error')
@@ -272,13 +271,11 @@ defmodule InfiniteTracingTest do
 
     Plug.Cowboy.shutdown(TestPlugApp.HTTP)
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   @tag :capture_log
   test "error span - exit" do
     TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     {:ok, _} = Plug.Cowboy.http(TestPlugApp, [], port: 7788)
     {:ok, {{_, 500, _}, _, _}} = :httpc.request('http://localhost:7788/exit')
@@ -294,6 +291,5 @@ defmodule InfiniteTracingTest do
 
     Plug.Cowboy.shutdown(TestPlugApp.HTTP)
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 end

@@ -17,7 +17,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.Logs.Harvester do
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
        sampling: %{
-         reservoir_size: Application.get_env(:new_relic_agent, :log_reservior_size, 5_000),
+         reservoir_size: Application.get_env(:new_relic_agent, :log_reservoir_size, 5_000),
          logs_seen: 0
        },
        logs: []

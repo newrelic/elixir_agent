@@ -127,7 +127,7 @@ defmodule NewRelic.Transaction.Complete do
 
     span_events =
       extract_span_events(
-        NewRelic.Config.get(:trace_mode),
+        NewRelic.Config.feature(:infinite_tracing),
         tx_attrs,
         pid,
         process_spawns,
@@ -151,8 +151,6 @@ defmodule NewRelic.Transaction.Complete do
 
     {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
   end
-
-  # TODO: Don't create Transaction Root Process for OtherTransaction?
 
   defp extract_span_events(:infinite, tx_attrs, pid, spawns, names, exits) do
     spawned_process_span_events(tx_attrs, spawns, names, exits)
