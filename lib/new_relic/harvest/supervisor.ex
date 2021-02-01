@@ -12,7 +12,9 @@ defmodule NewRelic.Harvest.Supervisor do
     Harvest.Collector.SpanEvent.HarvestCycle,
     Harvest.Collector.TransactionErrorEvent.HarvestCycle,
     Harvest.Collector.CustomEvent.HarvestCycle,
-    Harvest.Collector.ErrorTrace.HarvestCycle
+    Harvest.Collector.ErrorTrace.HarvestCycle,
+    Harvest.TelemetrySdk.Logs.HarvestCycle,
+    Harvest.TelemetrySdk.Spans.HarvestCycle
   ]
 
   def start_link(_) do

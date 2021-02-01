@@ -34,6 +34,16 @@ defmodule InfiniteTracingTest do
       do_hello()
     end
 
+    @trace :error
+    def error do
+      raise "Err"
+    end
+
+    @trace :exit
+    def exit do
+      exit(:bad)
+    end
+
     @trace :do_hello
     def do_hello do
       Process.sleep(10)
@@ -70,6 +80,22 @@ defmodule InfiniteTracingTest do
       |> Task.await()
 
       send_resp(conn, 200, Traced.hello())
+    end
+
+    get "/error" do
+      Task.async(fn ->
+        Process.sleep(5)
+        Traced.error()
+      end)
+      |> Task.await()
+
+      send_resp(conn, 200, "won't get here")
+    end
+
+    get "/exit" do
+      Traced.exit()
+
+      send_resp(conn, 200, "won't get here either")
     end
 
     get "/reset_span" do
@@ -145,9 +171,6 @@ defmodule InfiniteTracingTest do
       end)
 
     [[_intrinsics, tx_event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-
-    # IO.inspect({tx_event, tx_span, tx_root_process_span})
-
 
     # Everything shares the incoming trace.id
     assert tx_event[:traceId] == @trace_id
@@ -226,6 +249,50 @@ defmodule InfiniteTracingTest do
     Jason.encode!(tx_event)
     Jason.encode!(spans)
 
+    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+  end
+
+  @tag :capture_log
+  test "error span - exception in traced span" do
+    TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    {:ok, _} = Plug.Cowboy.http(TestPlugApp, [], port: 7777)
+    {:ok, {{_, 500, _}, _, _}} = :httpc.request('http://localhost:7777/error')
+
+    [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
+
+    error_span =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:name] == "InfiniteTracingTest.Traced.error/0"
+      end)
+
+    assert error_span.attributes[:"error.message"] == "(RuntimeError) Err"
+
+    Plug.Cowboy.shutdown(TestPlugApp.HTTP)
+    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+  end
+
+  @tag :capture_log
+  test "error span - exit" do
+    TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    {:ok, _} = Plug.Cowboy.http(TestPlugApp, [], port: 7788)
+    {:ok, {{_, 500, _}, _, _}} = :httpc.request('http://localhost:7788/exit')
+
+    [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
+
+    exit_span =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:name] == "InfiniteTracingTest.Traced.exit/0"
+      end)
+
+    assert exit_span.attributes[:"error.message"] == "(EXIT) :bad"
+
+    Plug.Cowboy.shutdown(TestPlugApp.HTTP)
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
