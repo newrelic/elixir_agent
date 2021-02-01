@@ -69,6 +69,6 @@ jobs:
         docker-compose up -d
         mix deps.get
         mix format --check-formatted
-        sleep 10
+        until pg_isready -h localhost; do sleep 1; done;
         mix test
         MIX_ENV=test mix instrumented_task.example_task
