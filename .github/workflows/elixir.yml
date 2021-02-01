@@ -62,6 +62,7 @@ jobs:
     - name: Run unit tests
       run: mix test
 
+
     - name: Run integration tests
       run: |
         cd examples
