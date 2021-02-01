@@ -70,5 +70,6 @@ jobs:
         mix deps.get
         mix format --check-formatted
         until pg_isready -h localhost; do sleep 1; done;
+        sleep 10
         mix test
         MIX_ENV=test mix instrumented_task.example_task
