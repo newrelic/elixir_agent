@@ -62,10 +62,16 @@ jobs:
     - name: Run unit tests
       run: mix test
 
-    - name: Run integration tests
+    - name: Start integration test dependencies
       run: |
         cd examples
         docker-compose up -d
+        until pg_isready -h localhost; do sleep 1; done;
+        sleep 10
+
+    - name: Run integration tests
+      run: |
+        cd examples
         mix deps.get
         mix format --check-formatted
         mix test
