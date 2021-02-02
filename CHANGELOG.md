@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.23.0`
+
+Features
+* Adds support for Infinite Tracing. [#307](https://github.com/newrelic/elixir_agent/pull/307)
+
 ### `v1.22.6`
 
 Tweaks
