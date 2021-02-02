@@ -37,4 +37,10 @@ defmodule CollectorProtocolTest do
 
     Jason.encode!(payload)
   end
+
+  test "determine correct collector host" do
+    assert "collector.newrelic.com" = Collector.Protocol.determine_host(nil, nil)
+    assert "collector.eu01.nr-data.net" = Collector.Protocol.determine_host(nil, "eu01")
+    assert "cool.newrelic.com" = Collector.Protocol.determine_host("cool.newrelic.com", nil)
+  end
 end

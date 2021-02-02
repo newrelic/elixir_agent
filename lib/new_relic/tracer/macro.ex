@@ -190,6 +190,18 @@ defmodule NewRelic.Tracer.Macro do
 
       try do
         unquote(body)
+      rescue
+        exception ->
+          message = NewRelic.Util.Error.format_reason(:error, exception)
+          NewRelic.DistributedTrace.set_span(:error, message: message)
+
+          reraise exception, __STACKTRACE__
+      catch
+        :exit, value ->
+          message = NewRelic.Util.Error.format_reason(:exit, value)
+          NewRelic.DistributedTrace.set_span(:error, message: "(EXIT) #{message}")
+
+          exit(value)
       after
         end_time_mono = System.monotonic_time()
 

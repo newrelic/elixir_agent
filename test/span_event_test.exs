@@ -101,6 +101,7 @@ defmodule SpanEventTest do
 
   defmodule Traced do
     use NewRelic.Tracer
+
     @trace :hello
     def hello do
       do_hello()

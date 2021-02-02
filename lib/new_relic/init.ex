@@ -1,6 +1,9 @@
 defmodule NewRelic.Init do
   @moduledoc false
 
+  alias NewRelic.Harvest.Collector
+  alias NewRelic.Harvest.TelemetrySdk
+
   def run() do
     verify_erlang_otp_version()
     init_config()
@@ -19,8 +22,10 @@ defmodule NewRelic.Init do
   def init_config() do
     host = determine_config(:host)
     license_key = determine_config(:license_key)
-    {collector_host, region_prefix} = determine_collector_host(host, license_key)
-    telemetry_hosts = determine_telemetry_hosts(host, region_prefix)
+    region_prefix = determine_region(license_key)
+
+    collector_host = Collector.Protocol.determine_host(host, region_prefix)
+    telemetry_hosts = TelemetrySdk.Config.determine_hosts(host, region_prefix)
 
     NewRelic.Config.put(%{
       log: determine_config(:log),
@@ -34,8 +39,19 @@ defmodule NewRelic.Init do
       region_prefix: region_prefix,
       automatic_attributes: determine_automatic_attributes(),
       labels: determine_config(:labels) |> parse_labels(),
-      telemetry_hosts: telemetry_hosts
+      telemetry_hosts: telemetry_hosts,
+      trace_mode: determine_trace_mode()
     })
+  end
+
+  @region_matcher ~r/^(?<prefix>.+?)x/
+  def determine_region(nil), do: nil
+
+  def determine_region(license_key) do
+    case Regex.named_captures(@region_matcher, license_key) do
+      %{"prefix" => prefix} -> String.trim_trailing(prefix, "x")
+      _ -> nil
+    end
   end
 
   def init_features() do
@@ -78,7 +94,7 @@ defmodule NewRelic.Init do
     })
   end
 
-  defp determine_config(key, default \\ nil) when is_atom(key) do
+  def determine_config(key, default \\ nil) when is_atom(key) do
     env = key |> to_string() |> String.upcase()
 
     System.get_env("NEW_RELIC_#{env}") ||
@@ -93,28 +109,8 @@ defmodule NewRelic.Init do
     end
   end
 
-  @env_matcher ~r/^(?<env>.+)-collector/
-  def determine_telemetry_hosts(host, region) do
-    env = host && Regex.named_captures(@env_matcher, host)["env"]
-    env = env && env <> "-"
-    region = region && region <> "."
-
-    %{
-      log: "https://#{env}log-api.#{region}newrelic.com/log/v1"
-    }
-  end
-
-  def determine_collector_host(host, license_key) do
-    cond do
-      manual_config_host = host ->
-        {manual_config_host, nil}
-
-      region_prefix = determine_region(license_key) ->
-        {"collector.#{region_prefix}.nr-data.net", region_prefix}
-
-      true ->
-        {"collector.newrelic.com", nil}
-    end
+  defp determine_trace_mode() do
+    (determine_config(:infinite_tracing_trace_observer_host) && :infinite) || :sampling
   end
 
   def determine_automatic_attributes() do
@@ -124,17 +120,6 @@ defmodule NewRelic.Init do
       {name, {m, f, a}} -> {name, apply(m, f, a)}
       {name, value} -> {name, value}
     end)
-  end
-
-  @region_matcher ~r/^(?<prefix>.+?)x/
-
-  def determine_region(nil), do: false
-
-  def determine_region(key) do
-    case Regex.named_captures(@region_matcher, key) do
-      %{"prefix" => prefix} -> String.trim_trailing(prefix, "x")
-      _ -> false
-    end
   end
 
   defp parse_bool(bool) when is_boolean(bool), do: bool

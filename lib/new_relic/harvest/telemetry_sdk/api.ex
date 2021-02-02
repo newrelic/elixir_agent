@@ -9,6 +9,14 @@ defmodule NewRelic.Harvest.TelemetrySdk.API do
     |> maybe_retry(url, payload)
   end
 
+  def span(spans) do
+    url = url(:trace)
+    payload = {:spans, spans, generate_request_id()}
+
+    request(url, payload)
+    |> maybe_retry(url, payload)
+  end
+
   def request(url, payload) do
     post(url, payload)
   end

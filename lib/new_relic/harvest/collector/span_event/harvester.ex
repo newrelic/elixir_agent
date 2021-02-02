@@ -10,12 +10,13 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   alias NewRelic.Util
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, [])
+    GenServer.start_link(__MODULE__, mode: NewRelic.Config.feature(:infinite_tracing))
   end
 
-  def init(_) do
+  def init(mode: mode) do
     {:ok,
      %{
+       mode: mode,
        start_time: System.system_time(),
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
@@ -51,10 +52,13 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
       duration: duration_s,
       name: name,
       category: category,
-      category_attributes: Util.coerce_attributes(attributes)
+      category_attributes: attributes
     }
     |> report_span_event(DistributedTrace.get_tracing_context(), edge)
   end
+
+  def report_span(%Event{} = event),
+    do: report_span_event(event)
 
   def report_span_event(%Event{} = _event, nil = _context, _mfa), do: :no_transaction
 
