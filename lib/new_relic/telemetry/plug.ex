@@ -135,11 +135,11 @@ defmodule NewRelic.Telemetry.Plug do
   def handle_event(
         @cowboy_exception,
         %{duration: duration} = meas,
-        %{kind: kind, reason: reason} = meta,
+        %{kind: kind} = meta,
         _config
       ) do
     add_stop_attrs(meas, meta, duration)
-    {reason, stack} = reason_and_stack(reason)
+    {reason, stack} = reason_and_stack(meta)
 
     Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
     Transaction.Reporter.stop_transaction(:web)
@@ -238,17 +238,21 @@ defmodule NewRelic.Telemetry.Plug do
     String.split(status) |> List.first() |> String.to_integer()
   end
 
-  defp reason_and_stack({{reason, stack}, _init_call}) do
+  defp reason_and_stack(%{reason: %{__exception__: true} = reason, stacktrace: stack}) do
     {reason, stack}
   end
 
-  defp reason_and_stack({reason, _init_call}) do
+  defp reason_and_stack(%{reason: {{reason, stack}, _init_call}}) do
+    {reason, stack}
+  end
+
+  defp reason_and_stack(%{reason: {reason, _init_call}}) do
     {reason, []}
   end
 
-  defp reason_and_stack(unknown_exit_reason) do
-    NewRelic.log(:debug, "unknown_exit_reason: #{inspect(unknown_exit_reason)}")
-    {:unknown_exit_reason, []}
+  defp reason_and_stack(unexpected_cowboy_exception) do
+    NewRelic.log(:debug, "unexpected_cowboy_exception: #{inspect(unexpected_cowboy_exception)}")
+    {:unexpected_cowboy_exception, []}
   end
 
   defp plug_name(conn, match_path) do

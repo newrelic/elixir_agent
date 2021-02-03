@@ -136,7 +136,14 @@ defmodule NewRelic.Transaction.Complete do
 
     segment_tree = Map.update!(segment_tree, :children, &(&1 ++ top_children ++ stray_children))
 
-    span_events = extract_span_events(tx_attrs, pid, process_spawns, process_exits)
+    span_events =
+      extract_span_events(
+        NewRelic.Config.feature(:infinite_tracing),
+        tx_attrs,
+        pid,
+        process_spawns,
+        process_exits
+      )
 
     apdex = calculate_apdex(tx_attrs, tx_error)
 
@@ -173,12 +180,17 @@ defmodule NewRelic.Transaction.Complete do
     (tx_attrs.duration_ms + concurrent_process_time_ms) / 1000
   end
 
-  defp extract_span_events(%{sampled: true} = tx_attrs, pid, spawns, exits) do
+  defp extract_span_events(:infinite, tx_attrs, pid, spawns, exits) do
+    spawned_process_span_events(tx_attrs, spawns, exits)
+    |> add_spansactions(tx_attrs, pid)
+  end
+
+  defp extract_span_events(:sampling, %{sampled: true} = tx_attrs, pid, spawns, exits) do
     spawned_process_span_events(tx_attrs, spawns, exits)
     |> add_root_process_span_event(tx_attrs, pid)
   end
 
-  defp extract_span_events(_tx_attrs, _pid, _spawns, _exits) do
+  defp extract_span_events(_trace_mode, _tx_attrs, _pid, _spawns, _exits) do
     []
   end
 
@@ -214,6 +226,50 @@ defmodule NewRelic.Transaction.Complete do
           }
           |> maybe_add(:tracingVendors, tx_attrs[:tracingVendors])
           |> maybe_add(:trustedParentId, tx_attrs[:trustedParentId])
+      }
+      | spans
+    ]
+  end
+
+  @spansaction_exclude_attrs [
+    :guid,
+    :traceId,
+    :start_time,
+    :end_time,
+    :parentId,
+    :parentSpanId,
+    :sampled,
+    :priority,
+    :tracingVendors,
+    :trustedParentId
+  ]
+  defp add_spansactions(spans, tx_attrs, pid) do
+    [
+      %NewRelic.Span.Event{
+        guid: tx_attrs[:guid],
+        transaction_id: tx_attrs[:guid],
+        trace_id: tx_attrs[:traceId],
+        parent_id: tx_attrs[:parentSpanId],
+        name: tx_attrs[:name],
+        category: "Transaction",
+        entry_point: true,
+        timestamp: tx_attrs[:start_time],
+        duration: tx_attrs[:duration_s],
+        category_attributes:
+          Map.drop(tx_attrs, @spansaction_exclude_attrs)
+          |> maybe_add(:tracingVendors, tx_attrs[:tracingVendors])
+          |> maybe_add(:trustedParentId, tx_attrs[:trustedParentId])
+      },
+      %NewRelic.Span.Event{
+        guid: DistributedTrace.generate_guid(pid: pid),
+        transaction_id: tx_attrs[:guid],
+        trace_id: tx_attrs[:traceId],
+        category: "generic",
+        name: "Transaction Root Process",
+        parent_id: tx_attrs[:guid],
+        timestamp: tx_attrs[:start_time],
+        duration: tx_attrs[:duration_s],
+        category_attributes: %{pid: inspect(pid)}
       }
       | spans
     ]
@@ -381,7 +437,7 @@ defmodule NewRelic.Transaction.Complete do
   end
 
   defp report_span_events(span_events) do
-    Enum.each(span_events, &Collector.SpanEvent.Harvester.report_span_event/1)
+    Enum.each(span_events, &NewRelic.report_span/1)
   end
 
   defp report_transaction_event(%{transactionType: :Other} = tx_attrs) do

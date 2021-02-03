@@ -76,6 +76,26 @@ defmodule IntegrationTest do
     assert resp.status_code == 202
   end
 
+  test "Can post a Span" do
+    {:ok, resp} =
+      NewRelic.Harvest.TelemetrySdk.API.span([
+        %{
+          spans: [
+            %{
+              id: "123",
+              "trace.id": "abc",
+              attributes: %{foo: "BAR"}
+            }
+          ],
+          common: %{
+            attributes: NewRelic.Harvest.Collector.AgentRun.entity_metadata()
+          }
+        }
+      ])
+
+    assert resp.status_code == 202
+  end
+
   test "EnabledSupervisor starts" do
     NewRelic.EnabledSupervisorManager.start_child()
 

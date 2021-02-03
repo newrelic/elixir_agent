@@ -203,6 +203,13 @@ defmodule NewRelic.DistributedTrace do
     Process.put(:nr_current_span_attrs, %{url: url, method: method, component: component})
   end
 
+  def set_span(:error, message: message) do
+    Process.put(
+      :nr_current_span_attrs,
+      Map.merge(get_span_attrs(), %{error: true, "error.message": message})
+    )
+  end
+
   def set_span(
         :datastore,
         statement: statement,

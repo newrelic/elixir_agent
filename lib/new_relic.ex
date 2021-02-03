@@ -229,7 +229,7 @@ defmodule NewRelic do
   defdelegate report_sample(category, values), to: NewRelic.Sampler.Reporter
 
   @doc false
-  defdelegate report_span(span), to: NewRelic.Harvest.Collector.SpanEvent.Harvester
+  defdelegate report_span(span), to: NewRelic.Span.Reporter
 
   @doc false
   defdelegate report_metric(identifier, values), to: NewRelic.Harvest.Collector.Metric.Harvester

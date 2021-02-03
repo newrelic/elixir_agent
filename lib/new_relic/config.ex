@@ -178,6 +178,16 @@ defmodule NewRelic.Config do
   Logs In Context can be configured in two ways:
   * Environment variable `NEW_RELIC_LOGS_IN_CONTEXT=forwarder`
   * Application config `config :new_relic_agent, logs_in_context: :forwarder`
+
+  ### Infinite Tracing
+
+  [Infinite Tracing](https://docs.newrelic.com/docs/understand-dependencies/distributed-tracing/infinite-tracing/introduction-infinite-tracing)
+  gives you more control of sampling by collecting 100% of Spans and sending them
+  to a Trace Observer for processing.
+
+  You can configure your Trace Observer in two ways:
+  * Environment variable `NEW_RELIC_INFINITE_TRACING_TRACE_OBSERVER_HOST=trace-observer.host`
+  * Application config `config :new_relic_agent, infinite_tracing_trace_observer_host: "trace-observer.host"`
   """
   def feature(configurable_agent_feature)
 
@@ -188,6 +198,10 @@ defmodule NewRelic.Config do
       "direct" -> :direct
       other -> other
     end
+  end
+
+  def feature(:infinite_tracing) do
+    get(:trace_mode)
   end
 
   @doc false

@@ -434,6 +434,30 @@ defmodule NewRelic.Metric.MetricData do
       }
     ]
 
+  def transform({:supportability, :infinite_tracing}, spans_seen: spans_seen),
+    do: [
+      %Metric{
+        name: :"Supportability/InfiniteTracing/Span/Seen",
+        call_count: spans_seen
+      }
+    ]
+
+  def transform({:supportability, :infinite_tracing}, harvest_size: harvest_size),
+    do: [
+      %Metric{
+        name: :"Supportability/InfiniteTracing/Span/Sent",
+        call_count: harvest_size
+      },
+      %Metric{
+        name: :"Supportability/Elixir/TelemetrySdk/Harvest/Span",
+        call_count: 1
+      },
+      %Metric{
+        name: :"Supportability/Harvest",
+        call_count: 1
+      }
+    ]
+
   def transform({:supportability, harvester},
         events_seen: events_seen,
         reservoir_size: reservoir_size
@@ -457,10 +481,6 @@ defmodule NewRelic.Metric.MetricData do
         name: join(["Supportability/Elixir/Collector/HarvestSize", harvester]),
         call_count: 1,
         total_call_time: harvest_size
-      },
-      %Metric{
-        name: :"Supportability/Elixir/Harvest",
-        call_count: 1
       },
       %Metric{
         name: :"Supportability/Harvest",

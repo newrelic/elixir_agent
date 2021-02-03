@@ -1,7 +1,6 @@
 ## CHANGELOG
 
-### `v1.23.0`
-
+### `v1.24.0`
 Features
 * `Plug` instrumentation is now fully automatic based on `telemetry` events!
   * Please remove deprecated calls:
@@ -12,7 +11,10 @@ Features
     - https://github.com/binaryseed/new_relic_phoenix
 * Transaction tracking is now faster and better in the face of overload
 
-------
+### `v1.23.0`
+
+Features
+* Adds support for Infinite Tracing. [#307](https://github.com/newrelic/elixir_agent/pull/307)
 
 ### `v1.22.6`
 
