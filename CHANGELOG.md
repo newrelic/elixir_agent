@@ -1,9 +1,16 @@
 ## CHANGELOG
 
+### `v1.23.1`
+
+Tweaks
+* Improve External span names. [#309](https://github.com/newrelic/elixir_agent/pull/309)
+
 ### `v1.23.0`
 
 Features
 * Adds support for Infinite Tracing. [#307](https://github.com/newrelic/elixir_agent/pull/307)
+
+------
 
 ### `v1.22.6`
 
