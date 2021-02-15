@@ -124,7 +124,6 @@ defmodule SpanEventTest do
     def http_request do
       Process.sleep(10)
       NewRelic.set_span(:http, url: "http://example.com", method: "GET", component: "HTTPoison")
-      NewRelic.DistributedTrace.put_span_attrs(:http, status_code: 200)
       "bar"
     end
   end
@@ -162,15 +161,15 @@ defmodule SpanEventTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    assert [function, _, _] =
-             Enum.find(span_events, fn [ev, _, _] ->
-               ev[:name] == "SpanEventTest.Traced.function/0"
-             end)
+    [function, _, _] =
+      Enum.find(span_events, fn [ev, _, _] ->
+        ev[:name] == "SpanEventTest.Traced.function/0"
+      end)
 
-    assert [http_request, _, _] =
-             Enum.find(span_events, fn [ev, _, _] ->
-               ev[:name] == "External/example.com/HTTPoison/GET"
-             end)
+    [http_request, _, _] =
+      Enum.find(span_events, fn [ev, _, _] ->
+        ev[:name] == "External/example.com/HTTPoison/GET"
+      end)
 
     assert function[:category] == "generic"
     assert function[:some] == "attribute"
@@ -205,7 +204,7 @@ defmodule SpanEventTest do
 
     [task_event, _, _] = Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "Process" end)
 
-    [nested_event, _, _] =
+    [nested_external_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] ->
         ev[:name] == "External/example.com/HTTPoison/GET"
       end)
@@ -219,27 +218,27 @@ defmodule SpanEventTest do
     assert function_event[:traceId] == "d6b4ba0c3a712ca"
     assert nested_function_event[:traceId] == "d6b4ba0c3a712ca"
     assert task_event[:traceId] == "d6b4ba0c3a712ca"
-    assert nested_event[:traceId] == "d6b4ba0c3a712ca"
+    assert nested_external_event[:traceId] == "d6b4ba0c3a712ca"
 
     assert tx_root_process_event[:transactionId] == tx_event[:guid]
     assert function_event[:transactionId] == tx_event[:guid]
     assert nested_function_event[:transactionId] == tx_event[:guid]
     assert task_event[:transactionId] == tx_event[:guid]
-    assert nested_event[:transactionId] == tx_event[:guid]
+    assert nested_external_event[:transactionId] == tx_event[:guid]
 
     assert tx_event[:sampled] == true
     assert tx_root_process_event[:sampled] == true
     assert function_event[:sampled] == true
     assert nested_function_event[:sampled] == true
     assert task_event[:sampled] == true
-    assert nested_event[:sampled] == true
+    assert nested_external_event[:sampled] == true
 
     assert tx_event[:priority] == 0.987654
     assert tx_root_process_event[:priority] == 0.987654
     assert function_event[:priority] == 0.987654
     assert nested_function_event[:priority] == 0.987654
     assert task_event[:priority] == 0.987654
-    assert nested_event[:priority] == 0.987654
+    assert nested_external_event[:priority] == 0.987654
 
     assert function_event[:duration] > 0.009
     assert function_event[:duration] < 0.020
@@ -248,18 +247,17 @@ defmodule SpanEventTest do
     assert function_event[:parentId] == tx_root_process_event[:guid]
     assert nested_function_event[:parentId] == function_event[:guid]
     assert task_event[:parentId] == tx_root_process_event[:guid]
-    assert nested_event[:parentId] == task_event[:guid]
+    assert nested_external_event[:parentId] == task_event[:guid]
 
     assert function_event[:duration] > 0
     assert task_event[:duration] > 0
-    assert nested_event[:duration] > 0
+    assert nested_external_event[:duration] > 0
 
-    assert nested_event[:category] == "http"
-    assert nested_event[:"http.url"] == "http://example.com"
-    assert nested_event[:"http.method"] == "GET"
-    assert nested_event[:"http.statusCode"] == 200
-    assert nested_event[:"span.kind"] == "client"
-    assert nested_event[:component] == "HTTPoison"
+    assert nested_external_event[:category] == "http"
+    assert nested_external_event[:"http.url"] == "http://example.com"
+    assert nested_external_event[:"http.method"] == "GET"
+    assert nested_external_event[:"span.kind"] == "client"
+    assert nested_external_event[:component] == "HTTPoison"
 
     assert nested_function_event[:category] == "generic"
     assert nested_function_event[:name] == "SpanEventTest.Traced.do_hello/0"

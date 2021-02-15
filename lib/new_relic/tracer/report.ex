@@ -47,7 +47,12 @@ defmodule NewRelic.Tracer.Report do
        ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
+    arity = length(arguments)
+    args = inspect_args(arguments, Keyword.take(options, [:args]))
     span_attrs = NewRelic.DistributedTrace.get_span_attrs()
+
+    function_name = function_name({module, function}, name)
+    function_arity_name = function_name({module, function, arity}, name)
 
     case span_attrs do
       %{url: url, component: component, method: method} ->
@@ -74,7 +79,16 @@ defmodule NewRelic.Tracer.Report do
           name: metric_name,
           edge: [span: id, parent: parent_id],
           category: "http",
-          attributes: span_attrs
+          attributes:
+            Map.merge(span_attrs, %{
+              mfa: function_arity_name,
+              args: args
+            })
+        )
+
+        NewRelic.incr_attributes(
+          "external.#{host}.call_count": 1,
+          "external.#{host}.duration_ms": duration_ms
         )
 
         NewRelic.report_metric({:external, url, component, method}, duration_s: duration_s)
@@ -85,12 +99,6 @@ defmodule NewRelic.Tracer.Report do
         })
 
       _ ->
-        arity = length(arguments)
-        args = inspect_args(arguments, Keyword.take(options, [:args]))
-
-        function_name = function_name({module, function}, name)
-        function_arity_name = function_name({module, function, arity}, name)
-
         Transaction.Reporter.add_trace_segment(%{
           module: module,
           function: function,
