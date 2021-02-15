@@ -241,8 +241,10 @@ defmodule InfiniteTracingTest do
     assert nested_external_span.attributes[:"http.method"] == "GET"
     assert nested_external_span.attributes[:"span.kind"] == "client"
     assert nested_external_span.attributes[:component] == "HTTPoison"
-    assert nested_external_span.attributes[:args] |> is_binary
-    assert nested_external_span.attributes[:mfa] == "InfiniteTracingTest.Traced.http_request/0"
+    assert nested_external_span.attributes[:"trace.args"] |> is_binary
+
+    assert nested_external_span.attributes[:"trace.function"] ==
+             "InfiniteTracingTest.Traced.http_request/0"
 
     assert nested_function_span.attributes[:category] == "generic"
     assert nested_function_span.attributes[:name] == "InfiniteTracingTest.Traced.do_hello/0"
