@@ -33,6 +33,18 @@ if Code.ensure_loaded?(HTTPoison) do
       headers ++ NewRelic.distributed_trace_headers(:http)
     end
 
+    defp maybe_add_status_code({:ok, %HTTPoison.Response{status_code: status_code}} = result) do
+      NewRelic.DistributedTrace.put_span_attrs(:http, status_code: status_code)
+      result
+    end
+
+    defp maybe_add_status_code(%HTTPoison.Response{status_code: status_code} = result) do
+      NewRelic.DistributedTrace.put_span_attrs(:http, status_code: status_code)
+      result
+    end
+
+    defp maybe_add_status_code(result), do: result
+
     @trace {:get, category: :external}
     def get(url, headers \\ [], options \\ []) do
       headers = instrument("GET", url, headers)

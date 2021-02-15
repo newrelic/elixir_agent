@@ -124,6 +124,7 @@ defmodule SpanEventTest do
     def http_request do
       Process.sleep(10)
       NewRelic.set_span(:http, url: "http://example.com", method: "GET", component: "HTTPoison")
+      NewRelic.DistributedTrace.put_span_attrs(:http, status_code: 200)
       "bar"
     end
   end
@@ -161,13 +162,15 @@ defmodule SpanEventTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    [function, _, _] =
-      Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.function/0" end)
+    assert [function, _, _] =
+             Enum.find(span_events, fn [ev, _, _] ->
+               ev[:name] == "SpanEventTest.Traced.function/0"
+             end)
 
-    [http_request, _, _] =
-      Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "SpanEventTest.Traced.http_request/0"
-      end)
+    assert [http_request, _, _] =
+             Enum.find(span_events, fn [ev, _, _] ->
+               ev[:name] == "External/example.com/HTTPoison/GET"
+             end)
 
     assert function[:category] == "generic"
     assert function[:some] == "attribute"
@@ -204,7 +207,7 @@ defmodule SpanEventTest do
 
     [nested_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "SpanEventTest.Traced.http_request/0"
+        ev[:name] == "External/example.com/HTTPoison/GET"
       end)
 
     [[_intrinsics, tx_event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
@@ -254,9 +257,9 @@ defmodule SpanEventTest do
     assert nested_event[:category] == "http"
     assert nested_event[:"http.url"] == "http://example.com"
     assert nested_event[:"http.method"] == "GET"
+    assert nested_event[:"http.statusCode"] == 200
     assert nested_event[:"span.kind"] == "client"
     assert nested_event[:component] == "HTTPoison"
-    assert nested_event[:args]
 
     assert nested_function_event[:category] == "generic"
     assert nested_function_event[:name] == "SpanEventTest.Traced.do_hello/0"
