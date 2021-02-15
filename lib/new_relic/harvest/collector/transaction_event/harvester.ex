@@ -3,6 +3,7 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
 
   @moduledoc false
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Transaction.Event
   alias NewRelic.Util.PriorityQueue
@@ -30,13 +31,13 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
   def report_event(%Event{} = event),
     do:
       Collector.TransactionEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.cast({:report, event})
 
   def gather_harvest,
     do:
       Collector.TransactionEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.call(:gather_harvest)
 
   # Server
@@ -82,13 +83,22 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
       events
     ])
 
-    log_harvest(length(events), state.sampling.reservoir_size)
+    log_harvest(length(events), state.sampling.events_seen, state.sampling.reservoir_size)
   end
 
-  def log_harvest(harvest_size, reservoir_size) do
+  def log_harvest(harvest_size, events_seen, reservoir_size) do
     NewRelic.report_metric({:supportability, "AnalyticEventData"}, harvest_size: harvest_size)
-    NewRelic.report_metric({:supportability, "AnalyticEventData"}, reservoir_size: reservoir_size)
-    NewRelic.log(:debug, "Completed Transaction Event harvest - size: #{harvest_size}")
+
+    NewRelic.report_metric({:supportability, "AnalyticEventData"},
+      events_seen: events_seen,
+      reservoir_size: reservoir_size
+    )
+
+    NewRelic.log(
+      :debug,
+      "Completed Transaction Event harvest - " <>
+        "size: #{harvest_size}, seen: #{events_seen}, max: #{reservoir_size}"
+    )
   end
 
   def build_payload(state) do

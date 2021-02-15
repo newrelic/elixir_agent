@@ -2,6 +2,7 @@ defmodule TransactionErrorEventTest do
   use ExUnit.Case
   use Plug.Test
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Error.Event
 
@@ -13,8 +14,15 @@ defmodule TransactionErrorEventTest do
     plug(:dispatch)
 
     get "/error" do
-      raise "CrazyTransactionError"
+      raise "TransactionError"
       send_resp(conn, 200, "won't happen")
+    end
+
+    get "/async_error" do
+      Task.async(fn -> Process.sleep(100) end)
+      |> Task.await(10)
+
+      send_resp(conn, 200, "won't happen either")
     end
 
     get "/caught/error" do
@@ -107,7 +115,7 @@ defmodule TransactionErrorEventTest do
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
 
-    Collector.HarvestCycle.send_harvest(
+    Harvest.HarvestCycle.send_harvest(
       Collector.TransactionErrorEvent.HarvesterSupervisor,
       harvester
     )
@@ -119,14 +127,13 @@ defmodule TransactionErrorEventTest do
     Application.put_env(:new_relic_agent, :error_event_harvest_cycle, 300)
     TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
 
-    first = Collector.HarvestCycle.current_harvester(Collector.TransactionErrorEvent.HarvestCycle)
+    first = Harvest.HarvestCycle.current_harvester(Collector.TransactionErrorEvent.HarvestCycle)
     Process.monitor(first)
 
     # Wait until harvest swap
     assert_receive {:DOWN, _ref, _, ^first, :shutdown}, 1000
 
-    second =
-      Collector.HarvestCycle.current_harvester(Collector.TransactionErrorEvent.HarvestCycle)
+    second = Harvest.HarvestCycle.current_harvester(Collector.TransactionErrorEvent.HarvestCycle)
 
     Process.monitor(second)
 
@@ -171,12 +178,28 @@ defmodule TransactionErrorEventTest do
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
+  test "cowboy request process exit" do
+    TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+    Logger.remove_backend(:console)
+
+    {:ok, _} = Plug.Cowboy.http(TestPlugApp, [], port: 9999)
+    :httpc.request('http://localhost:9999/async_error')
+
+    traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
+    assert Enum.find(traces, &match?([_, _, ":timeout", "EXIT", _, _], &1))
+
+    Plug.Cowboy.shutdown(TestPlugApp.HTTP)
+
+    Logger.add_backend(:console)
+    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+  end
+
   test "Ignore late reports" do
     TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
 
     harvester =
       Collector.TransactionErrorEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
 
     assert :ok == GenServer.call(harvester, :send_harvest)
 

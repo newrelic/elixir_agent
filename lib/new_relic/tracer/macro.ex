@@ -19,13 +19,6 @@ defmodule NewRelic.Tracer.Macro do
   def __on_definition__(_env, _access, _name, _args, _guards, nil), do: nil
   def __on_definition__(_env, _access, _name, _args, _guards, []), do: nil
 
-  # Take no action if there is a top-level rescue clause
-  def __on_definition__(env, _access, name, _args, _guards, do: _, rescue: _) do
-    Logger.warn(
-      "[New Relic] Unable to trace `#{inspect(env.module)}.#{name}` due to top-level rescue clause -- please remove @trace"
-    )
-  end
-
   def __on_definition__(%{module: module}, access, name, args, guards, do: body) do
     if trace_info =
          trace_function?(module, name, length(args))
@@ -41,6 +34,25 @@ defmodule NewRelic.Tracer.Macro do
       })
 
       Module.put_attribute(module, :nr_last_tracer, {name, length(args), trace_info})
+      Module.delete_attribute(module, :trace)
+    end
+  end
+
+  # Take no action if there are other function-level clauses
+  def __on_definition__(%{module: module}, _access, name, args, _guards, clauses) do
+    if trace_function?(module, name, length(args)) do
+      found =
+        clauses
+        |> Keyword.drop([:do])
+        |> Keyword.keys()
+        |> Enum.map(&"`#{&1}`")
+        |> Enum.join(", ")
+
+      Logger.warn(
+        "[New Relic] Unable to trace `#{inspect(module)}.#{name}/#{length(args)}` " <>
+          "due to additional function-level clauses: #{found} -- please remove @trace"
+      )
+
       Module.delete_attribute(module, :trace)
     end
   end
@@ -178,6 +190,18 @@ defmodule NewRelic.Tracer.Macro do
 
       try do
         unquote(body)
+      rescue
+        exception ->
+          message = NewRelic.Util.Error.format_reason(:error, exception)
+          NewRelic.DistributedTrace.set_span(:error, message: message)
+
+          reraise exception, __STACKTRACE__
+      catch
+        :exit, value ->
+          message = NewRelic.Util.Error.format_reason(:exit, value)
+          NewRelic.DistributedTrace.set_span(:error, message: "(EXIT) #{message}")
+
+          exit(value)
       after
         end_time_mono = System.monotonic_time()
 
@@ -193,7 +217,8 @@ defmodule NewRelic.Tracer.Macro do
         duration_acc = Process.get({:nr_duration_acc, parent_ref}, 0)
         Process.put({:nr_duration_acc, parent_ref}, duration_acc + duration_ms)
 
-        child_duration_ms = Process.get({:nr_duration_acc, current_ref}, 0)
+        child_duration_ms = Process.delete({:nr_duration_acc, current_ref}) || 0
+        if parent_ref == :root, do: Process.delete({:nr_duration_acc, parent_ref})
 
         Tracer.Report.call(
           {unquote(module), unquote(function), unquote(build_call_args(args))},

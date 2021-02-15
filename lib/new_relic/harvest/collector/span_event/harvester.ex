@@ -4,17 +4,19 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   @moduledoc false
 
   alias NewRelic.DistributedTrace
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Span.Event
-  alias NewRelic.Util.PriorityQueue
+  alias NewRelic.Util
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, [])
+    GenServer.start_link(__MODULE__, mode: NewRelic.Config.feature(:infinite_tracing))
   end
 
-  def init(_) do
+  def init(mode: mode) do
     {:ok,
      %{
+       mode: mode,
        start_time: System.system_time(),
        start_time_mono: System.monotonic_time(),
        end_time_mono: nil,
@@ -22,7 +24,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
          reservoir_size: Collector.AgentRun.lookup(:span_event_reservoir_size, 100),
          events_seen: 0
        },
-       events: PriorityQueue.new()
+       events: Util.PriorityQueue.new()
      }}
   end
 
@@ -55,6 +57,9 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
     |> report_span_event(DistributedTrace.get_tracing_context(), edge)
   end
 
+  def report_span(%Event{} = event),
+    do: report_span_event(event)
+
   def report_span_event(%Event{} = _event, nil = _context, _mfa), do: :no_transaction
 
   def report_span_event(%Event{} = _event, %DistributedTrace.Context{sampled: false}, _mfa),
@@ -81,13 +86,13 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   def report_span_event(%Event{} = event),
     do:
       Collector.SpanEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.cast({:report, event})
 
   def gather_harvest,
     do:
       Collector.SpanEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
       |> GenServer.call(:gather_harvest)
 
   # Server
@@ -117,7 +122,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   # Helpers
 
   def store_event(%{sampling: %{reservoir_size: size}} = state, %{priority: key} = event),
-    do: %{state | events: PriorityQueue.insert(state.events, size, key, event)}
+    do: %{state | events: Util.PriorityQueue.insert(state.events, size, key, event)}
 
   def store_sampling(%{sampling: sampling} = state),
     do: %{state | sampling: Map.update!(sampling, :events_seen, &(&1 + 1))}
@@ -131,7 +136,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
       spans
     ])
 
-    log_harvest(length(spans), state.sampling.reservoir_size)
+    log_harvest(length(spans), state.sampling.events_seen, state.sampling.reservoir_size)
   end
 
   def generate_guid(:root), do: DistributedTrace.generate_guid(pid: self())
@@ -139,15 +144,24 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
   def generate_guid({label, ref}),
     do: DistributedTrace.generate_guid(pid: self(), label: label, ref: ref)
 
-  def log_harvest(harvest_size, reservoir_size) do
+  def log_harvest(harvest_size, events_seen, reservoir_size) do
     NewRelic.report_metric({:supportability, "SpanEventData"}, harvest_size: harvest_size)
-    NewRelic.report_metric({:supportability, "SpanEventData"}, reservoir_size: reservoir_size)
-    NewRelic.log(:debug, "Completed Span Event harvest - size: #{harvest_size}")
+
+    NewRelic.report_metric({:supportability, "SpanEventData"},
+      events_seen: events_seen,
+      reservoir_size: reservoir_size
+    )
+
+    NewRelic.log(
+      :debug,
+      "Completed Span Event harvest - " <>
+        "size: #{harvest_size}, seen: #{events_seen}, max: #{reservoir_size}"
+    )
   end
 
   def build_payload(state) do
     state.events
-    |> PriorityQueue.values()
+    |> Util.PriorityQueue.values()
     |> Event.format_events()
   end
 end

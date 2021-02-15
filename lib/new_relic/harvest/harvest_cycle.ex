@@ -1,11 +1,12 @@
-defmodule NewRelic.Harvest.Collector.HarvestCycle do
+defmodule NewRelic.Harvest.HarvestCycle do
   use GenServer
 
   # Manages the harvest cycle for a given harvester.
 
   @moduledoc false
 
-  alias NewRelic.Harvest.Collector
+  alias NewRelic.Harvest
+  alias NewRelic.Harvest.HarvesterStore
 
   def start_link(config) do
     GenServer.start_link(__MODULE__, config, name: config[:name])
@@ -15,7 +16,8 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
         name: name,
         child_spec: child_spec,
         harvest_cycle_key: harvest_cycle_key,
-        supervisor: supervisor
+        supervisor: supervisor,
+        lookup_module: lookup_module
       ) do
     if NewRelic.Config.enabled?(), do: send(self(), :harvest_cycle)
 
@@ -25,6 +27,7 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
        child_spec: child_spec,
        harvest_cycle_key: harvest_cycle_key,
        supervisor: supervisor,
+       lookup_module: lookup_module,
        harvester: nil,
        timer: nil
      }}
@@ -32,7 +35,11 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
 
   # API
 
-  def current_harvester(harvest_cycle), do: Collector.HarvesterStore.current(harvest_cycle)
+  def current_harvester(harvest_cycle), do: HarvesterStore.current(harvest_cycle)
+
+  def cycle(harvest_cycle) do
+    send(harvest_cycle, :harvest_cycle)
+  end
 
   def manual_shutdown(harvest_cycle) do
     case current_harvester(harvest_cycle) do
@@ -66,6 +73,7 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
   end
 
   def handle_info(:harvest_cycle, state) do
+    stop_harvest_cycle(state.timer)
     harvester = swap_harvester(state)
     timer = trigger_harvest_cycle(state)
     {:noreply, %{state | harvester: harvester, timer: timer}}
@@ -98,15 +106,15 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
          harvester: harvester,
          child_spec: child_spec
        }) do
-    {:ok, next} = Collector.HarvesterSupervisor.start_child(supervisor, child_spec)
+    {:ok, next} = Harvest.HarvesterSupervisor.start_child(supervisor, child_spec)
     Process.monitor(next)
-    Collector.HarvesterStore.update(name, next)
+    HarvesterStore.update(name, next)
     send_harvest(supervisor, harvester)
     next
   end
 
   defp stop_harvester(%{supervisor: supervisor, name: name, harvester: harvester}) do
-    Collector.HarvesterStore.update(name, nil)
+    HarvesterStore.update(name, nil)
     send_harvest(supervisor, harvester)
   end
 
@@ -115,7 +123,7 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
   @harvest_timeout 15_000
   def send_harvest(supervisor, harvester) do
     Task.Supervisor.start_child(
-      Collector.TaskSupervisor,
+      Harvest.TaskSupervisor,
       fn ->
         try do
           GenServer.call(harvester, :send_harvest, @harvest_timeout)
@@ -132,8 +140,8 @@ defmodule NewRelic.Harvest.Collector.HarvestCycle do
 
   defp stop_harvest_cycle(timer), do: timer && Process.cancel_timer(timer)
 
-  defp trigger_harvest_cycle(%{harvest_cycle_key: harvest_cycle_key}) do
-    harvest_cycle = Collector.AgentRun.lookup(harvest_cycle_key) || 60_000
+  defp trigger_harvest_cycle(%{lookup_module: lookup_module, harvest_cycle_key: harvest_cycle_key}) do
+    harvest_cycle = lookup_module.lookup(harvest_cycle_key) || 60_000
     Process.send_after(self(), :harvest_cycle, harvest_cycle)
   end
 end

@@ -11,16 +11,24 @@ defmodule InitTest do
     assert "eu01" == NewRelic.Init.determine_region("eu01xeu02x37a29c3982469a3fe9999999999999")
   end
 
-  test "set correct collector host" do
-    assert "collector.newrelic.com" == NewRelic.Init.determine_collector_host()
+  test "handle config default properly" do
+    Application.put_env(:new_relic_agent, :harvest_enabled, true)
+    NewRelic.Init.init_config()
+    assert NewRelic.Config.get(:harvest_enabled)
 
-    System.put_env("NEW_RELIC_LICENSE_KEY", "eu01xeu02x37a29c3982469a3fe9999999999999")
-    assert "collector.eu01.nr-data.net" == NewRelic.Init.determine_collector_host()
+    Application.put_env(:new_relic_agent, :harvest_enabled, false)
+    NewRelic.Init.init_config()
+    refute NewRelic.Config.get(:harvest_enabled)
 
-    System.put_env("NEW_RELIC_HOST", "cool.newrelic.com")
-    assert "cool.newrelic.com" == NewRelic.Init.determine_collector_host()
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
+    NewRelic.Init.init_config()
+    assert NewRelic.Config.get(:harvest_enabled)
 
-    System.delete_env("NEW_RELIC_LICENSE_KEY")
-    System.delete_env("NEW_RELIC_HOST")
+    System.put_env("NEW_RELIC_HARVEST_ENABLED", "false")
+    NewRelic.Init.init_config()
+    refute NewRelic.Config.get(:harvest_enabled)
+
+    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+    NewRelic.Init.init_config()
   end
 end

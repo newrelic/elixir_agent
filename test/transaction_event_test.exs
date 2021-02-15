@@ -2,6 +2,7 @@ defmodule TransactionEventTest do
   use ExUnit.Case
   use Plug.Test
 
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
   alias NewRelic.Transaction.Event
 
@@ -69,7 +70,7 @@ defmodule TransactionEventTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.HarvestCycle.send_harvest(Collector.TransactionEvent.HarvesterSupervisor, harvester)
+    Harvest.HarvestCycle.send_harvest(Collector.TransactionEvent.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
 
     Application.delete_env(:new_relic_agent, :transaction_event_reservoir_size)
@@ -95,13 +96,13 @@ defmodule TransactionEventTest do
     Application.put_env(:new_relic_agent, :transaction_event_harvest_cycle, 300)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
-    first = Collector.HarvestCycle.current_harvester(Collector.TransactionEvent.HarvestCycle)
+    first = Harvest.HarvestCycle.current_harvester(Collector.TransactionEvent.HarvestCycle)
     Process.monitor(first)
 
     # Wait until harvest swap
     assert_receive {:DOWN, _ref, _, ^first, :shutdown}, 1000
 
-    second = Collector.HarvestCycle.current_harvester(Collector.TransactionEvent.HarvestCycle)
+    second = Harvest.HarvestCycle.current_harvester(Collector.TransactionEvent.HarvestCycle)
     Process.monitor(second)
 
     refute first == second
@@ -133,7 +134,7 @@ defmodule TransactionEventTest do
 
     harvester =
       Collector.TransactionEvent.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
 
     assert :ok == GenServer.call(harvester, :send_harvest)
 

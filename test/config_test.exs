@@ -8,16 +8,16 @@ defmodule ConfigTest do
   test "Logger output device" do
     inital_logger = NewRelic.Logger.initial_logger()
 
-    System.put_env("NEW_RELIC_LOG", "stdout")
+    reset_config = TestHelper.update(:nr_config, log: "stdout")
     assert :stdio == NewRelic.Logger.initial_logger()
 
-    System.put_env("NEW_RELIC_LOG", "some_file.log")
+    TestHelper.update(:nr_config, log: "some_file.log")
     assert {:file, "some_file.log"} == NewRelic.Logger.initial_logger()
 
-    System.put_env("NEW_RELIC_LOG", "Logger")
+    TestHelper.update(:nr_config, log: "Logger")
     assert :logger == NewRelic.Logger.initial_logger()
 
-    System.delete_env("NEW_RELIC_LOG")
+    reset_config.()
     assert inital_logger == NewRelic.Logger.initial_logger()
   end
 
@@ -32,7 +32,7 @@ defmodule ConfigTest do
       raw: "attribute"
     )
 
-    assert NewRelic.Config.automatic_attributes() == %{
+    assert NewRelic.Init.determine_automatic_attributes() == %{
              env_var: "env-var-value",
              raw: "attribute",
              function_call: "FUN"
@@ -43,43 +43,43 @@ defmodule ConfigTest do
   end
 
   test "Can configure error collecting via ENV and Application" do
+    # Via ENV
     System.put_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED", "false")
-
+    NewRelic.Init.init_features()
     refute NewRelic.Config.feature?(:error_collector)
 
+    # Via Application
     System.delete_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED")
-
+    Application.put_env(:new_relic_agent, :error_collector_enabled, true)
+    NewRelic.Init.init_features()
     assert NewRelic.Config.feature?(:error_collector)
 
+    # ENV over Application
     System.put_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED", "true")
-    Application.get_env(:new_relic_agent, :error_collector_enabled, false)
-
+    Application.put_env(:new_relic_agent, :error_collector_enabled, false)
+    NewRelic.Init.init_features()
     assert NewRelic.Config.feature?(:error_collector)
 
+    # Default
     System.delete_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED")
+    Application.delete_env(:new_relic_agent, :error_collector_enabled)
+    NewRelic.Init.init_features()
+    assert NewRelic.Config.feature?(:error_collector)
   end
 
   test "Parse multiple app names" do
-    System.put_env("NEW_RELIC_APP_NAME", "One Name; Two Names ")
-    assert "Two Names" in NewRelic.Config.app_name()
-    assert length(NewRelic.Config.app_name()) == 2
+    assert "Two" in NewRelic.Init.parse_app_names("One; Two")
+    assert length(NewRelic.Init.parse_app_names("One; Two")) == 2
 
-    System.put_env("NEW_RELIC_APP_NAME", "One Name")
-    assert length(NewRelic.Config.app_name()) == 1
-
-    System.delete_env("NEW_RELIC_APP_NAME")
+    assert length(NewRelic.Init.parse_app_names("One Name")) == 1
   end
 
   test "Parse labels" do
-    System.put_env("NEW_RELIC_LABELS", "key1:value1;key2:value2; key3 :value3;stray ")
-
-    labels = NewRelic.Config.labels()
+    labels = NewRelic.Init.parse_labels("key1:value1;key2:value2; key3 :value3;stray ")
 
     assert ["key3", "value3"] in labels
     assert length(labels) == 3
 
-    System.delete_env("NEW_RELIC_LABELS")
-
-    assert [] == NewRelic.Config.labels()
+    assert [] == NewRelic.Init.parse_labels(nil)
   end
 end

@@ -1,5 +1,112 @@
 ## CHANGELOG
 
+### `v1.23.0`
+
+Features
+* Adds support for Infinite Tracing. [#307](https://github.com/newrelic/elixir_agent/pull/307)
+
+### `v1.22.6`
+
+Tweaks
+* Add `ERTS Version` to environment values. [#302](https://github.com/newrelic/elixir_agent/pull/302)
+
+### `v1.22.5`
+
+Fixes
+* Handle formatting exit edge case. [#300](https://github.com/newrelic/elixir_agent/pull/300)
+* Work around CPU util shutdown issue. [#301](https://github.com/newrelic/elixir_agent/pull/301)
+
+### `v1.22.4`
+
+Features
+* Adds a macro for defining an Other Transaction. [#264](https://github.com/newrelic/elixir_agent/pull/264)
+
+Fixes
+* Handle when a string winds up in a stacktrace list. [#294](https://github.com/newrelic/elixir_agent/pull/294)
+* Properly handle boolean config option. [#295](https://github.com/newrelic/elixir_agent/pull/295)
+* Prevent error when bad attribute values get in. [#296](https://github.com/newrelic/elixir_agent/pull/296)
+
+### `v1.22.3`
+
+Tweaks
+* Make request queuing collection configurable [#292](https://github.com/newrelic/elixir_agent/pull/292)
+
+### `v1.22.2`
+
+Tweaks
+* Optimize metric aggregation with `:counter`
+
+### `v1.22.1`
+
+Fixes
+* Fix a compile time warning about `:scheduler` [#288](https://github.com/newrelic/elixir_agent/pull/288)
+* Avoid a shutdown bug in `:cpu_sup` [#287](https://github.com/newrelic/elixir_agent/pull/287)
+
+### `v1.22.0`
+
+Features
+* Report a custom metric. [#283](https://github.com/newrelic/elixir_agent/pull/283)
+
+------
+
+### `v1.21.2`
+
+Fixes
+* Handle encoding an unexpected nil sampled flag. [#282](https://github.com/newrelic/elixir_agent/pull/282)
+
+### `v1.21.1`
+
+Fixes
+* Properly handle a bad tracestate sampled / priority value. [#273](https://github.com/newrelic/elixir_agent/pull/273)
+
+### `v1.21.0`
+
+Features
+* Logs in context - connect `Logger` messages to the current Distributed Trace / Error Trace. [#272](https://github.com/newrelic/elixir_agent/pull/272)
+
+Logs in context requires Elixir 1.10 or greater.
+
+------
+
+### `v1.20.0`
+
+Removals:
+* Stop reporting redundant `ElixirAggregate` custom events for `Transaction`. [#276](https://github.com/newrelic/elixir_agent/pull/276)
+* Stop reporting redundant `ElixirAggregate` custom events for `FunctionTrace`. [#277](https://github.com/newrelic/elixir_agent/pull/277)
+
+Alternatives for querying this data are available and noted in the PRs.
+
+Fixes
+* Don't warn for untraced functions. [#269](https://github.com/newrelic/elixir_agent/pull/269) Thanks @barthez!
+* Spread the Samplers across the full sample cycle. [#278](https://github.com/newrelic/elixir_agent/pull/278)
+
+------
+
+### `v1.19.7`
+
+Tweaks
+* Log the number of events seen by harvesters. [#274](https://github.com/newrelic/elixir_agent/pull/274)
+
+### `v1.19.6`
+
+Fixes
+* Properly handle bad values in Custom and Span Events. [#267](https://github.com/newrelic/elixir_agent/pull/267) & [#268](https://github.com/newrelic/elixir_agent/pull/268)
+
+### `v1.19.5`
+
+Fixes
+* Fix memory leak in long running transactions. [#263](https://github.com/newrelic/elixir_agent/pull/263) Thanks @mopp!
+
+### `v1.19.4`
+
+Fixes
+* Fix tracer compilation bug. [#255](https://github.com/newrelic/elixir_agent/pull/255)
+
+### `v1.19.3`
+
+Features
+* Report more Error metrics based on transaction type. [#251](https://github.com/newrelic/elixir_agent/pull/251)
+
 ### `v1.19.2`
 
 Tweaks

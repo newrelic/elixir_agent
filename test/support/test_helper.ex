@@ -52,28 +52,32 @@ defmodule TestHelper do
     {:ok, %{body: to_string(body)}}
   end
 
-  alias NewRelic.Harvest.Collector
-
   def simulate_agent_enabled(_context) do
-    Process.whereis(Collector.TaskSupervisor) ||
+    Process.whereis(Harvest.TaskSupervisor) ||
       NewRelic.EnabledSupervisor.start_link(:ok)
 
     :ok
   end
 
   def simulate_agent_run(_context) do
-    prev_key = Collector.AgentRun.trusted_account_key()
-    Collector.AgentRun.store(:trusted_account_key, "190")
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+    reset_agent_run = TestHelper.update(:nr_agent_run, trusted_account_key: "190")
     send(NewRelic.DistributedTrace.BackoffSampler, :reset)
 
     ExUnit.Callbacks.on_exit(fn ->
-      Collector.AgentRun.store(:trusted_account_key, prev_key)
-      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-      System.delete_env("NEW_RELIC_LICENSE_KEY")
+      reset_config.()
+      reset_agent_run.()
     end)
 
     :ok
+  end
+
+  def update(key, updates) do
+    original = :persistent_term.get(key, %{})
+    updates = Map.new(updates)
+
+    :persistent_term.put(key, Map.merge(original, updates))
+
+    fn -> :persistent_term.put(key, original) end
   end
 end

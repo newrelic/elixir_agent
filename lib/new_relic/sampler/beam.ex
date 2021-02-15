@@ -12,13 +12,16 @@ defmodule NewRelic.Sampler.Beam do
   end
 
   def init(:ok) do
+    :erlang.system_flag(:scheduler_wall_time, true)
+
     # throw away first value
     :cpu_sup.util()
+    :erlang.statistics(:scheduler_wall_time)
 
     NewRelic.sample_process()
 
     if NewRelic.Config.enabled?(),
-      do: Process.send_after(self(), :report, NewRelic.Sampler.Reporter.random_offset())
+      do: Process.send_after(self(), :report, NewRelic.Sampler.Reporter.random_sample_offset())
 
     {:ok, %{previous: take_sample()}}
   end
@@ -67,7 +70,7 @@ defmodule NewRelic.Sampler.Beam do
       memory_binary_mb: memory[:binary] / @mb,
       memory_code_mb: memory[:code] / @mb,
       atom_count: :erlang.system_info(:atom_count),
-      ets_count: safe_check(:erlang, :system_info, [:ets_count]),
+      ets_count: :erlang.system_info(:ets_count),
       port_count: :erlang.system_info(:port_count),
       process_count: :erlang.system_info(:process_count),
       atom_limit: :erlang.system_info(:atom_limit),
@@ -75,17 +78,10 @@ defmodule NewRelic.Sampler.Beam do
       port_limit: :erlang.system_info(:port_limit),
       process_limit: :erlang.system_info(:process_limit),
       schedulers: :erlang.system_info(:schedulers),
-      scheduler_utilization: safe_check(:scheduler, :sample, []),
+      scheduler_utilization: :erlang.statistics(:scheduler_wall_time) |> Enum.sort(),
       cpu_count: :erlang.system_info(:logical_processors),
       cpu_utilization: :cpu_sup.util()
     }
-  end
-
-  def safe_check(m, f, a) do
-    # Some checks only available in OTP 21+
-    apply(m, f, a)
-  rescue
-    _ -> nil
   end
 
   defp delta(previous, current) do
@@ -99,10 +95,15 @@ defmodule NewRelic.Sampler.Beam do
     }
   end
 
-  defp delta(:util, nil, nil), do: nil
-
   defp delta(:util, previous, current) do
-    [{:total, scheduler_utilization, _} | _] = :scheduler.utilization(previous, current)
-    scheduler_utilization
+    {active, total} =
+      Enum.zip(previous, current)
+      |> Enum.map(fn {{n, a0, t0}, {n, a1, t1}} -> {n, a1 - a0, t1 - t0} end)
+      |> Enum.reduce({0, 0}, fn {_n, d_a, d_t}, {acc_a, acc_t} -> {acc_a + d_a, acc_t + d_t} end)
+
+    safe_div(active, total)
   end
+
+  defp safe_div(_, 0.0), do: 0.0
+  defp safe_div(a, b), do: a / b
 end

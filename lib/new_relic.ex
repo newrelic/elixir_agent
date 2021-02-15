@@ -53,7 +53,7 @@ defmodule NewRelic do
   defdelegate incr_attributes(attrs), to: NewRelic.Transaction.Reporter
 
   @doc """
-  Start a new "Other" Transaction.
+  Start an "Other" Transaction.
 
   This will begin monitoring the current process as an "Other" Transaction
   (ie: Not a "Web" Transaction). The first argument will be considered
@@ -91,12 +91,27 @@ defmodule NewRelic do
   defdelegate stop_transaction(), to: NewRelic.Transaction
 
   @doc """
+  Define an "Other" transaction within the given block. The return value of
+  the block is returned.
+
+  See `start_transaction` and `stop_transaction` for more details.
+  """
+  defmacro other_transaction(category, name, do: block) do
+    quote do
+      NewRelic.start_transaction(unquote(category), unquote(name))
+      res = unquote(block)
+      NewRelic.stop_transaction()
+      res
+    end
+  end
+
+  @doc """
   Call within a transaction to prevent it from reporting.
 
   ```elixir
-  def index(conn, %{}) do
+  def index(conn, _) do
     NewRelic.ignore_transaction()
-    send_resp(conn, :ok, '')
+    send_resp(conn, 200, "Health check OK")
   end
   ```
   """
@@ -129,9 +144,7 @@ defmodule NewRelic do
   """
   defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
 
-  @doc """
-  Deprecated, please use `distributed_trace_headers`
-  """
+  @deprecated "Use distributed_trace_headers/1 instead"
   defdelegate create_distributed_trace_payload(type),
     to: NewRelic.DistributedTrace,
     as: :distributed_trace_headers
@@ -171,6 +184,16 @@ defmodule NewRelic do
   defdelegate report_custom_event(type, attributes),
     to: NewRelic.Harvest.Collector.CustomEvent.Harvester
 
+  @doc """
+  Report a Custom metric.
+
+  ```elixir
+  NewRelic.report_custom_metric("My/Metric", 123)
+  ```
+  """
+  defdelegate report_custom_metric(name, value),
+    to: NewRelic.Harvest.Collector.Metric.Harvester
+
   @doc false
   defdelegate report_aggregate(meta, values), to: NewRelic.Aggregate.Reporter
 
@@ -178,7 +201,7 @@ defmodule NewRelic do
   defdelegate report_sample(category, values), to: NewRelic.Sampler.Reporter
 
   @doc false
-  defdelegate report_span(span), to: NewRelic.Harvest.Collector.SpanEvent.Harvester
+  defdelegate report_span(span), to: NewRelic.Span.Reporter
 
   @doc false
   defdelegate report_metric(identifier, values), to: NewRelic.Harvest.Collector.Metric.Harvester

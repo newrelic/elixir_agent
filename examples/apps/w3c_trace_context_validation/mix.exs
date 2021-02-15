@@ -25,6 +25,7 @@ defmodule W3cTraceContextValidation.MixProject do
   defp deps do
     [
       {:new_relic_agent, path: "../../../"},
+      {:plug_cowboy, "~> 2.0"},
       {:httpoison, "~> 1.0"}
     ]
   end

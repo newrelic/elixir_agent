@@ -1,9 +1,18 @@
-defmodule NewRelic.Harvest.Collector.MetricData do
+defmodule NewRelic.Metric.MetricData do
   # Heper functions for generating Metrics with the correct timeslice values
 
   @moduledoc false
 
   alias NewRelic.Metric
+
+  def transform({:custom, name}, count: count, value: value),
+    do: %Metric{
+      name: join(["Custom", name]),
+      call_count: count,
+      total_call_time: value,
+      min_call_time: value,
+      max_call_time: value
+    }
 
   def transform(:http_dispatcher, duration_s: duration_s),
     do: %Metric{
@@ -368,6 +377,18 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         max_call_time: duration_s
       }
 
+  def transform(:error, type: type, error_count: error_count),
+    do: [
+      %Metric{
+        name: "Errors/all#{type}",
+        call_count: error_count
+      },
+      %Metric{
+        name: :"Errors/all",
+        call_count: error_count
+      }
+    ]
+
   def transform(:error, error_count: error_count),
     do: %Metric{
       name: :"Errors/all",
@@ -378,14 +399,18 @@ defmodule NewRelic.Harvest.Collector.MetricData do
     do: %Metric{
       name: :"Memory/Physical",
       call_count: 1,
-      total_call_time: memory_mb
+      total_call_time: memory_mb,
+      min_call_time: memory_mb,
+      max_call_time: memory_mb
     }
 
   def transform(:cpu, utilization: utilization),
     do: %Metric{
       name: :"CPU/User Time",
       call_count: 1,
-      total_call_time: utilization
+      total_call_time: utilization,
+      min_call_time: utilization,
+      max_call_time: utilization
     }
 
   def transform(:apdex, apdex: :satisfying, threshold: t),
@@ -409,14 +434,46 @@ defmodule NewRelic.Harvest.Collector.MetricData do
       }
     ]
 
-  def transform({:supportability, harvester}, reservoir_size: reservoir_size),
+  def transform({:supportability, :infinite_tracing}, spans_seen: spans_seen),
     do: [
       %Metric{
-        name: join(["Supportability/EventHarvest", harvester, "HarvestLimit"]),
-        call_count: 1,
-        total_call_time: reservoir_size
+        name: :"Supportability/InfiniteTracing/Span/Seen",
+        call_count: spans_seen
       }
     ]
+
+  def transform({:supportability, :infinite_tracing}, harvest_size: harvest_size),
+    do: [
+      %Metric{
+        name: :"Supportability/InfiniteTracing/Span/Sent",
+        call_count: harvest_size
+      },
+      %Metric{
+        name: :"Supportability/Elixir/TelemetrySdk/Harvest/Span",
+        call_count: 1
+      },
+      %Metric{
+        name: :"Supportability/Harvest",
+        call_count: 1
+      }
+    ]
+
+  def transform({:supportability, harvester},
+        events_seen: events_seen,
+        reservoir_size: reservoir_size
+      ),
+      do: [
+        %Metric{
+          name: join(["Supportability/Elixir/Collector/HarvestSeen", harvester]),
+          call_count: 1,
+          total_call_time: events_seen
+        },
+        %Metric{
+          name: join(["Supportability/EventHarvest", harvester, "HarvestLimit"]),
+          call_count: 1,
+          total_call_time: reservoir_size
+        }
+      ]
 
   def transform({:supportability, harvester}, harvest_size: harvest_size),
     do: [
@@ -424,10 +481,6 @@ defmodule NewRelic.Harvest.Collector.MetricData do
         name: join(["Supportability/Elixir/Collector/HarvestSize", harvester]),
         call_count: 1,
         total_call_time: harvest_size
-      },
-      %Metric{
-        name: :"Supportability/Elixir/Harvest",
-        call_count: 1
       },
       %Metric{
         name: :"Supportability/Harvest",
@@ -465,6 +518,12 @@ defmodule NewRelic.Harvest.Collector.MetricData do
   def transform(:supportability, [:trace_context, :tracestate, :non_new_relic]),
     do: %Metric{
       name: :"Supportability/TraceContext/TraceState/NoNrEntry",
+      call_count: 1
+    }
+
+  def transform(:supportability, [:trace_context, :tracestate, :invalid]),
+    do: %Metric{
+      name: :"Supportability/TraceContext/TraceState/Parse/Exception",
       call_count: 1
     }
 

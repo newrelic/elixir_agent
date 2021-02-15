@@ -7,12 +7,13 @@ defmodule NewRelic.EnabledSupervisor do
   @moduledoc false
 
   def start_link(_) do
-    Supervisor.start_link(__MODULE__, :ok)
+    Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   def init(:ok) do
     children = [
       NewRelic.Harvest.Supervisor,
+      NewRelic.LogsInContext.Supervisor,
       NewRelic.Sampler.Supervisor,
       NewRelic.Error.Supervisor,
       NewRelic.Aggregate.Supervisor

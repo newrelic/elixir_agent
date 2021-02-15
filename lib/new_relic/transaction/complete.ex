@@ -25,7 +25,6 @@ defmodule NewRelic.Transaction.Complete do
     report_transaction_metric(tx_attrs)
     report_queue_time_metric(tx_attrs)
     report_transaction_metrics(tx_attrs, tx_metrics)
-    report_aggregate(tx_attrs)
     report_caller_metric(tx_attrs)
     report_apdex_metric(apdex)
     report_span_events(span_events)
@@ -126,7 +125,15 @@ defmodule NewRelic.Transaction.Complete do
     top_children = List.wrap(function_segments[inspect(pid)])
     segment_tree = Map.update!(segment_tree, :children, &(&1 ++ top_children))
 
-    span_events = extract_span_events(tx_attrs, pid, process_spawns, process_names, process_exits)
+    span_events =
+      extract_span_events(
+        NewRelic.Config.feature(:infinite_tracing),
+        tx_attrs,
+        pid,
+        process_spawns,
+        process_names,
+        process_exits
+      )
 
     apdex = calculate_apdex(tx_attrs, tx_error)
 
@@ -145,12 +152,17 @@ defmodule NewRelic.Transaction.Complete do
     {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
   end
 
-  defp extract_span_events(%{sampled: true} = tx_attrs, pid, spawns, names, exits) do
+  defp extract_span_events(:infinite, tx_attrs, pid, spawns, names, exits) do
+    spawned_process_span_events(tx_attrs, spawns, names, exits)
+    |> add_spansactions(tx_attrs, pid)
+  end
+
+  defp extract_span_events(:sampling, %{sampled: true} = tx_attrs, pid, spawns, names, exits) do
     spawned_process_span_events(tx_attrs, spawns, names, exits)
     |> add_root_process_span_event(tx_attrs, pid)
   end
 
-  defp extract_span_events(_tx_attrs, _pid, _spawns, _names, _exits) do
+  defp extract_span_events(_trace_mode, _tx_attrs, _pid, _spawns, _names, _exits) do
     []
   end
 
@@ -186,6 +198,50 @@ defmodule NewRelic.Transaction.Complete do
           }
           |> maybe_add(:tracingVendors, tx_attrs[:tracingVendors])
           |> maybe_add(:trustedParentId, tx_attrs[:trustedParentId])
+      }
+      | spans
+    ]
+  end
+
+  @spansaction_exclude_attrs [
+    :guid,
+    :traceId,
+    :start_time,
+    :end_time,
+    :parentId,
+    :parentSpanId,
+    :sampled,
+    :priority,
+    :tracingVendors,
+    :trustedParentId
+  ]
+  defp add_spansactions(spans, tx_attrs, pid) do
+    [
+      %NewRelic.Span.Event{
+        guid: tx_attrs[:guid],
+        transaction_id: tx_attrs[:guid],
+        trace_id: tx_attrs[:traceId],
+        parent_id: tx_attrs[:parentSpanId],
+        name: tx_attrs[:name],
+        category: "Transaction",
+        entry_point: true,
+        timestamp: tx_attrs[:start_time],
+        duration: tx_attrs[:duration_s],
+        category_attributes:
+          Map.drop(tx_attrs, @spansaction_exclude_attrs)
+          |> maybe_add(:tracingVendors, tx_attrs[:tracingVendors])
+          |> maybe_add(:trustedParentId, tx_attrs[:trustedParentId])
+      },
+      %NewRelic.Span.Event{
+        guid: DistributedTrace.generate_guid(pid: pid),
+        transaction_id: tx_attrs[:guid],
+        trace_id: tx_attrs[:traceId],
+        category: "generic",
+        name: "Transaction Root Process",
+        parent_id: tx_attrs[:guid],
+        timestamp: tx_attrs[:start_time],
+        duration: tx_attrs[:duration_s],
+        category_attributes: %{pid: inspect(pid)}
       }
       | spans
     ]
@@ -334,7 +390,7 @@ defmodule NewRelic.Transaction.Complete do
   end
 
   defp report_span_events(span_events) do
-    Enum.each(span_events, &Collector.SpanEvent.Harvester.report_span_event/1)
+    Enum.each(span_events, &NewRelic.report_span/1)
   end
 
   defp report_transaction_event(%{transactionType: :Other} = tx_attrs) do
@@ -413,7 +469,7 @@ defmodule NewRelic.Transaction.Complete do
 
     unless expected do
       NewRelic.report_metric({:supportability, :error_event}, error_count: 1)
-      NewRelic.report_metric(:error, error_count: 1)
+      NewRelic.report_metric(:error, type: tx_attrs.transactionType, error_count: 1)
     end
   end
 
@@ -512,22 +568,6 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
-  defp report_aggregate(%{transactionType: :Other} = tx) do
-    NewRelic.report_aggregate(%{type: :OtherTransaction, name: tx[:name]}, %{
-      duration_us: tx.duration_us,
-      duration_ms: tx.duration_ms,
-      call_count: 1
-    })
-  end
-
-  defp report_aggregate(tx) do
-    NewRelic.report_aggregate(%{type: :Transaction, name: tx[:name]}, %{
-      duration_us: tx.duration_us,
-      duration_ms: tx.duration_ms,
-      call_count: 1
-    })
-  end
-
   def report_transaction_metric(tx) do
     NewRelic.report_metric({:transaction, tx.name},
       type: tx.transactionType,
@@ -622,7 +662,8 @@ defmodule NewRelic.Transaction.Complete do
     NewRelic.report_metric(:apdex, apdex: apdex, threshold: apdex_t())
   end
 
-  def apdex_t, do: Collector.AgentRun.lookup(:apdex_t)
+  @default_apdex_t 2.0
+  def apdex_t, do: Collector.AgentRun.apdex_t() || @default_apdex_t
 
   defp parse_error_expected(%{expected: true}), do: true
   defp parse_error_expected(_), do: false

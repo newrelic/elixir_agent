@@ -131,6 +131,8 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
            priority,
            timestamp
          ] <- String.split(value, "-"),
+         {sampled, priority} <-
+           decode_sampled_priority(sampled, priority),
          [
            trusted_account_key,
            _
@@ -146,14 +148,15 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
             app_id: app_id,
             span_id: span_id,
             transaction_id: transaction_id,
-            sampled: sampled |> decode_sampled(),
-            priority: priority |> decode_priority(),
+            sampled: sampled,
+            priority: priority,
             timestamp: timestamp |> String.to_integer()
           }
         }
       ]
     else
       _ ->
+        NewRelic.report_metric(:supportability, [:trace_context, :tracestate, :invalid])
         NewRelic.log(:debug, "Bad W3C NR tracestate: `#{key}`: `#{value}`")
         []
     end
@@ -188,8 +191,18 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
   defp encode_type("Browser"), do: "1"
   defp encode_type("Mobile"), do: "2"
 
+  defp decode_sampled_priority("", ""), do: {nil, nil}
+  defp decode_sampled_priority("", _), do: :invalid
+  defp decode_sampled_priority(_, ""), do: :invalid
+
+  defp decode_sampled_priority(sampled, priority) do
+    {decode_sampled(sampled), decode_priority(priority)}
+  end
+
   defp decode_priority(""), do: nil
   defp decode_priority(priority), do: String.to_float(priority)
+
+  defp encode_priority(nil), do: ""
 
   defp encode_priority(priority),
     do: priority |> :erlang.float_to_binary([:compact, decimals: 6])
@@ -200,4 +213,5 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
 
   defp encode_sampled(true), do: "1"
   defp encode_sampled(false), do: "0"
+  defp encode_sampled(nil), do: ""
 end

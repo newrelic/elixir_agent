@@ -1,5 +1,7 @@
 defmodule MetricHarvesterTest do
   use ExUnit.Case
+
+  alias NewRelic.Harvest
   alias NewRelic.Harvest.Collector
 
   test "Harvester - collect and aggregate some metrics" do
@@ -23,7 +25,7 @@ defmodule MetricHarvesterTest do
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
-    Collector.HarvestCycle.send_harvest(Collector.Metric.HarvesterSupervisor, harvester)
+    Harvest.HarvestCycle.send_harvest(Collector.Metric.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
   end
 
@@ -31,13 +33,13 @@ defmodule MetricHarvesterTest do
     Application.put_env(:new_relic_agent, :data_report_period, 300)
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
-    first = Collector.HarvestCycle.current_harvester(Collector.Metric.HarvestCycle)
+    first = Harvest.HarvestCycle.current_harvester(Collector.Metric.HarvestCycle)
     Process.monitor(first)
 
     # Wait until harvest swap
     assert_receive {:DOWN, _ref, _, ^first, :shutdown}, 1000
 
-    second = Collector.HarvestCycle.current_harvester(Collector.Metric.HarvestCycle)
+    second = Harvest.HarvestCycle.current_harvester(Collector.Metric.HarvestCycle)
     Process.monitor(second)
 
     refute first == second
@@ -55,7 +57,7 @@ defmodule MetricHarvesterTest do
 
     harvester =
       Collector.Metric.HarvestCycle
-      |> Collector.HarvestCycle.current_harvester()
+      |> Harvest.HarvestCycle.current_harvester()
 
     assert :ok == GenServer.call(harvester, :send_harvest)
 

@@ -40,7 +40,10 @@ defmodule NewRelic.Util.Error do
     do:
       stacktrace
       |> prepend_initial_call(initial_call)
-      |> Enum.map(&Exception.format_stacktrace_entry/1)
+      |> Enum.map(fn
+        line when is_binary(line) -> line
+        entry when is_tuple(entry) -> Exception.format_stacktrace_entry(entry)
+      end)
 
   defp prepend_initial_call(stacktrace, {mod, fun, args}),
     do: stacktrace ++ [{mod, fun, args, []}]

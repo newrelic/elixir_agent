@@ -3,13 +3,11 @@ defmodule OtherTransactionTest do
   alias NewRelic.Harvest.Collector
 
   setup do
-    System.put_env("NEW_RELIC_HARVEST_ENABLED", "true")
-    System.put_env("NEW_RELIC_LICENSE_KEY", "foo")
+    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
     send(NewRelic.DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
-      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-      System.delete_env("NEW_RELIC_LICENSE_KEY")
+      reset_config.()
     end)
 
     :ok
@@ -114,10 +112,33 @@ defmodule OtherTransactionTest do
     refute NewRelic.DistributedTrace.Tracker.fetch(task.pid)
   end
 
+  test "NewRelic.other_transaction macro" do
+    require NewRelic
+
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    task =
+      Task.async(fn ->
+        NewRelic.other_transaction "Category", "ViaMacro" do
+          Process.sleep(100)
+
+          :test_value
+        end
+      end)
+
+    assert :test_value == Task.await(task)
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+    assert TestHelper.find_metric(metrics, "OtherTransaction/Category/ViaMacro")
+
+    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
+  end
+
   @tag :capture_log
   test "Error in Other Transaction" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+    TestHelper.restart_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
     start_supervised({Task.Supervisor, name: TestSupervisor})
 
     {:exit, {_exception, _stacktrace}} =
@@ -145,6 +166,12 @@ defmodule OtherTransactionTest do
 
     assert event[:error]
 
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestHelper.find_metric(metrics, "Errors/all")
+    assert TestHelper.find_metric(metrics, "Errors/allOther")
+
+    TestHelper.pause_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end

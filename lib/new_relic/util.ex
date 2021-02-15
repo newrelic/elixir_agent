@@ -56,7 +56,15 @@ defmodule NewRelic.Util do
     [{key, value}]
   end
 
-  def coerce_attributes(attrs) do
+  def coerce_attributes(attrs) when is_map(attrs) do
+    do_coerce_attributes(attrs) |> Map.new()
+  end
+
+  def coerce_attributes(attrs) when is_list(attrs) do
+    do_coerce_attributes(attrs)
+  end
+
+  defp do_coerce_attributes(attrs) do
     Enum.flat_map(attrs, fn
       {_key, nil} ->
         []
@@ -95,8 +103,9 @@ defmodule NewRelic.Util do
     [
       ["Language", "Elixir"],
       ["Elixir Version", build_info[:version]],
-      ["OTP Version", build_info[:otp_release]],
-      ["Elixir build", build_info[:build]]
+      ["Elixir build", build_info[:build]],
+      ["OTP Version", :erlang.system_info(:otp_release) |> to_string],
+      ["ERTS Version", :erlang.system_info(:version) |> to_string]
     ]
   end
 
@@ -165,5 +174,14 @@ defmodule NewRelic.Util do
 
   defp get_hostname do
     with {:ok, name} <- :inet.gethostname(), do: to_string(name)
+  end
+
+  def uuid4() do
+    "#{u(4)}-#{u(2)}-4a#{u(1)}-#{u(2)}-#{u(6)}"
+  end
+
+  defp u(len) do
+    :crypto.strong_rand_bytes(len)
+    |> Base.encode16(case: :lower)
   end
 end

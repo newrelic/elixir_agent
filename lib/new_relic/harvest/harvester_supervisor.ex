@@ -1,4 +1,4 @@
-defmodule NewRelic.Harvest.Collector.HarvesterSupervisor do
+defmodule NewRelic.Harvest.HarvesterSupervisor do
   use DynamicSupervisor
 
   @moduledoc false
