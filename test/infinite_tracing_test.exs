@@ -165,9 +165,9 @@ defmodule InfiniteTracingTest do
         attr[:name] == "Process"
       end)
 
-    nested_span =
+    nested_external_span =
       Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "InfiniteTracingTest.Traced.http_request/0"
+        attr[:name] == "External/example.com/HTTPoison/GET"
       end)
 
     [[_intrinsics, tx_event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
@@ -179,7 +179,7 @@ defmodule InfiniteTracingTest do
     assert function_span[:"trace.id"] == @trace_id
     assert nested_function_span[:"trace.id"] == @trace_id
     assert task_span[:"trace.id"] == @trace_id
-    assert nested_span[:"trace.id"] == @trace_id
+    assert nested_external_span[:"trace.id"] == @trace_id
 
     # We generate a "Transaction" span with the same ID as the Transaction
     assert tx_event[:guid] == tx_span[:id]
@@ -190,7 +190,7 @@ defmodule InfiniteTracingTest do
     assert function_span.attributes[:transactionId] == tx_event[:guid]
     assert nested_function_span.attributes[:transactionId] == tx_event[:guid]
     assert task_span.attributes[:transactionId] == tx_event[:guid]
-    assert nested_span.attributes[:transactionId] == tx_event[:guid]
+    assert nested_external_span.attributes[:transactionId] == tx_event[:guid]
 
     # The Transaction is new, not the incoming parent Transaction
     refute tx_event[:guid] == @parent_transaction_id
@@ -208,20 +208,20 @@ defmodule InfiniteTracingTest do
     assert function_span.attributes[:"parent.id"] == tx_root_process_span[:id]
     assert nested_function_span.attributes[:"parent.id"] == function_span[:id]
     assert task_span.attributes[:"parent.id"] == tx_root_process_span[:id]
-    assert nested_span.attributes[:"parent.id"] == task_span[:id]
+    assert nested_external_span.attributes[:"parent.id"] == task_span[:id]
 
     # With Infinite Tracing, we don't do sampled or priority on Spans
     refute Map.has_key?(tx_root_process_span, :sampled)
     refute Map.has_key?(function_span, :sampled)
     refute Map.has_key?(nested_function_span, :sampled)
     refute Map.has_key?(task_span, :sampled)
-    refute Map.has_key?(nested_span, :sampled)
+    refute Map.has_key?(nested_external_span, :sampled)
 
     refute Map.has_key?(tx_root_process_span, :priority)
     refute Map.has_key?(function_span, :priority)
     refute Map.has_key?(nested_function_span, :priority)
     refute Map.has_key?(task_span, :priority)
-    refute Map.has_key?(nested_span, :priority)
+    refute Map.has_key?(nested_external_span, :priority)
 
     # But the Transaction Event still gets sampled and priority
     assert tx_event[:sampled] == true
@@ -232,15 +232,19 @@ defmodule InfiniteTracingTest do
     assert function_span.attributes[:"duration.ms"] < 20
     assert task_span.attributes[:"duration.ms"] >= 15
     assert task_span.attributes[:"duration.ms"] < 25
-    assert nested_span.attributes[:"duration.ms"] >= 10
-    assert nested_span.attributes[:"duration.ms"] < 20
+    assert nested_external_span.attributes[:"duration.ms"] >= 10
+    assert nested_external_span.attributes[:"duration.ms"] < 20
 
-    assert nested_span.attributes[:category] == "http"
-    assert nested_span.attributes[:"http.url"] == "http://example.com"
-    assert nested_span.attributes[:"http.method"] == "GET"
-    assert nested_span.attributes[:"span.kind"] == "client"
-    assert nested_span.attributes[:component] == "HTTPoison"
-    assert nested_span.attributes[:args] |> is_binary
+    assert nested_external_span.attributes[:category] == "http"
+    assert nested_external_span.attributes[:name] == "External/example.com/HTTPoison/GET"
+    assert nested_external_span.attributes[:"http.url"] == "http://example.com"
+    assert nested_external_span.attributes[:"http.method"] == "GET"
+    assert nested_external_span.attributes[:"span.kind"] == "client"
+    assert nested_external_span.attributes[:component] == "HTTPoison"
+    assert nested_external_span.attributes[:"trace.args"] |> is_binary
+
+    assert nested_external_span.attributes[:"trace.function"] ==
+             "InfiniteTracingTest.Traced.http_request/0"
 
     assert nested_function_span.attributes[:category] == "generic"
     assert nested_function_span.attributes[:name] == "InfiniteTracingTest.Traced.do_hello/0"

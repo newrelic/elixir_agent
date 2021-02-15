@@ -379,7 +379,7 @@ defmodule TransactionTraceTest do
         sp.name == "TransactionTraceTest.ExternalService.secret_query/1"
       end)
 
-    assert span[:args] == "[DISABLED]"
+    assert span[:"trace.args"] == "[DISABLED]"
 
     [span, _, _] =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
