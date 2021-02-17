@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.23.2`
+
+Tweaks
+* Minor change to External span tracer attributes. [#311](https://github.com/newrelic/elixir_agent/pull/311)
+
 ### `v1.23.1`
 
 Tweaks
