@@ -81,8 +81,8 @@ defmodule NewRelic.Tracer.Report do
           category: "http",
           attributes:
             Map.merge(span_attrs, %{
-              "trace.function": function_arity_name,
-              "trace.args": args
+              "tracer.function": function_arity_name,
+              "tracer.args": args
             })
         )
 
@@ -119,7 +119,7 @@ defmodule NewRelic.Tracer.Report do
           name: function_arity_name,
           edge: [span: id, parent: parent_id],
           category: "http",
-          attributes: Map.put(span_attrs, :"trace.args", args)
+          attributes: Map.put(span_attrs, :"tracer.args", args)
         )
 
         NewRelic.incr_attributes(
