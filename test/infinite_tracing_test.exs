@@ -13,7 +13,8 @@ defmodule InfiniteTracingTest do
       TestHelper.update(:nr_config,
         license_key: "dummy_key",
         harvest_enabled: true,
-        trace_mode: :infinite
+        trace_mode: :infinite,
+        automatic_attributes: %{auto: "attribute"}
       )
 
     send(DistributedTrace.BackoffSampler, :reset)
@@ -248,6 +249,10 @@ defmodule InfiniteTracingTest do
 
     assert nested_function_span.attributes[:category] == "generic"
     assert nested_function_span.attributes[:name] == "InfiniteTracingTest.Traced.do_hello/0"
+
+    # Automatic attributes assigned to the Transaction and Spansaction
+    assert tx_event[:auto] == "attribute"
+    assert tx_span.attributes[:auto] == "attribute"
 
     # Ensure these will encode properly
     Jason.encode!(tx_event)
