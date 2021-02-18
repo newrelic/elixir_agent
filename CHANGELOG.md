@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.23.3`
+
+Tweaks
+* Add automatic attributes to the Spansaction. [#312](https://github.com/newrelic/elixir_agent/pull/312)
+* Track tracer reductions. [#313](https://github.com/newrelic/elixir_agent/pull/313)
+
 ### `v1.23.2`
 
 Tweaks
