@@ -242,6 +242,8 @@ defmodule SpanEventTest do
 
     assert function_event[:duration] > 0.009
     assert function_event[:duration] < 0.020
+    assert function_event[:"tracer.reductions"] |> is_number
+    assert function_event[:"tracer.reductions"] > 1
 
     assert tx_root_process_event[:parentId] == "5f474d64b9cc9b2a"
     assert function_event[:parentId] == tx_root_process_event[:guid]
@@ -258,9 +260,13 @@ defmodule SpanEventTest do
     assert nested_external_event[:"http.method"] == "GET"
     assert nested_external_event[:"span.kind"] == "client"
     assert nested_external_event[:component] == "HTTPoison"
+    assert nested_external_event[:"tracer.reductions"] |> is_number
+    assert nested_external_event[:"tracer.reductions"] > 1
 
     assert nested_function_event[:category] == "generic"
     assert nested_function_event[:name] == "SpanEventTest.Traced.do_hello/0"
+    assert nested_function_event[:"tracer.reductions"] |> is_number
+    assert nested_function_event[:"tracer.reductions"] > 1
 
     # Ensure these will encode properly
     Jason.encode!(tx_event)

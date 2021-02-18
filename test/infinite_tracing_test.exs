@@ -231,11 +231,14 @@ defmodule InfiniteTracingTest do
     # Other Span attributes get wired up correctly
     assert function_span.attributes[:"duration.ms"] >= 10
     assert function_span.attributes[:"duration.ms"] < 20
+    assert function_span.attributes[:"tracer.reductions"] |> is_number
+    assert function_span.attributes[:"tracer.reductions"] > 1
+
     assert task_span.attributes[:"duration.ms"] >= 15
     assert task_span.attributes[:"duration.ms"] < 25
+
     assert nested_external_span.attributes[:"duration.ms"] >= 10
     assert nested_external_span.attributes[:"duration.ms"] < 20
-
     assert nested_external_span.attributes[:category] == "http"
     assert nested_external_span.attributes[:name] == "External/example.com/HTTPoison/GET"
     assert nested_external_span.attributes[:"http.url"] == "http://example.com"
@@ -243,12 +246,16 @@ defmodule InfiniteTracingTest do
     assert nested_external_span.attributes[:"span.kind"] == "client"
     assert nested_external_span.attributes[:component] == "HTTPoison"
     assert nested_external_span.attributes[:"tracer.args"] |> is_binary
+    assert nested_external_span.attributes[:"tracer.reductions"] |> is_number
+    assert nested_external_span.attributes[:"tracer.reductions"] > 1
 
     assert nested_external_span.attributes[:"tracer.function"] ==
              "InfiniteTracingTest.Traced.http_request/0"
 
     assert nested_function_span.attributes[:category] == "generic"
     assert nested_function_span.attributes[:name] == "InfiniteTracingTest.Traced.do_hello/0"
+    assert nested_function_span.attributes[:"tracer.reductions"] |> is_number
+    assert nested_function_span.attributes[:"tracer.reductions"] > 1
 
     # Automatic attributes assigned to the Transaction and Spansaction
     assert tx_event[:auto] == "attribute"

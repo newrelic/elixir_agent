@@ -3,10 +3,9 @@ defmodule NewRelic.Tracer.Report do
 
   # Helper functions that will report traced function events in their various forms
   #  - Transaction Trace segments
-  #  - Distributed Trace spans
+  #  - Distributed Trace Span events
   #  - Transaction attributes
   #  - Metrics
-  #  - Aggregate metric-like NRDB events
 
   @moduledoc false
 
@@ -43,7 +42,7 @@ defmodule NewRelic.Tracer.Report do
          name,
          pid,
          {id, parent_id},
-         {start_time, start_time_mono, end_time_mono, _child_duration_ms}
+         {start_time, start_time_mono, end_time_mono, _child_duration_ms, reductions}
        ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
@@ -82,7 +81,8 @@ defmodule NewRelic.Tracer.Report do
           attributes:
             Map.merge(span_attrs, %{
               "tracer.function": function_arity_name,
-              "tracer.args": args
+              "tracer.args": args,
+              "tracer.reductions": reductions
             })
         )
 
@@ -119,7 +119,11 @@ defmodule NewRelic.Tracer.Report do
           name: function_arity_name,
           edge: [span: id, parent: parent_id],
           category: "http",
-          attributes: Map.put(span_attrs, :"tracer.args", args)
+          attributes:
+            Map.merge(span_attrs, %{
+              "tracer.args": args,
+              "tracer.reductions": reductions
+            })
         )
 
         NewRelic.incr_attributes(
@@ -152,7 +156,7 @@ defmodule NewRelic.Tracer.Report do
          name,
          pid,
          {id, parent_id},
-         {start_time, start_time_mono, end_time_mono, child_duration_ms}
+         {start_time, start_time_mono, end_time_mono, child_duration_ms, reductions}
        ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
@@ -182,7 +186,11 @@ defmodule NewRelic.Tracer.Report do
       name: function_name,
       edge: [span: id, parent: parent_id],
       category: "generic",
-      attributes: Map.put(NewRelic.DistributedTrace.get_span_attrs(), :args, args)
+      attributes:
+        Map.merge(NewRelic.DistributedTrace.get_span_attrs(), %{
+          "tracer.args": args,
+          "tracer.reductions": reductions
+        })
     )
 
     NewRelic.report_metric(
