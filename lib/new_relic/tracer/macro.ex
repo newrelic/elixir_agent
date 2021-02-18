@@ -187,6 +187,7 @@ defmodule NewRelic.Tracer.Macro do
 
       start_time = System.system_time()
       start_time_mono = System.monotonic_time()
+      [reductions: start_reductions] = Process.info(self(), [:reductions])
 
       try do
         unquote(body)
@@ -204,6 +205,7 @@ defmodule NewRelic.Tracer.Macro do
           exit(value)
       after
         end_time_mono = System.monotonic_time()
+        [reductions: end_reductions] = Process.info(self(), [:reductions])
 
         parent_ref =
           case previous_span do
@@ -220,12 +222,14 @@ defmodule NewRelic.Tracer.Macro do
         child_duration_ms = Process.delete({:nr_duration_acc, current_ref}) || 0
         if parent_ref == :root, do: Process.delete({:nr_duration_acc, parent_ref})
 
+        reductions = end_reductions - start_reductions
+
         Tracer.Report.call(
           {unquote(module), unquote(function), unquote(build_call_args(args))},
           unquote(trace_info),
           inspect(self()),
           {span, previous_span || :root},
-          {start_time, start_time_mono, end_time_mono, child_duration_ms}
+          {start_time, start_time_mono, end_time_mono, child_duration_ms, reductions}
         )
 
         NewRelic.DistributedTrace.reset_span(
