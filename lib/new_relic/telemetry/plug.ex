@@ -181,7 +181,7 @@ defmodule NewRelic.Telemetry.Plug do
     |> NewRelic.add_attributes()
   end
 
-  defp add_stop_error_attrs(%{resp_status: "500" <> _, error: {:socket_error, error, message}}) do
+  defp add_stop_error_attrs(%{resp_status: "5" <> _, error: {:socket_error, error, message}}) do
     [
       error: true,
       "cowboy.socket_error": error,
