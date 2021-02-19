@@ -256,7 +256,9 @@ defmodule NewRelic.Transaction.Complete do
         timestamp: tx_attrs[:start_time],
         duration: tx_attrs[:duration_s],
         category_attributes:
-          Map.drop(tx_attrs, @spansaction_exclude_attrs)
+          tx_attrs
+          |> Map.drop(@spansaction_exclude_attrs)
+          |> Map.merge(NewRelic.Config.automatic_attributes())
           |> maybe_add(:tracingVendors, tx_attrs[:tracingVendors])
           |> maybe_add(:trustedParentId, tx_attrs[:trustedParentId])
       },

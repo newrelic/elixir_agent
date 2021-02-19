@@ -339,7 +339,7 @@ defmodule TransactionTraceTest do
         sp.name == "TransactionTraceTest.HelperModule.do_work/1"
       end)
 
-    assert String.length(span[:args]) < 500
+    assert String.length(span[:"tracer.args"]) < 500
 
     reset_config.()
   end
@@ -356,7 +356,7 @@ defmodule TransactionTraceTest do
         sp.name == "TransactionTraceTest.HelperModule.do_work/1"
       end)
 
-    assert span[:args] == "[DISABLED]"
+    assert span[:"tracer.args"] == "[DISABLED]"
 
     reset_config.()
     reset_features.()
@@ -373,7 +373,7 @@ defmodule TransactionTraceTest do
         sp.name == "TransactionTraceTest.HelperModule.work_hard/1"
       end)
 
-    assert span[:args] == "[DISABLED]"
+    assert span[:"tracer.args"] == "[DISABLED]"
 
     [span, _, _] =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
@@ -381,7 +381,7 @@ defmodule TransactionTraceTest do
         sp.name == "TransactionTraceTest.HelperModule.do_work/1"
       end)
 
-    refute span[:args] == "[DISABLED]"
+    refute span[:"tracer.args"] == "[DISABLED]"
 
     reset_config.()
   end
@@ -397,7 +397,7 @@ defmodule TransactionTraceTest do
         sp.name == "TransactionTraceTest.ExternalService.secret_query/1"
       end)
 
-    assert span[:args] == "[DISABLED]"
+    assert span[:"tracer.args"] == "[DISABLED]"
 
     [span, _, _] =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
@@ -405,7 +405,7 @@ defmodule TransactionTraceTest do
         sp.name == "TransactionTraceTest.ExternalService.query/1"
       end)
 
-    refute span[:args] == "[DISABLED]"
+    refute span[:"tracer.args"] == "[DISABLED]"
 
     reset_config.()
   end

@@ -11,10 +11,31 @@ Features
     - https://github.com/binaryseed/new_relic_phoenix
 * Transaction tracking is now faster and better in the face of overload
 
+------
+
+### `v1.23.3`
+
+Tweaks
+* Add automatic attributes to the Spansaction. [#312](https://github.com/newrelic/elixir_agent/pull/312)
+* Track tracer reductions. [#313](https://github.com/newrelic/elixir_agent/pull/313)
+
+### `v1.23.2`
+
+Tweaks
+* Minor change to External span tracer attributes. [#311](https://github.com/newrelic/elixir_agent/pull/311)
+
+### `v1.23.1`
+
+Tweaks
+* Improve External span names. [#309](https://github.com/newrelic/elixir_agent/pull/309)
+>>>>>>> master
+
 ### `v1.23.0`
 
 Features
 * Adds support for Infinite Tracing. [#307](https://github.com/newrelic/elixir_agent/pull/307)
+
+------
 
 ### `v1.22.6`
 
