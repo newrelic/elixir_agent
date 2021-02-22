@@ -62,6 +62,11 @@ defmodule NewRelic.Transaction.Reporter do
     :ok
   end
 
+  def connect_task_to_transaction() do
+    Transaction.Sidecar.connect(:task)
+    :ok
+  end
+
   def disconnect_from_transaction() do
     Transaction.Sidecar.disconnect()
     :ok

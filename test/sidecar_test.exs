@@ -3,6 +3,26 @@ defmodule SidecarTest do
 
   alias NewRelic.Transaction.Sidecar
   alias NewRelic.Harvest.Collector
+  alias NewRelic.Harvest.TelemetrySdk
+
+  setup do
+    reset_agent_run = TestHelper.update(:nr_agent_run, trusted_account_key: "190")
+
+    reset_config =
+      TestHelper.update(:nr_config,
+        license_key: "dummy_key",
+        harvest_enabled: true,
+        trace_mode: :infinite,
+        automatic_attributes: %{auto: "attribute"}
+      )
+
+    on_exit(fn ->
+      reset_agent_run.()
+      reset_config.()
+    end)
+
+    :ok
+  end
 
   test "Transaction.Sidecar" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
@@ -163,5 +183,114 @@ defmodule SidecarTest do
 
     # no-op when called outside a Transaction
     NewRelic.connect_to_transaction(self())
+  end
+
+  defmodule Traced do
+    use NewRelic.Tracer
+
+    @trace :hey
+    def hey do
+      :hey
+    end
+
+    @trace :hello
+    def hello do
+      :hello
+    end
+  end
+
+  test "manually connect Task nolink processes" do
+    TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
+    {:ok, _sup} = Task.Supervisor.start_link(name: TestTaskSup)
+    test = self()
+
+    spawn(fn ->
+      NewRelic.start_transaction("Test", "manual_nolink_connection")
+      NewRelic.add_attributes(root: :YES)
+
+      Task.Supervisor.async_nolink(
+        TestTaskSup,
+        fn ->
+          NewRelic.add_attributes(async_nolink: :NO)
+          Traced.hey()
+        end
+      )
+      |> Task.await()
+
+      Task.Supervisor.async_nolink(
+        TestTaskSup,
+        fn ->
+          NewRelic.connect_task_to_transaction()
+          NewRelic.add_attributes(async_nolink_connected: :YES)
+          Traced.hey()
+
+          Task.Supervisor.async_stream_nolink(
+            TestTaskSup,
+            [:YES],
+            fn val ->
+              NewRelic.connect_task_to_transaction()
+              NewRelic.add_attributes(async_stream_nolink_connected: val)
+              Traced.hello()
+            end
+          )
+          |> Enum.map(& &1)
+        end
+      )
+      |> Task.await()
+
+      send(test, :done)
+    end)
+
+    receive do
+      :done -> :ok
+    end
+
+    [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
+
+    spansaction =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:category] == "Transaction"
+      end)
+
+    assert spansaction.attributes[:root] == "YES"
+    refute spansaction.attributes[:async_nolink]
+    assert spansaction.attributes[:async_nolink_connected] == "YES"
+    assert spansaction.attributes[:async_stream_nolink_connected] == "YES"
+
+    tx_root_process_span =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:name] == "Transaction Root Process"
+      end)
+
+    connected_task_process_span =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:"parent.id"] == tx_root_process_span[:id]
+      end)
+
+    assert connected_task_process_span.attributes[:name] == "Process"
+
+    hey_function_span =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:name] == "SidecarTest.Traced.hey/0"
+      end)
+
+    assert hey_function_span.attributes[:"parent.id"] == connected_task_process_span[:id]
+
+    connected_stream_task_process_span =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:"parent.id"] == connected_task_process_span[:id]
+      end)
+
+    assert connected_stream_task_process_span.attributes[:name] == "Process"
+
+    hello_function_span =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:name] == "SidecarTest.Traced.hello/0"
+      end)
+
+    assert hello_function_span.attributes[:"parent.id"] == connected_stream_task_process_span[:id]
+
+    # no-op when called outside a Transaction
+    NewRelic.connect_task_to_transaction()
   end
 end

@@ -122,6 +122,7 @@ defmodule TransactionTest do
           Task.Supervisor.async_nolink(
             TestTaskSup,
             fn ->
+              NewRelic.connect_task_to_transaction()
               NewRelic.add_attributes(not_linked: "still_tracked")
               Process.sleep(5)
 
@@ -137,7 +138,6 @@ defmodule TransactionTest do
           Task.Supervisor.async_nolink(
             TestTaskSup,
             fn ->
-              NewRelic.exclude_from_transaction()
               NewRelic.add_attributes(not_tracked: "not_tracked")
 
               Process.sleep(5)

@@ -3,9 +3,9 @@ defmodule NewRelic.Transaction.ErlangTrace do
 
   alias NewRelic.Transaction
 
-  # This GenServer watches transaction processes for
-  # :trace messages signal that a transaction process has
-  # spwaned another process that we track as a Span
+  # This GenServer watches Transaction processes for
+  # :trace messages that signal that a Transaction process has
+  # spwaned another linked process that we include in the Transaction
 
   @moduledoc false
 
@@ -47,26 +47,6 @@ defmodule NewRelic.Transaction.ErlangTrace do
   # Trace messages
 
   def handle_info(
-        {:trace_ts, source, :return_from, {Task.Supervisor, :async_nolink, _arity},
-         %Task{pid: pid}, timestamp},
-        state
-      ) do
-    Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
-    enable_trace_flags(pid)
-    overload_protection(state.overload)
-    {:noreply, state}
-  end
-
-  def handle_info(
-        {:trace_ts, source, :return_from, {:poolboy, :checkout, _}, pid, timestamp},
-        state
-      ) do
-    Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
-    overload_protection(state.overload)
-    {:noreply, state}
-  end
-
-  def handle_info(
         {:trace_ts, source, :return_from, {:proc_lib, :spawn_link, _}, pid, timestamp},
         state
       ) do
@@ -92,32 +72,16 @@ defmodule NewRelic.Transaction.ErlangTrace do
     ArgumentError -> :process_gone
   end
 
-  defp enable_trace_flags(pid) do
-    :erlang.trace(pid, true, [:call, :set_on_spawn, :timestamp])
-  rescue
-    ArgumentError -> :process_gone
-  end
-
   def enable_trace_patterns do
-    # Use function tracers to notice when Async work has been kicked off
+    # Use function tracers to notice when linked work has been kicked off
     #   http://erlang.org/doc/man/erlang.html#trace_3_trace_messages_return_from
     #   http://erlang.org/doc/apps/erts/match_spec.html
 
     trace_proc_lib_spawn_link()
-    trace_task_async_nolink()
-    trace_poolboy_checkout()
   end
 
   defp trace_proc_lib_spawn_link do
     :erlang.trace_pattern({:proc_lib, :spawn_link, :_}, [{:_, [], [{:return_trace}]}], [])
-  end
-
-  defp trace_task_async_nolink do
-    :erlang.trace_pattern({Task.Supervisor, :async_nolink, :_}, [{:_, [], [{:return_trace}]}], [])
-  end
-
-  defp trace_poolboy_checkout do
-    :erlang.trace_pattern({:poolboy, :checkout, :_}, [{:_, [], [{:return_trace}]}], [])
   end
 
   defp overload_protection(%{backoff: backoff} = overload) do

@@ -2,6 +2,8 @@ defmodule NewRelic.Transaction.Sidecar do
   @moduledoc false
   use GenServer, restart: :temporary
 
+  alias NewRelic.Transaction.ErlangTrace
+
   def setup_stores do
     :ets.new(__MODULE__.ContextStore, [:named_table, :set, :public, read_concurrency: true])
     :ets.new(__MODULE__.LookupStore, [:named_table, :set, :public, read_concurrency: true])
@@ -39,9 +41,21 @@ defmodule NewRelic.Transaction.Sidecar do
      }}
   end
 
-  def connect(pid) do
-    set_sidecar(lookup_sidecar(pid))
-    cast({:add_offspring, self()})
+  def connect(parent) when is_pid(parent) do
+    with parent_sidecar when is_pid(parent_sidecar) <-
+           track_spawn(parent, self(), System.system_time(:millisecond)) do
+      set_sidecar(parent_sidecar)
+      ErlangTrace.trace()
+    end
+  end
+
+  def connect(:task) do
+    with [parent | _] <- Process.get(:"$callers"),
+         parent_sidecar when is_pid(parent_sidecar) <-
+           track_spawn(parent, self(), System.system_time(:millisecond)) do
+      set_sidecar(parent_sidecar)
+      ErlangTrace.trace()
+    end
   end
 
   def disconnect() do
@@ -53,9 +67,11 @@ defmodule NewRelic.Transaction.Sidecar do
   end
 
   def track_spawn(parent, child, timestamp) do
-    parent_sidecar = lookup_sidecar(parent)
-    store_sidecar(child, parent_sidecar)
-    cast(parent_sidecar, {:spawn, parent, child, timestamp})
+    with parent_sidecar when is_pid(parent_sidecar) <- lookup_sidecar(parent) do
+      store_sidecar(child, parent_sidecar)
+      cast(parent_sidecar, {:spawn, parent, child, timestamp})
+      parent_sidecar
+    end
   end
 
   def add(attrs) do
@@ -138,10 +154,6 @@ defmodule NewRelic.Transaction.Sidecar do
 
   def handle_cast({:exclude, pid}, state) do
     {:noreply, %{state | exclusions: [pid | state.exclusions]}}
-  end
-
-  def handle_cast({:add_offspring, pid}, state) do
-    {:noreply, %{state | offspring: MapSet.put(state.offspring, pid)}}
   end
 
   def handle_cast(:ignore, state) do
@@ -230,7 +242,7 @@ defmodule NewRelic.Transaction.Sidecar do
     case Process.get(:nr_tx_sidecar) do
       nil ->
         sidecar =
-          lookup_sidecar_in(process_callers()) ||
+          lookup_sidecar_in(linked_process_callers()) ||
             lookup_sidecar_in(process_ancestors())
 
         set_sidecar(sidecar)
@@ -238,8 +250,8 @@ defmodule NewRelic.Transaction.Sidecar do
       :no_track ->
         nil
 
-      pid ->
-        pid
+      sidecar ->
+        sidecar
     end
   end
 
@@ -262,8 +274,10 @@ defmodule NewRelic.Transaction.Sidecar do
 
   defp lookup_sidecar(_named_process), do: nil
 
-  defp process_callers() do
-    Process.get(:"$callers", []) |> Enum.reverse()
+  defp linked_process_callers() do
+    callers = Process.get(:"$callers", []) |> Enum.reverse()
+    {:links, links} = Process.info(self(), :links)
+    for pid <- callers, ^pid <- links, do: pid
   end
 
   defp process_ancestors() do

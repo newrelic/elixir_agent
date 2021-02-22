@@ -125,13 +125,25 @@ defmodule NewRelic do
   Advanced:
   Call to manually connect the current process to another process's Transaction.
 
-  Only use this when there is no discoverable connection (ex: the process was
+  Only use this when there is no auto-discoverable connection (ex: the process was
   spawned without links or the logic is within a message handling callback).
 
   This connection will persist until the process exits or
   `NewRelic.disconnect_from_transaction()` is called.
   """
   defdelegate connect_to_transaction(pid), to: NewRelic.Transaction.Reporter
+
+  @doc """
+  Advanced:
+  Call to manually connect a `Task` process to the process which called it.
+
+  Only needed when a `Task` is spawned without a link to the calling process,
+  eg: `Task.Supervisor.async_nolink`.
+
+  This connection will persist until the process exits or
+  `NewRelic.disconnect_from_transaction()` is called.
+  """
+  defdelegate connect_task_to_transaction(), to: NewRelic.Transaction.Reporter
 
   @doc """
   Advanced:
@@ -153,7 +165,7 @@ defmodule NewRelic do
   You must manually instrument outgoing HTTP calls to connect them to a Distributed Trace.
 
   The agent will automatically read request headers and detect if the request is a part
-  of a Distributed Trace, but outgoing requests need an extra header:
+  of an incoming Distributed Trace, but outgoing requests need an extra header:
 
   ```elixir
   HTTPoison.get(url, ["x-api-key": "secret"] ++ NewRelic.distributed_trace_headers(:http))

@@ -123,13 +123,13 @@ HTTPoison.get("http://www.example.com")
 
 You may start an "Other" Transaction for non-HTTP related work. This could used be while consuming from a message queue, for example.
 
-To start an other transaction:
+To start an Other Transaction:
 
 ```elixir
 NewRelic.start_transaction(category, name)
 ```
 
-And to stop the transaction within the same process:
+And to stop the Transaction within the same process:
 
 ```elixir
 NewRelic.stop_transaction()

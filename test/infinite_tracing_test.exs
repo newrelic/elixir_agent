@@ -2,7 +2,6 @@ defmodule InfiniteTracingTest do
   use ExUnit.Case
   use Plug.Test
 
-  alias NewRelic.DistributedTrace
   alias NewRelic.Harvest.TelemetrySdk
   alias NewRelic.Harvest.Collector
 
@@ -16,8 +15,6 @@ defmodule InfiniteTracingTest do
         trace_mode: :infinite,
         automatic_attributes: %{auto: "attribute"}
       )
-
-    send(DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
       reset_agent_run.()
