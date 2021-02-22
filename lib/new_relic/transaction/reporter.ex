@@ -90,11 +90,11 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   def add_trace_segment(segment) do
-    Transaction.Sidecar.add(function_segments: {:list, segment})
+    Transaction.Sidecar.append(function_segments: segment)
   end
 
   def track_metric(metric) do
-    Transaction.Sidecar.add(transaction_metrics: {:list, metric})
+    Transaction.Sidecar.append(transaction_metrics: metric)
   end
 
   def track_spawn(parent, child, timestamp) do
