@@ -1,6 +1,7 @@
 defmodule NewRelic.Transaction.Sidecar do
-  @moduledoc false
   use GenServer, restart: :temporary
+
+  @moduledoc false
 
   alias NewRelic.Transaction.ErlangTrace
 
