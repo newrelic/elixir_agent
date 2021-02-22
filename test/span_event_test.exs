@@ -205,7 +205,10 @@ defmodule SpanEventTest do
     [nested_function_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.do_hello/0" end)
 
-    [task_event, _, _] = Enum.find(span_events, fn [ev, _, _] -> ev[:name] == :named_process end)
+    [task_event, _, _] =
+      Enum.find(span_events, fn [ev, _, _] ->
+        ev[:pid] && ev[:parentId] == request_process_event[:guid]
+      end)
 
     [nested_external_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] ->
