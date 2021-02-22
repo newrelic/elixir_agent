@@ -18,4 +18,19 @@ defmodule MetricTest do
 
     TestHelper.pause_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
   end
+
+  test "increment custom metrics" do
+    TestHelper.restart_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
+
+    NewRelic.increment_custom_metric("Foo/Bar")
+    NewRelic.increment_custom_metric("Foo/Bar", 2)
+
+    metrics = TestHelper.gather_harvest(NewRelic.Harvest.Collector.Metric.Harvester)
+
+    [_, [count, _, _, _, _, _]] = TestHelper.find_metric(metrics, "Custom/Foo/Bar", 3)
+
+    assert count == 3
+
+    TestHelper.pause_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
+  end
 end
