@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.23.5`
+
+Fixes
+* Inspect failed output going to log. [#315](https://github.com/newrelic/elixir_agent/pull/315)
+
 ### `v1.23.4`
 
 Tweaks
