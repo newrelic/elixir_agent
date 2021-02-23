@@ -19,7 +19,7 @@ defmodule NewRelic.Util.HTTP do
         post(url, body, headers)
 
       {:error, message} ->
-        NewRelic.log(:debug, "Unable to JSON encode: #{body}")
+        NewRelic.log(:debug, "Unable to JSON encode: #{inspect(body)}")
         {:error, message}
     end
   end
