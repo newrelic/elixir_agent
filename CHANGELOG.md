@@ -15,6 +15,16 @@ Features
 
 ------
 
+### `v1.23.5`
+
+Fixes
+* Inspect failed output going to log. [#315](https://github.com/newrelic/elixir_agent/pull/315)
+
+### `v1.23.4`
+
+Tweaks
+* Add ability to increment custom metric. [#314](https://github.com/newrelic/elixir_agent/pull/314) Thanks @edds!
+
 ### `v1.23.3`
 
 Tweaks

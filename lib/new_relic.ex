@@ -223,6 +223,16 @@ defmodule NewRelic do
   defdelegate report_custom_metric(name, value),
     to: NewRelic.Harvest.Collector.Metric.Harvester
 
+  @doc """
+  Increment a Custom metric.
+
+  ```elixir
+  NewRelic.increment_custom_metric("My/Metric")
+  ```
+  """
+  defdelegate increment_custom_metric(name, count \\ 1),
+    to: NewRelic.Harvest.Collector.Metric.Harvester
+
   @doc false
   defdelegate enable_erlang_trace, to: NewRelic.Transaction.ErlangTraceManager
 

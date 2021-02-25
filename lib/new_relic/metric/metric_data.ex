@@ -5,6 +5,12 @@ defmodule NewRelic.Metric.MetricData do
 
   alias NewRelic.Metric
 
+  def transform({:custom, name}, count: count),
+    do: %Metric{
+      name: join(["Custom", name]),
+      call_count: count
+    }
+
   def transform({:custom, name}, count: count, value: value),
     do: %Metric{
       name: join(["Custom", name]),
