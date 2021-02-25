@@ -159,15 +159,18 @@ defmodule SidecarTest do
 
       tx = NewRelic.get_transaction()
 
-      spawn(fn ->
-        NewRelic.connect_to_transaction(tx)
-        NewRelic.add_attributes(foo2: "BAZ")
+      pid =
+        spawn(fn ->
+          NewRelic.connect_to_transaction(tx)
+          NewRelic.add_attributes(foo2: "BAZ")
 
-        NewRelic.disconnect_from_transaction()
-        NewRelic.add_attributes(foo3: "QUX")
+          assert :ets.member(Sidecar.LookupStore, self())
 
-        send(pid, :carry_on)
-      end)
+          NewRelic.disconnect_from_transaction()
+          NewRelic.add_attributes(foo3: "QUX")
+
+          send(pid, :carry_on)
+        end)
 
       assert_receive :carry_on
       Process.sleep(500)
@@ -179,6 +182,8 @@ defmodule SidecarTest do
       assert attributes[:foo1] == "BAR"
       assert attributes[:foo2] == "BAZ"
       refute attributes[:foo3]
+
+      refute :ets.member(Sidecar.LookupStore, pid)
     end)
     |> Task.await()
   end

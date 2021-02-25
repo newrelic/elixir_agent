@@ -55,6 +55,7 @@ defmodule NewRelic.Transaction.Sidecar do
 
   def disconnect() do
     set_sidecar(:no_track)
+    cleanup(lookup: self())
   end
 
   def tracking?() do
@@ -160,12 +161,14 @@ defmodule NewRelic.Transaction.Sidecar do
   end
 
   def handle_cast({:exclude, pid}, state) do
+    cleanup(lookup: pid)
     {:noreply, %{state | exclusions: [pid | state.exclusions]}}
   end
 
   def handle_cast(:ignore, state) do
     cleanup(context: self())
     cleanup(lookup: state.parent)
+    Enum.each(state.offspring, &cleanup(lookup: &1))
     {:stop, :normal, state}
   end
 
