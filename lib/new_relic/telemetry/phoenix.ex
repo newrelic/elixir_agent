@@ -54,7 +54,11 @@ defmodule NewRelic.Telemetry.Phoenix do
       "phoenix.endpoint": conn.private[:phoenix_endpoint] |> inspect(),
       "phoenix.router": conn.private[:phoenix_router] |> inspect(),
       "phoenix.controller": meta.plug |> inspect(),
-      "phoenix.action": meta.plug_opts |> to_string(),
+      "phoenix.action":
+        case meta.plug_opts do
+          action when is_atom(action) -> to_string(action)
+          action -> inspect(action)
+        end,
       "phoenix.format": conn.private[:phoenix_format],
       "phoenix.template": conn.private[:phoenix_template],
       "phoenix.view": conn.private[:phoenix_view] |> inspect()
@@ -80,7 +84,7 @@ defmodule NewRelic.Telemetry.Phoenix do
     :ignore
   end
 
-  defp phoenix_name(%{plug: controller, plug_opts: action}) do
+  defp phoenix_name(%{plug: controller, plug_opts: action}) when is_atom(action) do
     "/Phoenix/#{inspect(controller)}/#{action}"
   end
 

@@ -30,7 +30,6 @@ Tweaks
 
 Tweaks
 * Improve External span names. [#309](https://github.com/newrelic/elixir_agent/pull/309)
->>>>>>> master
 
 ### `v1.23.0`
 
