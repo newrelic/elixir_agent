@@ -1,6 +1,7 @@
 ## CHANGELOG
 
 ### `v1.24.0`
+
 Features
 * `Plug` instrumentation is now fully automatic based on `telemetry` events!
   * Please remove deprecated calls:
@@ -10,6 +11,7 @@ Features
   * Please remove deprecated instrumentation library:
     - https://github.com/binaryseed/new_relic_phoenix
 * Transaction tracking is now faster and better in the face of overload
+  * Transactions no longer follow processes that aren't linked (ex: `Task.Supervisor.async_nolink`). They can be connected manually if desired using `NewRelic.connect_task_to_transaction` and `NewRelic.connect_to_transaction`.
 
 ------
 

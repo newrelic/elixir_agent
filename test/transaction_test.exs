@@ -119,10 +119,12 @@ defmodule TransactionTest do
         Task.async(fn ->
           NewRelic.add_attributes(nested: "spawn")
 
+          tx = NewRelic.get_transaction()
+
           Task.Supervisor.async_nolink(
             TestTaskSup,
             fn ->
-              NewRelic.connect_task_to_transaction()
+              NewRelic.connect_to_transaction(tx)
               NewRelic.add_attributes(not_linked: "still_tracked")
               Process.sleep(5)
 

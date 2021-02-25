@@ -294,7 +294,11 @@ defmodule NewRelic.Transaction.Complete do
         category: "generic",
         name: proc.name || "Process",
         guid: DistributedTrace.generate_guid(pid: proc.id),
-        parent_id: DistributedTrace.generate_guid(pid: proc.parent_id),
+        parent_id:
+          case proc.parent_id do
+            {pid, label, ref} -> DistributedTrace.generate_guid(pid: pid, label: label, ref: ref)
+            pid -> DistributedTrace.generate_guid(pid: pid)
+          end,
         timestamp: proc[:start_time],
         duration: (proc[:end_time] - proc[:start_time]) / 1000,
         category_attributes: %{
@@ -392,7 +396,12 @@ defmodule NewRelic.Transaction.Complete do
   end
 
   defp generate_process_tree(processes, root: root) do
-    parent_map = Enum.group_by(processes, & &1.parent_id)
+    parent_map =
+      Enum.group_by(processes, fn
+        %{parent_id: {pid, _label, _ref}} -> pid
+        %{parent_id: pid} -> pid
+      end)
+
     generate_tree(root, parent_map)
   end
 

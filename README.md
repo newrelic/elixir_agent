@@ -54,7 +54,7 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 * `NEW_RELIC_APP_NAME`
 * `NEW_RELIC_LICENSE_KEY`
 
-## Telemetry
+## Telemetry-based Instrumentation
 
 Some common Elixir packages are auto-instrumented via [`telemetry`](https://github.com/beam-telemetry/telemetry)
 
@@ -63,26 +63,43 @@ Some common Elixir packages are auto-instrumented via [`telemetry`](https://gith
 * [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Ecto.html) for details.
 * [`Redix`](https://github.com/whatyouhide/redix): See [NewRelic.Telemetry.Redix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Redix.html) for details.
 
-## Custom Instrumentation
+## Manual Instrumentation
+
+#### Transactions
+
+The `Plug` and `Phoenix` instrumentation automatically report a Transaction for each request.
+
+These Transactions will follow across any process spawned and linked (ex: `Task.async`), but will _not_ follow a process that isn't linked (ex: `Task.Supervisor.async_nolink`).
+
+To manually connect a Transaction to an unlinked process, you can use `NewRelic.get_transaction` and `NewRelic.connect_to_transaction`. See the docs for those functions for further details.
+
+```elixir
+tx = NewRelic.get_transaction()
+
+Task.Supervisor.async_nolink(MyTaskSupervisor, fn ->
+  NewRelic.connect_to_transaction(tx)
+  # ...
+end)
+```
 
 #### Function Tracing
 
-* `NewRelic.Tracer` enables detailed Function tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it. Install it by adding `use NewRelic.Tracer` to any module, and annotating any function with `@trace` module attribute
+`NewRelic.Tracer` enables detailed Function tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it. Install it by adding `use NewRelic.Tracer` to any module, and annotating any function with an `@trace` module attribute
 
 ```elixir
 defmodule MyModule do
   use NewRelic.Tracer
 
-  @trace :func
-  def func do
-    # Will report as `MyModule.func/0`
+  @trace :process
+  def process do
+    # Will report as `MyModule.process/0`
   end
 end
 ```
 
 #### Distributed Tracing
 
-* Requests to other services can be traced with the combination of an additional outgoing header and an `:external` tracer.
+Requests to other services can be traced with the combination of an additional outgoing header and an `:external` tracer.
 
 ```elixir
 defmodule MyExternalService do
@@ -99,7 +116,7 @@ end
 
 #### Pre-Instrumented Modules
 
-* `NewRelic.Instrumented.Mix.Task` To enable the Agent and record an Other Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, records the Transaction, and is shut down.
+`NewRelic.Instrumented.Mix.Task` To enable the Agent and record an Other Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, records a Transaction, and is shut down.
 
 ```elixir
 defmodule Mix.Tasks.Example do
@@ -112,7 +129,7 @@ defmodule Mix.Tasks.Example do
 end
 ```
 
-* `NewRelic.Instrumented.HTTPoison` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace.
+`NewRelic.Instrumented.HTTPoison` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace.
 
 ```elixir
 alias NewRelic.Instrumented.HTTPoison

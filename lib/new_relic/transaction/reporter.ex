@@ -57,13 +57,19 @@ defmodule NewRelic.Transaction.Reporter do
     :ok
   end
 
-  def connect_to_transaction(pid) when is_pid(pid) do
-    Transaction.Sidecar.connect(pid)
-    :ok
+  def get_transaction() do
+    %{
+      sidecar: Transaction.Sidecar.get_sidecar(),
+      parent:
+        case NewRelic.DistributedTrace.read_current_span() do
+          nil -> self()
+          {label, ref} -> {self(), label, ref}
+        end
+    }
   end
 
-  def connect_task_to_transaction() do
-    Transaction.Sidecar.connect(:task)
+  def connect_to_transaction(tx_ref) do
+    Transaction.Sidecar.connect(tx_ref)
     :ok
   end
 

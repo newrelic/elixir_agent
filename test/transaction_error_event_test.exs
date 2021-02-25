@@ -25,8 +25,10 @@ defmodule TransactionErrorEventTest do
     end
 
     get "/caught/error" do
+      tx = NewRelic.get_transaction()
+
       Task.Supervisor.async_nolink(TestSup, fn ->
-        NewRelic.connect_task_to_transaction()
+        NewRelic.connect_to_transaction(tx)
         NewRelic.add_attributes(nested: "process")
         raise "NestedTaskError"
       end)

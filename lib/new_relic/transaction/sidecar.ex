@@ -42,19 +42,13 @@ defmodule NewRelic.Transaction.Sidecar do
      }}
   end
 
-  def connect(parent) when is_pid(parent) do
-    with parent_sidecar when is_pid(parent_sidecar) <-
-           track_spawn(parent, self(), System.system_time(:millisecond)) do
-      set_sidecar(parent_sidecar)
-      ErlangTrace.trace()
-    end
-  end
+  def connect(%{sidecar: nil}), do: :ignore
 
-  def connect(:task) do
-    with [parent | _] <- Process.get(:"$callers"),
-         parent_sidecar when is_pid(parent_sidecar) <-
-           track_spawn(parent, self(), System.system_time(:millisecond)) do
-      set_sidecar(parent_sidecar)
+  def connect(%{sidecar: sidecar, parent: parent}) do
+    with nil <- get_sidecar() do
+      cast(sidecar, {:spawn, parent, self(), System.system_time(:millisecond)})
+      store_sidecar(self(), sidecar)
+      set_sidecar(sidecar)
       ErlangTrace.trace()
     end
   end
@@ -252,7 +246,7 @@ defmodule NewRelic.Transaction.Sidecar do
     pid
   end
 
-  defp get_sidecar() do
+  def get_sidecar() do
     case Process.get(:nr_tx_sidecar) do
       nil ->
         sidecar =

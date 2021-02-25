@@ -246,6 +246,10 @@ defmodule NewRelic.DistributedTrace do
     end
   end
 
+  def read_current_span() do
+    Process.get(:nr_current_span)
+  end
+
   def reset_span(previous_span: previous_span, previous_span_attrs: previous_span_attrs) do
     Process.put(:nr_current_span, previous_span)
     Process.put(:nr_current_span_attrs, previous_span_attrs)
