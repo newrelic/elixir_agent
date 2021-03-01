@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.23.6`
+
+Fixes
+* Coerce Transaction Trace segment attribute values. [#316](https://github.com/newrelic/elixir_agent/pull/316)
+
 ### `v1.23.5`
 
 Fixes
