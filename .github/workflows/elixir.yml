@@ -74,5 +74,5 @@ jobs:
         cd examples
         mix deps.get
         mix format --check-formatted
-        mix test || mix test --failed
+        mix test
         MIX_ENV=test mix instrumented_task.example_task

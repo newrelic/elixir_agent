@@ -57,17 +57,19 @@ defmodule NewRelic.Transaction.Trace do
         duration: duration,
         metric_name: metric_name
       }) do
+    attributes = first_segment.attributes |> NewRelic.Util.coerce_attributes()
+
     [
       0,
       duration,
       "ROOT",
-      first_segment.attributes,
+      attributes,
       [
         [
           0,
           duration,
           metric_name,
-          first_segment.attributes,
+          attributes,
           Enum.map(segments, &format_child_segments/1)
         ]
       ]
@@ -79,7 +81,7 @@ defmodule NewRelic.Transaction.Trace do
       segment.relative_start_time,
       segment.relative_end_time,
       segment.metric_name,
-      segment.attributes,
+      segment.attributes |> NewRelic.Util.coerce_attributes(),
       Enum.map(segment.children, &format_child_segments/1),
       segment.class_name,
       segment.method_name
