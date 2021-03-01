@@ -71,6 +71,7 @@ jobs:
 
     - name: Run integration tests
       run: |
+        set -x
         cd examples
         mix deps.get
         mix format --check-formatted
