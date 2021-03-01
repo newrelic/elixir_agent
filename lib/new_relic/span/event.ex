@@ -72,7 +72,8 @@ defmodule NewRelic.Span.Event do
       component: category[:component] || "component",
       "span.kind": "client"
     })
-    |> Map.merge(NewRelic.Util.coerce_attributes(custom))
+    |> NewRelic.Util.coerce_attributes()
+    |> Map.merge(custom)
   end
 
   def merge_category_attributes(%{category: "datastore"} = span, category_attributes) do
@@ -88,7 +89,8 @@ defmodule NewRelic.Span.Event do
       component: category[:component] || "component",
       "span.kind": "client"
     })
-    |> Map.merge(NewRelic.Util.coerce_attributes(custom))
+    |> NewRelic.Util.coerce_attributes()
+    |> Map.merge(custom)
   end
 
   def merge_category_attributes(span, category_attributes),
