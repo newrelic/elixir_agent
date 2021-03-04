@@ -7,11 +7,13 @@ Features
   * Please remove deprecated calls:
     - `use NewRelic.Transaction`
     - `NewRelic.Transaction.handle_errors/2`
-* `Phoenix` instrumentation is not fullly automatic based on `telemetry` events!
+* `Phoenix` instrumentation is now fullly automatic based on `telemetry` events!
   * Please remove deprecated instrumentation library:
     - https://github.com/binaryseed/new_relic_phoenix
 * Transaction tracking is now faster and better in the face of overload
-  * Transactions no longer follow processes that aren't linked (ex: `Task.Supervisor.async_nolink`). They can be connected manually if desired using `NewRelic.connect_task_to_transaction` and `NewRelic.connect_to_transaction`.
+  * Note: Transactions no longer follow processes that aren't linked (ex: `Task.Supervisor.async_nolink`). They can be connected manually if desired using `NewRelic.connect_to_transaction`.
+
+------
 
 ### `v1.23.6`
 

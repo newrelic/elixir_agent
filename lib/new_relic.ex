@@ -130,7 +130,8 @@ defmodule NewRelic do
 
   @doc """
   Advanced:
-  Call to manually connect the current process to a Transaction.
+  Call to manually connect the current process to a Transaction. Pass in a reference
+  returned by `NewRelic.get_transaction()`
 
   Only use this when there is no auto-discoverable connection (ex: the process was
   spawned without links or the logic is within a message handling callback).
@@ -138,7 +139,7 @@ defmodule NewRelic do
   This connection will persist until the process exits or
   `NewRelic.disconnect_from_transaction()` is called.
   """
-  defdelegate connect_to_transaction(pid), to: NewRelic.Transaction.Reporter
+  defdelegate connect_to_transaction(ref), to: NewRelic.Transaction.Reporter
 
   @doc """
   Advanced:

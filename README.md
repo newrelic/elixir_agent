@@ -90,9 +90,9 @@ end)
 defmodule MyModule do
   use NewRelic.Tracer
 
-  @trace :process
-  def process do
-    # Will report as `MyModule.process/0`
+  @trace :work
+  def work do
+    # Will report as `MyModule.work/0`
   end
 end
 ```

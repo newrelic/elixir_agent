@@ -24,7 +24,7 @@ defmodule NewRelic.Telemetry.Plug do
 
   ----
 
-  Inside a Transaction, the agent will track work across processes that are spawned.
+  Inside a Transaction, the agent will track work across processes that are spawned and linked.
   You can signal to the agent not to track work done inside a spawned process, which will
   exclude it from the current Transaction.
 
