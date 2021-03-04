@@ -6,10 +6,7 @@ defmodule NewRelic.Transaction.Complete do
   alias NewRelic.DistributedTrace
   alias NewRelic.Transaction
 
-  def run(
-        %{start_time: _, start_time_mono: _, end_time_mono: _} = tx_attrs,
-        pid
-      ) do
+  def run(tx_attrs, pid) do
     {tx_segments, tx_attrs, tx_error, span_events, apdex, tx_metrics} =
       tx_attrs
       |> transform_name_attrs
@@ -30,13 +27,9 @@ defmodule NewRelic.Transaction.Complete do
     report_span_events(span_events)
   end
 
-  def run(tx_attrs, _pid) do
-    NewRelic.report_metric(:supportability, [:transaction, :missing_attributes])
-    NewRelic.log(:debug, "Missing required transaction attributes. #{inspect(tx_attrs)}")
-  end
-
   defp transform_name_attrs(%{custom_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{framework_name: name} = tx), do: Map.put(tx, :name, name)
+  defp transform_name_attrs(%{phoenix_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{plug_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(%{other_transaction_name: name} = tx), do: Map.put(tx, :name, name)
   defp transform_name_attrs(tx), do: Map.put(tx, :name, "Unknown/Unknown")
@@ -46,6 +39,22 @@ defmodule NewRelic.Transaction.Complete do
 
   defp identify_transaction_type(tx),
     do: Map.put(tx, :transactionType, :Web)
+
+  defp transform_time_attrs(%{system_time: system_time, duration: duration} = tx) do
+    start_time_ms = System.convert_time_unit(system_time, :native, :millisecond)
+    duration_us = System.convert_time_unit(duration, :native, :microsecond)
+    duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+
+    tx
+    |> Map.drop([:system_time, :duration, :end_time_mono])
+    |> Map.merge(%{
+      start_time: start_time_ms,
+      end_time: start_time_ms + duration_ms,
+      duration_us: duration_us,
+      duration_ms: duration_ms,
+      duration_s: duration_ms / 1000
+    })
+  end
 
   defp transform_time_attrs(
          %{start_time: start_time, end_time_mono: end_time_mono, start_time_mono: start_time_mono} =
@@ -82,10 +91,9 @@ defmodule NewRelic.Transaction.Complete do
   defp transform_queue_duration(tx), do: tx
 
   defp extract_transaction_info(tx_attrs, pid) do
-    {function_segments, tx_attrs} = Map.pop(tx_attrs, :trace_function_segments, [])
-    {process_spawns, tx_attrs} = Map.pop(tx_attrs, :trace_process_spawns, [])
-    {process_names, tx_attrs} = Map.pop(tx_attrs, :trace_process_names, [])
-    {process_exits, tx_attrs} = Map.pop(tx_attrs, :trace_process_exits, [])
+    {function_segments, tx_attrs} = Map.pop(tx_attrs, :function_segments, [])
+    {process_spawns, tx_attrs} = Map.pop(tx_attrs, :process_spawns, [])
+    {process_exits, tx_attrs} = Map.pop(tx_attrs, :process_exits, [])
     {tx_error, tx_attrs} = Map.pop(tx_attrs, :transaction_error, nil)
     {tx_metrics, tx_attrs} = Map.pop(tx_attrs, :transaction_metrics, [])
 
@@ -96,7 +104,7 @@ defmodule NewRelic.Transaction.Complete do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.group_by(& &1.pid)
-      |> Enum.into(%{}, &generate_process_segment_tree(&1))
+      |> Enum.into(%{}, &generate_segment_tree(&1))
 
     root_process_segment =
       tx_attrs
@@ -110,20 +118,23 @@ defmodule NewRelic.Transaction.Complete do
 
     process_segments =
       process_spawns
-      |> collect_process_segments(process_names, process_exits)
+      |> collect_process_segments(process_exits)
       |> Enum.map(&transform_trace_time_attrs(&1, tx_attrs.start_time))
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.reject(&(&1.relative_start_time == &1.relative_end_time))
       |> Enum.sort_by(& &1.relative_start_time)
 
+    {merged_process_function_segments, remaining_function_segments} =
+      merge_process_function_segments(process_segments, function_segments)
+
     segment_tree =
-      process_segments
-      |> Enum.map(&Map.put(&1, :children, function_segments[&1.pid] || []))
-      |> generate_process_tree(root: root_process_segment)
+      generate_process_tree(merged_process_function_segments, root: root_process_segment)
 
     top_children = List.wrap(function_segments[inspect(pid)])
-    segment_tree = Map.update!(segment_tree, :children, &(&1 ++ top_children))
+    stray_children = Map.values(remaining_function_segments) |> List.flatten()
+
+    segment_tree = Map.update!(segment_tree, :children, &(&1 ++ top_children ++ stray_children))
 
     span_events =
       extract_span_events(
@@ -131,7 +142,6 @@ defmodule NewRelic.Transaction.Complete do
         tx_attrs,
         pid,
         process_spawns,
-        process_names,
         process_exits
       )
 
@@ -146,23 +156,41 @@ defmodule NewRelic.Transaction.Complete do
       tx_attrs
       |> Map.merge(NewRelic.Config.automatic_attributes())
       |> Map.put(:"nr.apdexPerfZone", Util.Apdex.label(apdex))
-      |> Map.put(:total_time_s, tx_attrs.duration_s + concurrent_process_time_ms / 1000)
-      |> Map.put(:process_spawns, length(process_spawns))
+      |> Map.put(:total_time_s, total_time_s(tx_attrs, concurrent_process_time_ms))
+      |> Map.put(:process_spawns, process_spawn_count(tx_attrs, process_spawns))
 
     {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
   end
 
-  defp extract_span_events(:infinite, tx_attrs, pid, spawns, names, exits) do
-    spawned_process_span_events(tx_attrs, spawns, names, exits)
+  defp process_spawn_count(%{transactionType: :Web}, process_spawns) do
+    # Remove the cowboy Request process spawn
+    length(process_spawns) - 1
+  end
+
+  defp process_spawn_count(%{transactionType: :Other}, process_spawns) do
+    length(process_spawns)
+  end
+
+  defp total_time_s(%{transactionType: :Web}, concurrent_process_time_ms) do
+    # Cowboy request process is already included in concurrent time
+    concurrent_process_time_ms / 1000
+  end
+
+  defp total_time_s(%{transactionType: :Other} = tx_attrs, concurrent_process_time_ms) do
+    (tx_attrs.duration_ms + concurrent_process_time_ms) / 1000
+  end
+
+  defp extract_span_events(:infinite, tx_attrs, pid, spawns, exits) do
+    spawned_process_span_events(tx_attrs, spawns, exits)
     |> add_spansactions(tx_attrs, pid)
   end
 
-  defp extract_span_events(:sampling, %{sampled: true} = tx_attrs, pid, spawns, names, exits) do
-    spawned_process_span_events(tx_attrs, spawns, names, exits)
+  defp extract_span_events(:sampling, %{sampled: true} = tx_attrs, pid, spawns, exits) do
+    spawned_process_span_events(tx_attrs, spawns, exits)
     |> add_root_process_span_event(tx_attrs, pid)
   end
 
-  defp extract_span_events(_trace_mode, _tx_attrs, _pid, _spawns, _names, _exits) do
+  defp extract_span_events(_trace_mode, _tx_attrs, _pid, _spawns, _exits) do
     []
   end
 
@@ -253,9 +281,9 @@ defmodule NewRelic.Transaction.Complete do
   def maybe_add(attrs, _key, ""), do: attrs
   def maybe_add(attrs, key, value), do: Map.put(attrs, key, value)
 
-  defp spawned_process_span_events(tx_attrs, process_spawns, process_names, process_exits) do
+  defp spawned_process_span_events(tx_attrs, process_spawns, process_exits) do
     process_spawns
-    |> collect_process_segments(process_names, process_exits)
+    |> collect_process_segments(process_exits)
     |> Enum.map(&transform_trace_name_attrs/1)
     |> Enum.map(fn proc ->
       %NewRelic.Span.Event{
@@ -266,7 +294,11 @@ defmodule NewRelic.Transaction.Complete do
         category: "generic",
         name: proc.name || "Process",
         guid: DistributedTrace.generate_guid(pid: proc.id),
-        parent_id: DistributedTrace.generate_guid(pid: proc.parent_id),
+        parent_id:
+          case proc.parent_id do
+            {pid, label, ref} -> DistributedTrace.generate_guid(pid: pid, label: label, ref: ref)
+            pid -> DistributedTrace.generate_guid(pid: pid)
+          end,
         timestamp: proc[:start_time],
         duration: (proc[:end_time] - proc[:start_time]) / 1000,
         category_attributes: %{
@@ -276,9 +308,8 @@ defmodule NewRelic.Transaction.Complete do
     end)
   end
 
-  defp collect_process_segments(spawns, names, exits) do
-    for {pid, start_time, original} <- spawns,
-        {^pid, name} <- names,
+  defp collect_process_segments(spawns, exits) do
+    for {pid, start_time, original, name} <- spawns,
         {^pid, end_time} <- exits do
       %{
         pid: inspect(pid),
@@ -344,12 +375,37 @@ defmodule NewRelic.Transaction.Complete do
     |> Map.merge(%{class_name: name || "Process", method_name: nil, metric_name: pid})
   end
 
+  defp merge_process_function_segments(process_segments, function_segments) do
+    Enum.reduce(
+      process_segments,
+      {[], function_segments},
+      &reduce_process_function_segments/2
+    )
+  end
+
+  defp reduce_process_function_segments(
+         process_segment,
+         {merged_segments, remaining_function_segments}
+       ) do
+    {process_function_segments, remaining_function_segments} =
+      Map.pop(remaining_function_segments, process_segment.pid, [])
+
+    merged_process_segment = Map.put(process_segment, :children, process_function_segments)
+
+    {[merged_process_segment | merged_segments], remaining_function_segments}
+  end
+
   defp generate_process_tree(processes, root: root) do
-    parent_map = Enum.group_by(processes, & &1.parent_id)
+    parent_map =
+      Enum.group_by(processes, fn
+        %{parent_id: {pid, _label, _ref}} -> pid
+        %{parent_id: pid} -> pid
+      end)
+
     generate_tree(root, parent_map)
   end
 
-  defp generate_process_segment_tree({pid, segments}) do
+  defp generate_segment_tree({pid, segments}) do
     parent_map = Enum.group_by(segments, & &1.parent_id)
     %{children: children} = generate_tree(%{id: :root}, parent_map)
     {pid, children}
@@ -447,7 +503,7 @@ defmodule NewRelic.Transaction.Complete do
     expected = parse_error_expected(error.reason)
 
     {exception_type, exception_reason, exception_stacktrace} =
-      Util.Error.normalize(:error, error.reason, error.stack)
+      Util.Error.normalize(error.kind, error.reason, error.stack)
 
     report_error_trace(
       tx_attrs,

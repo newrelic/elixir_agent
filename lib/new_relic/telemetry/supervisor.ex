@@ -1,4 +1,4 @@
-defmodule NewRelic.TelemetrySupervisor do
+defmodule NewRelic.Telemetry.Supervisor do
   use Supervisor
 
   @moduledoc false
@@ -10,7 +10,9 @@ defmodule NewRelic.TelemetrySupervisor do
   def init(_) do
     children = [
       NewRelic.Telemetry.Ecto.Supervisor,
-      NewRelic.Telemetry.Redix
+      NewRelic.Telemetry.Redix,
+      NewRelic.Telemetry.Plug,
+      NewRelic.Telemetry.Phoenix
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

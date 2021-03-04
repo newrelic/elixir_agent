@@ -1,13 +1,27 @@
 defmodule TestHelper do
-  def request(module, conn) do
-    Task.async(fn ->
-      try do
-        module.call(conn, [])
-      rescue
-        error -> error
-      end
-    end)
-    |> Task.await()
+  def request(module, conn, http_opts \\ [], protocol_options \\ []) do
+    Plug.Cowboy.http(module, [], port: 8000, protocol_options: protocol_options)
+
+    response =
+      NewRelic.Util.HTTP.get(
+        "http://localhost:8000#{conn.request_path}",
+        conn.req_headers,
+        http_opts
+      )
+
+    Plug.Cowboy.shutdown(Module.concat(module, HTTP))
+
+    case response do
+      {:ok, response} -> response
+      response -> response
+    end
+  end
+
+  def http_request(port, path) do
+    {:ok, {{_, status_code, _}, _headers, body}} =
+      :httpc.request('http://localhost:#{port}/#{path}')
+
+    {:ok, %{status_code: status_code, body: to_string(body)}}
   end
 
   def trigger_report(module) do
@@ -43,13 +57,6 @@ defmodule TestHelper do
       [%{name: ^name, scope: ""}, [^call_count, _, _, _, _, _]] -> true
       _ -> false
     end)
-  end
-
-  def http_request(path, port) do
-    {:ok, {{_, _status_code, _}, _headers, body}} =
-      :httpc.request('http://localhost:#{port}/#{path}')
-
-    {:ok, %{body: to_string(body)}}
   end
 
   def simulate_agent_enabled(_context) do

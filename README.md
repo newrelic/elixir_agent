@@ -54,47 +54,52 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 * `NEW_RELIC_APP_NAME`
 * `NEW_RELIC_LICENSE_KEY`
 
-## Instrumentation
+## Telemetry-based Instrumentation
 
-Out of the box, we will report Error Traces & some general BEAM VM stats. For further visibility, you'll need to add some basic instrumentation.
+Some common Elixir packages are auto-instrumented via [`telemetry`](https://github.com/beam-telemetry/telemetry)
 
-#### Telemetry
+* [`Plug`](https://github.com/elixir-plug/plug): See [NewRelic.Telemetry.Plug](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Plug.html) for details.
+* [`Phoenix`](https://github.com/phoenixframework/phoenix): See [NewRelic.Telemetry.Phoenix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Phoenix.html) for details.
+* [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Ecto.html) for details.
+* [`Redix`](https://github.com/whatyouhide/redix): See [NewRelic.Telemetry.Redix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Redix.html) for details.
 
-Some Elixir packages are auto-instrumented via [`telemetry`](https://github.com/beam-telemetry/telemetry)
+## Manual Instrumentation
 
-* [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://github.com/newrelic/elixir_agent/blob/master/lib/new_relic/telemetry/ecto.ex) for details.
+#### Transactions
 
-#### Plug
+The `Plug` and `Phoenix` instrumentation automatically report a Transaction for each request.
 
-Plug instrumentation is built into the agent.
+These Transactions will follow across any process spawned and linked (ex: `Task.async`), but will _not_ follow a process that isn't linked (ex: `Task.Supervisor.async_nolink`).
 
-* `NewRelic.Transaction` enables rich Transaction Monitoring for a `Plug` pipeline. It's a macro that injects a few plugs and an error handler. Install it by adding `use NewRelic.Transaction` to your Plug module.
+To manually connect a Transaction to an unlinked process, you can use `NewRelic.get_transaction` and `NewRelic.connect_to_transaction`. See the docs for those functions for further details.
 
 ```elixir
-defmodule MyPlug do
-  use Plug.Router
-  use NewRelic.Transaction
+tx = NewRelic.get_transaction()
+
+Task.Supervisor.async_nolink(MyTaskSupervisor, fn ->
+  NewRelic.connect_to_transaction(tx)
   # ...
-end
+end)
 ```
 
 #### Function Tracing
 
-* `NewRelic.Tracer` enables detailed Function tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it. Install it by adding `use NewRelic.Tracer` to any module, and annotating any function with `@trace` module attribute
-
+`NewRelic.Tracer` enables detailed Function tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it. Install it by adding `use NewRelic.Tracer` to any module, and annotating any function with an `@trace` module attribute
 
 ```elixir
 defmodule MyModule do
   use NewRelic.Tracer
 
-  @trace :func
-  def func do
-    # Will report as `MyModule.func/0`
+  @trace :work
+  def work do
+    # Will report as `MyModule.work/0`
   end
 end
 ```
 
-* `NewRelic.Tracer` also enables detailed External request tracing. A little more instrumentation is required to pass the trace context forward with Distributed Tracing.
+#### Distributed Tracing
+
+Requests to other services can be traced with the combination of an additional outgoing header and an `:external` tracer.
 
 ```elixir
 defmodule MyExternalService do
@@ -111,7 +116,7 @@ end
 
 #### Pre-Instrumented Modules
 
-* `NewRelic.Instrumented.Mix.Task` To enable the Agent and record a Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, record the Transaction, and shut down.
+`NewRelic.Instrumented.Mix.Task` To enable the Agent and record an Other Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, records a Transaction, and is shut down.
 
 ```elixir
 defmodule Mix.Tasks.Example do
@@ -124,7 +129,7 @@ defmodule Mix.Tasks.Example do
 end
 ```
 
-* `NewRelic.Instrumented.HTTPoison` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace.
+`NewRelic.Instrumented.HTTPoison` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace.
 
 ```elixir
 alias NewRelic.Instrumented.HTTPoison
@@ -133,15 +138,15 @@ HTTPoison.get("http://www.example.com")
 
 #### Other Transactions
 
-You may start an "Other" Transaction for non-HTTP related work. This could used be while consuming messages from a broker, for example.
+You may start an "Other" Transaction for non-HTTP related work. This could used be while consuming from a message queue, for example.
 
-To start an other transaction:
+To start an Other Transaction:
 
 ```elixir
 NewRelic.start_transaction(category, name)
 ```
 
-And to stop the transaction within the same process:
+And to stop the Transaction within the same process:
 
 ```elixir
 NewRelic.stop_transaction()
@@ -151,5 +156,4 @@ NewRelic.stop_transaction()
 
 There are a few adapters which leverage this agent to provide library / framework specific instrumentation. Note that these will eventually be replaced with `telemetry` based instrumentation.
 
-* `Phoenix` https://github.com/binaryseed/new_relic_phoenix
 * `Absinthe` https://github.com/binaryseed/new_relic_absinthe

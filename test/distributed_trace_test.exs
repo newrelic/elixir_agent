@@ -9,7 +9,6 @@ defmodule DistributedTraceTest do
 
   defmodule TestPlugApp do
     use Plug.Router
-    use NewRelic.Transaction
     use NewRelic.Tracer
 
     plug(:match)
@@ -98,7 +97,7 @@ defmodule DistributedTraceTest do
       )
 
     outbound_payload =
-      response.resp_body
+      response.body
       |> Base.decode64!()
       |> Jason.decode!()
 
@@ -145,7 +144,7 @@ defmodule DistributedTraceTest do
       )
 
     outbound_payload =
-      response.resp_body
+      response.body
       |> Base.decode64!()
       |> Jason.decode!()
 
@@ -163,7 +162,7 @@ defmodule DistributedTraceTest do
     response = TestHelper.request(TestPlugApp, conn(:get, "/"))
 
     outbound_payload =
-      response.resp_body
+      response.body
       |> Base.decode64!()
       |> Jason.decode!()
 
@@ -174,6 +173,19 @@ defmodule DistributedTraceTest do
 
     # Increase by 1 the priority when we generate it
     assert get_in(outbound_payload, ["d", "pr"]) > 1.0
+  end
+
+  test "asking for DT context when there is none" do
+    headers = NewRelic.DistributedTrace.distributed_trace_headers(:http)
+    assert length(headers) == 0
+
+    Task.async(fn ->
+      NewRelic.start_transaction("TransactionCategory", "MyTaskName")
+
+      headers = NewRelic.DistributedTrace.distributed_trace_headers(:http)
+      assert length(headers) > 0
+    end)
+    |> Task.await()
   end
 
   describe "Context decoding" do
@@ -288,7 +300,7 @@ defmodule DistributedTraceTest do
       )
 
     [traceparent_header, tracestate_header] =
-      response.resp_body
+      response.body
       |> String.split("|")
 
     assert traceparent_header |> is_binary

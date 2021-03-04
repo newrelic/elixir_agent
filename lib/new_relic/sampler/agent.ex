@@ -1,8 +1,6 @@
 defmodule NewRelic.Sampler.Agent do
   use GenServer
 
-  alias NewRelic.Transaction
-
   # Takes samples of the state of the Agent
 
   @moduledoc false
@@ -31,22 +29,27 @@ defmodule NewRelic.Sampler.Agent do
 
   def record_sample do
     NewRelic.report_metric(
-      {:supportability, :agent, "ReporterCollectingSize"},
-      value: ets_size(NewRelic.Transaction.Reporter.Collecting)
+      {:supportability, :agent, "Sidecar/Process/ActiveCount"},
+      value: NewRelic.Transaction.Sidecar.counter()
     )
 
     NewRelic.report_metric(
-      {:supportability, :agent, "ReporterTrackingSize"},
-      value: ets_size(NewRelic.Transaction.Reporter.Tracking)
+      {:supportability, :agent, "Sidecar/Stores/ContextStore/Size"},
+      value: ets_size(NewRelic.Transaction.Sidecar.ContextStore)
     )
 
     NewRelic.report_metric(
-      {:supportability, :agent, "ReporterCompleteTasksActive"},
-      value: length(Task.Supervisor.children(Transaction.TaskSupervisor))
+      {:supportability, :agent, "Sidecar/Stores/LookupStore/Size"},
+      value: ets_size(NewRelic.Transaction.Sidecar.LookupStore)
+    )
+
+    NewRelic.report_metric(
+      {:supportability, :agent, "ErlangTrace/Restarts"},
+      value: NewRelic.Transaction.ErlangTraceManager.restart_count()
     )
   end
 
-  def ets_size(table) do
+  defp ets_size(table) do
     :ets.info(table, :size)
   rescue
     ArgumentError -> nil

@@ -31,9 +31,12 @@ defmodule OtherTransactionTest do
       External.call()
 
       Task.async(fn ->
-        Process.sleep(100)
+        # min duration for collecting trace
+        Process.sleep(50)
       end)
       |> Task.await()
+
+      Process.sleep(10)
     end)
     |> Task.await()
 
@@ -46,6 +49,7 @@ defmodule OtherTransactionTest do
         duration_ms: duration_ms,
         start_time: start_time,
         end_time: end_time,
+        total_time_s: total_time_s,
         traceId: _,
         guid: _
       }
@@ -53,6 +57,9 @@ defmodule OtherTransactionTest do
 
     assert name == "OtherTransaction/TransactionCategory/MyTaskName"
     assert end_time - start_time == duration_ms
+
+    assert duration_ms >= 60
+    assert total_time_s >= (60 + 50) / 1000
 
     [_trace] = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
 
@@ -94,22 +101,6 @@ defmodule OtherTransactionTest do
     assert TestHelper.find_metric(metrics, "OtherTransaction/DifferentCategory/DifferentName")
 
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
-  end
-
-  test "Cleanup context when stopped manually" do
-    task =
-      Task.async(fn ->
-        NewRelic.start_transaction("TransactionCategory", "Cleanup")
-
-        assert NewRelic.DistributedTrace.Tracker.fetch(self())
-
-        Process.sleep(100)
-        NewRelic.stop_transaction()
-      end)
-
-    Task.await(task)
-
-    refute NewRelic.DistributedTrace.Tracker.fetch(task.pid)
   end
 
   test "NewRelic.other_transaction macro" do

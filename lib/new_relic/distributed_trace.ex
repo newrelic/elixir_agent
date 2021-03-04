@@ -5,25 +5,37 @@ defmodule NewRelic.DistributedTrace do
 
   @moduledoc false
 
-  alias NewRelic.DistributedTrace.{Context, Tracker}
+  alias NewRelic.DistributedTrace.Context
   alias NewRelic.Harvest.Collector.AgentRun
   alias NewRelic.Transaction
 
-  def accept_distributed_trace_headers(:http, conn) do
-    w3c_headers(conn) || newrelic_header(conn) || :no_payload
+  def start(:http, headers) do
+    determine_context(:http, headers)
+    |> track_transaction(transport_type: "HTTP")
   end
 
-  defp w3c_headers(conn) do
-    with [_traceparent | _] <- Plug.Conn.get_req_header(conn, @w3c_traceparent),
-         %Context{} = context <- __MODULE__.W3CTraceContext.extract(conn) do
+  defp determine_context(:http, headers) do
+    case accept_distributed_trace_headers(:http, headers) do
+      %Context{} = context -> context
+      _ -> generate_new_context()
+    end
+  end
+
+  def accept_distributed_trace_headers(:http, headers) do
+    w3c_headers(headers) || newrelic_header(headers) || :no_payload
+  end
+
+  defp w3c_headers(headers) do
+    with {:ok, _traceparent} <- Map.fetch(headers, @w3c_traceparent),
+         %Context{} = context <- __MODULE__.W3CTraceContext.extract(headers) do
       context
     else
       _ -> false
     end
   end
 
-  defp newrelic_header(conn) do
-    with [trace_payload | _] <- Plug.Conn.get_req_header(conn, @nr_header),
+  defp newrelic_header(headers) do
+    with {:ok, trace_payload} <- Map.fetch(headers, @nr_header),
          %Context{} = context <- __MODULE__.NewRelicContext.extract(trace_payload) do
       context
     else
@@ -176,19 +188,11 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def set_tracing_context(context) do
-    Tracker.store(self(), context: context)
-  end
-
-  def cleanup_context() do
-    Tracker.cleanup(self())
+    Transaction.Sidecar.trace_context(context)
   end
 
   def get_tracing_context() do
-    if Transaction.Reporter.tracking?(self()) do
-      self()
-      |> Transaction.Reporter.root()
-      |> Tracker.fetch()
-    end
+    Transaction.Sidecar.trace_context()
   end
 
   def set_span(:generic, attrs) do
@@ -240,6 +244,10 @@ defmodule NewRelic.DistributedTrace do
       nil -> generate_guid(pid: self())
       {label, ref} -> generate_guid(pid: self(), label: label, ref: ref)
     end
+  end
+
+  def read_current_span() do
+    Process.get(:nr_current_span)
   end
 
   def reset_span(previous_span: previous_span, previous_span_attrs: previous_span_attrs) do

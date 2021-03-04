@@ -13,8 +13,6 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceParent do
   @parent_id 16
   @flags 2
 
-  def decode([header]), do: decode(header)
-
   def decode(<<"ff", "-", _::binary>>),
     do: invalid()
 

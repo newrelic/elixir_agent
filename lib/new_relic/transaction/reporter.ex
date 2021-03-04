@@ -1,7 +1,4 @@
 defmodule NewRelic.Transaction.Reporter do
-  use GenServer
-
-  alias NewRelic.Util.AttrStore
   alias NewRelic.Transaction
 
   # This GenServer collects and reports Transaction related data
@@ -14,168 +11,99 @@ defmodule NewRelic.Transaction.Reporter do
 
   @moduledoc false
 
-  # Customer Exposed API
-
   def add_attributes(attrs) when is_list(attrs) do
-    if tracking?(self()) do
-      AttrStore.add(
-        __MODULE__,
-        self(),
-        attrs
-        |> NewRelic.Util.deep_flatten()
-        |> NewRelic.Util.coerce_attributes()
-      )
-    end
+    attrs
+    |> NewRelic.Util.deep_flatten()
+    |> NewRelic.Util.coerce_attributes()
+    |> Transaction.Sidecar.add()
   end
 
   def incr_attributes(attrs) do
-    if tracking?(self()) do
-      AttrStore.incr(__MODULE__, self(), attrs)
-    end
+    Transaction.Sidecar.incr(attrs)
   end
 
   def set_transaction_name(custom_name) when is_binary(custom_name) do
-    if tracking?(self()) do
-      AttrStore.add(__MODULE__, self(), custom_name: custom_name)
+    Transaction.Sidecar.add(custom_name: custom_name)
+  end
+
+  def start_transaction(:web) do
+    Transaction.ErlangTrace.trace()
+    Transaction.Sidecar.track(:web)
+  end
+
+  def start_transaction(:other) do
+    unless Transaction.Sidecar.tracking?() do
+      Transaction.ErlangTrace.trace()
+      Transaction.Sidecar.track(:other)
     end
   end
 
-  # Internal Agent API
-
-  def start() do
-    Transaction.Monitor.add(self())
-    AttrStore.track(__MODULE__, self())
-
-    AttrStore.add(__MODULE__, self(),
-      pid: inspect(self()),
-      start_time: System.system_time(),
-      start_time_mono: System.monotonic_time()
-    )
+  def stop_transaction(:web) do
+    Transaction.Sidecar.complete()
   end
 
-  def start_other_transaction(category, name) do
-    unless tracking?(self()) do
-      start()
-      AttrStore.add(__MODULE__, self(), other_transaction_name: "#{category}/#{name}")
-    end
+  def stop_transaction(:other) do
+    Transaction.Sidecar.add(end_time_mono: System.monotonic_time())
+    Transaction.Sidecar.complete()
   end
 
   def ignore_transaction() do
-    if tracking?(self()) do
-      ensure_purge(self())
-      AttrStore.untrack(__MODULE__, self())
-      AttrStore.purge(__MODULE__, self())
-    end
+    Transaction.Sidecar.ignore()
+    :ok
   end
 
-  def error(pid, error) do
-    if tracking?(pid) do
-      AttrStore.add(__MODULE__, pid, transaction_error: {:error, error})
-    end
+  def exclude_from_transaction() do
+    Transaction.Sidecar.exclude()
+    :ok
   end
 
-  def fail(pid, %{kind: kind, reason: reason, stack: stack}) do
-    if tracking?(pid) do
-      if NewRelic.Config.feature?(:error_collector) do
-        AttrStore.add(__MODULE__, pid,
-          error: true,
-          error_kind: kind,
-          error_reason: inspect(reason),
-          error_stack: inspect(stack)
-        )
-      else
-        AttrStore.add(__MODULE__, pid, error: true)
-      end
+  def get_transaction() do
+    %{
+      sidecar: Transaction.Sidecar.get_sidecar(),
+      parent:
+        case NewRelic.DistributedTrace.read_current_span() do
+          nil -> self()
+          {label, ref} -> {self(), label, ref}
+        end
+    }
+  end
+
+  def connect_to_transaction(tx_ref) do
+    Transaction.Sidecar.connect(tx_ref)
+    :ok
+  end
+
+  def disconnect_from_transaction() do
+    Transaction.Sidecar.disconnect()
+    :ok
+  end
+
+  def error(error) do
+    Transaction.Sidecar.add(transaction_error: {:error, error})
+  end
+
+  def fail(%{kind: kind, reason: reason, stack: stack}) do
+    if NewRelic.Config.feature?(:error_collector) do
+      Transaction.Sidecar.add(
+        error: true,
+        error_kind: kind,
+        error_reason: inspect(reason),
+        error_stack: inspect(stack)
+      )
+    else
+      Transaction.Sidecar.add(error: true)
     end
   end
 
   def add_trace_segment(segment) do
-    if tracking?(self()) do
-      AttrStore.add(__MODULE__, self(), trace_function_segments: {:list, segment})
-    end
+    Transaction.Sidecar.append(function_segments: segment)
   end
 
   def track_metric(metric) do
-    if tracking?(self()) do
-      AttrStore.add(__MODULE__, self(), transaction_metrics: {:list, metric})
-    end
+    Transaction.Sidecar.append(transaction_metrics: metric)
   end
 
-  def complete(pid, mode) do
-    if tracking?(pid) do
-      AttrStore.add(__MODULE__, pid, end_time_mono: System.monotonic_time())
-      AttrStore.untrack(__MODULE__, pid)
-
-      case mode do
-        :sync ->
-          complete_and_purge(pid)
-
-        :async ->
-          Task.Supervisor.start_child(Transaction.TaskSupervisor, fn ->
-            complete_and_purge(pid)
-          end)
-      end
-    end
+  def track_spawn(parent, child, timestamp) do
+    Transaction.Sidecar.track_spawn(parent, child, timestamp)
   end
-
-  defp complete_and_purge(pid) do
-    AttrStore.collect(__MODULE__, pid)
-    |> Transaction.Complete.run(pid)
-
-    AttrStore.purge(__MODULE__, pid)
-  end
-
-  # Internal Transaction.Monitor API
-  #
-
-  def track_spawn(original, pid, timestamp) do
-    if tracking?(original) do
-      AttrStore.link(__MODULE__, original, pid)
-
-      AttrStore.add(__MODULE__, pid,
-        trace_process_spawns: {:list, {pid, timestamp, original}},
-        trace_process_names: {:list, {pid, NewRelic.Util.process_name(pid)}}
-      )
-    end
-  end
-
-  def track_exit(pid, timestamp) do
-    if tracking?(pid) do
-      AttrStore.add(__MODULE__, pid, trace_process_exits: {:list, {pid, timestamp}})
-    end
-  end
-
-  # Try really hard not to leak memory if any async reporting trickles in late
-  def ensure_purge(pid) do
-    Process.send_after(
-      __MODULE__,
-      {:ensure_purge, AttrStore.root(__MODULE__, pid)},
-      Application.get_env(:new_relic_agent, :ensure_purge_after, 2_000)
-    )
-  end
-
-  # GenServer
-  #
-
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
-  end
-
-  def init(:ok) do
-    NewRelic.sample_process()
-    AttrStore.new(__MODULE__)
-    {:ok, %{timers: %{}}}
-  end
-
-  def handle_info({:ensure_purge, pid}, state) do
-    AttrStore.purge(__MODULE__, pid)
-    {:noreply, %{state | timers: Map.drop(state.timers, [pid])}}
-  end
-
-  # Helpers
-  #
-
-  def tracking?(pid), do: AttrStore.tracking?(__MODULE__, pid)
-
-  def root(pid), do: AttrStore.root(__MODULE__, pid)
 end

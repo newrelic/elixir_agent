@@ -551,12 +551,6 @@ defmodule NewRelic.Metric.MetricData do
       call_count: 1
     }
 
-  def transform(:supportability, [:transaction, :missing_attributes]),
-    do: %Metric{
-      name: :"Supportability/Transaction/MissingAttributes",
-      call_count: 1
-    }
-
   def transform(:queue_time, duration_s: duration_s),
     do: %Metric{
       name: "WebFrontend/QueueTime",

@@ -1,6 +1,5 @@
 defmodule RedixExample.Router do
   use Plug.Router
-  use NewRelic.Transaction
 
   plug(:match)
   plug(:dispatch)

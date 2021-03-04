@@ -1,5 +1,5 @@
 defmodule TransactionTraceTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   use Plug.Test
 
   alias NewRelic.Harvest
@@ -11,6 +11,7 @@ defmodule TransactionTraceTest do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+    send(NewRelic.DistributedTrace.BackoffSampler, :reset)
 
     on_exit(fn ->
       TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
@@ -48,7 +49,6 @@ defmodule TransactionTraceTest do
 
   defmodule TestPlugApp do
     use Plug.Router
-    use NewRelic.Transaction
 
     plug(:match)
     plug(:dispatch)
@@ -221,6 +221,24 @@ defmodule TransactionTraceTest do
     traces = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
     assert length(traces) == 2
     Jason.encode!(traces)
+  end
+
+  test "Transaction Trace when erlang trace disabled" do
+    NewRelic.disable_erlang_trace()
+
+    TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
+
+    traces = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
+
+    # tbh, the TT struct we have to send is too complicated to assert on structurally
+    # so i'm just gonna make sure the expected string fragments are in there :)
+    trace_str = Jason.encode!(traces)
+
+    assert trace_str =~ "TransactionTraceTest.ExternalService.query"
+    assert trace_str =~ "TransactionTraceTest.ExternalService.secret_query"
+    assert trace_str =~ "TransactionTraceTest.HelperModule.function"
+
+    NewRelic.enable_erlang_trace()
   end
 
   test "Don't report traces with a short duration" do

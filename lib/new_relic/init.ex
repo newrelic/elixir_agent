@@ -81,6 +81,16 @@ defmodule NewRelic.Init do
           "NEW_RELIC_REDIX_INSTRUMENTATION_ENABLED",
           :redix_instrumentation_enabled
         ),
+      plug_instrumentation:
+        determine_feature(
+          "NEW_RELIC_PLUG_INSTRUMENTATION_ENABLED",
+          :plug_instrumentation_enabled
+        ),
+      phoenix_instrumentation:
+        determine_feature(
+          "NEW_RELIC_PHOENIX_INSTRUMENTATION_ENABLED",
+          :phoenix_instrumentation_enabled
+        ),
       function_argument_collection:
         determine_feature(
           "NEW_RELIC_FUNCTION_ARGUMENT_COLLECTION_ENABLED",

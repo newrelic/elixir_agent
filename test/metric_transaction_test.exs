@@ -45,7 +45,6 @@ defmodule MetricTransactionTest do
 
   defmodule TestPlugApp do
     use Plug.Router
-    use NewRelic.Transaction
 
     plug(:match)
     plug(:dispatch)
@@ -169,6 +168,7 @@ defmodule MetricTransactionTest do
     assert_in_delta time, 0.1, 0.02
   end
 
+  @tag capture_log: true
   test "Failed transaction" do
     TestHelper.request(TestPlugApp, conn(:get, "/fail"))
 

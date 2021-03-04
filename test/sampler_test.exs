@@ -1,5 +1,5 @@
 defmodule SamplerTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
 
   alias NewRelic.Harvest.Collector
 
@@ -113,28 +113,6 @@ defmodule SamplerTest do
     assert second_reductions > first_reductions
   end
 
-  test "Agent sampler" do
-    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-
-    Task.Supervisor.start_child(NewRelic.Transaction.TaskSupervisor, fn ->
-      Process.sleep(1000)
-    end)
-
-    Task.Supervisor.start_child(NewRelic.Transaction.TaskSupervisor, fn ->
-      Process.sleep(1000)
-    end)
-
-    TestHelper.trigger_report(NewRelic.Sampler.Agent)
-
-    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
-
-    assert [_, [_, 2.0, _, _, _, _]] =
-             TestHelper.find_metric(
-               metrics,
-               "Supportability/ElixirAgent/ReporterCompleteTasksActive"
-             )
-  end
-
   describe "Sampler.ETS" do
     test "records metrics on ETS tables" do
       TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
@@ -161,5 +139,51 @@ defmodule SamplerTest do
 
     assert length(top_procs) >= 5
     assert length(top_procs) <= 10
+  end
+
+  test "Agent sampler" do
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+
+    _tx_1 =
+      Task.async(fn ->
+        NewRelic.start_transaction("Test", "Tx")
+        Process.sleep(500)
+      end)
+
+    _tx_2 =
+      Task.async(fn ->
+        NewRelic.start_transaction("Test", "Tx")
+        Process.sleep(500)
+      end)
+
+    _tx_3 =
+      Task.async(fn ->
+        NewRelic.start_transaction("Test", "Tx")
+        Process.sleep(500)
+      end)
+
+    Process.sleep(100)
+
+    TestHelper.trigger_report(NewRelic.Sampler.Agent)
+
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+
+    assert [_, [_, active, _, _, _, _]] =
+             TestHelper.find_metric(
+               metrics,
+               "Supportability/ElixirAgent/Sidecar/Process/ActiveCount"
+             )
+
+    assert active >= 3
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Supportability/ElixirAgent/Sidecar/Stores/LookupStore/Size"
+           )
+
+    assert TestHelper.find_metric(
+             metrics,
+             "Supportability/ElixirAgent/Sidecar/Stores/ContextStore/Size"
+           )
   end
 end

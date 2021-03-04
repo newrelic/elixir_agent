@@ -1,6 +1,5 @@
 defmodule W3cTraceContextValidation.Router do
   use Plug.Router
-  use NewRelic.Transaction
   use NewRelic.Tracer
 
   plug(Plug.Parsers, parsers: [:json], json_decoder: Jason)
