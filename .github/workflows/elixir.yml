@@ -67,7 +67,7 @@ jobs:
         cd examples
         docker-compose up -d
         until pg_isready -h localhost; do sleep 1; done;
-        sleep 10
+        until mysqladmin --protocol tcp ping; do sleep 1; done;
 
     - name: Run integration tests
       run: |
