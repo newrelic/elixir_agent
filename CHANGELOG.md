@@ -13,7 +13,6 @@ Features
 * Transaction tracking is now faster and better in the face of overload
   * Transactions no longer follow processes that aren't linked (ex: `Task.Supervisor.async_nolink`). They can be connected manually if desired using `NewRelic.connect_task_to_transaction` and `NewRelic.connect_to_transaction`.
 
-=======
 ### `v1.23.6`
 
 Fixes
