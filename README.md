@@ -76,9 +76,19 @@ To manually connect a Transaction to an unlinked process, you can use `NewRelic.
 ```elixir
 tx = NewRelic.get_transaction()
 
-Task.Supervisor.async_nolink(MyTaskSupervisor, fn ->
+spawn(fn ->
   NewRelic.connect_to_transaction(tx)
   # ...
+end)
+```
+
+If you are using a `Task` to spawn work, you can use the pre-instrumented `NewRelic.Instrumented.Task` convienince module to make this easier. Just `alias` it in your module and all your Tasks will be instrumented. You may also use the functions directly.
+
+```elixir
+alias NewRelic.Instrumented.Task
+
+Task.Supervisor.async_nolink(MyTaskSupervisor, fn ->
+  # This process wil be automatically connected to the Transaction...
 end)
 ```
 
