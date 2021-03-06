@@ -201,14 +201,11 @@ defmodule SidecarTest do
       :hello
     end
 
-    @trace :connected_task_async_nolink
-    def connected_task_async_nolink(fun) do
-      tx = NewRelic.get_transaction()
+    @trace :instrumented_task_async_nolink
+    def instrumented_task_async_nolink(fun) do
+      alias NewRelic.Instrumented.Task
 
-      Task.Supervisor.async_nolink(TestTaskSup, fn ->
-        NewRelic.connect_to_transaction(tx)
-        fun.()
-      end)
+      Task.Supervisor.async_nolink(TestTaskSup, fun)
       |> Task.await()
     end
   end
@@ -230,17 +227,14 @@ defmodule SidecarTest do
       )
       |> Task.await()
 
-      Traced.connected_task_async_nolink(fn ->
+      Traced.instrumented_task_async_nolink(fn ->
         NewRelic.add_attributes(async_nolink_connected: :YES)
         Traced.hey()
 
-        tx = NewRelic.get_transaction()
-
-        Task.Supervisor.async_stream_nolink(
+        NewRelic.Instrumented.Task.Supervisor.async_stream_nolink(
           TestTaskSup,
           [:YES],
           fn val ->
-            NewRelic.connect_to_transaction(tx)
             NewRelic.add_attributes(async_stream_nolink_connected: val)
             Traced.hello()
           end
@@ -274,7 +268,7 @@ defmodule SidecarTest do
 
     task_triggering_function_span =
       Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "SidecarTest.Traced.connected_task_async_nolink/1"
+        attr[:name] == "SidecarTest.Traced.instrumented_task_async_nolink/1"
       end)
 
     assert task_triggering_function_span.attributes[:"parent.id"] == tx_root_process_span[:id]

@@ -160,6 +160,10 @@ defmodule NewRelic.Transaction.Sidecar do
      }}
   end
 
+  def handle_cast({:offspring, child}, state) do
+    {:noreply, %{state | offspring: MapSet.put(state.offspring, child)}}
+  end
+
   def handle_cast({:exclude, pid}, state) do
     cleanup(lookup: pid)
     {:noreply, %{state | exclusions: [pid | state.exclusions]}}
@@ -240,10 +244,6 @@ defmodule NewRelic.Transaction.Sidecar do
     Process.delete(:nr_tx_sidecar)
   end
 
-  defp set_sidecar(nil) do
-    nil
-  end
-
   defp set_sidecar(pid) do
     Process.put(:nr_tx_sidecar, pid)
     pid
@@ -252,11 +252,14 @@ defmodule NewRelic.Transaction.Sidecar do
   def get_sidecar() do
     case Process.get(:nr_tx_sidecar) do
       nil ->
-        sidecar =
-          lookup_sidecar_in(linked_process_callers()) ||
-            lookup_sidecar_in(process_ancestors())
-
-        set_sidecar(sidecar)
+        with {:links, links} <- Process.info(self(), :links),
+             sidecar when is_pid(sidecar) <-
+               lookup_sidecar_in(linked_process_callers(links)) ||
+                 lookup_sidecar_in(linked_process_ancestors(links)) do
+          cast(sidecar, {:offspring, self()})
+          store_sidecar(self(), sidecar)
+          set_sidecar(sidecar)
+        end
 
       :no_track ->
         nil
@@ -285,14 +288,18 @@ defmodule NewRelic.Transaction.Sidecar do
 
   defp lookup_sidecar(_named_process), do: nil
 
-  defp linked_process_callers() do
-    callers = Process.get(:"$callers", []) |> Enum.reverse()
-    {:links, links} = Process.info(self(), :links)
-    for pid <- callers, ^pid <- links, do: pid
+  defp linked_process_callers(links) do
+    for pid <- Process.get(:"$callers", []) |> Enum.reverse(),
+        ^pid <- links do
+      pid
+    end
   end
 
-  defp process_ancestors() do
-    Process.get(:"$ancestors", [])
+  defp linked_process_ancestors(links) do
+    for pid <- Process.get(:"$ancestors", []),
+        ^pid <- links do
+      pid
+    end
   end
 
   defp cleanup(context: sidecar) do
