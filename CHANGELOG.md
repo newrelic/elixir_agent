@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.24.1`
+
+Tweaks
+* Add a helper module for auto-instrumenting a `Task`. [#318](https://github.com/newrelic/elixir_agent/pull/318)
+
 ### `v1.24.0`
 
 Features
