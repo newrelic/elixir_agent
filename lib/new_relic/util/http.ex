@@ -35,8 +35,8 @@ defmodule NewRelic.Util.HTTP do
   end
 
   @doc """
-  Certs are pulled from Mozilla exactly as Hex does:
-  https://github.com/hexpm/hex/blob/master/README.md#bundled-ca-certs
+  Certs are from `CAStore`.
+  https://github.com/elixir-mint/castore
 
   SSL configured according to EEF Security guide:
   https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
@@ -46,7 +46,7 @@ defmodule NewRelic.Util.HTTP do
       connect_timeout: 1000,
       ssl: [
         verify: :verify_peer,
-        cacertfile: Application.app_dir(:new_relic_agent, "priv/cacert.pem"),
+        cacertfile: CAStore.file_path(),
         customize_hostname_check: [
           match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
         ]

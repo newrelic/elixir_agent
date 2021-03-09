@@ -42,6 +42,7 @@ defmodule NewRelic.Mixfile do
   defp deps do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
+      {:castore, ">= 0.1.0"},
       {:jason, "~> 1.0"},
       {:telemetry, "~> 0.4"},
       # Instrumentation:
