@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.24.2`
+
+Tweaks
+* Use `castore` for certificates. [#320](https://github.com/newrelic/elixir_agent/pull/320) Thanks @chulkilee!
+
 ### `v1.24.1`
 
 Tweaks
