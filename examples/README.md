@@ -23,15 +23,11 @@ mix new example
 Point to the agent
 
 ```elixir
-  def project do
-    [
-      elixirc_paths: ["lib", Path.expand("../../../test/support")],
-    ]
-  end
-
   defp deps do
     [
       {:new_relic_agent, path: "../../../"},
+      {:test_support, in_umbrella: true},
+      # ...
     ]
   end
 ```

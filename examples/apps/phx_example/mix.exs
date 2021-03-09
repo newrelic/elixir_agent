@@ -10,7 +10,6 @@ defmodule PhxExample.MixProject do
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       elixir: "~> 1.7",
-      elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -24,12 +23,10 @@ defmodule PhxExample.MixProject do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib", Path.expand("../../../test/support")]
-  defp elixirc_paths(_), do: ["lib"]
-
   defp deps do
     [
       {:new_relic_agent, path: "../../../"},
+      {:test_support, in_umbrella: true},
       {:phoenix, "~> 1.5"},
       {:phoenix_html, "~> 2.11"},
       {:jason, "~> 1.0"},
