@@ -29,7 +29,7 @@ defmodule NewRelic.Mixfile do
 
   defp package do
     [
-      files: ["lib", "priv", "mix.exs", "README.md", "CHANGELOG.md", "VERSION"],
+      files: ["lib", "mix.exs", "README.md", "CHANGELOG.md", "VERSION"],
       maintainers: ["Vince Foley"],
       licenses: ["Apache 2.0"],
       links: %{
