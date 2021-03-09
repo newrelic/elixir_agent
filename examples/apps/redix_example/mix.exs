@@ -10,7 +10,6 @@ defmodule RedixExample.MixProject do
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       elixir: "~> 1.9",
-      elixirc_paths: ["lib", Path.expand("../../../test/support")],
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -28,6 +27,7 @@ defmodule RedixExample.MixProject do
   defp deps do
     [
       {:new_relic_agent, path: "../../../"},
+      {:test_support, in_umbrella: true},
       {:plug_cowboy, "~> 2.0"},
       {:redix, "~> 1.0"}
     ]
