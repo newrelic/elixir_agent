@@ -9,8 +9,8 @@ defmodule TelemetrySdk.ConfigTest do
            } = TelemetrySdk.Config.determine_hosts(nil, nil)
 
     assert %{
-             log: "https://log-api.eu01.newrelic.com/log/v1",
-             trace: "https://trace-api.eu01.newrelic.com/trace/v1"
+             log: "https://log-api.eu.newrelic.com/log/v1",
+             trace: "https://trace-api.eu.newrelic.com/trace/v1"
            } = TelemetrySdk.Config.determine_hosts(nil, "eu01")
 
     assert %{

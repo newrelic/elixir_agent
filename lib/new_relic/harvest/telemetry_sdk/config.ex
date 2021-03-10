@@ -9,11 +9,12 @@ defmodule NewRelic.Harvest.TelemetrySdk.Config do
     Application.get_env(:new_relic_agent, key, @default[key])
   end
 
+  @region_matcher ~r/^(?<region>\D+)/
   @env_matcher ~r/^(?<env>.+)-collector/
   def determine_hosts(host, region) do
     env = host && Regex.named_captures(@env_matcher, host)["env"]
     env = env && env <> "-"
-    region = region && region <> "."
+    region = region && Regex.named_captures(@region_matcher, region)["region"] <> "."
 
     %{
       log: "https://#{env}log-api.#{region}newrelic.com/log/v1",
