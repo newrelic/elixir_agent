@@ -13,10 +13,11 @@ defmodule NewRelic.Harvest.TelemetrySdk.Config do
   def determine_hosts(host, region) do
     env = host && Regex.named_captures(@env_matcher, host)["env"]
     env = env && env <> "-"
+    log_region = region && String.replace(region, ~r/\d/, "") <> "."
     region = region && region <> "."
 
     %{
-      log: "https://#{env}log-api.#{region}newrelic.com/log/v1",
+      log: "https://#{env}log-api.#{log_region}newrelic.com/log/v1",
       trace: trace_domain(env, region)
     }
   end
