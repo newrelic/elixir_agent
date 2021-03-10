@@ -167,3 +167,23 @@ NewRelic.stop_transaction()
 There are a few adapters which leverage this agent to provide library / framework specific instrumentation. Note that these will eventually be replaced with `telemetry` based instrumentation.
 
 * `Absinthe` https://github.com/binaryseed/new_relic_absinthe
+
+## Logging
+
+New Relic's [Log management](https://docs.newrelic.com/docs/logs/log-management/get-started/get-started-log-management/)
+feature allows you to see all your applications logs in New Relic's interface, connected to other contextual data 
+such as traces.
+
+The feature is supported by the agent and can be run in multiple "modes":
+
+* `forwarder` The recommended mode which formats outgoing logs as JSON objects
+  ready to be picked up by
+  a [Log Forwarder](https://docs.newrelic.com/docs/logs/enable-log-management-new-relic/enable-log-monitoring-new-relic/enable-log-management-new-relic)
+* `direct` Logs are buffered in the agent and shipped directly to New Relic.
+  Your logs will continue being output to their normal destination.
+* `disabled` (default)
+
+Logs In Context can be configured in two ways:
+
+* Environment variable `NEW_RELIC_LOGS_IN_CONTEXT=forwarder`
+* Application config `config :new_relic_agent, logs_in_context: :forwarder`
