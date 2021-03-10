@@ -63,6 +63,14 @@ Some common Elixir packages are auto-instrumented via [`telemetry`](https://gith
 * [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Ecto.html) for details.
 * [`Redix`](https://github.com/whatyouhide/redix): See [NewRelic.Telemetry.Redix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Redix.html) for details.
 
+## Agent Features
+
+There are a few agent features that can be enabled via configuration. Please see the documentation for more information.
+
+* [Logs In Context](https://hexdocs.pm/new_relic_agent/NewRelic.Config.html#feature/1-logs-in-context)
+* [Infinite Tracing](https://hexdocs.pm/new_relic_agent/NewRelic.Config.html#feature/1-infinite-tracing)
+* [Security Controls](https://hexdocs.pm/new_relic_agent/NewRelic.Config.html#feature?/1-security)
+
 ## Manual Instrumentation
 
 #### Transactions
