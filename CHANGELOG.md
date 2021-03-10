@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.24.3`
+
+Fixes
+* Fix Telemetry API URLs for EU customers. [#326](https://github.com/newrelic/elixir_agent/pull/326) Thanks @mattgibson!
+
 ### `v1.24.2`
 
 Tweaks
