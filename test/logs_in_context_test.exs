@@ -18,7 +18,7 @@ defmodule LogsInContextTest do
           NewRelic.start_transaction("TransactionCategory", "LogsInContext")
 
           Logger.metadata(foo: :bar, now: DateTime.utc_now())
-          Logger.error("FOO")
+          Logger.error("FOO", baz: :qux)
         end)
         |> Task.await()
       end)
@@ -33,6 +33,7 @@ defmodule LogsInContextTest do
     assert log["trace.id"] |> is_binary
     assert log["metadata.foo"] == "bar"
     assert log["metadata.now"] |> is_binary
+    assert log["metadata.baz"] == "qux"
 
     configure_logs_in_context(:disabled)
   end
