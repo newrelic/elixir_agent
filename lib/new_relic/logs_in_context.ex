@@ -60,7 +60,7 @@ defmodule NewRelic.LogsInContext do
 
   defp prepare_log(%{msg: {:string, msg}} = log) do
     %{
-      message: msg,
+      message: IO.iodata_to_binary(msg),
       timestamp: System.convert_time_unit(log.meta.time, :microsecond, :millisecond),
       "log.level": log.level
     }

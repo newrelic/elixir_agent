@@ -37,6 +37,26 @@ defmodule LogsInContextTest do
     configure_logs_in_context(:disabled)
   end
 
+  test "LogsInContext formats log messages from Io Lists" do
+    configure_logs_in_context(:forwarder)
+
+    log_line =
+      capture_log([colors: [enabled: false]], fn ->
+        Task.async(fn ->
+          NewRelic.start_transaction("TransactionCategory", "LogsInContext")
+          Logger.error(["FOO", 32, "BAR"])
+        end)
+        |> Task.await()
+      end)
+
+    # Console logging is transformed into JSON structured log lines
+    log = Jason.decode!(log_line)
+
+    assert log["message"] == "FOO BAR"
+
+    configure_logs_in_context(:disabled)
+  end
+
   test "LogsInContext in :direct mode" do
     TestHelper.restart_harvest_cycle(TelemetrySdk.Logs.HarvestCycle)
 
