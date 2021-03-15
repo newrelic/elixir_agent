@@ -65,7 +65,7 @@ defmodule NewRelic.LogsInContext do
       "log.level": log.level
     }
     |> Map.merge(log_metadata(log))
-    |> Map.merge(logger_metadata())
+    |> Map.merge(custom_metadata(log))
     |> Map.merge(tracing_metadata())
   end
 
@@ -91,18 +91,13 @@ defmodule NewRelic.LogsInContext do
     }
   end
 
-  defp logger_metadata() do
-    case :logger.get_process_metadata() do
-      :undefined ->
-        %{}
-
-      metadata ->
-        [metadata: metadata]
-        |> NewRelic.Util.deep_flatten()
-        |> NewRelic.Util.coerce_attributes()
-        |> Map.new()
-        |> Map.delete("metadata.size")
-    end
+  @ignored [:domain, :file, :gl, :line, :mfa, :pid, :time]
+  defp custom_metadata(log) do
+    [metadata: Map.drop(log.meta, @ignored)]
+    |> NewRelic.Util.deep_flatten()
+    |> NewRelic.Util.coerce_attributes()
+    |> Map.new()
+    |> Map.delete("metadata.size")
   end
 
   def linking_metadata() do
