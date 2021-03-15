@@ -91,14 +91,9 @@ defmodule NewRelic.LogsInContext do
     }
   end
 
+  @ignored [:domain, :file, :gl, :line, :mfa, :pid, :time]
   defp custom_metadata(log) do
-    ignored_keys = [:domain, :file, :gl, :line, :mfa, :pid, :time]
-
-    custom_metadata =
-      Enum.reject(log.meta, fn {k, _v} -> k in ignored_keys end)
-      |> Map.new()
-
-    [metadata: custom_metadata]
+    [metadata: Map.drop(log.meta, @ignored)]
     |> NewRelic.Util.deep_flatten()
     |> NewRelic.Util.coerce_attributes()
     |> Map.new()
