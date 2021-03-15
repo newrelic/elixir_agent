@@ -60,7 +60,11 @@ jobs:
       run: mix format --check-formatted
 
     - name: Run unit tests
-      run: mix test --trace
+      run: |
+        set +e
+        mix test --trace
+        set -e
+        mix test --failed
 
     - name: Start integration test dependencies
       run: |
