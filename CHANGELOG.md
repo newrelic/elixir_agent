@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### `v1.24.4`
+
+Tweaks
+* Support per-log message metadata. [#330](https://github.com/newrelic/elixir_agent/pull/330) Thanks @mattgibson!
+* Properly render IO list log message. [#329](https://github.com/newrelic/elixir_agent/pull/329) Thanks @mattgibson!
+
 ### `v1.24.3`
 
 Fixes
