@@ -20,6 +20,8 @@ defmodule NewRelic.Harvest.HarvesterStore do
       [{^harvester, pid}] -> pid
       _ -> nil
     end
+  rescue
+    _ -> nil
   end
 
   def update(harvester, pid) do

@@ -22,6 +22,6 @@ defmodule TestSupport.MixProject do
   end
 
   defp deps do
-    []
+    [{:new_relic_agent, path: "../../../"}]
   end
 end
