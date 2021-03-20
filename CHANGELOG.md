@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.24.5`
+
+Fixes
+* Ensure instrumentation calls don't fail if app not started. [#332](https://github.com/newrelic/elixir_agent/pull/332)
+
 ### `v1.24.4`
 
 Tweaks
