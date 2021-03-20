@@ -79,4 +79,5 @@ jobs:
         mix deps.get
         mix format --check-formatted
         mix test
-        MIX_ENV=test mix instrumented_task.example_task
+        MIX_ENV=test mix instrumented_task
+        MIX_ENV=test mix uninstrumented_task
