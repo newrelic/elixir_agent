@@ -10,7 +10,7 @@ on:
 
 jobs:
   unit_test:
-    name: Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
+    name: Unit Tests - Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
     runs-on: ubuntu-latest
 
     strategy:
