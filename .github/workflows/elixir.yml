@@ -73,6 +73,11 @@ jobs:
         set -e
         mix test --failed
 
+    - name: Check example formatting
+      run: |
+        cd examples
+        mix format --check-formatted
+
     - name: Start integration test dependencies
       run: |
         cd examples
@@ -80,11 +85,17 @@ jobs:
         until pg_isready -h localhost; do sleep 1; done;
         until mysqladmin --protocol tcp ping; do sleep 1; done;
 
-    - name: Run integration tests
+    - name: Compile example applications
       run: |
         cd examples
         mix deps.get
-        mix format --check-formatted
+        mix compile
+      env:
+        MIX_ENV: test
+
+    - name: Run integration tests
+      run: |
+        cd examples
         mix test
         MIX_ENV=test mix instrumented_task
         MIX_ENV=test mix uninstrumented_task
