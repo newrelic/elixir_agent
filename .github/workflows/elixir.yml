@@ -9,8 +9,8 @@ on:
       - master
 
 jobs:
-  test:
-    name: Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
+  unit_test:
+    name: Unit Tests - Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
     runs-on: ubuntu-latest
 
     strategy:
@@ -36,9 +36,7 @@ jobs:
     - name: Restore deps cache
       uses: actions/cache@v2
       with:
-        path: |
-          deps
-          examples/deps
+        path: deps
         key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
         restore-keys: |
           deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
@@ -47,9 +45,7 @@ jobs:
     - name: Restore _build cache
       uses: actions/cache@v2
       with:
-        path: |
-          _build
-          examples/_build
+        path: _build
         key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
         restore-keys: |
           build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
@@ -69,33 +65,74 @@ jobs:
     - name: Run unit tests
       run: |
         set +e
-        mix test --trace
+        mix test
         set -e
-        mix test --failed
+        mix test --trace --failed
 
-    - name: Check example formatting
-      run: |
-        cd examples
-        mix format --check-formatted
+  integration_test:
+    name: Integration Tests - Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - elixir: '1.11'
+            otp: '23'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Set up Elixir
+      uses: erlef/setup-elixir@v1
+      with:
+        elixir-version: ${{ matrix.elixir }}
+        otp-version: ${{ matrix.otp }}
+
+    - name: Restore deps cache
+      uses: actions/cache@v2
+      with:
+        path: examples/deps
+        key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
+        restore-keys: |
+          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
+
+    - name: Restore _build cache
+      uses: actions/cache@v2
+      with:
+        path: examples/_build
+        key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
+        restore-keys: |
+          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
+
+    - name: Install deps
+      working-directory: examples
+      run: mix deps.get
+
+    - name: Check Formatting
+      working-directory: examples
+      run: mix format --check-formatted
+
+    - name: Compile application
+      working-directory: examples
+      run: mix compile
+      env:
+        MIX_ENV: test
 
     - name: Start integration test dependencies
+      working-directory: examples
       run: |
-        cd examples
         docker-compose up -d
         until pg_isready -h localhost; do sleep 1; done;
         until mysqladmin --protocol tcp ping; do sleep 1; done;
 
-    - name: Compile example applications
+    - name: Run integration tests
+      working-directory: examples
       run: |
-        cd examples
-        mix deps.get
-        mix compile
+        mix test
+        mix instrumented_task
+        mix uninstrumented_task
       env:
         MIX_ENV: test
-
-    - name: Run integration tests
-      run: |
-        cd examples
-        mix test
-        MIX_ENV=test mix instrumented_task
-        MIX_ENV=test mix uninstrumented_task
