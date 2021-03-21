@@ -39,9 +39,10 @@ jobs:
         path: |
           deps
           examples/deps
-        key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+        key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}
+          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
 
     - name: Restore _build cache
       uses: actions/cache@v2
@@ -49,15 +50,21 @@ jobs:
         path: |
           _build
           examples/_build
-        key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+        key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}
+          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
 
     - name: Install deps
       run: mix deps.get
 
     - name: Check Formatting
       run: mix format --check-formatted
+
+    - name: Compile application
+      run: mix compile
+      env:
+        MIX_ENV: test
 
     - name: Run unit tests
       run: |
@@ -66,6 +73,11 @@ jobs:
         set -e
         mix test --failed
 
+    - name: Check example formatting
+      run: |
+        cd examples
+        mix format --check-formatted
+
     - name: Start integration test dependencies
       run: |
         cd examples
@@ -73,11 +85,17 @@ jobs:
         until pg_isready -h localhost; do sleep 1; done;
         until mysqladmin --protocol tcp ping; do sleep 1; done;
 
-    - name: Run integration tests
+    - name: Compile example applications
       run: |
         cd examples
         mix deps.get
-        mix format --check-formatted
+        mix compile
+      env:
+        MIX_ENV: test
+
+    - name: Run integration tests
+      run: |
+        cd examples
         mix test
         MIX_ENV=test mix instrumented_task
         MIX_ENV=test mix uninstrumented_task
