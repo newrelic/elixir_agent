@@ -65,9 +65,9 @@ jobs:
     - name: Run unit tests
       run: |
         set +e
-        mix test --trace
+        mix test
         set -e
-        mix test --failed
+        mix test --trace --failed
 
   integration_test:
     name: Integration Tests - Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
