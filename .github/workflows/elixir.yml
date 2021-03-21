@@ -61,6 +61,11 @@ jobs:
     - name: Check Formatting
       run: mix format --check-formatted
 
+    - name: Compile application
+      run: mix compile
+      env:
+        MIX_ENV: test
+
     - name: Run unit tests
       run: |
         set +e
