@@ -79,6 +79,10 @@ jobs:
           - elixir: '1.11'
             otp: '23'
 
+    defaults:
+      run:
+        working-directory: examples
+
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -108,28 +112,23 @@ jobs:
           build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
 
     - name: Install deps
-      working-directory: examples
       run: mix deps.get
 
     - name: Check Formatting
-      working-directory: examples
       run: mix format --check-formatted
 
     - name: Compile application
-      working-directory: examples
       run: mix compile
       env:
         MIX_ENV: test
 
     - name: Start integration test dependencies
-      working-directory: examples
       run: |
         docker-compose up -d
         until pg_isready -h localhost; do sleep 1; done;
         until mysqladmin --protocol tcp ping; do sleep 1; done;
 
     - name: Run integration tests
-      working-directory: examples
       run: |
         mix test
         mix instrumented_task
