@@ -18,4 +18,5 @@ config :ecto_example, EctoExample.MySQLRepo,
   hostname: "localhost",
   port: 3306
 
-config :ecto_example, EctoExample.SQLite3Repo, database: "tmp/example_db.sqlite3"
+config :ecto_example, EctoExample.SQLite3Repo,
+  database: "tmp/example_db.sqlite3"
