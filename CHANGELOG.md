@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.25.0`
+
+Features
+* Support for any `Ecto` adapter, including Sqlite and MSSQL. [#337](https://github.com/newrelic/elixir_agent/pull/337) Thanks @marocchino!
+
+------
+
 ### `v1.24.5`
 
 Fixes
