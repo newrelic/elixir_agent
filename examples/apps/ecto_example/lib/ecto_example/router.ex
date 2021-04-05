@@ -7,15 +7,19 @@ defmodule EctoExample.Router do
   get "/hello" do
     error_query(EctoExample.PostgresRepo)
     error_query(EctoExample.MySQLRepo)
+    error_query(EctoExample.SQLite3Repo)
 
     count_query(EctoExample.PostgresRepo)
     count_query(EctoExample.MySQLRepo)
+    count_query(EctoExample.SQLite3Repo)
 
     stream_query(EctoExample.PostgresRepo)
     stream_query(EctoExample.MySQLRepo)
+    stream_query(EctoExample.SQLite3Repo)
 
     delete_query(EctoExample.PostgresRepo)
     delete_query(EctoExample.MySQLRepo)
+    delete_query(EctoExample.SQLite3Repo)
 
     send_resp(conn, 200, Jason.encode!(%{hello: "world"}))
   end

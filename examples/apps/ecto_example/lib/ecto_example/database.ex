@@ -6,15 +6,17 @@ defmodule EctoExample.Database do
   end
 
   def init(:ok) do
-    start_and_migrate(EctoExample.PostgresRepo, Ecto.Adapters.Postgres)
-    start_and_migrate(EctoExample.MySQLRepo, Ecto.Adapters.MyXQL)
+    start_and_migrate(EctoExample.PostgresRepo)
+    start_and_migrate(EctoExample.MySQLRepo)
+    start_and_migrate(EctoExample.SQLite3Repo)
 
     {:ok, %{}}
   end
 
-  def start_and_migrate(repo, adapter) do
+  def start_and_migrate(repo) do
     config = Application.get_env(:ecto_example, repo)
 
+    adapter = repo.__adapter__()
     adapter.storage_down(config)
     :ok = adapter.storage_up(config)
 
