@@ -31,7 +31,8 @@ defmodule EctoExample.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:ecto_sql, "~> 3.4"},
       {:postgrex, ">= 0.0.0"},
-      {:myxql, ">= 0.0.0"}
+      {:myxql, ">= 0.0.0"},
+      {:ecto_sqlite3, ">= 0.0.0"}
     ]
   end
 end
