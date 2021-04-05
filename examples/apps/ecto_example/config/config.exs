@@ -2,7 +2,7 @@ use Mix.Config
 
 config :ecto_example,
   http_port: 4001,
-  ecto_repos: [EctoExample.PostgresRepo, EctoExample.MySQLRepo]
+  ecto_repos: [EctoExample.PostgresRepo, EctoExample.MySQLRepo, EctoExample.SQLite3Repo]
 
 config :ecto_example, EctoExample.PostgresRepo,
   database: "example_db",
@@ -17,3 +17,5 @@ config :ecto_example, EctoExample.MySQLRepo,
   password: "password",
   hostname: "localhost",
   port: 3306
+
+config :ecto_example, EctoExample.SQLite3Repo, database: "tmp/example_db.sqlite3"
