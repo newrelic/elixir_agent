@@ -1,6 +1,8 @@
 defmodule NewRelic.Telemetry.Ecto.Handler do
   @moduledoc false
 
+  alias NewRelic.Telemetry.Ecto.Metadata
+
   def handle_event(
         _event,
         %{total_time: total_time} = measurements,
@@ -27,7 +29,7 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
     id = {:ecto_sql_query, make_ref()}
     parent_id = Process.get(:nr_current_span) || :root
 
-    with {datastore, table, operation} <- NewRelic.Telemetry.Ecto.Metadata.parse(metadata) do
+    with {datastore, {table, operation}} <- Metadata.parse(metadata) do
       metric_name = "Datastore/statement/#{datastore}/#{table}/#{operation}"
       secondary_name = "#{inspect(repo)} #{hostname}:#{port}/#{database}"
 
