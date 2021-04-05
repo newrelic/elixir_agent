@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.25.1`
+
+Fixes
+* Fix edge case in new `Ecto` table name parsing. [#338](https://github.com/newrelic/elixir_agent/pull/338)
+
 ### `v1.25.0`
 
 Features
