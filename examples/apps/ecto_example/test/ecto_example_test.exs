@@ -113,6 +113,26 @@ defmodule EctoExampleTest do
            )
   end
 
+  test "Table name parsing" do
+    alias NewRelic.Telemetry.Ecto.Metadata
+
+    assert {:select, "table.name"} = Metadata.parse_query(~s<SELECT * FROM table.name>)
+    assert {:select, "table.name"} = Metadata.parse_query(~s<SELECT * FROM `table.name`>)
+    assert {:select, "table.name"} = Metadata.parse_query(~s<SELECT * FROM [table.name]>)
+    assert {:select, "table.name"} = Metadata.parse_query(~s<SELECT * FROM "table.name">)
+
+    assert {:insert, "table"} = Metadata.parse_query(~s<INSERT INTO table VALUES 1, 2>)
+    assert {:update, "table"} = Metadata.parse_query(~s<UPDATE table SET foo = bar>)
+    assert {:delete, "table"} = Metadata.parse_query(~s<DELETE FROM table WHERE foo = bar>)
+    assert {:create, "table"} = Metadata.parse_query(~s<CREATE TABLE table>)
+    assert {:create, "table"} = Metadata.parse_query(~s<CREATE TABLE IF NOT EXISTS table>)
+
+    assert {:other, :other} = Metadata.parse_query(~s<SELECT some_lock()>)
+    assert {:begin, :other} = Metadata.parse_query(~s<begin>)
+    assert {:commit, :other} = Metadata.parse_query(~s<commit>)
+    assert {:rollback, :other} = Metadata.parse_query(~s<rollback>)
+  end
+
   defp request() do
     http_port = Application.get_env(:ecto_example, :http_port)
     NewRelic.Util.HTTP.get("http://localhost:#{http_port}/hello")

@@ -29,7 +29,7 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
     id = {:ecto_sql_query, make_ref()}
     parent_id = Process.get(:nr_current_span) || :root
 
-    with {datastore, {table, operation}} <- Metadata.parse(metadata) do
+    with {datastore, {operation, table}} <- Metadata.parse(metadata) do
       metric_name = "Datastore/statement/#{datastore}/#{table}/#{operation}"
       secondary_name = "#{inspect(repo)} #{hostname}:#{port}/#{database}"
 
