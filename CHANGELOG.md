@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.25.3`
+
+Fixes
+* Handle exception asking for remote process name. [#342](https://github.com/newrelic/elixir_agent/pull/342) Thanks @benhaney!
+
 ### `v1.25.2`
 
 Fixes
