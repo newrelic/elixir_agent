@@ -18,6 +18,9 @@ defmodule NewRelic.Util do
       {:registered_name, []} -> nil
       {:registered_name, name} -> name
     end
+  rescue
+    # `Process.info/2` will raise when given a pid from a remote node
+    ArgumentError -> nil
   end
 
   def metric_join(segments) when is_list(segments) do
