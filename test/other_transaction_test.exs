@@ -56,7 +56,7 @@ defmodule OtherTransactionTest do
     ] = event
 
     assert name == "OtherTransaction/TransactionCategory/MyTaskName"
-    assert end_time - start_time == duration_ms
+    assert_in_delta end_time - start_time, duration_ms, 1
 
     assert duration_ms >= 60
     assert total_time_s >= (60 + 50) / 1000
