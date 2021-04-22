@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.26.0`
+
+Features
+* Increase timestamp resolution. [#343](https://github.com/newrelic/elixir_agent/pull/343)
+
 ### `v1.25.3`
 
 Fixes
