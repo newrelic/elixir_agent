@@ -218,7 +218,7 @@ defmodule NewRelic.Tracer.Report do
   end
 
   defp duration_ms(start_time_mono, end_time_mono),
-    do: System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
+    do: System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond) / 1000
 
   defp function_name({m, f}, f), do: "#{inspect(m)}.#{f}"
   defp function_name({m, f}, i), do: "#{inspect(m)}.#{f}:#{i}"

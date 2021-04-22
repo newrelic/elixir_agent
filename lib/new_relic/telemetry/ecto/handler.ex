@@ -9,7 +9,7 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
         %{type: :ecto_sql_query, repo: repo} = metadata,
         config
       ) do
-    end_time = System.system_time(:millisecond)
+    end_time = System.system_time(:microsecond) / 1000
 
     duration_ms = total_time |> to_ms
     duration_s = duration_ms / 1000
@@ -100,7 +100,7 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
   end
 
   defp to_ms(nil), do: nil
-  defp to_ms(ns), do: System.convert_time_unit(ns, :nanosecond, :millisecond)
+  defp to_ms(ns), do: System.convert_time_unit(ns, :nanosecond, :microsecond) / 1000
 
   defp maybe_add(map, _, nil), do: map
   defp maybe_add(map, key, value), do: Map.put(map, key, value)
