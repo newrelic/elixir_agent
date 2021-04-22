@@ -43,7 +43,8 @@ defmodule NewRelic.Transaction.Complete do
   defp transform_time_attrs(%{system_time: system_time, duration: duration} = tx) do
     start_time_ms = System.convert_time_unit(system_time, :native, :millisecond)
     duration_us = System.convert_time_unit(duration, :native, :microsecond)
-    duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+    duration_ms = duration_us / 1000
+    duration_s = duration_ms / 1000
 
     tx
     |> Map.drop([:system_time, :duration, :end_time_mono])
@@ -52,7 +53,7 @@ defmodule NewRelic.Transaction.Complete do
       end_time: start_time_ms + duration_ms,
       duration_us: duration_us,
       duration_ms: duration_ms,
-      duration_s: duration_ms / 1000
+      duration_s: duration_s
     })
   end
 
@@ -62,7 +63,8 @@ defmodule NewRelic.Transaction.Complete do
        ) do
     start_time_ms = System.convert_time_unit(start_time, :native, :millisecond)
     duration_us = System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond)
-    duration_ms = System.convert_time_unit(end_time_mono - start_time_mono, :native, :millisecond)
+    duration_ms = duration_us / 1000
+    duration_s = duration_ms / 1000
 
     tx
     |> Map.drop([:start_time_mono, :end_time_mono])
@@ -71,7 +73,7 @@ defmodule NewRelic.Transaction.Complete do
       end_time: start_time_ms + duration_ms,
       duration_us: duration_us,
       duration_ms: duration_ms,
-      duration_s: duration_ms / 1000
+      duration_s: duration_s
     })
   end
 

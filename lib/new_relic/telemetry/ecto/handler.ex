@@ -9,7 +9,7 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
         %{type: :ecto_sql_query, repo: repo} = metadata,
         config
       ) do
-    end_time = System.system_time(:millisecond)
+    end_time = System.system_time(:microsecond) / 1000
 
     duration_ms = total_time |> to_ms
     duration_s = duration_ms / 1000
