@@ -90,8 +90,8 @@ defmodule NewRelic.Telemetry.Redix do
         %{commands: commands} = meta,
         config
       ) do
-    end_time_ms = System.system_time(:millisecond)
-    duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+    end_time_ms = System.system_time(:microsecond) / 1000
+    duration_ms = System.convert_time_unit(duration, :native, :microsecond) / 1000
     duration_s = duration_ms / 1000
     start_time_ms = end_time_ms - duration_ms
 

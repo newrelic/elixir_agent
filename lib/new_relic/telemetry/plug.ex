@@ -213,7 +213,7 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   defp to_ms(duration),
-    do: System.convert_time_unit(duration, :native, :millisecond)
+    do: System.convert_time_unit(duration, :native, :microsecond) / 1000
 
   @request_start_header "x-request-start"
   defp maybe_report_queueing(meta) do

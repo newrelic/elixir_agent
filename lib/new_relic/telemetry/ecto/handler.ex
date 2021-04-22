@@ -100,7 +100,7 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
   end
 
   defp to_ms(nil), do: nil
-  defp to_ms(ns), do: System.convert_time_unit(ns, :nanosecond, :millisecond)
+  defp to_ms(ns), do: System.convert_time_unit(ns, :nanosecond, :microsecond) / 1000
 
   defp maybe_add(map, _, nil), do: map
   defp maybe_add(map, key, value), do: Map.put(map, key, value)
