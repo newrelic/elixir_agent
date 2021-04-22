@@ -152,8 +152,8 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
   defp get(counter, index), do: :counters.get(counter, index)
 
   # counters store integers, so we encode values
-  # into integers keeping 3 decimal places of precision
-  @precision 1_000
+  # into integers keeping 4 decimal places of precision
+  @precision 10_000
   @compile {:inline, encode: 1, decode: 1}
   defp encode(val), do: round(val * @precision)
   defp decode(val), do: val / @precision
