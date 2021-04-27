@@ -24,6 +24,15 @@ defmodule SidecarTest do
     :ok
   end
 
+  defmodule SimpleServer do
+    use GenServer
+
+    def init(:ok) do
+      NewRelic.add_attributes(gen_server: "init")
+      {:ok, nil}
+    end
+  end
+
   test "Transaction.Sidecar" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
@@ -33,6 +42,7 @@ defmodule SidecarTest do
 
       Task.async(fn ->
         NewRelic.add_attributes(baz: "QUX")
+        GenServer.start_link(SimpleServer, :ok)
 
         Task.async(fn ->
           NewRelic.add_attributes(blah: "BLAH")
@@ -59,6 +69,7 @@ defmodule SidecarTest do
       assert attributes[:baz] == "QUX"
       assert attributes[:blah] == "BLAH"
       assert attributes[:deep] == "DEEP"
+      assert attributes[:gen_server] == "init"
 
       assert :ets.member(Sidecar.ContextStore, {:context, sidecar})
 

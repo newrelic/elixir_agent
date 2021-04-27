@@ -55,6 +55,15 @@ defmodule NewRelic.Transaction.ErlangTrace do
     {:noreply, state}
   end
 
+  def handle_info(
+        {:trace_ts, source, :return_from, {:proc_lib, :start_link, _}, {:ok, pid}, timestamp},
+        state
+      ) do
+    Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
+    overload_protection(state.overload)
+    {:noreply, state}
+  end
+
   def handle_info(_msg, state) do
     {:noreply, state}
   end
@@ -82,6 +91,7 @@ defmodule NewRelic.Transaction.ErlangTrace do
 
   defp trace_proc_lib_spawn_link do
     :erlang.trace_pattern({:proc_lib, :spawn_link, :_}, [{:_, [], [{:return_trace}]}], [])
+    :erlang.trace_pattern({:proc_lib, :start_link, :_}, [{:_, [], [{:return_trace}]}], [])
   end
 
   defp overload_protection(%{backoff: backoff} = overload) do
