@@ -1,9 +1,18 @@
 ## CHANGELOG
 
+### `v1.27.0`
+
+Features
+* Include start_link in transaction tracing. [#344](https://github.com/newrelic/elixir_agent/pull/344)
+
+------
+
 ### `v1.26.0`
 
 Features
 * Increase timestamp resolution. [#343](https://github.com/newrelic/elixir_agent/pull/343)
+
+------
 
 ### `v1.25.3`
 
