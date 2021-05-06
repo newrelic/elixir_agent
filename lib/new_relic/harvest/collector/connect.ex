@@ -16,7 +16,8 @@ defmodule NewRelic.Harvest.Collector.Connect do
         event_harvest_config: NewRelic.Config.event_harvest_config(),
         metadata: NewRelic.Util.metadata(),
         environment: NewRelic.Util.elixir_environment(),
-        agent_version: NewRelic.Config.agent_version()
+        agent_version: NewRelic.Config.agent_version(),
+        high_security: NewRelic.Config.high_security()
       }
     ]
   end

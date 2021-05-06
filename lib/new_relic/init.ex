@@ -35,6 +35,7 @@ defmodule NewRelic.Init do
       app_name: determine_config(:app_name) |> parse_app_names,
       license_key: license_key,
       harvest_enabled: determine_config(:harvest_enabled, true) |> parse_bool,
+      high_security: determine_config(:high_security) || false,
       collector_host: collector_host,
       region_prefix: region_prefix,
       automatic_attributes: determine_automatic_attributes(),

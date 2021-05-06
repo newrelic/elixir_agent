@@ -97,6 +97,28 @@ defmodule NewRelic.Config do
     do: get(:labels)
 
   @doc """
+  Enables High Security Mode; when enabled this prevents any potentially
+  sensitive information being reported to New Relic. You can enable this
+  behavior in two ways:
+
+  * Environment variables `NEW_RELIC_HIGH_SECURITY=true`
+  * Application config: `config :new_relic_agent, high_security: true`
+
+  The configuration setting here must match your New Relic account setting;
+  otherwise the agent's connection attempt will be rejected and the agent will
+  shut down. This will prevent the agent from reporting any metrics to New Relic,
+  but will not shut down your application.
+
+  Enabling High Security Mode has significant implications for all applications
+  reporting to your New Relic account. Please read the High Security Mode
+  documentation for further details:
+
+  https://docs.newrelic.com/docs/agents/manage-apm-agents/configuration/high-security-mode/
+  """
+  def high_security,
+    do: get(:high_security)
+
+  @doc """
   Some Agent features can be toggled via configuration.
 
   ### Security
@@ -105,7 +127,7 @@ defmodule NewRelic.Config do
     * Toggles collection of any Error traces or metrics
   * `:db_query_collection_enabled` (default `true`)
     * Toggles collection of Database query strings
-  * `function_argument_collection_enabled` (default `true`)
+  * `:function_argument_collection_enabled` (default `true`)
     * Toggles collection of traced function arguments
 
   ### Instrumentation
