@@ -90,10 +90,25 @@ defmodule NewRelic do
   defdelegate stop_transaction(), to: NewRelic.OtherTransaction
 
   @doc """
-  Define an "Other" transaction within the given block. The return value of
+  Define an "Other" transaction with the given block. The return value of
   the block is returned.
 
-  See `start_transaction` and `stop_transaction` for more details.
+  See `start_transaction` and `stop_transaction` for more details about
+  Transactions.
+
+  Example:
+
+  ```elixir
+  defmodule Worker do
+    use NewRelic.Tracer
+
+    def process_messages do
+      NewRelic.other_transaction("Worker", "ProcessMessages") do
+        # ...
+      end
+    end
+  end
+  ```
   """
   defmacro other_transaction(category, name, do: block) do
     quote do
