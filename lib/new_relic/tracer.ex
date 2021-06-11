@@ -85,6 +85,7 @@ defmodule NewRelic.Tracer do
 
   defmacro __using__(_args) do
     quote do
+      require NewRelic
       require NewRelic.Tracer.Macro
       require NewRelic.Tracer.Report
       Module.register_attribute(__MODULE__, :nr_tracers, accumulate: true)
