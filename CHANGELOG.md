@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.27.1`
+
+Features
+* Auto-require `NewRelic` in `use NewRelic.Tracer` for convenience. [#350](https://github.com/newrelic/elixir_agent/pull/350)
+
 ### `v1.27.0`
 
 Features
