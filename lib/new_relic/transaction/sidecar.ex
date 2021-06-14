@@ -218,6 +218,7 @@ defmodule NewRelic.Transaction.Sidecar do
 
   def handle_continue(:complete, state) do
     cleanup(context: self())
+    cleanup(lookup: state.parent)
     Enum.each(state.offspring, &cleanup(lookup: &1))
     run_complete(state)
     counter(:sub)
