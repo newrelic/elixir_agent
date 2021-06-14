@@ -363,4 +363,26 @@ defmodule SidecarTest do
     tx = NewRelic.get_transaction()
     NewRelic.connect_to_transaction(tx)
   end
+
+  test "don't leak when stop_transaction isn't called" do
+    test = self()
+
+    task =
+      Task.async(fn ->
+        NewRelic.start_transaction("Test", "leak")
+        send(test, {:started, NewRelic.Transaction.Sidecar.get_sidecar()})
+
+        Process.sleep(300)
+      end)
+
+    assert_receive {:started, sidecar}
+    Process.monitor(sidecar)
+
+    assert [{_, ^sidecar}] = :ets.lookup(NewRelic.Transaction.Sidecar.LookupStore, task.pid)
+
+    Task.await(task)
+
+    assert_receive {:DOWN, _, _, ^sidecar, _}
+    assert [] = :ets.lookup(NewRelic.Transaction.Sidecar.LookupStore, task.pid)
+  end
 end
