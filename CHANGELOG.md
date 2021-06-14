@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.27.2`
+
+Fixes
+* Fix a leak in other transactions when not manually closed. [#352](https://github.com/newrelic/elixir_agent/pull/352)
+
 ### `v1.27.1`
 
 Features
