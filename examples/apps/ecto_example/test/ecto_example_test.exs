@@ -127,7 +127,8 @@ defmodule EctoExampleTest do
     assert {:create, "table"} = Metadata.parse_query(~s<CREATE TABLE table>)
     assert {:create, "table"} = Metadata.parse_query(~s<CREATE TABLE IF NOT EXISTS table>)
 
-    assert {:other, :other} = Metadata.parse_query(~s<SELECT some_lock()>)
+    assert {:select, :other} = Metadata.parse_query(~s<SELECT some_lock()>)
+    assert {:select, :other} = Metadata.parse_query(~s<SELECT 1>)
     assert {:begin, :other} = Metadata.parse_query(~s<begin>)
     assert {:commit, :other} = Metadata.parse_query(~s<commit>)
     assert {:rollback, :other} = Metadata.parse_query(~s<rollback>)

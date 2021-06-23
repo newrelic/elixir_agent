@@ -53,7 +53,7 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
   def parse_query(operation, query) do
     case Regex.named_captures(@capture[operation], query) do
       %{"table" => table} -> {operation, String.replace(table, @esc, "")}
-      _ -> {:other, :other}
+      _ -> {operation, :other}
     end
   end
 end
