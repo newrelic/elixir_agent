@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.27.3`
+
+Fixes
+* Fix categorization of simple SQL queries in Ecto. [#354](https://github.com/newrelic/elixir_agent/pull/354) Thanks @mrz!
+
 ### `v1.27.2`
 
 Fixes
