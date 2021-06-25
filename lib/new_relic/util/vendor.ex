@@ -1,6 +1,8 @@
 defmodule NewRelic.Util.Vendor do
   @moduledoc false
 
+  alias NewRelic.Util.HTTP
+
   def maybe_add_vendors(util, options \\ []) do
     %{}
     |> maybe_add_aws(options)
@@ -56,8 +58,8 @@ defmodule NewRelic.Util.Vendor do
 
   @aws_vendor_data ["availabilityZone", "instanceId", "instanceType"]
   def aws_vendor_map(url) do
-    case :httpc.request(:get, {~c(#{url}), []}, [{:timeout, 100}], []) do
-      {:ok, {{_, 200, 'OK'}, _headers, body}} ->
+    case HTTP.get(url, [], [{:timeout, 100}]) do
+      {:ok, %{body: body, status_code: 200}} ->
         case Jason.decode(body) do
           {:ok, data} -> Map.take(data, @aws_vendor_data)
           _ -> nil
