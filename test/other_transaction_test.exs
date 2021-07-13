@@ -1,6 +1,8 @@
 defmodule OtherTransactionTest do
   use ExUnit.Case
+
   alias NewRelic.Harvest.Collector
+  alias NewRelic.Harvest.TelemetrySdk
 
   setup do
     reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
@@ -165,5 +167,82 @@ defmodule OtherTransactionTest do
     TestHelper.pause_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+  end
+
+  @tag :capture_log
+  test "do fail transaction on error exit" do
+    reset_config =
+      TestHelper.update(:nr_config,
+        trace_mode: :infinite
+      )
+
+    on_exit(fn ->
+      reset_config.()
+    end)
+
+    TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
+    {:ok, _sup} = Task.Supervisor.start_link(name: TestTaskSup)
+    test = self()
+
+    Task.Supervisor.async_nolink(TestTaskSup, fn ->
+      NewRelic.start_transaction("Test", "Error")
+      send(test, {:sidecar, NewRelic.Transaction.Sidecar.get_sidecar()})
+      Process.sleep(10)
+      raise RuntimeError
+    end)
+
+    assert_receive {:sidecar, sidecar}
+    Process.monitor(sidecar)
+    assert_receive {:DOWN, _, _, ^sidecar, _}
+
+    [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
+
+    spansaction =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:category] == "Transaction" && attr[:name] == "Test/Error"
+      end)
+
+    assert spansaction.attributes[:error]
+    assert spansaction.attributes[:error_reason] =~ "RuntimeError"
+  end
+
+  defmodule ExpectedError do
+    defexception message: "Expected!", expected: true
+  end
+
+  @tag :capture_log
+  test "don't fail transaction on expected error exit" do
+    reset_config =
+      TestHelper.update(:nr_config,
+        trace_mode: :infinite
+      )
+
+    on_exit(fn ->
+      reset_config.()
+    end)
+
+    TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
+    {:ok, _sup} = Task.Supervisor.start_link(name: TestTaskSup)
+    test = self()
+
+    Task.Supervisor.async_nolink(TestTaskSup, fn ->
+      NewRelic.start_transaction("Test", "ExpectedError")
+      send(test, {:sidecar, NewRelic.Transaction.Sidecar.get_sidecar()})
+      Process.sleep(10)
+      raise ExpectedError
+    end)
+
+    assert_receive {:sidecar, sidecar}
+    Process.monitor(sidecar)
+    assert_receive {:DOWN, _, _, ^sidecar, _}
+
+    [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
+
+    spansaction =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:category] == "Transaction" && attr[:name] == "Test/ExpectedError"
+      end)
+
+    refute spansaction.attributes[:error]
   end
 end
