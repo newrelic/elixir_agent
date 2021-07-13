@@ -187,7 +187,8 @@ defmodule NewRelic.Transaction.Sidecar do
     end_time_mono = System.monotonic_time()
 
     attributes =
-      with {reason, stack} when reason != :shutdown <- down_reason do
+      with {reason, stack} when reason != :shutdown <- down_reason,
+           false <- match?(%{expected: true}, reason) do
         Map.merge(state.attributes, %{
           error: true,
           error_kind: :exit,
