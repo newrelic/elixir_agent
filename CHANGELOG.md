@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.27.4`
+
+Fixes
+* Don't fail an Other Transaction upon expected error. [#357](https://github.com/newrelic/elixir_agent/pull/357)
+
 ### `v1.27.3`
 
 Fixes
