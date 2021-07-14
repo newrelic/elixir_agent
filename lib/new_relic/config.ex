@@ -119,6 +119,8 @@ defmodule NewRelic.Config do
     * Controls all Ecto instrumentation
   * `:redix_instrumentation_enabled` (default `true`)
     * Controls all Redix instrumentation
+  * `:absinthe_instrumentation_enabled` (default `true`)
+    * Controls all Absinthe instrumentation
   * `:request_queuing_metrics_enabled`
     * Controls collection of request queuing metrics
 
@@ -153,6 +155,10 @@ defmodule NewRelic.Config do
 
   def feature?(:redix_instrumentation) do
     get(:features, :redix_instrumentation)
+  end
+
+  def feature?(:absinthe_instrumentation) do
+    get(:features, :absinthe_instrumentation)
   end
 
   def feature?(:function_argument_collection) do
