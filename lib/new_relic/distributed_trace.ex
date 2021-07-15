@@ -231,6 +231,60 @@ defmodule NewRelic.DistributedTrace do
     Process.get(:nr_current_span_attrs) || %{}
   end
 
+  @max_open_span_count Application.get_env(:new_relic, :max_open_span_count, 20)
+
+  def start_span(options) do
+    id = Keyword.fetch!(options, :id)
+    name = Keyword.fetch!(options, :name)
+
+    case Process.get(:nr_open_span_count, 0) do
+      over when over >= @max_open_span_count ->
+        Process.put(:nr_open_span_count, over + 1)
+
+        NewRelic.incr_attributes(skipped_span_count: 1)
+
+      under ->
+        Process.put(:nr_open_span_count, under + 1)
+
+        start_time = Keyword.get(options, :start_time, System.system_time())
+        attributes = Keyword.get(options, :attributes, []) |> Map.new()
+        parent = Process.get(:nr_current_span)
+
+        Process.put({:nr_span, id}, {name, parent, start_time, attributes})
+    end
+
+    :ok
+  end
+
+  def stop_span(options) do
+    id = Keyword.fetch!(options, :id)
+    duration = Keyword.fetch!(options, :duration)
+
+    case Process.get({:nr_span, id}) do
+      nil ->
+        :no_such_span
+
+      {name, parent, start_time, attributes} ->
+        Process.put(:nr_open_span_count, Process.get(:nr_open_span_count) - 1)
+
+        name = Keyword.get(options, :name, name)
+        timestamp_us = System.convert_time_unit(start_time, :native, :microsecond)
+        duration_us = System.convert_time_unit(duration, :native, :microsecond)
+        stop_attributes = Keyword.get(options, :attributes, []) |> Map.new()
+
+        NewRelic.report_span(
+          timestamp_ms: timestamp_us / 1000,
+          duration_s: duration_us / 1_000_000,
+          name: name,
+          edge: [span: {name, id}, parent: parent || :root],
+          category: "generic",
+          attributes: Map.merge(attributes, stop_attributes)
+        )
+    end
+
+    :ok
+  end
+
   def set_current_span(label: label, ref: ref) do
     current = {label, ref}
     previous_span = Process.get(:nr_current_span)

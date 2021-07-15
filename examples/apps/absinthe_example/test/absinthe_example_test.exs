@@ -5,16 +5,15 @@ defmodule AbsintheExampleTest do
   alias NewRelic.Harvest.Collector
 
   setup_all context, do: TestSupport.simulate_agent_enabled(context)
-  setup_all context, do: TestSupport.simulate_agent_run(context)
+  setup_all context, do: TestSupport.simulate_agent_run(context, trace_mode: :infinite)
 
   test "Absinthe instrumentation" do
     TestSupport.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestSupport.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
 
-    {:ok, %{body: body}} =
+    {:ok, %{body: _body}} =
       request("""
       query TestQuery {
-       echo(this: "hello, world")
        one {
          two {
            three
@@ -23,15 +22,13 @@ defmodule AbsintheExampleTest do
       }
       """)
 
-    assert body =~ "hello, world"
-
     metrics = TestSupport.gather_harvest(Collector.Metric.Harvester)
 
     assert TestSupport.find_metric(metrics, "WebTransaction")
 
     assert TestSupport.find_metric(
              metrics,
-             "WebTransactionTotalTime/Absinthe/AbsintheExample.Schema/query/TestQuery"
+             "WebTransactionTotalTime/Absinthe/AbsintheExample.Schema/query/one.two.three"
            )
 
     [%{spans: spans}] = TestSupport.gather_harvest(TelemetrySdk.Spans.Harvester)
@@ -41,23 +38,24 @@ defmodule AbsintheExampleTest do
         attr[:name] == "AbsintheExample.Resolvers.do_three/0"
       end)
 
-    three_resolver =
-      Enum.find(spans, fn %{id: id} ->
-        id == do_three_fn_trace.attributes[:"parent.id"]
-      end)
-
     operation =
-      Enum.find(spans, fn %{id: id} ->
-        id == three_resolver.attributes[:"parent.id"]
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:name] == "query:TestQuery"
       end)
 
     one_resolver =
       Enum.find(spans, fn %{attributes: attr} ->
-        attr[:"absinthe.field.path"] == "one"
+        attr[:name] == "&AbsintheExample.Resolvers.one/3"
       end)
 
-    # Resolver execution isn't nested like the graphql query
-    assert one_resolver.attributes[:"parent.id"] == operation.id
+    # TODO: Make 3 a fn
+    three_resolver =
+      Enum.find(spans, fn %{attributes: attr} ->
+        attr[:name] == "&AbsintheExample.Resolvers.three/3"
+      end)
+
+    assert one_resolver.attributes[:"absinthe.field.path"] == "one"
+    assert three_resolver.attributes[:"absinthe.field.path"] == "one.two.three"
 
     assert operation.attributes[:"absinthe.operation.name"] == "TestQuery"
     assert operation.attributes[:"absinthe.operation.type"] == "query"
@@ -69,28 +67,6 @@ defmodule AbsintheExampleTest do
 
     assert operation.attributes[:"duration.ms"] >
              three_resolver.attributes[:"duration.ms"]
-  end
-
-  test "Query naming" do
-    TestSupport.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-
-    {:ok, %{body: body}} =
-      request("""
-      query {
-       one {
-         two {
-           three
-         }
-       }
-      }
-      """)
-
-    metrics = TestSupport.gather_harvest(Collector.Metric.Harvester)
-
-    assert TestSupport.find_metric(
-             metrics,
-             "WebTransactionTotalTime/Absinthe/AbsintheExample.Schema/query/one.two.three"
-           )
   end
 
   defp request(query) do
