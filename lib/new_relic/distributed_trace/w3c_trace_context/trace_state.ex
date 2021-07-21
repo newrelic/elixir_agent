@@ -204,7 +204,10 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
 
   defp encode_priority(nil), do: ""
 
-  defp encode_priority(priority),
+  defp encode_priority(priority) when is_integer(priority),
+    do: encode_priority(priority / 1)
+
+  defp encode_priority(priority) when is_float(priority),
     do: priority |> :erlang.float_to_binary([:compact, decimals: 6])
 
   defp decode_sampled("1"), do: true

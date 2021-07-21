@@ -257,7 +257,7 @@ defmodule NewRelic.DistributedTrace do
 
   defp generate_sampling() do
     case {generate_sample?(), generate_priority()} do
-      {true, priority} -> {priority + 1, true}
+      {true, priority} -> {priority + 1.0, true}
       {false, priority} -> {priority, false}
     end
   end
