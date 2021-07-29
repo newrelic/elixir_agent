@@ -25,7 +25,7 @@ defmodule NewRelic.Instrumented.Task do
   defdelegate await(task, timeout \\ 5000),
     to: Task
 
-  if Kernel.function_exported?(Task, :await_many, 2) do
+  if Code.ensure_loaded?(Task) && Kernel.function_exported?(Task, :await_many, 2) do
     defdelegate await_many(tasks, timeout \\ 5000),
       to: Task
   end
