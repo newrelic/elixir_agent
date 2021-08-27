@@ -11,6 +11,7 @@ defmodule NewRelic.Telemetry.Supervisor do
     children = [
       NewRelic.Telemetry.Ecto.Supervisor,
       NewRelic.Telemetry.Redix,
+      NewRelic.Telemetry.Quantum,
       NewRelic.Telemetry.Plug,
       NewRelic.Telemetry.Phoenix
     ]

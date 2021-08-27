@@ -62,6 +62,7 @@ Some common Elixir packages are auto-instrumented via [`telemetry`](https://gith
 * [`Phoenix`](https://github.com/phoenixframework/phoenix): See [NewRelic.Telemetry.Phoenix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Phoenix.html) for details.
 * [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Ecto.html) for details.
 * [`Redix`](https://github.com/whatyouhide/redix): See [NewRelic.Telemetry.Redix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Redix.html) for details.
+* [`Quantum`](https://github.com/quantum-elixir/quantum-core): See [NewRelic.Telemetry.Quantum](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Quantum.html) for details.
 
 ## Agent Features
 
