@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.27.6`
+
+Tweaks
+* Update Telemetry dependency to allow Telemetry 1.0. [#363](https://github.com/newrelic/elixir_agent/pull/363) Thanks @jimsynz!
+
 ### `v1.27.5`
 
 Fixes
