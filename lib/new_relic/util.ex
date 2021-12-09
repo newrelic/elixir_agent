@@ -7,7 +7,7 @@ defmodule NewRelic.Util do
     maybe_heroku_dyno_hostname() || get_hostname()
   end
 
-  def pid, do: System.get_pid() |> String.to_integer()
+  def pid, do: System.pid() |> String.to_integer()
 
   def time_to_ms({megasec, sec, microsec}),
     do: (megasec * 1_000_000 + sec) * 1_000 + round(microsec / 1_000)
