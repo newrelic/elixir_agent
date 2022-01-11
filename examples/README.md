@@ -17,17 +17,17 @@ Create the app
 
 ```
 cd apps
-mix new example
+mix new --sup example
 ```
 
 Point to the agent
 
 ```elixir
-  defp deps do
-    [
-      {:new_relic_agent, path: "../../../"},
-      {:test_support, in_umbrella: true},
-      # ...
-    ]
-  end
+defp deps do
+  [
+    {:new_relic_agent, path: "../../../"},
+    {:test_support, in_umbrella: true},
+    # ...
+  ]
+end
 ```
