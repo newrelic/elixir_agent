@@ -17,6 +17,15 @@ defmodule NewRelic.Telemetry.Absinthe.Metadata do
     end)
   end
 
+  def operation_span_name(input) when is_binary(input) do
+    with {:ok, tokens} <- Absinthe.Lexer.tokenize(input),
+         {:ok, parsed} <- :absinthe_parser.parse(tokens),
+         %Absinthe.Language.OperationDefinition{} = definition <-
+           Enum.find(parsed.definitions, fn x -> x.operation in [:query, :mutation] end) do
+      "#{definition.operation}:#{definition.name || definition.selection_set.selections |> hd |> Map.get(:name)}"
+    end
+  end
+
   def operation_span_name(%{type: type, name: name}) when is_binary(name) do
     "#{to_string(type)}:#{name}"
   end
