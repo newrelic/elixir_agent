@@ -236,6 +236,15 @@ defmodule NewRelic.DistributedTrace do
   def start_span(options) do
     id = Keyword.fetch!(options, :id)
     name = Keyword.fetch!(options, :name)
+    path = Keyword.fetch(options, :path)
+    parent_path = Keyword.fetch(options, :parent_path)
+
+    {_current, parent} =
+      set_current_span_with_parent(
+        label: {name, path},
+        ref: id,
+        parent_path: parent_path
+      )
 
     case Process.get(:nr_open_span_count, 0) do
       over when over >= @max_open_span_count ->
@@ -248,7 +257,6 @@ defmodule NewRelic.DistributedTrace do
 
         start_time = Keyword.get(options, :start_time, System.system_time())
         attributes = Keyword.get(options, :attributes, []) |> Map.new()
-        parent = Process.get(:nr_current_span)
 
         Process.put({:nr_span, id}, {name, parent, start_time, attributes})
     end
@@ -291,6 +299,15 @@ defmodule NewRelic.DistributedTrace do
     previous_span_attrs = Process.get(:nr_current_span_attrs)
     Process.put(:nr_current_span, current)
     {current, previous_span, previous_span_attrs}
+  end
+
+  def set_current_span_with_parent(label: label, ref: ref, parent_path: parent_path) do
+    {name, path} = label
+    current = {name, ref}
+    parent_span = Process.get({:spans, parent_path})
+    Process.put(:nr_current_span, current)
+    Process.put({:spans, path}, current)
+    {current, parent_span || :root}
   end
 
   def get_current_span_guid() do

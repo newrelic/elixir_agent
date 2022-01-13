@@ -58,10 +58,9 @@ defmodule NewRelic.Telemetry.Absinthe do
   end
 
   def handle_event(@operation_start, meas, meta, config) do
-    # TODO: Operation name
     NewRelic.start_span(
       id: meta.id,
-      name: "Operation",
+      name: Metadata.operation_span_name(meta.blueprint.input),
       start_time: meas.system_time,
       attributes: [
         "absinthe.query": read_query(meta.options[:document], collect: config.collect_query?)
@@ -72,7 +71,9 @@ defmodule NewRelic.Telemetry.Absinthe do
   end
 
   def handle_event(@resolve_field_start, meas, meta, _config) do
-    path = apply(Absinthe.Resolution, :path, [meta.resolution]) |> Enum.join(".")
+    path = Absinthe.Resolution.path(meta.resolution)
+    parent_path = parent_path(path)
+
     type = "#{meta.resolution.definition.parent_type.name}.#{meta.resolution.definition.name}"
     resolver_name = Metadata.resolver_name(meta.resolution.middleware)
 
@@ -80,8 +81,10 @@ defmodule NewRelic.Telemetry.Absinthe do
       id: meta.id,
       name: resolver_name,
       start_time: meas.system_time,
+      path: Enum.join(path, "."),
+      parent_path: Enum.join(parent_path, "."),
       attributes: [
-        "absinthe.field.path": path,
+        "absinthe.field.path": Enum.join(path, "."),
         "absinthe.field.type": type
       ]
     )
@@ -107,6 +110,13 @@ defmodule NewRelic.Telemetry.Absinthe do
         "absinthe.operation.name": operation.name
       ]
     )
+  end
+
+  def parent_path(path) when is_list(path) do
+    case Enum.reverse(path) do
+      [_field_name, f | parent] when is_number(f) -> Enum.reverse(parent)
+      [_ | parent] -> Enum.reverse(parent)
+    end
   end
 
   defp read_query(query, collect: true), do: query
