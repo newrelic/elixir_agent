@@ -63,7 +63,8 @@ defmodule NewRelic.Telemetry.Absinthe do
       name: Metadata.operation_span_name(meta.blueprint.input),
       start_time: meas.system_time,
       attributes: [
-        "absinthe.query": read_query(meta.options[:document], collect: config.collect_query?)
+        "absinthe.query": read_query(meta.options[:document], collect: config.collect_query?),
+        start_time_mono: System.monotonic_time()
       ]
     )
 
@@ -85,13 +86,25 @@ defmodule NewRelic.Telemetry.Absinthe do
       parent_path: Enum.join(parent_path, "."),
       attributes: [
         "absinthe.field.path": Enum.join(path, "."),
-        "absinthe.field.type": type
+        "absinthe.field.type": type,
+        start_time_mono: System.monotonic_time()
       ]
     )
   end
 
   def handle_event(@resolve_field_stop, meas, meta, _config) do
-    NewRelic.stop_span(id: meta.id, duration: meas.duration)
+    path = Absinthe.Resolution.path(meta.resolution)
+    type = "#{meta.resolution.definition.parent_type.name}.#{meta.resolution.definition.name}"
+
+    NewRelic.stop_span(
+      id: meta.id,
+      duration: meas.duration,
+      path: Enum.join(path, "."),
+      attributes: [
+        "absinthe.field.path": Enum.join(path, "."),
+        "absinthe.field.type": type
+      ]
+    )
   end
 
   def handle_event(@operation_stop, meas, meta, _config) do

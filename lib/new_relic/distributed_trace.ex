@@ -236,8 +236,8 @@ defmodule NewRelic.DistributedTrace do
   def start_span(options) do
     id = Keyword.fetch!(options, :id)
     name = Keyword.fetch!(options, :name)
-    path = Keyword.fetch(options, :path)
-    parent_path = Keyword.fetch(options, :parent_path)
+    path = Keyword.get(options, :path)
+    parent_path = Keyword.get(options, :parent_path)
 
     {_current, parent} =
       set_current_span_with_parent(
@@ -276,9 +276,27 @@ defmodule NewRelic.DistributedTrace do
         Process.put(:nr_open_span_count, Process.get(:nr_open_span_count) - 1)
 
         name = Keyword.get(options, :name, name)
+        path = Keyword.get(options, :path, name)
         timestamp_us = System.convert_time_unit(start_time, :native, :microsecond)
         duration_us = System.convert_time_unit(duration, :native, :microsecond)
+        start_attributes = attributes |> Map.new()
         stop_attributes = Keyword.get(options, :attributes, []) |> Map.new()
+
+        NewRelic.Transaction.Reporter.add_trace_segment(%{
+          primary_name:
+            "#{name}"
+            |> String.trim("&")
+            |> String.trim("/3")
+            |> String.trim("/2"),
+          secondary_name: "#{path}",
+          attributes: attributes,
+          pid: inspect(self()),
+          id: {name, id},
+          parent_id: parent || :root,
+          start_time: start_time,
+          start_time_mono: start_attributes.start_time_mono,
+          end_time_mono: System.monotonic_time()
+        })
 
         NewRelic.report_span(
           timestamp_ms: timestamp_us / 1000,
@@ -287,6 +305,14 @@ defmodule NewRelic.DistributedTrace do
           edge: [span: {name, id}, parent: parent || :root],
           category: "generic",
           attributes: Map.merge(attributes, stop_attributes)
+        )
+
+        NewRelic.report_aggregate(
+          %{
+            name: :AbsintheResolverTrace,
+            resolver: "#{name}"
+          },
+          %{duration_ms: duration_us / 1000, call_count: 1}
         )
     end
 
