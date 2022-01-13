@@ -126,9 +126,9 @@ defmodule NewRelic.Telemetry.Absinthe do
   end
 
   def parent_path(path) when is_list(path) do
-    case Enum.reverse(path) do
-      [_field_name, f | parent] when is_number(f) -> Enum.reverse(parent)
-      [_ | parent] -> Enum.reverse(parent)
+    case Enum.take(path, -2) do
+      [i, _] when is_number(i) -> path |> Enum.drop(-2)
+      _ -> path |> Enum.drop(-1)
     end
   end
 
