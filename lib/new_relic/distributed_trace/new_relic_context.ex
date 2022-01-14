@@ -16,7 +16,7 @@ defmodule NewRelic.DistributedTrace.NewRelicContext do
   def decode(raw_payload) when is_binary(raw_payload) do
     with {:ok, json} <- Base.decode64(raw_payload),
          {:ok, map} <- Jason.decode(json),
-         context <- validate(map) do
+         %Context{} = context <- validate(map) do
       NewRelic.report_metric(:supportability, [:dt, :accept, :success])
       context
     else
@@ -29,7 +29,7 @@ defmodule NewRelic.DistributedTrace.NewRelicContext do
 
   def restrict_access(:bad_dt_payload), do: :bad_dt_payload
 
-  def restrict_access(context) do
+  def restrict_access(%Context{} = context) do
     if (context.trust_key || context.account_id) == AgentRun.trusted_account_key() do
       context
     else
