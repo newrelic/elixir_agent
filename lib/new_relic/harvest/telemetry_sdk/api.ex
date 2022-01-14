@@ -17,6 +17,14 @@ defmodule NewRelic.Harvest.TelemetrySdk.API do
     |> maybe_retry(url, payload)
   end
 
+  def dimensional_metric(metrics) do
+    url = url(:metric)
+    payload = {:metrics, metrics, generate_request_id()}
+
+    request(url, payload)
+    |> maybe_retry(url, payload)
+  end
+
   def request(url, payload) do
     post(url, payload)
   end

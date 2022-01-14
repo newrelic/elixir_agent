@@ -3,7 +3,8 @@ defmodule NewRelic.Harvest.TelemetrySdk.Config do
 
   @default %{
     logs_harvest_cycle: 5_000,
-    spans_harvest_cycle: 5_000
+    spans_harvest_cycle: 5_000,
+    dimensional_metrics_harvest_cycle: 5_000
   }
   def lookup(key) do
     Application.get_env(:new_relic_agent, key, @default[key])
@@ -18,7 +19,8 @@ defmodule NewRelic.Harvest.TelemetrySdk.Config do
 
     %{
       log: "https://#{env}log-api.#{region}newrelic.com/log/v1",
-      trace: trace_domain(env, region)
+      trace: trace_domain(env, region),
+      metric: metric_domain(env, region)
     }
   end
 
@@ -33,5 +35,9 @@ defmodule NewRelic.Harvest.TelemetrySdk.Config do
 
   defp trace_domain(_env, _region, infinite_tracing_host) do
     "https://#{infinite_tracing_host}/trace/v1"
+  end
+
+  defp metric_domain(env, region) do
+    "https://#{env}metric-api.#{region}newrelic.com/metric/v1"
   end
 end
