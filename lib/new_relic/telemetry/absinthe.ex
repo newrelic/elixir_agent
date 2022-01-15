@@ -103,7 +103,11 @@ defmodule NewRelic.Telemetry.Absinthe do
       attributes: [
         "absinthe.field.path": Enum.join(path, "."),
         "absinthe.field.type": type
-      ]
+      ],
+      aggregate: %{
+        name: :AbsintheResolverTrace,
+        method_key: :resolver
+      }
     )
   end
 
@@ -121,7 +125,11 @@ defmodule NewRelic.Telemetry.Absinthe do
       attributes: [
         "absinthe.operation.type": operation.type,
         "absinthe.operation.name": operation.name
-      ]
+      ],
+      aggregate: %{
+        name: :AbsintheOperationTrace,
+        method_key: :operation
+      }
     )
   end
 

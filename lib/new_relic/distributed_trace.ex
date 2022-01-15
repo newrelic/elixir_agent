@@ -267,6 +267,7 @@ defmodule NewRelic.DistributedTrace do
   def stop_span(options) do
     id = Keyword.fetch!(options, :id)
     duration = Keyword.fetch!(options, :duration)
+    aggregate = Keyword.get(options, :aggregate)
 
     case Process.get({:nr_span, id}) do
       nil ->
@@ -307,13 +308,15 @@ defmodule NewRelic.DistributedTrace do
           attributes: Map.merge(attributes, stop_attributes)
         )
 
-        NewRelic.report_aggregate(
-          %{
-            name: :AbsintheResolverTrace,
-            resolver: "#{name}"
-          },
-          %{duration_ms: duration_us / 1000, call_count: 1}
-        )
+        if aggregate do
+          NewRelic.report_aggregate(
+            %{
+              :name => aggregate.name,
+              aggregate.method_key => name
+            },
+            %{duration_ms: duration_us / 1000, call_count: 1}
+          )
+        end
     end
 
     :ok
