@@ -6,7 +6,7 @@ defmodule NewRelic.Telemetry.Absinthe.Metadata do
 
         case Keyword.get(info, :type) do
           :external -> inspect(resolver_fn)
-          :local -> "&#{inspect(info[:module])}.anonymous/#{info[:arity]}"
+          :local -> local_function_name(info)
         end
 
       {{middleware, :call}, _options} ->
@@ -15,6 +15,13 @@ defmodule NewRelic.Telemetry.Absinthe.Metadata do
       _ ->
         nil
     end)
+  end
+
+  defp local_function_name(info) do
+    case Atom.to_string(info[:name]) do
+      "-dataloader" <> _ -> "&#{inspect(info[:module])}.dataloader/#{info[:arity]}"
+      _ -> "&#{inspect(info[:module])}.anonymous/#{info[:arity]}"
+    end
   end
 
   def operation_span_name(input) when is_binary(input) do

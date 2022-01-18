@@ -107,7 +107,8 @@ defmodule NewRelic.Telemetry.Absinthe do
       aggregate: %{
         name: :AbsintheResolverTrace,
         method_key: :resolver
-      }
+      },
+      is_segment?: true
     )
   end
 

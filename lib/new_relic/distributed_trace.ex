@@ -283,21 +283,23 @@ defmodule NewRelic.DistributedTrace do
         start_attributes = attributes |> Map.new()
         stop_attributes = Keyword.get(options, :attributes, []) |> Map.new()
 
-        NewRelic.Transaction.Reporter.add_trace_segment(%{
-          primary_name:
-            "#{name}"
-            |> String.trim("&")
-            |> String.trim("/3")
-            |> String.trim("/2"),
-          secondary_name: "#{path}",
-          attributes: attributes,
-          pid: inspect(self()),
-          id: {name, id},
-          parent_id: parent || :root,
-          start_time: start_time,
-          start_time_mono: start_attributes.start_time_mono,
-          end_time_mono: System.monotonic_time()
-        })
+        if Keyword.get(options, :is_segment?) do
+          NewRelic.Transaction.Reporter.add_trace_segment(%{
+            primary_name:
+              "#{name}"
+              |> String.trim("&")
+              |> String.trim("/3")
+              |> String.trim("/2"),
+            secondary_name: "#{path}",
+            attributes: attributes,
+            pid: inspect(self()),
+            id: {name, id},
+            parent_id: parent || :root,
+            start_time: start_time,
+            start_time_mono: start_attributes.start_time_mono,
+            end_time_mono: System.monotonic_time()
+          })
+        end
 
         NewRelic.report_span(
           timestamp_ms: timestamp_us / 1000,
