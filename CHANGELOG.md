@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.27.7`
+
+Fixes
+* Handle DT payload with unknown version. [#374](https://github.com/newrelic/elixir_agent/pull/374) Thanks @renanlage!
+
 ### `v1.27.6`
 
 Tweaks
