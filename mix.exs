@@ -31,7 +31,7 @@ defmodule NewRelic.Mixfile do
     [
       files: ["lib", "mix.exs", "README.md", "CHANGELOG.md", "VERSION"],
       maintainers: ["Vince Foley"],
-      licenses: ["Apache 2.0"],
+      licenses: ["Apache-2.0"],
       links: %{
         "Changelog" => "#{@source_url}/blob/master/CHANGELOG.md",
         "GitHub" => @source_url
