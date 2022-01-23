@@ -6,7 +6,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
   alias NewRelic.Harvest
   alias NewRelic.Harvest.TelemetrySdk
 
-  @interval_ms 5_000
+  @interval_ms TelemetrySdk.Config.lookup(:dimensional_metrics_harvest_cycle)
 
   @valid_types [:count, :gauge, :summary]
 
