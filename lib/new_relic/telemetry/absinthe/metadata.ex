@@ -29,52 +29,31 @@ defmodule NewRelic.Telemetry.Absinthe.Metadata do
          {:ok, parsed} <- :absinthe_parser.parse(tokens),
          %Absinthe.Language.OperationDefinition{} = definition <-
            Enum.find(parsed.definitions, fn x -> x.operation in [:query, :mutation] end) do
-      "#{definition.operation}:#{definition.name || definition.selection_set.selections |> hd |> Map.get(:name)}"
+      "#{definition.operation}:#{definition.name || definition.selection_set.selections |> selections_name()}"
     end
-  end
-
-  def operation_span_name(%{type: type, name: name}) when is_binary(name) do
-    "#{to_string(type)}:#{name}"
   end
 
   def operation_span_name(%{type: type}) do
     "#{to_string(type)}"
   end
 
-  def transaction_name(schema, operation) do
-    "Absinthe/#{inspect(schema)}/#{operation.type}/" <>
-      Enum.join(NewRelic.Telemetry.Absinthe.Metadata.collect_deepest_path(operation), ".")
+  def operation_span_name(%{type: type, name: name}) when is_binary(name) do
+    "#{to_string(type)}:#{name}"
   end
 
-  def collect_deepest_path(%{type: :mutation, selections: [%{name: name} | _]}) do
-    [name]
+  def operation_span_name(nil) do
+    "Absinthe/unknown_operaion"
   end
 
-  def collect_deepest_path(%{type: :subscription, selections: [%{name: name} | _]}) do
-    [name]
+  def transaction_name(schema, %Absinthe.Blueprint.Document.Operation{} = operation) do
+    "Absinthe/#{inspect(schema)}/#{operation.type}/#{operation.name || operation.selections |> selections_name()}"
   end
 
-  def collect_deepest_path(%{type: :query, selections: [selection]}) do
-    collect_deepest_path(selection, [])
+  def transaction_name(schema, nil) do
+    "Absinthe/#{inspect(schema)}/unknown_operaion"
   end
 
-  def collect_deepest_path(%{type: :query}) do
-    []
-  end
-
-  def collect_deepest_path(%{selections: selections, name: name}, acc) do
-    selections
-    |> Enum.reject(fn
-      %{name: "__typename"} -> true
-      _ -> false
-    end)
-    |> case do
-      [selection] -> collect_deepest_path(selection, acc ++ [name])
-      _ -> acc ++ [name]
-    end
-  end
-
-  def collect_deepest_path(_, acc) do
-    acc
+  defp selections_name(selections) do
+    selections |> Enum.map(fn x -> Map.get(x, :name) end) |> Enum.join("+")
   end
 end
