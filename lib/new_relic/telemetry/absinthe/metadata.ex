@@ -42,7 +42,7 @@ defmodule NewRelic.Telemetry.Absinthe.Metadata do
   end
 
   def operation_span_name(nil) do
-    "Absinthe/unknown_operaion"
+    "Absinthe/unknown_operation"
   end
 
   def transaction_name(schema, %Absinthe.Blueprint.Document.Operation{} = operation) do
@@ -50,7 +50,7 @@ defmodule NewRelic.Telemetry.Absinthe.Metadata do
   end
 
   def transaction_name(schema, nil) do
-    "Absinthe/#{inspect(schema)}/unknown_operaion"
+    "Absinthe/#{inspect(schema)}/unknown_operation"
   end
 
   defp selections_name(selections) do
