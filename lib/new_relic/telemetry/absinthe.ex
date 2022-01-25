@@ -121,7 +121,6 @@ defmodule NewRelic.Telemetry.Absinthe do
 
     NewRelic.stop_span(
       id: meta.id,
-      name: Metadata.operation_span_name(meta.blueprint.execution.result.emitter),
       duration: meas.duration,
       attributes: [
         "absinthe.operation.type": operation.type,

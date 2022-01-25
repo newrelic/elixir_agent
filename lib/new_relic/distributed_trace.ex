@@ -276,7 +276,6 @@ defmodule NewRelic.DistributedTrace do
       {name, parent, start_time, attributes} ->
         Process.put(:nr_open_span_count, Process.get(:nr_open_span_count) - 1)
 
-        name = Keyword.get(options, :name, name)
         path = Keyword.get(options, :path, name)
         timestamp_us = System.convert_time_unit(start_time, :native, :microsecond)
         duration_us = System.convert_time_unit(duration, :native, :microsecond)
