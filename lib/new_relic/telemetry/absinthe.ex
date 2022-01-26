@@ -123,8 +123,8 @@ defmodule NewRelic.Telemetry.Absinthe do
       id: meta.id,
       duration: meas.duration,
       attributes: [
-        "absinthe.operation.type": operation[:type],
-        "absinthe.operation.name": operation[:name]
+        "absinthe.operation.type": operation && operation.type,
+        "absinthe.operation.name": operation && operation.name
       ],
       aggregate: %{
         name: :AbsintheOperationTrace,
