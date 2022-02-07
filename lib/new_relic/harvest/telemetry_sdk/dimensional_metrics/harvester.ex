@@ -18,7 +18,8 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
     {:ok,
      %{
        start_time_ms: System.system_time(:millisecond),
-       metrics: []
+       metrics: %{},
+       attributes: %{}
      }}
   end
 
@@ -42,8 +43,15 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
   def handle_cast(_late_msg, :completed), do: {:noreply, :completed}
 
   def handle_cast({:report, metric}, state) do
-    # TODO: merge metrics with the same type/name/attributes?
-    {:noreply, %{state | metrics: [metric | state.metrics]}}
+    # convert metric to tuple key
+    key = metric_key(metric)
+
+    {:noreply,
+     %{
+       state
+       | metrics: merge(state.metrics, key, metric),
+         attributes: Map.put_new(state.attributes, key, metric[:attributes])
+     }}
   end
 
   # do not resend metrics when harvest has already been reported
@@ -59,6 +67,32 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
   end
 
   # Helpers
+
+  defp merge(metrics, key, metric) do
+    # put or update counter
+    Map.update(metrics, key, default(metric), &update(&1, metric))
+  end
+
+  @size 1
+  defp default(metric) do
+    @size
+    |> :counters.new([])
+    |> update(metric)
+  end
+
+  @index 1
+  defp update(counters, metric) do
+    :counters.add(counters, @index, metric[:value])
+  end
+
+  @spec metric_key(%{
+          required(:type) => atom(),
+          required(:name) => binary(),
+          required(:attributes) => map()
+        }) :: {atom(), binary(), non_neg_integer()}
+  defp metric_key(%{type: type, name: name, attributes: attributes}) do
+    {type, name, :erlang.phash2(attributes)}
+  end
 
   defp send_harvest(state) do
     TelemetrySdk.API.log(build_dimensional_metric_data(state.metrics, state))
