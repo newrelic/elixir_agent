@@ -173,3 +173,12 @@ NewRelic.stop_transaction()
 There are a few adapters which leverage this agent to provide library / framework specific instrumentation. Note that these will eventually be replaced with `telemetry` based instrumentation.
 
 * `Absinthe` https://github.com/binaryseed/new_relic_absinthe
+
+#### Disabling
+
+If you want to disable the New Relic's agent, you can do it in two different ways:
+
+* Application config:
+  * `config :new_relic_agent, app_name: nil`
+  * `config :new_relic_agent, license_key: nil`
+* Environment variables: `NEW_RELIC_HARVEST_ENABLED=false`
