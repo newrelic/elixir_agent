@@ -40,7 +40,7 @@ defmodule SSLTest do
     end
 
     test "allows good domains" do
-      assert {:ok, _} = NewRelic.Util.HTTP.post("https://sha512.badssl.com/", "", [])
+      assert {:ok, _} = NewRelic.Util.HTTP.post("https://sha256.badssl.com/", "", [])
     end
   end
 end
