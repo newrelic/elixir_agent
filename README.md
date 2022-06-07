@@ -22,7 +22,7 @@ We'd love to get your contributions to improve the elixir agent! Keep in mind wh
 Install the [Hex package](https://hex.pm/packages/new_relic_agent)
 
 Requirements:
-* Erlang/OTP 21
+* Erlang/OTP 22
 * Elixir 1.9
 
 ```elixir
