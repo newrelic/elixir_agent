@@ -176,7 +176,7 @@ There are a few adapters which leverage this agent to provide library / framewor
 
 #### Disabling
 
-If you want to disable the New Relic's agent, you can do it in two different ways:
+If you want to disable the agent, you can do it in two different ways:
 
 * Application config: `config :new_relic_agent, license_key: nil`
 * Environment variables: `NEW_RELIC_HARVEST_ENABLED=false`
