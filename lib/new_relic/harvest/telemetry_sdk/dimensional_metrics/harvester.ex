@@ -43,6 +43,8 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
 
   def handle_cast({:report, metric}, state) do
     # TODO: merge metrics with the same type/name/attributes?
+    # Take phash2 of attributes and store them as a map with the
+    # key being {type, name, phash2(attributes)} => [metrics]
     {:noreply, %{state | metrics: [metric | state.metrics]}}
   end
 
