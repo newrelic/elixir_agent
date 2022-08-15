@@ -76,7 +76,7 @@ defmodule NewRelic.Sampler.TopProcess do
   defp parse(:name, pid, []) do
     with {:dictionary, dictionary} <- Process.info(pid, :dictionary),
          {m, f, a} <- Keyword.get(dictionary, :"$initial_call") do
-      "#{inspect(m)}.#{f}/#{a}"
+      "#{inspect(m)}.#{f}/#{inspect(a)}"
     else
       _ -> inspect(pid)
     end
