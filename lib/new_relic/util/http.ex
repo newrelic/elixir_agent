@@ -42,6 +42,8 @@ defmodule NewRelic.Util.HTTP do
   https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
   """
   def http_options(opts \\ []) do
+    env_opts = Application.get_env(:new_relic_agent, :httpc_request_options, [])
+
     [
       connect_timeout: 1000,
       ssl: [
@@ -53,5 +55,6 @@ defmodule NewRelic.Util.HTTP do
       ]
     ]
     |> Keyword.merge(opts)
+    |> Keyword.merge(env_opts)
   end
 end
