@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.27.8`
+
+Features
+* Allow user to provide global override of some HTTP client settings. [#391](https://github.com/newrelic/elixir_agent/pull/391) Thanks @edds!
+
 ### `v1.27.7`
 
 Fixes
