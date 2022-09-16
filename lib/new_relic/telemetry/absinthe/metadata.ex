@@ -1,4 +1,6 @@
 defmodule NewRelic.Telemetry.Absinthe.Metadata do
+  alias Absinthe.Language.OperationDefinition
+
   def resolver_name(middleware) do
     Enum.find_value(middleware, fn
       {{Absinthe.Resolution, :call}, resolver_fn} ->
@@ -26,10 +28,17 @@ defmodule NewRelic.Telemetry.Absinthe.Metadata do
 
   def operation_span_name(input) when is_binary(input) do
     with {:ok, tokens} <- Absinthe.Lexer.tokenize(input),
-         {:ok, parsed} <- :absinthe_parser.parse(tokens),
-         %Absinthe.Language.OperationDefinition{} = definition <-
-           Enum.find(parsed.definitions, fn x -> x.operation in [:query, :mutation] end) do
-      "#{definition.operation}:#{definition.name || definition.selection_set.selections |> selections_name()}"
+         {:ok, parsed} <- :absinthe_parser.parse(tokens) do
+      definition =
+        for %OperationDefinition{operation: operation} = d <- parsed.definitions,
+            operation in [:query, :mutation] do
+          d
+        end
+        |> List.first()
+
+      unless is_nil(definition) do
+        "#{definition.operation}:#{definition.name || definition.selection_set.selections |> selections_name()}"
+      end
     end
   end
 

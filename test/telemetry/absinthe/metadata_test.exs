@@ -13,6 +13,13 @@ defmodule NewRelic.Telemetry.Absinthe.MetadataTest do
       assert Metadata.operation_span_name(query_string) == "query:getHero"
     end
 
+    test "when query contains a fragment" do
+      query_string =
+        "fragment NameParts on Person { \n  firstName \n  lastName \n}\nquery GetPerson {\n  people(id: 7) {\n    ...NameParts\n    avatar(size: LARGE)\n  }\n}"
+
+      assert Metadata.operation_span_name(query_string) == "query:GetPerson"
+    end
+
     test "when mutation" do
       query_string =
         "mutation ($ep: Episode!, $review: ReviewInput!) { \n  createReview(episode: $ep, review: $review) { \n    stars \n    commentary \n  } \n}"
