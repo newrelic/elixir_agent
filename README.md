@@ -44,6 +44,14 @@ config :new_relic_agent,
   app_name: "My App",
   license_key: "license_key"
 ```
+In case you see [connection timeout from new relic](https://github.com/newrelic/elixir_agent/issues/390) define custome timeout in your config
+
+```elixir
+config :new_relic_agent,
+  app_name: "My App",
+  license_key: "license_key",
+  httpc_request_options: [connect_timeout: 5000]
+```
 
 #### Via Environment variables
 
