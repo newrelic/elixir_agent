@@ -84,12 +84,18 @@ defmodule NewRelic.Telemetry.Phoenix do
     :ignore
   end
 
-  defp phoenix_name(%{plug: controller, plug_opts: action}) when is_atom(action) do
-    "/Phoenix/#{inspect(controller)}/#{action}"
+  defp nice_name(atom), do: atom |> Atom.to_string() |> String.replace(~r/^Elixir\./, "")
+
+  defp phoenix_name(%{plug: controller, plug_opts: action, phoenix_live_view: {view, _, _, _}}) when is_atom(action) and action == view do
+    "/Phoenix/#{inspect(controller)}/#{nice_name(action)}"
+  end
+
+  defp phoenix_name(%{plug: controller, plug_opts: action, phoenix_live_view: {view, _, _, _}}) when is_atom(action) do
+    "/Phoenix/#{inspect(controller)}/#{nice_name(view)}/#{action}"
   end
 
   defp phoenix_name(%{conn: %{private: %{phoenix_endpoint: phoenix_endpoint}} = conn}) do
-    "/Phoenix/#{inspect(phoenix_endpoint)}/#{conn.method}"
+    "/Phoenix/#{nice_name(phoenix_endpoint)}/#{conn.method}"
   end
 
   defp phoenix_name(%{conn: conn}) do
