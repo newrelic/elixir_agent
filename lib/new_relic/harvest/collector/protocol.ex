@@ -60,7 +60,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
 
   defp retry_call({:ok, response}, _params, _payload), do: {:ok, response}
 
-  @retryable [408, 429, 500, 503]
+  @retryable [408, 429, 500, 503, 504]
   defp retry_call({:error, status}, params, payload) when status in @retryable,
     do: issue_call(params, payload)
 
