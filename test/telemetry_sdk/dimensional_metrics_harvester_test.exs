@@ -11,7 +11,7 @@ defmodule TelemetrySdk.DimensionalMetricsHarvesterTest do
         TelemetrySdk.DimensionalMetrics.Harvester
       )
 
-    metric1 = %{}
+    metric1 = %{type: :gauge, name: "cpu", value: 10, attributes: %{k8: true, id: 123}}
     GenServer.cast(harvester, {:report, metric1})
 
     metrics = GenServer.call(harvester, :gather_harvest)
