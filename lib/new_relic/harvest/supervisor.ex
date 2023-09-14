@@ -14,7 +14,8 @@ defmodule NewRelic.Harvest.Supervisor do
     Harvest.Collector.CustomEvent.HarvestCycle,
     Harvest.Collector.ErrorTrace.HarvestCycle,
     Harvest.TelemetrySdk.Logs.HarvestCycle,
-    Harvest.TelemetrySdk.Spans.HarvestCycle
+    Harvest.TelemetrySdk.Spans.HarvestCycle,
+    Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle
   ]
 
   def start_link(_) do
