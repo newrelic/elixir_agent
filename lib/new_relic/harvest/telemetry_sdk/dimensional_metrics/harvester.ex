@@ -69,9 +69,20 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
       nil ->
         case type do
           :summary ->
-            new_summary = %{type: type, name: name, count: 1, min: new_value, max: new_value, sum: new_value, attributes: attributes}
+            new_summary = %{
+              type: type,
+              name: name,
+              count: 1,
+              min: new_value,
+              max: new_value,
+              sum: new_value,
+              attributes: attributes
+            }
+
             Map.put(metrics_acc, {type, name, attributes_hash}, new_summary)
-          _ -> Map.put(metrics_acc, {type, name, attributes_hash}, metric)
+
+          _ ->
+            Map.put(metrics_acc, {type, name, attributes_hash}, metric)
         end
 
       %{type: :count, name: name, value: current_value, attributes: attributes} ->
@@ -88,9 +99,16 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
         updated_metric = %{type: :gauge, name: name, value: new_value, attributes: attributes}
         Map.put(metrics_acc, {type, name, attributes_hash}, updated_metric)
 
-      %{type: type, name: name, count: current_value, min: min, max: max, sum: sum, attributes: attributes} =
-       #TODO aggregate summary metric
-        metrics_acc
+        # TODO aggregate summary metric
+        %{
+          type: type,
+          name: name,
+          count: current_value,
+          min: min,
+          max: max,
+          sum: sum,
+          attributes: attributes
+        } = metrics_acc
     end
   end
 
