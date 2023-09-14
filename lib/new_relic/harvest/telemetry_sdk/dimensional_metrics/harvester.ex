@@ -18,7 +18,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
     {:ok,
      %{
        start_time_ms: System.system_time(:millisecond),
-       metrics: []
+       metrics: %{}
      }}
   end
 
@@ -43,9 +43,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
 
   def handle_cast({:report, metric}, state) do
     # TODO: merge metrics with the same type/name/attributes?
-    # Take phash2 of attributes and store them as a map with the
-    # key being {type, name, phash2(attributes)} => [metrics]
-    {:noreply, %{state | metrics: [metric | state.metrics]}}
+    {:noreply, %{state | metrics: merge_metric(metric, state.metrics)}}
   end
 
   # do not resend metrics when harvest has already been reported
@@ -62,9 +60,40 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
 
   # Helpers
 
+  defp merge_metric(
+         %{type: type, name: name, value: new_value, attributes: attributes} = metric,
+         metrics_acc
+       ) do
+    attributes_hash = :erlang.phash2(attributes)
+
+    case Map.get(metrics_acc, {type, name, attributes_hash}) do
+      nil ->
+        Map.put(metrics_acc, {type, name, attributes_hash}, metric)
+
+      %{type: :count, name: name, value: current_value, attributes: attributes} ->
+        updated_metric = %{
+          type: :count,
+          name: name,
+          value: current_value + new_value,
+          attributes: attributes
+        }
+
+        Map.put(metrics_acc, {type, name, attributes_hash}, updated_metric)
+
+      %{type: :gauge, name: name, value: _current_value, attributes: attributes} ->
+        updated_metric = %{type: :gauge, name: name, value: new_value, attributes: attributes}
+        Map.put(metrics_acc, {type, name, attributes_hash}, updated_metric)
+
+      %{type: :summary, name: _name, value: _current_value, attributes: _attributes} ->
+        # TODO
+        metrics_acc
+    end
+  end
+
   defp send_harvest(state) do
-    TelemetrySdk.API.log(build_dimensional_metric_data(state.metrics, state))
-    log_harvest(length(state.metrics))
+    metrics = Map.to_list(state.metrics)
+    TelemetrySdk.API.log(build_dimensional_metric_data(metrics, state))
+    log_harvest(length(metrics))
   end
 
   defp log_harvest(harvest_size) do
