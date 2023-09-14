@@ -11,7 +11,7 @@ on:
 jobs:
   unit_test:
     name: Unit Tests - Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     strategy:
       matrix:
