@@ -72,10 +72,12 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
             new_summary = %{
               type: type,
               name: name,
-              count: 1,
-              min: new_value,
-              max: new_value,
-              sum: new_value,
+              value: %{
+                count: 1,
+                min: new_value,
+                max: new_value,
+                sum: new_value
+              },
               attributes: attributes
             }
 
@@ -98,21 +100,23 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
         Map.put(
           metrics_acc,
           {type, name, attributes_hash},
-          update_summary(current_metric, new_value)
+          %{current_metric | value: update_summary_value_map(current_metric, new_value)}
         )
     end
   end
 
-  defp update_summary(
-         %{type: :summary, min: min, max: max, count: count, sum: sum} = current_metric,
+  defp update_summary_value_map(
+         %{type: :summary, value: value_map} = current_metric,
          new_value
        ) do
-    updated_sum_count = %{current_metric | sum: sum + new_value, count: count + 1}
+    updated_sum_count = %{value_map | sum: value_map.sum + new_value, count: value_map.count + 1}
 
     updated_min =
-      if new_value < min, do: %{updated_sum_count | min: new_value}, else: updated_sum_count
+      if new_value < value_map.min,
+        do: %{updated_sum_count | min: new_value},
+        else: updated_sum_count
 
-    if new_value > max, do: %{updated_min | max: new_value}, else: updated_min
+    if new_value > value_map.max, do: %{updated_min | max: new_value}, else: updated_min
   end
 
   defp send_harvest(state) do

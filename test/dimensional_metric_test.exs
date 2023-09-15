@@ -92,10 +92,10 @@ defmodule DimensionalMetricTest do
     [metric] = metrics
     assert metric.name == "duration"
     assert metric.type == :summary
-    assert metric.sum == 126
-    assert metric.min == 9.5
-    assert metric.max == 55.5
-    assert metric.count == 4
+    assert metric.value.sum == 126
+    assert metric.value.min == 9.5
+    assert metric.value.max == 55.5
+    assert metric.value.count == 4
 
     TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
   end
