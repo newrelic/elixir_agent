@@ -99,16 +99,17 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
         updated_metric = %{type: :gauge, name: name, value: new_value, attributes: attributes}
         Map.put(metrics_acc, {type, name, attributes_hash}, updated_metric)
 
-        # TODO aggregate summary metric
-        %{
-          type: type,
-          name: name,
-          count: current_value,
-          min: min,
-          max: max,
-          sum: sum,
-          attributes: attributes
-        } = metrics_acc
+      %{
+        type: :summary,
+        name: name,
+        count: current_value,
+        min: min,
+        max: max,
+        sum: sum,
+        attributes: attributes
+      } ->
+        # TODO
+        metrics_acc
     end
   end
 
