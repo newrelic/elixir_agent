@@ -85,31 +85,23 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
             Map.put(metrics_acc, {type, name, attributes_hash}, metric)
         end
 
-      %{type: :count, name: name, value: current_value, attributes: attributes} ->
-        updated_metric = %{
-          type: :count,
-          name: name,
-          value: current_value + new_value,
-          attributes: attributes
-        }
-
+      %{type: :count, value: current_value} = current_metric ->
+        updated_metric = %{current_metric | value: current_value + new_value}
         Map.put(metrics_acc, {type, name, attributes_hash}, updated_metric)
 
-      %{type: :gauge, name: name, value: _current_value, attributes: attributes} ->
-        updated_metric = %{type: :gauge, name: name, value: new_value, attributes: attributes}
+      %{type: :gauge} = current_metric ->
+        updated_metric = %{current_metric | value: new_value}
         Map.put(metrics_acc, {type, name, attributes_hash}, updated_metric)
 
-      %{
-        type: :summary,
-        name: name,
-        count: current_value,
-        min: min,
-        max: max,
-        sum: sum,
-        attributes: attributes
-      } ->
-        # TODO
-        metrics_acc
+      %{type: :summary, min: min, max: max, count: count, sum: sum} = current_metric ->
+        updated_sum = %{current_metric | sum: sum + new_value}
+        updated_count = %{updated_sum | count: count + 1}
+
+        updated_min =
+          if new_value < min, do: %{updated_count | min: new_value}, else: updated_count
+
+        all_updated = if new_value > max, do: %{updated_min | max: new_value}, else: updated_min
+        Map.put(metrics_acc, {type, name, attributes_hash}, all_updated)
     end
   end
 

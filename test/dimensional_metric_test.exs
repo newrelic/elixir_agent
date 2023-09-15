@@ -26,4 +26,77 @@ defmodule DimensionalMetricTest do
 
     TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
   end
+
+  test "gauge dimensional metric is updated" do
+    TestHelper.restart_harvest_cycle(
+      NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle
+    )
+
+    NewRelic.report_dimensional_metric(:gauge, "mem_percent.foo_baz", 10, %{cpu: 1000})
+    NewRelic.report_dimensional_metric(:gauge, "mem_percent.foo_baz", 40, %{cpu: 1000})
+    NewRelic.report_dimensional_metric(:gauge, "mem_percent.foo_baz", 90, %{cpu: 1000})
+
+    [%{metrics: metrics_map}] =
+      TestHelper.gather_harvest(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester)
+
+    metrics = Map.values(metrics_map)
+
+    assert length(metrics) == 1
+    [metric] = metrics
+    assert metric.name == "mem_percent.foo_baz"
+    assert metric.type == :gauge
+    assert metric.value == 90
+
+    TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
+  end
+
+  test "count dimensional metric is updated" do
+    TestHelper.restart_harvest_cycle(
+      NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle
+    )
+
+    NewRelic.report_dimensional_metric(:count, "OOM", 1, %{cpu: 1000})
+    NewRelic.report_dimensional_metric(:count, "OOM", 1, %{cpu: 1000})
+    NewRelic.report_dimensional_metric(:count, "OOM", 2, %{cpu: 1000})
+
+    [%{metrics: metrics_map}] =
+      TestHelper.gather_harvest(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester)
+
+    metrics = Map.values(metrics_map)
+
+    assert length(metrics) == 1
+    [metric] = metrics
+    assert metric.name == "OOM"
+    assert metric.type == :count
+    assert metric.value == 4
+
+    TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
+  end
+
+  test "summary dimensional metric is updated" do
+    TestHelper.restart_harvest_cycle(
+      NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle
+    )
+
+    NewRelic.report_dimensional_metric(:summary, "duration", 40.5, %{cpu: 1000})
+    NewRelic.report_dimensional_metric(:summary, "duration", 20.5, %{cpu: 1000})
+    NewRelic.report_dimensional_metric(:summary, "duration", 9.5, %{cpu: 1000})
+    NewRelic.report_dimensional_metric(:summary, "duration", 55.5, %{cpu: 1000})
+
+    [%{metrics: metrics_map}] =
+      TestHelper.gather_harvest(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester)
+
+    metrics = Map.values(metrics_map)
+
+    assert length(metrics) == 1
+    [metric] = metrics
+    assert metric.name == "duration"
+    assert metric.type == :summary
+    assert metric.sum == 126
+    assert metric.min == 9.5
+    assert metric.max == 55.5
+    assert metric.count == 4
+
+    TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
+  end
 end
