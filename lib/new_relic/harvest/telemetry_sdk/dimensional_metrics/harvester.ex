@@ -117,7 +117,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
 
   defp send_harvest(state) do
     metrics = Map.values(state.metrics)
-    TelemetrySdk.API.log(build_dimensional_metric_data(metrics, state))
+    TelemetrySdk.API.dimensional_metric(build_dimensional_metric_data(metrics, state))
     log_harvest(length(metrics))
   end
 
