@@ -60,53 +60,71 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
   # Helpers
 
   defp merge_metric(
-         %{type: type, name: name, value: new_value, attributes: attributes} = metric,
+         %{type: :count, name: name, value: new_value, attributes: attributes} = metric,
          metrics_acc
        ) do
     attributes_hash = :erlang.phash2(attributes)
 
-    case Map.get(metrics_acc, {type, name, attributes_hash}) do
+    case Map.get(metrics_acc, {:count, name, attributes_hash}) do
       nil ->
-        case type do
-          :summary ->
-            new_summary = %{
-              type: type,
-              name: name,
-              value: %{
-                count: 1,
-                min: new_value,
-                max: new_value,
-                sum: new_value
-              },
-              attributes: attributes
-            }
-
-            Map.put(metrics_acc, {type, name, attributes_hash}, new_summary)
-
-          _ ->
-            Map.put(metrics_acc, {type, name, attributes_hash}, metric)
-        end
+        Map.put(metrics_acc, {:count, name, attributes_hash}, metric)
 
       %{type: :count, value: current_value} = current_metric ->
-        Map.put(metrics_acc, {type, name, attributes_hash}, %{
+        Map.put(metrics_acc, {:count, name, attributes_hash}, %{
           current_metric
           | value: current_value + new_value
         })
+    end
+  end
+
+  defp merge_metric(
+         %{type: :gauge, name: name, value: new_value, attributes: attributes} = metric,
+         metrics_acc
+       ) do
+    attributes_hash = :erlang.phash2(attributes)
+
+    case Map.get(metrics_acc, {:gauge, name, attributes_hash}) do
+      nil ->
+        Map.put(metrics_acc, {:gauge, name, attributes_hash}, metric)
 
       %{type: :gauge} = current_metric ->
-        Map.put(metrics_acc, {type, name, attributes_hash}, %{current_metric | value: new_value})
+        Map.put(metrics_acc, {:gauge, name, attributes_hash}, %{current_metric | value: new_value})
+    end
+  end
+
+  defp merge_metric(
+         %{type: :summary, name: name, value: new_value, attributes: attributes},
+         metrics_acc
+       ) do
+    attributes_hash = :erlang.phash2(attributes)
+
+    case Map.get(metrics_acc, {:summary, name, attributes_hash}) do
+      nil ->
+        new_summary = %{
+          type: :summary,
+          name: name,
+          value: %{
+            count: 1,
+            min: new_value,
+            max: new_value,
+            sum: new_value
+          },
+          attributes: attributes
+        }
+
+        Map.put(metrics_acc, {:summary, name, attributes_hash}, new_summary)
 
       %{type: :summary} = current_metric ->
         Map.put(
           metrics_acc,
-          {type, name, attributes_hash},
+          {:summary, name, attributes_hash},
           %{current_metric | value: update_summary_value_map(current_metric, new_value)}
         )
     end
   end
 
   defp update_summary_value_map(
-         %{type: :summary, value: value_map} = current_metric,
+         %{type: :summary, value: value_map},
          new_value
        ) do
     updated_sum_count = %{value_map | sum: value_map.sum + new_value, count: value_map.count + 1}
