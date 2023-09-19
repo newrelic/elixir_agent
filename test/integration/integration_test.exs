@@ -96,6 +96,25 @@ defmodule IntegrationTest do
     assert resp.status_code == 202
   end
 
+  test "Can post a dimensional metric" do
+    {:ok, resp} =
+      NewRelic.Harvest.TelemetrySdk.API.dimensional_metric([
+        %{
+          metrics: [
+            %{
+              attributes: %{cpu: 1000},
+              name: "mem_percent.foo_baz",
+              type: :gauge,
+              value: 90
+            }
+          ],
+          common: %{"timestamp" => System.system_time(:millisecond), "interval.ms" => 5000}
+        }
+      ])
+
+    assert resp.status_code == 202
+  end
+
   test "EnabledSupervisor starts" do
     NewRelic.EnabledSupervisorManager.start_child()
 
