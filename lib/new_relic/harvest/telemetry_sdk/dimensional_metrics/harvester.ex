@@ -77,14 +77,12 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
          %{type: :count, name: name, value: new_value, attributes: attributes} = metric,
          metrics_acc
        ) do
-    attributes_hash = :erlang.phash2(attributes)
-
-    case Map.get(metrics_acc, {:count, name, attributes_hash}) do
+    case Map.get(metrics_acc, {:count, name, attributes}) do
       nil ->
-        Map.put(metrics_acc, {:count, name, attributes_hash}, metric)
+        Map.put(metrics_acc, {:count, name, attributes}, metric)
 
       %{type: :count, value: current_value} = current_metric ->
-        Map.put(metrics_acc, {:count, name, attributes_hash}, %{
+        Map.put(metrics_acc, {:count, name, attributes}, %{
           current_metric
           | value: current_value + new_value
         })
@@ -95,14 +93,12 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
          %{type: :gauge, name: name, value: new_value, attributes: attributes} = metric,
          metrics_acc
        ) do
-    attributes_hash = :erlang.phash2(attributes)
-
-    case Map.get(metrics_acc, {:gauge, name, attributes_hash}) do
+    case Map.get(metrics_acc, {:gauge, name, attributes}) do
       nil ->
-        Map.put(metrics_acc, {:gauge, name, attributes_hash}, metric)
+        Map.put(metrics_acc, {:gauge, name, attributes}, metric)
 
       %{type: :gauge} = current_metric ->
-        Map.put(metrics_acc, {:gauge, name, attributes_hash}, %{current_metric | value: new_value})
+        Map.put(metrics_acc, {:gauge, name, attributes}, %{current_metric | value: new_value})
     end
   end
 
@@ -110,9 +106,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
          %{type: :summary, name: name, value: new_value, attributes: attributes},
          metrics_acc
        ) do
-    attributes_hash = :erlang.phash2(attributes)
-
-    case Map.get(metrics_acc, {:summary, name, attributes_hash}) do
+    case Map.get(metrics_acc, {:summary, name, attributes}) do
       nil ->
         new_summary = %{
           type: :summary,
@@ -126,12 +120,12 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
           attributes: attributes
         }
 
-        Map.put(metrics_acc, {:summary, name, attributes_hash}, new_summary)
+        Map.put(metrics_acc, {:summary, name, attributes}, new_summary)
 
       %{type: :summary} = current_metric ->
         Map.put(
           metrics_acc,
-          {:summary, name, attributes_hash},
+          {:summary, name, attributes},
           %{current_metric | value: update_summary_value_map(current_metric, new_value)}
         )
     end
