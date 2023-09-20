@@ -74,62 +74,53 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
   end
 
   defp merge_metric(
-         %{type: :count, name: name, value: new_value, attributes: attributes} = metric,
-         metrics_acc
-       ) do
-    case Map.get(metrics_acc, {:count, name, attributes}) do
-      nil ->
-        Map.put(metrics_acc, {:count, name, attributes}, metric)
-
-      %{type: :count, value: current_value} = current_metric ->
-        Map.put(metrics_acc, {:count, name, attributes}, %{
-          current_metric
-          | value: current_value + new_value
-        })
-    end
-  end
-
-  defp merge_metric(
-         %{type: :gauge, name: name, value: new_value, attributes: attributes} = metric,
-         metrics_acc
-       ) do
-    case Map.get(metrics_acc, {:gauge, name, attributes}) do
-      nil ->
-        Map.put(metrics_acc, {:gauge, name, attributes}, metric)
-
-      %{type: :gauge} = current_metric ->
-        Map.put(metrics_acc, {:gauge, name, attributes}, %{current_metric | value: new_value})
-    end
-  end
-
-  defp merge_metric(
          %{type: :summary, name: name, value: new_value, attributes: attributes},
          metrics_acc
        ) do
-    case Map.get(metrics_acc, {:summary, name, attributes}) do
-      nil ->
-        new_summary = %{
-          type: :summary,
-          name: name,
-          value: %{
-            count: 1,
-            min: new_value,
-            max: new_value,
-            sum: new_value
-          },
-          attributes: attributes
-        }
+    new_summary = %{
+      type: :summary,
+      name: name,
+      value: %{
+        count: 1,
+        min: new_value,
+        max: new_value,
+        sum: new_value
+      },
+      attributes: attributes
+    }
 
-        Map.put(metrics_acc, {:summary, name, attributes}, new_summary)
-
-      %{type: :summary} = current_metric ->
-        Map.put(
-          metrics_acc,
-          {:summary, name, attributes},
-          %{current_metric | value: update_summary_value_map(current_metric, new_value)}
-        )
-    end
+    Map.update(
+      metrics_acc,
+      {:summary, name, attributes},
+      new_summary,
+      &update_metric(&1, new_value)
+    )
   end
+
+  defp merge_metric(
+         %{type: type, name: name, value: new_value, attributes: attributes} = metric,
+         metrics_acc
+       ),
+       do:
+         Map.update(metrics_acc, {type, name, attributes}, metric, &update_metric(&1, new_value))
+
+  defp update_metric(
+         %{type: :count, value: value} = current_metric,
+         new_value
+       ),
+       do: %{current_metric | value: value + new_value}
+
+  defp update_metric(
+         %{type: :gauge} = current_metric,
+         new_value
+       ),
+       do: %{current_metric | value: new_value}
+
+  defp update_metric(
+         %{type: :summary} = current_metric,
+         new_value
+       ),
+       do: %{current_metric | value: update_summary_value_map(current_metric, new_value)}
 
   defp update_summary_value_map(
          %{type: :summary, value: value_map},
