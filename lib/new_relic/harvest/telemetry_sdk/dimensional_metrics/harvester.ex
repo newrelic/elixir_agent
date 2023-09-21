@@ -17,7 +17,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
   def init(_) do
     {:ok,
      %{
-       start_time_ms: System.system_time(:millisecond),
+       start_time: get_start_time(),
        metrics: %{}
      }}
   end
@@ -153,12 +153,22 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
     [
       %{
         metrics: metrics,
-        common: common(state)
+        common: common(state.start_time)
       }
     ]
   end
 
-  defp common(%{start_time_ms: start_time_ms}) do
-    %{"timestamp" => start_time_ms, "interval.ms" => @interval_ms}
+  defp common(%{system: start_system_time, mono: start_mono}) do
+    %{
+      "timestamp" => start_system_time,
+      "interval.ms" => System.monotonic_time(:millisecond) - start_mono
+    }
+  end
+
+  defp get_start_time() do
+    %{
+      system: System.system_time(:millisecond),
+      mono: System.monotonic_time(:millisecond)
+    }
   end
 end
