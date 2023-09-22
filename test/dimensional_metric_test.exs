@@ -99,27 +99,4 @@ defmodule DimensionalMetricTest do
 
     TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
   end
-
-  test "metric with nil attribute values are rejected" do
-    TestHelper.restart_harvest_cycle(
-      NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle
-    )
-
-    NewRelic.report_dimensional_metric(:count, "OOM", 1, %{cpu: 1000, oops: nil})
-    NewRelic.report_dimensional_metric(:count, "Hits", 10, %{cpu: 1000})
-    NewRelic.report_dimensional_metric(:count, "OOM", 2, %{cpu: nil})
-
-    [%{metrics: metrics_map}] =
-      TestHelper.gather_harvest(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester)
-
-    metrics = Map.values(metrics_map)
-
-    assert length(metrics) == 1
-    [metric] = metrics
-    assert metric.name == "Hits"
-    assert metric.type == :count
-    assert metric.value == 10
-
-    TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
-  end
 end

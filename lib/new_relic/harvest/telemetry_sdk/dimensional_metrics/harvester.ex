@@ -6,8 +6,6 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
   alias NewRelic.Harvest
   alias NewRelic.Harvest.TelemetrySdk
 
-  @interval_ms TelemetrySdk.Config.lookup(:dimensional_metrics_harvest_cycle)
-
   @valid_types [:count, :gauge, :summary]
 
   def start_link(_) do
@@ -41,17 +39,8 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
   # do not accept more report messages when harvest has already been reported
   def handle_cast(_late_msg, :completed), do: {:noreply, :completed}
 
-  def handle_cast({:report, %{name: name, attributes: attributes} = metric}, state) do
-    if nil_attributes?(attributes) do
-      NewRelic.log(
-        :debug,
-        "Dimensional metric - #{name} - format is invalid. At least one attribute has an invalid nil value."
-      )
-
-      {:noreply, state}
-    else
-      {:noreply, %{state | metrics: merge_metric(metric, state.metrics)}}
-    end
+  def handle_cast({:report, metric}, state) do
+    {:noreply, %{state | metrics: merge_metric(metric, state.metrics)}}
   end
 
   # do not resend metrics when harvest has already been reported
@@ -67,11 +56,6 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
   end
 
   # Helpers
-
-  defp nil_attributes?(attributes) do
-    Map.values(attributes)
-    |> Enum.member?(nil)
-  end
 
   defp merge_metric(
          %{type: :summary, name: name, value: new_value, attributes: attributes},
