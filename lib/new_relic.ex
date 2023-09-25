@@ -230,6 +230,17 @@ defmodule NewRelic do
     to: NewRelic.Harvest.Collector.CustomEvent.Harvester
 
   @doc """
+  Report a Dimensional Metric.
+  Valid types: `:count`, `:gauge`, and `:summary`.
+
+  ```elixir
+  NewRelic.report_dimensional_metric(:count, "my_metric_name", 1, %{some: "attributes"})
+  ```
+  """
+  defdelegate report_dimensional_metric(type, name, value, attributes \\ %{}),
+    to: NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester
+
+  @doc """
   Report a Custom metric.
 
   ```elixir
