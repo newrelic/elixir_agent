@@ -9,13 +9,20 @@ defmodule NewRelic.DistributedTrace do
   alias NewRelic.Harvest.Collector.AgentRun
   alias NewRelic.Transaction
 
-  def start(:http, headers) do
-    determine_context(:http, headers)
-    |> track_transaction(transport_type: "HTTP")
+  defguardp is_known_transport(transport) when transport in ~w(http generic)a
+
+  def start(transport, headers_or_payload) when is_known_transport(transport) do
+    transport_type =
+      if transport == :http,
+        do: "HTTP",
+        else: Map.get(headers_or_payload, :transport_type, "Unknown")
+
+    determine_context(transport, headers_or_payload)
+    |> track_transaction(transport_type: transport_type)
   end
 
-  defp determine_context(:http, headers) do
-    case accept_distributed_trace_headers(:http, headers) do
+  defp determine_context(transport, headers) when is_known_transport(transport) do
+    case accept_distributed_trace_headers(transport, headers) do
       %Context{} = context -> context
       _ -> generate_new_context()
     end
@@ -23,6 +30,10 @@ defmodule NewRelic.DistributedTrace do
 
   def accept_distributed_trace_headers(:http, headers) do
     w3c_headers(headers) || newrelic_header(headers) || :no_payload
+  end
+
+  def accept_distributed_trace_headers(:generic, payload) do
+    w3c_headers(payload) || :no_payload
   end
 
   defp w3c_headers(headers) do
@@ -43,27 +54,45 @@ defmodule NewRelic.DistributedTrace do
     end
   end
 
+  def distributed_trace_headers(:generic) do
+    case get_tracing_context() do
+      nil ->
+        []
+
+      context ->
+        context
+        |> context_to_distributed_trace_headers()
+        |> Enum.filter(fn {k, _v} -> k in [@w3c_traceparent, @w3c_tracestate] end)
+    end
+  end
+
   def distributed_trace_headers(:http) do
     case get_tracing_context() do
       nil ->
         []
 
       context ->
-        context = %{
-          context
-          | span_guid: get_current_span_guid(),
-            timestamp: System.system_time(:millisecond)
-        }
-
-        nr_header = NewRelic.DistributedTrace.NewRelicContext.generate(context)
-        {traceparent, tracestate} = NewRelic.DistributedTrace.W3CTraceContext.generate(context)
-
-        [
-          {@nr_header, nr_header},
-          {@w3c_traceparent, traceparent},
-          {@w3c_tracestate, tracestate}
-        ]
+        context
+        |> context_to_distributed_trace_headers()
+        |> Enum.filter(fn {k, _v} -> k in [@nr_header, @w3c_traceparent, @w3c_tracestate] end)
     end
+  end
+
+  defp context_to_distributed_trace_headers(context) do
+    context = %{
+      context
+      | span_guid: get_current_span_guid(),
+        timestamp: System.system_time(:millisecond)
+    }
+
+    nr_header = NewRelic.DistributedTrace.NewRelicContext.generate(context)
+    {traceparent, tracestate} = NewRelic.DistributedTrace.W3CTraceContext.generate(context)
+
+    [
+      {@nr_header, nr_header},
+      {@w3c_traceparent, traceparent},
+      {@w3c_tracestate, tracestate}
+    ]
   end
 
   def generate_new_context() do
