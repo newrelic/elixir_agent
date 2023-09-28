@@ -54,45 +54,36 @@ defmodule NewRelic.DistributedTrace do
     end
   end
 
-  def distributed_trace_headers(:generic) do
+  def distributed_trace_headers(transport) do
     case get_tracing_context() do
       nil ->
         []
 
       context ->
-        context
-        |> context_to_distributed_trace_headers()
-        |> Enum.filter(fn {k, _v} -> k in [@w3c_traceparent, @w3c_tracestate] end)
+        context_to_distributed_trace_headers(context, transport)
     end
   end
 
-  def distributed_trace_headers(:http) do
-    case get_tracing_context() do
-      nil ->
-        []
-
-      context ->
-        context
-        |> context_to_distributed_trace_headers()
-        |> Enum.filter(fn {k, _v} -> k in [@nr_header, @w3c_traceparent, @w3c_tracestate] end)
-    end
-  end
-
-  defp context_to_distributed_trace_headers(context) do
+  defp context_to_distributed_trace_headers(context, transport) do
     context = %{
       context
       | span_guid: get_current_span_guid(),
         timestamp: System.system_time(:millisecond)
     }
 
-    nr_header = NewRelic.DistributedTrace.NewRelicContext.generate(context)
     {traceparent, tracestate} = NewRelic.DistributedTrace.W3CTraceContext.generate(context)
 
-    [
-      {@nr_header, nr_header},
+    generic_headers = [
       {@w3c_traceparent, traceparent},
       {@w3c_tracestate, tracestate}
     ]
+
+    if transport == :generic do
+      generic_headers
+    else
+      nr_header = NewRelic.DistributedTrace.NewRelicContext.generate(context)
+      [{@nr_header, nr_header} | generic_headers]
+    end
   end
 
   def generate_new_context() do
