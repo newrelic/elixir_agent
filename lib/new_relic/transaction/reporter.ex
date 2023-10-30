@@ -106,4 +106,8 @@ defmodule NewRelic.Transaction.Reporter do
   def track_spawn(parent, child, timestamp) do
     Transaction.Sidecar.track_spawn(parent, child, timestamp)
   end
+
+  def track_longest_external(duration_ms) do
+    Transaction.Sidecar.update_longest_external(duration_ms)
+  end
 end

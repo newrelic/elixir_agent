@@ -93,6 +93,8 @@ defmodule NewRelic.Tracer.Report do
 
         NewRelic.report_metric({:external, url, component, method}, duration_s: duration_s)
 
+        Transaction.Reporter.track_longest_external(duration_ms)
+
         Transaction.Reporter.track_metric({
           {:external, url, component, method},
           duration_s: duration_s
@@ -132,6 +134,8 @@ defmodule NewRelic.Tracer.Report do
         )
 
         NewRelic.report_metric({:external, function_name}, duration_s: duration_s)
+
+        Transaction.Reporter.track_longest_external(duration_ms)
 
         Transaction.Reporter.track_metric({
           {:external, function_name},

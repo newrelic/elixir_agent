@@ -82,6 +82,10 @@ defmodule NewRelic.Transaction.Sidecar do
     cast({:append_attributes, attrs})
   end
 
+  def update_longest_external (duration_ms) do
+    cast({:update_longest_external, duration_ms})
+  end
+
   def trace_context(context) do
     :ets.insert(__MODULE__.ContextStore, {{:context, get_sidecar()}, context})
   end
@@ -140,6 +144,11 @@ defmodule NewRelic.Transaction.Sidecar do
         Map.update(acc, key, [val], &[val | &1])
       end)
 
+    {:noreply, %{state | attributes: attributes}}
+  end
+
+  def handle_cast({:update_longest_external, duration_ms}, state) do
+    attributes = Map.update(state[:attributes], "external.longest_call", duration_ms, fn existing_duration -> if existing_duration > duration_ms, do: existing_duration, else: duration_ms  end)
     {:noreply, %{state | attributes: attributes}}
   end
 
