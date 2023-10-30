@@ -82,7 +82,7 @@ defmodule NewRelic.Transaction.Sidecar do
     cast({:append_attributes, attrs})
   end
 
-  def update_longest_external (duration_ms) do
+  def update_longest_external(duration_ms) do
     cast({:update_longest_external, duration_ms})
   end
 
@@ -148,7 +148,11 @@ defmodule NewRelic.Transaction.Sidecar do
   end
 
   def handle_cast({:update_longest_external, duration_ms}, state) do
-    attributes = Map.update(state[:attributes], "external.longest_call", duration_ms, fn existing_duration -> if existing_duration > duration_ms, do: existing_duration, else: duration_ms  end)
+    attributes =
+      Map.update(state[:attributes], "external.longest_call", duration_ms, fn existing_duration ->
+        if existing_duration > duration_ms, do: existing_duration, else: duration_ms
+      end)
+
     {:noreply, %{state | attributes: attributes}}
   end
 
