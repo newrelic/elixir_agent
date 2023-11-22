@@ -9,6 +9,7 @@ defmodule ErrorTest do
     def start_link, do: GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
     @compile {:no_warn_undefined, Not}
     def handle_call(:nofun, _from, _state), do: Not.a_function(:one, :two)
+    def handle_call(:secretfun, _from, _state), do: Not.secretfun("secretvalue", "other_secret")
     def handle_call(:sleep, _from, _state), do: :timer.sleep(:infinity)
     def handle_call(:raise, _from, _state), do: raise("ERROR")
   end
@@ -29,6 +30,27 @@ defmodule ErrorTest do
     assert Enum.find(events, fn [intrinsic, _, _] ->
              intrinsic[:"error.class"] == "UndefinedFunctionError"
            end)
+  end
+
+  test "Redact arguments when not gathering stacktrace args" do
+    Process.flag(:trap_exit, true)
+    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
+    ErrorDummy.start_link()
+
+    reset_features = TestHelper.update(:nr_features, stacktrace_argument_collection: false)
+
+    capture_log(fn ->
+      catch_exit do
+        GenServer.call(ErrorDummy, :secretfun)
+      end
+    end)
+
+    [[_, error, _]] = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
+
+    refute String.contains?(error.stacktrace, "secretvalue")
+    refute String.contains?(error.stacktrace, "other_secret")
+    assert String.contains?(error.stacktrace, "Not.secretfun(\"DISABLED (arity: 2)\")")
+    reset_features.()
   end
 
   test "Catch a raised Error" do
