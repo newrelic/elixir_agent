@@ -55,7 +55,11 @@ defmodule ErrorTest do
 
     refute String.contains?(List.first(trace_error.stack_trace), "secretvalue")
     refute String.contains?(List.first(trace_error.stack_trace), "other_secret")
-    assert String.contains?(List.first(trace_error.stack_trace), "Not.secretfun(\"DISABLED (arity: 2)\")")
+
+    assert String.contains?(
+             List.first(trace_error.stack_trace),
+             "Not.secretfun(\"DISABLED (arity: 2)\")"
+           )
 
     reset_features.()
   end
