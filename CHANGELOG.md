@@ -1,5 +1,14 @@
 ## CHANGELOG
 
+### `v1.28`
+
+Features
+* Add feature to remove function argument data from stacktraces reported to New Relic.
+[#417](https://github.com/newrelic/elixir_agent/pull/417) Thanks @griffitr!
+* Add support for [Dimensional Metrics](https://docs.newrelic.com/docs/query-your-data/nrql-new-relic-query-language/nrql-query-tutorials/query-infrastructure-dimensional-metrics-nrql/).
+[#408](https://github.com/newrelic/elixir_agent/pull/408) Thanks @XiXiaPdx!
+
+
 ### `v1.27.8`
 
 Features
