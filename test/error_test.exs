@@ -12,6 +12,7 @@ defmodule ErrorTest do
     def handle_call(:secretfun, _from, _state), do: Not.secretfun("secretvalue", "other_secret")
     def handle_call(:sleep, _from, _state), do: :timer.sleep(:infinity)
     def handle_call(:raise, _from, _state), do: raise("ERROR")
+    def handle_call(:erlang_error, _from, _state), do: raise(:erlang.error(:badarg))
   end
 
   test "Catch and harvest errors" do
@@ -114,6 +115,27 @@ defmodule ErrorTest do
     assert Enum.find(events, fn [intrinsic, _, _] ->
              intrinsic[:"error.class"] == "ArgumentError"
            end)
+  end
+
+  test "Handle Erlang exception when stacktrace arg colleection is turned off" do
+    Process.flag(:trap_exit, true)
+    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+    ErrorDummy.start_link()
+
+    reset_features = TestHelper.update(:nr_features, stacktrace_argument_collection: false)
+
+    capture_log(fn ->
+      catch_exit do
+        GenServer.call(ErrorDummy, :erlang_error)
+      end
+    end)
+
+    [[_, event_error, _]] = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
+
+    assert String.contains?(event_error.stacktrace, "init(\"DISABLED (arity: 1)\")")
+
+    reset_features.()
   end
 
   test "Catch a simple raise" do
