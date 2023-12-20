@@ -1,6 +1,6 @@
 import Config
 
-config :logger, level: :warn
+config :logger, level: :warning
 
 config :new_relic_agent,
   app_name: "ElixirAgentTest",

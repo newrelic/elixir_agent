@@ -5,7 +5,7 @@ defmodule LoggerTest do
     previous_logger = GenServer.call(NewRelic.Logger, {:logger, :memory})
 
     try do
-      NewRelic.log(:warn, "OH_NO!")
+      NewRelic.log(:warning, "OH_NO!")
 
       log = GenServer.call(NewRelic.Logger, :flush)
       assert log =~ "[WARN]"
