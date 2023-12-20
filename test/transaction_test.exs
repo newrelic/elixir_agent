@@ -47,7 +47,7 @@ defmodule TransactionTest do
         atom: :atom,
         pid: self(),
         ref: make_ref(),
-        port: :erlang.list_to_port('#Port<0.4>'),
+        port: :erlang.list_to_port(~c"#Port<0.4>"),
         date: Date.utc_today(),
         date_time: DateTime.utc_now(),
         naive_date_time: NaiveDateTime.utc_now(),
