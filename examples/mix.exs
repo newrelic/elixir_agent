@@ -11,6 +11,8 @@ defmodule Examples.MixProject do
   end
 
   defp deps do
-    []
+    [
+      {:ecto, ">= 3.9.5"}
+    ]
   end
 end
