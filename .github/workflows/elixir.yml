@@ -78,8 +78,8 @@ jobs:
         include:
           - elixir: '1.14'
             otp: '26'
-          - elixir: '1.12'
-            otp: '24'
+#          - elixir: '1.12'
+#            otp: '24'
 
     defaults:
       run:
@@ -95,23 +95,23 @@ jobs:
         elixir-version: ${{ matrix.elixir }}
         otp-version: ${{ matrix.otp }}
 
-    - name: Restore deps cache
-      uses: actions/cache@v2
-      with:
-        path: examples/deps
-        key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
-        restore-keys: |
-          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
-          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
+#    - name: Restore deps cache
+#      uses: actions/cache@v2
+#      with:
+#        path: examples/deps
+#        key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
+#        restore-keys: |
+#          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+#          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
 
-    - name: Restore _build cache
-      uses: actions/cache@v2
-      with:
-        path: examples/_build
-        key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
-        restore-keys: |
-          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
-          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
+#    - name: Restore _build cache
+#      uses: actions/cache@v2
+#      with:
+#        path: examples/_build
+#        key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
+#        restore-keys: |
+#          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+#          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
 
     - name: Install deps
       run: mix deps.get
@@ -121,7 +121,7 @@ jobs:
 
     - name: Compile application
       run: |
-        mix compile --return-errors --no-compile
+        mix compile
       env:
         MIX_ENV: test
 
