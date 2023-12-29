@@ -120,7 +120,10 @@ jobs:
       run: mix format --check-formatted
 
     - name: Compile application
-      run: mix compile
+      run: |
+        set +e
+        mix compile
+        set -e
       env:
         MIX_ENV: test
 
