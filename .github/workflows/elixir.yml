@@ -121,7 +121,7 @@ jobs:
 
     - name: Compile application
       run: |
-        mix compile --return-errors
+        mix compile --return-errors --no-compile
       env:
         MIX_ENV: test
 
