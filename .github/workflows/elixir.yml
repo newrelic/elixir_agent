@@ -78,8 +78,8 @@ jobs:
         include:
           - elixir: '1.14'
             otp: '26'
-#          - elixir: '1.12'
-#            otp: '24'
+          - elixir: '1.12'
+            otp: '24'
 
     defaults:
       run:
