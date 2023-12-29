@@ -100,9 +100,9 @@ jobs:
       with:
         path: examples/deps
         key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
-        restore-keys: |
-          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
-          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
+#        restore-keys: |
+#          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+#          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
 
 #    - name: Restore _build cache
 #      uses: actions/cache@v3
