@@ -96,7 +96,7 @@ jobs:
         otp-version: ${{ matrix.otp }}
 
 #    - name: Restore deps cache
-#      uses: actions/cache@v2
+#      uses: actions/cache@v3
 #      with:
 #        path: examples/deps
 #        key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
@@ -104,14 +104,14 @@ jobs:
 #          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
 #          deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
 
-#    - name: Restore _build cache
-#      uses: actions/cache@v2
-#      with:
-#        path: examples/_build
-#        key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
-#        restore-keys: |
-#          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
-#          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
+    - name: Restore _build cache
+      uses: actions/cache@v3
+      with:
+        path: examples/_build
+        key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
+        restore-keys: |
+          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
 
     - name: Install deps
       run: mix deps.get
