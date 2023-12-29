@@ -91,7 +91,7 @@ defmodule RedixExampleTest do
       end)
 
     assert err_event[:"peer.address"] == "localhost:6379"
-    assert err_event[:"redix.error"] == ":timeout"
+    assert err_event[:"redix.error"] == "unknown POSIX error: timeout"
   end
 
   defp request(path) do
