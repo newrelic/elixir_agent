@@ -64,7 +64,7 @@ defmodule EctoExampleTest do
     assert TestSupport.find_metric(
              metrics,
              "Datastore/statement/SQLite3/counts/select",
-             6
+             4
            )
 
     assert TestSupport.find_metric(
@@ -97,19 +97,19 @@ defmodule EctoExampleTest do
     assert TestSupport.find_metric(
              metrics,
              "Datastore/SQLite3/allWeb",
-             13
+             11
            )
 
     assert TestSupport.find_metric(
              metrics,
              "Datastore/allWeb",
-             37
+             35
            )
 
     assert TestSupport.find_metric(
              metrics,
              "Datastore/all",
-             37
+             35
            )
   end
 
