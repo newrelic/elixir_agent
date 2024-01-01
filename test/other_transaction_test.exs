@@ -147,13 +147,14 @@ defmodule OtherTransactionTest do
     assert [
              _ts,
              name,
-             "(RuntimeError) FAIL",
+             reason,
              _,
              _,
              _
            ] = trace
 
     assert name =~ "OtherTransaction"
+    assert reason =~ "(RuntimeError) FAIL"
 
     [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
