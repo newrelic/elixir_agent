@@ -19,5 +19,15 @@ defmodule NewRelic.Error.LoggerHandler do
     :none
   end
 
+  def translator(_level, :error, _timestamp, {_, %{args: _, function: _}} = metadata) do
+    if NewRelic.Transaction.Sidecar.tracking?() do
+      NewRelic.Error.MetadataReporter.report_error(:transaction, metadata)
+    else
+      NewRelic.Error.MetadataReporter.report_error(:process, metadata)
+    end
+
+    :none
+  end
+
   def translator(_level, _message, _timestamp, _metadata), do: :none
 end
