@@ -72,7 +72,6 @@ jobs:
   integration_test:
     name: Integration Tests - Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
     runs-on: ubuntu-20.04
-#    continue-on-error: true
 
     strategy:
       matrix:
