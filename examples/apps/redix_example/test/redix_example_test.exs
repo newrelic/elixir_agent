@@ -91,6 +91,8 @@ defmodule RedixExampleTest do
       end)
 
     assert err_event[:"peer.address"] == "localhost:6379"
+    # On elixir 1.14 OTP 26, the error message is "unknown POSIX error: timeout"
+    # On elixir 1.12, the error message is " :timeout"
     assert err_event[:"redix.error"] =~ "timeout"
   end
 

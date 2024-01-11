@@ -22,9 +22,9 @@ jobs:
           - elixir: '1.15'
             otp: '25'
           - elixir: '1.14'
-            otp: '25'
+            otp: '26'
           - elixir: '1.13'
-            otp: '24'
+            otp: '25'
           - elixir: '1.12'
             otp: '24'
           - elixir: '1.11'
@@ -86,12 +86,10 @@ jobs:
         include:
           - elixir: '1.15'
             otp: '26'
-          - elixir: '1.15'
-            otp: '25'
           - elixir: '1.14'
-            otp: '25'
+            otp: '26'
           - elixir: '1.13'
-            otp: '24'
+            otp: '25'
           - elixir: '1.12'
             otp: '24'
 
@@ -110,7 +108,7 @@ jobs:
         otp-version: ${{ matrix.otp }}
 
     - name: Restore deps cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: examples/deps
         key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
@@ -119,7 +117,7 @@ jobs:
           deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
 
     - name: Restore _build cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: examples/_build
         key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}-${{ github.sha }}
@@ -134,7 +132,8 @@ jobs:
       run: mix format --check-formatted
 
     - name: Compile application
-      run: mix compile
+      run: |
+        mix compile
       env:
         MIX_ENV: test
 
@@ -149,5 +148,6 @@ jobs:
         mix test
         mix instrumented_task
         mix uninstrumented_task
+
       env:
         MIX_ENV: test
