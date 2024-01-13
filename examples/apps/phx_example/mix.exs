@@ -29,6 +29,7 @@ defmodule PhxExample.MixProject do
       {:test_support, in_umbrella: true},
       {:phoenix, "~> 1.5"},
       {:phoenix_html, "~> 2.11"},
+      {:phoenix_view, "~> 2.0"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"}
     ]
