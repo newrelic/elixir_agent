@@ -52,7 +52,7 @@ defmodule NewRelic.Harvest.HarvestCycle do
 
         receive do
           {:DOWN, _ref, _, ^harvester, _reason} ->
-            NewRelic.log(:warn, "Completed shutdown #{inspect(harvest_cycle)}")
+            NewRelic.log(:warning, "Completed shutdown #{inspect(harvest_cycle)}")
         end
     end
   end

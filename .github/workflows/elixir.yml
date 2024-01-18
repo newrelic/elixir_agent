@@ -12,12 +12,19 @@ jobs:
   unit_test:
     name: Unit Tests - Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
     runs-on: ubuntu-20.04
+    continue-on-error: true
 
     strategy:
       matrix:
         include:
+          - elixir: '1.15'
+            otp: '26'
+          - elixir: '1.15'
+            otp: '25'
           - elixir: '1.14'
             otp: '26'
+          - elixir: '1.13'
+            otp: '25'
           - elixir: '1.12'
             otp: '24'
           - elixir: '1.11'
@@ -71,13 +78,18 @@ jobs:
 
   integration_test:
     name: Integration Tests - Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    continue-on-error: true
 
     strategy:
       matrix:
         include:
+          - elixir: '1.15'
+            otp: '26'
           - elixir: '1.14'
             otp: '26'
+          - elixir: '1.13'
+            otp: '25'
           - elixir: '1.12'
             otp: '24'
 

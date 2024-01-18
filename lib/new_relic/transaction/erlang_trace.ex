@@ -9,6 +9,8 @@ defmodule NewRelic.Transaction.ErlangTrace do
 
   @moduledoc false
 
+  import NewRelic.ConditionalCompile
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -47,18 +49,20 @@ defmodule NewRelic.Transaction.ErlangTrace do
   # Trace messages
 
   def handle_info(
-        {:trace_ts, source, :return_from, {:proc_lib, :spawn_link, _}, pid, timestamp},
+        {:trace_ts, source, :return_from, {module, :spawn_link, _}, pid, timestamp},
         state
-      ) do
+      )
+      when module in [:proc_lib, Task.Supervised] do
     Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
     overload_protection(state.overload)
     {:noreply, state}
   end
 
   def handle_info(
-        {:trace_ts, source, :return_from, {:proc_lib, :start_link, _}, {:ok, pid}, timestamp},
+        {:trace_ts, source, :return_from, {module, :start_link, _}, {:ok, pid}, timestamp},
         state
-      ) do
+      )
+      when module in [:proc_lib, Task.Supervised] do
     Transaction.Reporter.track_spawn(source, pid, NewRelic.Util.time_to_ms(timestamp))
     overload_protection(state.overload)
     {:noreply, state}
@@ -92,6 +96,18 @@ defmodule NewRelic.Transaction.ErlangTrace do
   defp trace_proc_lib_spawn_link do
     :erlang.trace_pattern({:proc_lib, :spawn_link, :_}, [{:_, [], [{:return_trace}]}], [])
     :erlang.trace_pattern({:proc_lib, :start_link, :_}, [{:_, [], [{:return_trace}]}], [])
+
+    # Starting with elixir 1.15 tasks are spawned with Task.Supervised.
+    # See https://github.com/elixir-lang/elixir/commit/ecdf68438160928f01769b3ed76e184ad451c9fe
+    after_elixir_version(
+      "1.15.0",
+      :erlang.trace_pattern({Task.Supervised, :spawn_link, :_}, [{:_, [], [{:return_trace}]}], [])
+    )
+
+    after_elixir_version(
+      "1.15.0",
+      :erlang.trace_pattern({Task.Supervised, :start_link, :_}, [{:_, [], [{:return_trace}]}], [])
+    )
   end
 
   defp overload_protection(%{backoff: backoff} = overload) do

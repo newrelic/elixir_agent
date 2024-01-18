@@ -19,7 +19,7 @@ defmodule TestHelper do
 
   def http_request(port, path) do
     {:ok, {{_, status_code, _}, _headers, body}} =
-      :httpc.request('http://localhost:#{port}/#{path}')
+      :httpc.request(~c"http://localhost:#{port}/#{path}")
 
     {:ok, %{status_code: status_code, body: to_string(body)}}
   end

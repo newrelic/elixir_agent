@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :phx_example, PhxExampleWeb.Endpoint,
   url: [host: "localhost"],

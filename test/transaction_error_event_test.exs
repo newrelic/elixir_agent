@@ -184,7 +184,7 @@ defmodule TransactionErrorEventTest do
     Logger.remove_backend(:console)
 
     {:ok, _} = Plug.Cowboy.http(TestPlugApp, [], port: 9999)
-    :httpc.request('http://localhost:9999/async_error')
+    :httpc.request(~c"http://localhost:9999/async_error")
 
     traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
     assert Enum.find(traces, &match?([_, _, ":timeout", "EXIT", _, _], &1))

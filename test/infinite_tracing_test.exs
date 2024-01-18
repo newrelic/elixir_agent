@@ -276,7 +276,7 @@ defmodule InfiniteTracingTest do
     TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
 
     {:ok, _} = Plug.Cowboy.http(TestPlugApp, [], port: 7777)
-    {:ok, {{_, 500, _}, _, _}} = :httpc.request('http://localhost:7777/error')
+    {:ok, {{_, 500, _}, _, _}} = :httpc.request(~c"http://localhost:7777/error")
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
@@ -296,7 +296,7 @@ defmodule InfiniteTracingTest do
     TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
 
     {:ok, _} = Plug.Cowboy.http(TestPlugApp, [], port: 7788)
-    {:ok, {{_, 500, _}, _, _}} = :httpc.request('http://localhost:7788/exit')
+    {:ok, {{_, 500, _}, _, _}} = :httpc.request(~c"http://localhost:7788/exit")
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 

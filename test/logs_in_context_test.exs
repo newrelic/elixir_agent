@@ -24,7 +24,8 @@ defmodule LogsInContextTest do
       end)
 
     # Console logging is transformed into JSON structured log lines
-    log = Jason.decode!(log_line)
+    [_, json] = Regex.run(~r/.*({.*}).*/, log_line)
+    log = Jason.decode!(json)
 
     assert log["timestamp"] |> is_integer
     assert log["message"] == "FOO"
@@ -51,7 +52,8 @@ defmodule LogsInContextTest do
       end)
 
     # Console logging is transformed into JSON structured log lines
-    log = Jason.decode!(log_line)
+    [_, json] = Regex.run(~r/.*({.*}).*/, log_line)
+    log = Jason.decode!(json)
 
     assert log["message"] == "FOO BAR"
 
@@ -111,7 +113,7 @@ defmodule LogsInContextTest do
     Application.delete_env(:new_relic_agent, :log_reservoir_size)
   end
 
-  @default_pattern "\n$time $metadata[$level] $levelpad$message\n"
+  @default_pattern "\n$time $metadata[$level] $message\n"
   def configure_logs_in_context(mode) do
     :logger.remove_primary_filter(:nr_logs_in_context)
     Logger.configure_backend(:console, format: @default_pattern)

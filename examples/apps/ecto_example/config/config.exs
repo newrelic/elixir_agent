@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :ecto_example,
   http_port: 4001,
