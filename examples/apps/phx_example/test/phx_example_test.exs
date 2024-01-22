@@ -58,7 +58,7 @@ defmodule PhxExampleTest do
 
     {:ok, %{body: body, status_code: 500}} = request("/phx/error")
 
-    assert body =~ "Opps, Internal Server Error"
+    assert body =~ "Oops, Internal Server Error"
 
     metrics = TestSupport.gather_harvest(Collector.Metric.Harvester)
 
@@ -84,7 +84,7 @@ defmodule PhxExampleTest do
 
     {:ok, %{body: body, status_code: 500}} = request("/phx/live_error")
 
-    assert body =~ "Opps, Internal Server Error"
+    assert body =~ "Oops, Internal Server Error"
 
     metrics = TestSupport.gather_harvest(Collector.Metric.Harvester)
 
