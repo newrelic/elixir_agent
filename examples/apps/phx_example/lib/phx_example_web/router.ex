@@ -13,6 +13,9 @@ defmodule PhxExampleWeb.Router do
   scope "/phx", PhxExampleWeb do
     pipe_through :browser
 
+    live "/home", HomeLive, :index
+    live "/live_error", ErrorLive, :index
+
     get "/error", PageController, :error
     get "/:foo", PageController, :index
   end

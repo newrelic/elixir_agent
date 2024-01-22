@@ -28,6 +28,29 @@ defmodule PhxExampleTest do
     assert event[:status] == 200
   end
 
+  test "Phoenix metrics generated for LiveView" do
+    TestSupport.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestSupport.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    {:ok, %{body: body}} = request("/phx/home")
+    assert body =~ "Some content"
+
+    metrics = TestSupport.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestSupport.find_metric(
+             metrics,
+             "WebTransaction/Phoenix/PhxExampleWeb.HomeLive/index"
+           )
+
+    [[_, event]] = TestSupport.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert event[:"phoenix.endpoint"] == "PhxExampleWeb.Endpoint"
+    assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
+    assert event[:"phoenix.controller"] == "Phoenix.LiveView.Plug"
+    assert event[:"phoenix.action"] == "index"
+    assert event[:status] == 200
+  end
+
   @tag :capture_log
   test "Phoenix error" do
     TestSupport.restart_harvest_cycle(Collector.Metric.HarvestCycle)
@@ -51,6 +74,32 @@ defmodule PhxExampleTest do
     assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
     assert event[:"phoenix.controller"] == "PhxExampleWeb.PageController"
     assert event[:"phoenix.action"] == "error"
+    assert event[:error]
+  end
+
+  @tag :capture_log
+  test "Phoenix LiveView error" do
+    TestSupport.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestSupport.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    {:ok, %{body: body, status_code: 500}} = request("/phx/live_error")
+
+    assert body =~ "Opps, Internal Server Error"
+
+    metrics = TestSupport.gather_harvest(Collector.Metric.Harvester)
+
+    assert TestSupport.find_metric(
+             metrics,
+             "WebTransaction/Phoenix/PhxExampleWeb.ErrorLive/index"
+           )
+
+    [[_, event]] = TestSupport.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert event[:status] == 500
+    assert event[:"phoenix.endpoint"] == "PhxExampleWeb.Endpoint"
+    assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
+    assert event[:"phoenix.controller"] == "Phoenix.LiveView.Plug"
+    assert event[:"phoenix.action"] == "index"
     assert event[:error]
   end
 
