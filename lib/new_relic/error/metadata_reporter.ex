@@ -62,19 +62,21 @@ defmodule NewRelic.Error.MetadataReporter do
     end
   end
 
-  defp parse_reason({exception, stacktrace}) do
-    type = parse_type(exception)
+  defp parse_reason({%type{message: message} = exception, stacktrace}) do
     expected = parse_error_expected(exception)
-    message = Map.get(exception, :message)
+    type = inspect(type)
     reason = "(#{type}) #{message}"
 
     {type, reason, stacktrace, expected}
   end
 
-  defp parse_type(%type{}) do
-    type
-    |> Module.split()
-    |> Enum.join(".")
+  defp parse_reason({exception, stacktrace}) do
+    exception = Exception.normalize(:error, exception, stacktrace)
+    type = inspect(exception.__struct__)
+    message = Exception.message(exception)
+    reason = "(#{type}) #{message}"
+
+    {type, reason, stacktrace, false}
   end
 
   defp parse_process_name([], [{module, _f, _a, _} | _]), do: inspect(module)

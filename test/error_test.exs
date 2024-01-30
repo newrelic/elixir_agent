@@ -186,4 +186,20 @@ defmodule ErrorTest do
              intrinsic[:"error.class"] == "File.Error"
            end)
   end
+
+  test "Catch a function clause error inside a Task" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
+
+    :proc_lib.spawn(fn ->
+      Task.async(fn -> ErrorDummy.handle_call(:foo, nil, nil) end) |> Task.await()
+    end)
+
+    :timer.sleep(100)
+
+    events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
+
+    assert Enum.find(events, fn [intrinsic, _, _] ->
+             intrinsic[:"error.class"] == "FunctionClauseError"
+           end)
+  end
 end
