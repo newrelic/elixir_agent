@@ -16,7 +16,7 @@ defmodule NewRelic.Error.LoggerHandler do
       NewRelic.Error.Reporter.report_error(:process, report)
     end
 
-    :none
+    :skip
   end
 
   def translator(_level, :error, _timestamp, {_, %{args: _, function: _}} = metadata) do
