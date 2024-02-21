@@ -1,5 +1,16 @@
 ## CHANGELOG
 
+### `v1.29`
+
+Features
+* Ensure working support for newer versions, up to Erlang 26 and Elixir 15
+  [#420](https://github.com/newrelic/elixir_agent/pull/420),
+  [#421](https://github.com/newrelic/elixir_agent/pull/421),
+  [#426](https://github.com/newrelic/elixir_agent/pull/426),
+  [#427](https://github.com/newrelic/elixir_agent/pull/427). Thank you so
+  much @tmaszk and @XiXiaPdx!
+
+
 ### `v1.28`
 
 Features
