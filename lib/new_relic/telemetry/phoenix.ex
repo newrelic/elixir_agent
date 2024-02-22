@@ -84,6 +84,10 @@ defmodule NewRelic.Telemetry.Phoenix do
     :ignore
   end
 
+  defp phoenix_name(%{phoenix_live_view: {module, action, _, _}}) when is_atom(action) do
+    "/Phoenix/#{inspect(module)}/#{action}"
+  end
+
   defp phoenix_name(%{plug: controller, plug_opts: action}) when is_atom(action) do
     "/Phoenix/#{inspect(controller)}/#{action}"
   end
