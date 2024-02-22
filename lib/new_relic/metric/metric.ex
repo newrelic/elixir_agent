@@ -7,6 +7,5 @@ defmodule NewRelic.Metric do
             total_call_time: 0,
             total_exclusive_time: 0,
             min_call_time: 0,
-            max_call_time: 0,
-            sum_of_squares: 0
+            max_call_time: 0
 end
