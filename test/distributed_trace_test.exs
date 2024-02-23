@@ -66,7 +66,7 @@ defmodule DistributedTraceTest do
     :ok
   end
 
-  test "Annotate Transaction event with DT attrs" do
+  test "Annotate HTTP transaction event with DT attrs" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     TestHelper.request(
@@ -184,6 +184,28 @@ defmodule DistributedTraceTest do
 
       headers = NewRelic.DistributedTrace.distributed_trace_headers(:http)
       assert length(headers) > 0
+    end)
+    |> Task.await()
+  end
+
+  test "Attaches generic DT attributes to the context" do
+    tracestate =
+      "2534120@nr=0-0-2534120-1651653516-34cc430c00000000-268a50db3d00fd03-1-1.049247-1695854781262"
+
+    traceid = "b9d7bbdbaf2b3725f4b4799f8dd60081"
+    traceparent = "00-#{traceid}-34cc430c00000000-01"
+
+    Task.async(fn ->
+      NewRelic.start_transaction("TransactionCategory", "MyTaskName")
+
+      NewRelic.DistributedTrace.start(:generic, %{
+        "tracestate" => tracestate,
+        "traceparent" => traceparent
+      })
+
+      context = NewRelic.DistributedTrace.get_tracing_context()
+
+      assert context.trace_id == traceid
     end)
     |> Task.await()
   end
