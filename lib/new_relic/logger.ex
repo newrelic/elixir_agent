@@ -31,7 +31,7 @@ defmodule NewRelic.Logger do
   # Server
 
   def handle_cast({:log, level, message}, %{io_device: Logger} = state) do
-    Logger.log(level, "new_relic_agent - " <> message)
+    elixir_logger(level, "new_relic_agent - " <> message)
     {:noreply, state}
   end
 
@@ -78,6 +78,11 @@ defmodule NewRelic.Logger do
     logfile |> Path.dirname() |> File.mkdir_p!()
     {:ok, _file} = File.open(logfile, [:append, :utf8])
   end
+
+  defp elixir_logger(:debug, message), do: Logger.debug(message)
+  defp elixir_logger(:info, message), do: Logger.info(message)
+  defp elixir_logger(:warn, message), do: Logger.warn(message)
+  defp elixir_logger(:error, message), do: Logger.error(message)
 
   @sep " - "
   def formatted(level, message), do: [formatted(level), @sep, timestamp(), @sep, message, "\n"]
