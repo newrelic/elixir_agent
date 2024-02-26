@@ -38,15 +38,37 @@ defmodule NewRelic.Util.Error do
 
   def format_stacktrace(stacktrace, initial_call),
     do:
-      List.wrap(stacktrace)
+      maybe_remove_args_from_stacktrace(stacktrace)
+      |> List.wrap()
       |> prepend_initial_call(initial_call)
       |> Enum.map(fn
         line when is_binary(line) -> line
         entry when is_tuple(entry) -> Exception.format_stacktrace_entry(entry)
       end)
 
-  defp prepend_initial_call(stacktrace, {mod, fun, args}),
-    do: stacktrace ++ [{mod, fun, args, []}]
+  defp prepend_initial_call(stacktrace, {mod, fun, args}) do
+    if NewRelic.Config.feature?(:stacktrace_argument_collection) do
+      stacktrace ++ [{mod, fun, args, []}]
+    else
+      stacktrace ++ [{mod, fun, ["DISABLED (arity: #{length(args)})"], []}]
+    end
+  end
 
-  defp prepend_initial_call(stacktrace, _), do: stacktrace
+  defp prepend_initial_call(stacktrace, _) do
+    stacktrace
+  end
+
+  defp maybe_remove_args_from_stacktrace(stacktrace) do
+    if NewRelic.Config.feature?(:stacktrace_argument_collection) do
+      stacktrace
+    else
+      remove_args_from_stacktrace(stacktrace)
+    end
+  end
+
+  defp remove_args_from_stacktrace([{mod, fun, [_ | _] = args, info} | rest]),
+    do: [{mod, fun, ["DISABLED (arity: #{length(args)})"], info} | rest]
+
+  defp remove_args_from_stacktrace(stacktrace) when is_list(stacktrace),
+    do: stacktrace
 end

@@ -101,6 +101,11 @@ defmodule NewRelic.Init do
           "NEW_RELIC_FUNCTION_ARGUMENT_COLLECTION_ENABLED",
           :function_argument_collection_enabled
         ),
+      stacktrace_argument_collection:
+        determine_feature(
+          "NEW_RELIC_STACKTRACE_ARGUMENT_COLLECTION_ENABLED",
+          :stacktrace_argument_collection_enabled
+        ),
       request_queuing_metrics:
         determine_feature(
           "NEW_RELIC_REQUEST_QUEUING_METRICS_ENABLED",

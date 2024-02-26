@@ -190,7 +190,9 @@ defmodule DistributedTraceTest do
 
   describe "Context decoding" do
     test "ignore unknown version" do
-      assert DistributedTrace.NewRelicContext.validate(%{"v" => [666]}) == :invalid
+      payload = %{"v" => [666]} |> Jason.encode!() |> Base.encode64()
+
+      assert DistributedTrace.NewRelicContext.decode(payload) == :bad_dt_payload
     end
 
     test "ignore bad base64" do
@@ -265,13 +267,46 @@ defmodule DistributedTraceTest do
 
       assert :restricted == DistributedTrace.NewRelicContext.restrict_access(context)
     end
+
+    test "payload is invalid" do
+      assert :bad_dt_payload == DistributedTrace.NewRelicContext.restrict_access(:bad_dt_payload)
+    end
   end
 
   test "correctly handle a bad NR payload" do
-    TestHelper.request(
-      TestPlugApp,
-      put_req_header(conn(:get, "/"), @dt_header, "asdf")
-    )
+    response =
+      TestHelper.request(
+        TestPlugApp,
+        put_req_header(conn(:get, "/"), @dt_header, "asdf")
+      )
+
+    assert response.status_code == 200
+  end
+
+  test "correctly handle a NR payload in an unknown version" do
+    payload =
+      """
+      {
+        "v": [0, 2],
+        "d": {
+          "d.ac": "2497233",
+          "d.ap": "488951130",
+          "d.id": "8e81319f548742aa",
+          "d.ti": 1640202478572,
+          "d.tr": "b4799f25a31049eebc2f808732b28e35",
+          "d.ty": "Mobile"
+        }
+      }
+      """
+      |> Base.encode64()
+
+    response =
+      TestHelper.request(
+        TestPlugApp,
+        put_req_header(conn(:get, "/"), @dt_header, payload)
+      )
+
+    assert response.status_code == 200
   end
 
   test "Always handle payload w/o sampling decision" do

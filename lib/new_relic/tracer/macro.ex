@@ -48,7 +48,7 @@ defmodule NewRelic.Tracer.Macro do
         |> Enum.map(&"`#{&1}`")
         |> Enum.join(", ")
 
-      Logger.warn(
+      Logger.warning(
         "[New Relic] Unable to trace `#{inspect(module)}.#{name}/#{length(args)}` " <>
           "due to additional function-level clauses: #{found} -- please remove @trace"
       )
@@ -81,7 +81,7 @@ defmodule NewRelic.Tracer.Macro do
   end
 
   def trace_deprecated?({_, category: :datastore}, module, name) do
-    Logger.warn(
+    Logger.warning(
       "[New Relic] Trace `:datastore` deprecated in favor of automatic ecto instrumentation. " <>
         "Please remove @trace from #{inspect(module)}.#{name}"
     )

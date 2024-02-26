@@ -1,5 +1,35 @@
 ## CHANGELOG
 
+### `v1.29`
+
+Features
+* Ensure working support for newer versions, up to Erlang 26 and Elixir 15
+  [#420](https://github.com/newrelic/elixir_agent/pull/420),
+  [#421](https://github.com/newrelic/elixir_agent/pull/421),
+  [#426](https://github.com/newrelic/elixir_agent/pull/426),
+  [#427](https://github.com/newrelic/elixir_agent/pull/427). Thank you so
+  much @tmaszk and @XiXiaPdx!
+
+
+### `v1.28`
+
+Features
+* Add feature to remove function argument data from stacktraces reported to New Relic.
+[#417](https://github.com/newrelic/elixir_agent/pull/417) Thanks @griffitr!
+* Add support for [Dimensional Metrics](https://docs.newrelic.com/docs/query-your-data/nrql-new-relic-query-language/nrql-query-tutorials/query-infrastructure-dimensional-metrics-nrql/).
+[#408](https://github.com/newrelic/elixir_agent/pull/408) Thanks @XiXiaPdx!
+
+
+### `v1.27.8`
+
+Features
+* Allow user to provide global override of some HTTP client settings. [#391](https://github.com/newrelic/elixir_agent/pull/391) Thanks @edds!
+
+### `v1.27.7`
+
+Fixes
+* Handle DT payload with unknown version. [#374](https://github.com/newrelic/elixir_agent/pull/374) Thanks @renanlage!
+
 ### `v1.27.6`
 
 Tweaks

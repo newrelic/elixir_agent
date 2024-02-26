@@ -15,15 +15,15 @@ New Relic has open-sourced this project to enable monitoring of `Elixir` applica
 
 ### Contributing
 
-We'd love to get your contributions to improve the elixir agent! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. If you'd like to execute our corporate CLA, or if you have any questions, please drop us an email at [open-source@newrelic.com](mailto:open-source@newrelic.com). 
+We'd love to get your contributions to improve the elixir agent! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. If you'd like to execute our corporate CLA, or if you have any questions, please drop us an email at [open-source@newrelic.com](mailto:open-source@newrelic.com).
 
 ## Installation
 
 Install the [Hex package](https://hex.pm/packages/new_relic_agent)
 
 Requirements:
-* Erlang/OTP 21
-* Elixir 1.8
+* Erlang/OTP 22
+* Elixir 1.9
 
 ```elixir
 defp deps do
@@ -51,6 +51,27 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 
 * `NEW_RELIC_APP_NAME`
 * `NEW_RELIC_LICENSE_KEY`
+
+#### HTTP Client Settings
+
+httpc client settings can be overridden if needed. For example, the HTTP connect timeout can be increased which can help alleviate errors related to timeouts connecting to New Relic:
+
+```elixir
+config :new_relic_agent,
+  app_name: "My App",
+  license_key: "license_key",
+  httpc_request_options: [connect_timeout: 5000]
+```
+
+#### For Elixir 1.15 and higher
+
+Due to changes in the Elixir 1.15 Logger, additional logger configuration is needed for NewRelic to capture all errors. Update your logger configuration by setting `handle_sasl_reports` to `true` and adding `NewRelic.ErrorLogger` to your logger backends.
+
+```elixir
+config :logger,
+  handle_sasl_reports: true,
+  backends: [:console, NewRelic.ErrorLogger]
+```
 
 ## Telemetry-based Instrumentation
 
@@ -173,3 +194,10 @@ NewRelic.stop_transaction()
 There are a few adapters which leverage this agent to provide library / framework specific instrumentation. Note that these will eventually be replaced with `telemetry` based instrumentation.
 
 * `Absinthe` https://github.com/binaryseed/new_relic_absinthe
+
+#### Disabling
+
+If you want to disable the agent, you can do it in two different ways:
+
+* Application config: `config :new_relic_agent, license_key: nil`
+* Environment variables: `NEW_RELIC_HARVEST_ENABLED=false`

@@ -8,7 +8,7 @@ defmodule NewRelic.Mixfile do
       app: :new_relic_agent,
       description: "New Relic's Open-Source Elixir Agent",
       version: agent_version(),
-      elixir: "~> 1.8",
+      elixir: "~> 1.9",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       name: "New Relic Elixir Agent",
@@ -31,7 +31,7 @@ defmodule NewRelic.Mixfile do
     [
       files: ["lib", "mix.exs", "README.md", "CHANGELOG.md", "VERSION"],
       maintainers: ["Vince Foley"],
-      licenses: ["Apache 2.0"],
+      licenses: ["Apache-2.0"],
       links: %{
         "Changelog" => "#{@source_url}/blob/master/CHANGELOG.md",
         "GitHub" => @source_url
@@ -50,9 +50,8 @@ defmodule NewRelic.Mixfile do
       {:plug_cowboy, ">= 2.4.0", optional: true},
       {:phoenix, ">= 1.5.5", optional: true},
       {:ecto_sql, ">= 3.4.0", optional: true},
-      {:ecto, ">= 3.4.1", optional: true},
-      {:redix, ">= 0.11.0", optional: true},
-      {:absinthe, ">= 1.5.0", optional: true}
+      {:ecto, ">= 3.9.5", optional: true},
+      {:redix, ">= 0.11.0", optional: true}
     ]
   end
 

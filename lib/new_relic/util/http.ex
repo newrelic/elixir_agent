@@ -1,11 +1,11 @@
 defmodule NewRelic.Util.HTTP do
   @moduledoc false
 
-  @gzip {'content-encoding', 'gzip'}
+  @gzip {~c"content-encoding", ~c"gzip"}
 
   def post(url, body, headers) when is_binary(body) do
-    headers = [@gzip | Enum.map(headers, fn {k, v} -> {'#{k}', '#{v}'} end)]
-    request = {'#{url}', headers, 'application/json', :zlib.gzip(body)}
+    headers = [@gzip | Enum.map(headers, fn {k, v} -> {~c"#{k}", ~c"#{v}"} end)]
+    request = {~c"#{url}", headers, ~c"application/json", :zlib.gzip(body)}
 
     with {:ok, {{_, status_code, _}, _headers, body}} <-
            :httpc.request(:post, request, http_options(), []) do
@@ -25,8 +25,8 @@ defmodule NewRelic.Util.HTTP do
   end
 
   def get(url, headers \\ [], opts \\ []) do
-    headers = Enum.map(headers, fn {k, v} -> {'#{k}', '#{v}'} end)
-    request = {'#{url}', headers}
+    headers = Enum.map(headers, fn {k, v} -> {~c"#{k}", ~c"#{v}"} end)
+    request = {~c"#{url}", headers}
 
     with {:ok, {{_, status_code, _}, _, body}} <-
            :httpc.request(:get, request, http_options(opts), []) do
@@ -42,6 +42,8 @@ defmodule NewRelic.Util.HTTP do
   https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
   """
   def http_options(opts \\ []) do
+    env_opts = Application.get_env(:new_relic_agent, :httpc_request_options, [])
+
     [
       connect_timeout: 1000,
       ssl: [
@@ -53,5 +55,6 @@ defmodule NewRelic.Util.HTTP do
       ]
     ]
     |> Keyword.merge(opts)
+    |> Keyword.merge(env_opts)
   end
 end

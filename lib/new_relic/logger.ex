@@ -23,7 +23,7 @@ defmodule NewRelic.Logger do
 
   # API
 
-  @levels [:debug, :info, :warn, :error]
+  @levels [:debug, :info, :warning, :error]
   def log(level, message) when level in @levels do
     GenServer.cast(__MODULE__, {:log, level, message})
   end
@@ -83,7 +83,7 @@ defmodule NewRelic.Logger do
   def formatted(level, message), do: [formatted(level), @sep, timestamp(), @sep, message, "\n"]
   def formatted(:debug), do: "[DEBUG]"
   def formatted(:info), do: "[INFO]"
-  def formatted(:warn), do: "[WARN]"
+  def formatted(:warning), do: "[WARN]"
   def formatted(:error), do: "[ERROR]"
 
   def timestamp do

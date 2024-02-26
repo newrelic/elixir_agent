@@ -1,30 +1,33 @@
 defmodule NewRelic.Error.LoggerHandler do
   @moduledoc false
 
-  # http://erlang.org/doc/man/logger.html
-
   def add_handler() do
-    :logger.remove_handler(:new_relic)
-    :logger.add_handler(:new_relic, NewRelic.Error.LoggerHandler, %{})
+    Logger.add_translator({__MODULE__, :translator})
   end
 
   def remove_handler() do
-    :logger.remove_handler(:new_relic)
+    Logger.remove_translator({__MODULE__, :translator})
   end
 
-  def log(
-        %{
-          meta: %{error_logger: %{tag: :error_report, type: :crash_report}},
-          msg: {:report, %{report: [report | _]}}
-        },
-        _config
-      ) do
+  def translator(_level, _message, _timestamp, {_, [report | _]}) when is_list(report) do
     if NewRelic.Transaction.Sidecar.tracking?() do
       NewRelic.Error.Reporter.report_error(:transaction, report)
     else
       NewRelic.Error.Reporter.report_error(:process, report)
     end
+
+    :skip
   end
 
-  def log(_log, _config), do: :ignore
+  def translator(_level, :error, _timestamp, {_, %{args: _, function: _}} = metadata) do
+    if NewRelic.Transaction.Sidecar.tracking?() do
+      NewRelic.Error.MetadataReporter.report_error(:transaction, metadata)
+    else
+      NewRelic.Error.MetadataReporter.report_error(:process, metadata)
+    end
+
+    :none
+  end
+
+  def translator(_level, _message, _timestamp, _metadata), do: :none
 end

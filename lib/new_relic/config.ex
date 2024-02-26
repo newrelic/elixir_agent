@@ -165,6 +165,10 @@ defmodule NewRelic.Config do
     get(:features, :function_argument_collection)
   end
 
+  def feature?(:stacktrace_argument_collection) do
+    get(:features, :stacktrace_argument_collection)
+  end
+
   def feature?(:request_queuing_metrics) do
     get(:features, :request_queuing_metrics)
   end
