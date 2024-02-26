@@ -1,9 +1,4 @@
 defmodule TestSupport do
-  # def trigger_report(module) do
-  #   Process.sleep(300)
-  #   GenServer.call(module, :report)
-  # end
-
   def gather_harvest(harvester) do
     Process.sleep(300)
     harvester.gather_harvest
@@ -13,10 +8,6 @@ defmodule TestSupport do
     Process.sleep(300)
     GenServer.call(harvest_cycle, :restart)
   end
-
-  # def pause_harvest_cycle(harvest_cycle) do
-  #   GenServer.call(harvest_cycle, :pause)
-  # end
 
   def find_metric(metrics, name, call_count \\ 1)
 
@@ -41,8 +32,13 @@ defmodule TestSupport do
     :ok
   end
 
-  def simulate_agent_run(_context) do
-    reset_config = update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+  def simulate_agent_run(_context, extra_config) do
+    reset_config =
+      update(
+        :nr_config,
+        Keyword.merge([license_key: "dummy_key", harvest_enabled: true], extra_config)
+      )
+
     reset_agent_run = update(:nr_agent_run, trusted_account_key: "190")
     send(NewRelic.DistributedTrace.BackoffSampler, :reset)
 
