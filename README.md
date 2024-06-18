@@ -1,13 +1,13 @@
 <a href="https://opensource.newrelic.com/oss-category/#new-relic-experimental"><picture><source media="(prefers-color-scheme: dark)" srcset="https://github.com/newrelic/opensource-website/raw/main/src/images/categories/dark/Experimental.png"><source media="(prefers-color-scheme: light)" srcset="https://github.com/newrelic/opensource-website/raw/main/src/images/categories/Experimental.png"><img alt="New Relic Open Source experimental project banner." src="https://github.com/newrelic/opensource-website/raw/main/src/images/categories/Experimental.png"></picture></a>
 
-# New Relic's Elixir Agent
+# New Relic's Elixir agent
 
 [![Build Status](https://github.com/newrelic/elixir_agent/workflows/CI/badge.svg)](https://github.com/newrelic/elixir_agent/actions?query=workflow%3ACI)
 [![Hex.pm Version](https://img.shields.io/hexpm/v/new_relic_agent.svg)](https://hex.pm/packages/new_relic_agent)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/new_relic_agent/)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-The Open-Source Elixir Agent allows you to monitor your `Elixir` applications with New Relic. It helps you track transactions, distributed traces and other parts of your application's behavior and provides an overview of underlying [BEAM activity](https://github.com/newrelic/elixir_agent/wiki/BEAM-stats-page).
+The experimental open-source Elixir agent allows you to monitor your `Elixir` applications with New Relic. It helps you track transactions, distributed traces, other parts of your application's behavior, and provides an overview of underlying [BEAM activity](https://github.com/newrelic/elixir_agent/wiki/BEAM-stats-page).
 
 [View the Documentation](https://hexdocs.pm/new_relic_agent)
 
@@ -17,7 +17,14 @@ New Relic hosts and moderates an online forum where customers can interact with 
 
 ### Contributing
 
-We'd love to get your contributions to improve the elixir agent! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. If you'd like to execute our corporate CLA, or if you have any questions, please drop us an email at [open-source@newrelic.com](mailto:open-source@newrelic.com).
+We encourage your contributions to improve [project name]! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. You only have to sign the CLA one time per project. If you have any questions, or to execute our corporate CLA, required if your contribution is on behalf of a company, please drop us an email at [opensource@newrelic.com](mailto:opensource@newrelic.com).
+
+A note about vulnerabilities: As noted in our security policy, New Relic is committed to the privacy and security of our customers and their data. We believe that providing coordinated disclosure by security researchers and engaging with the security community are important means to achieve our security goals.
+
+If you believe you have found a security vulnerability in this project or any of New Relic's products or websites, we welcome and greatly appreciate you reporting it to New Relic through HackerOne.
+
+### License
+The open-source Elixir agent is licensed under the Apache 2.0 License.
 
 ## Installation
 
@@ -84,7 +91,7 @@ Some common Elixir packages are auto-instrumented via [`telemetry`](https://gith
 * [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Ecto.html) for details.
 * [`Redix`](https://github.com/whatyouhide/redix): See [NewRelic.Telemetry.Redix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Redix.html) for details.
 
-## Agent Features
+## Agent features
 
 There are a few agent features that can be enabled via configuration. Please see the documentation for more information.
 
@@ -155,7 +162,7 @@ end
 
 #### Pre-Instrumented Modules
 
-`NewRelic.Instrumented.Mix.Task` To enable the Agent and record an Other Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, records a Transaction, and is shut down.
+`NewRelic.Instrumented.Mix.Task` To enable the agent and record an Other Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, records a Transaction, and is shut down.
 
 ```elixir
 defmodule Mix.Tasks.Example do
