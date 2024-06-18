@@ -342,6 +342,10 @@ defmodule DistributedTraceTest do
     assert tracestate_header |> is_binary
   end
 
+  test "trying to stop_span when there isn't one" do
+    NewRelic.DistributedTrace.stop_span(id: 123, duration: 0.23)
+  end
+
   def generate_inbound_payload(:app) do
     """
     {

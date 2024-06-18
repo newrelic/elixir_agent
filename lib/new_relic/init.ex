@@ -81,6 +81,11 @@ defmodule NewRelic.Init do
           "NEW_RELIC_REDIX_INSTRUMENTATION_ENABLED",
           :redix_instrumentation_enabled
         ),
+      absinthe_instrumentation:
+        determine_feature(
+          "NEW_RELIC_ABSINTHE_INSTRUMENTATION_ENABLED",
+          :absinthe_instrumentation_enabled
+        ),
       plug_instrumentation:
         determine_feature(
           "NEW_RELIC_PLUG_INSTRUMENTATION_ENABLED",
