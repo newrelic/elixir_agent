@@ -110,13 +110,21 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
         add(counter, @total_exclusive_time, encode(metric.total_exclusive_time))
         add(counter, @min_call_time, encode(metric.min_call_time))
         add(counter, @max_call_time, encode(metric.max_call_time))
-        add(counter, @sum_of_squares, encode(metric.sum_of_squares))
 
         Map.put(metrics_acc, {metric.name, metric.scope}, counter)
 
       counter ->
+        total_call_time = metric.total_call_time
+        acc_mean = decode(get(counter, @total_call_time)) / get(counter, @call_count)
+
         add(counter, @call_count, round(metric.call_count))
-        add(counter, @total_call_time, encode(metric.total_call_time))
+        add(counter, @total_call_time, encode(total_call_time))
+
+        mean = decode(get(counter, @total_call_time)) / get(counter, @call_count)
+
+        delta = total_call_time - acc_mean
+        delta2 = total_call_time - mean
+
         add(counter, @total_exclusive_time, encode(metric.total_exclusive_time))
 
         if metric.min_call_time < decode(get(counter, @min_call_time)),
@@ -125,7 +133,7 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
         if metric.max_call_time > decode(get(counter, @max_call_time)),
           do: put(counter, @max_call_time, encode(metric.max_call_time))
 
-        add(counter, @sum_of_squares, encode(metric.sum_of_squares))
+        add(counter, @sum_of_squares, encode(delta * delta2))
 
         metrics_acc
     end
