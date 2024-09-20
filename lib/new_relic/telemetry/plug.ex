@@ -53,6 +53,9 @@ defmodule NewRelic.Telemetry.Plug do
   @cowboy_start [:cowboy, :request, :start]
   @cowboy_stop [:cowboy, :request, :stop]
   @cowboy_exception [:cowboy, :request, :exception]
+  @bandit_start [:bandit, :request, :start]
+  @bandit_stop [:bandit, :request, :stop]
+  @bandit_exception [:bandit, :request, :exception]
 
   @plug_router_start [:plug, :router_dispatch, :start]
 
@@ -60,7 +63,10 @@ defmodule NewRelic.Telemetry.Plug do
     @cowboy_start,
     @cowboy_stop,
     @cowboy_exception,
-    @plug_router_start
+    @plug_router_start,
+    @bandit_start,
+    @bandit_stop,
+    @bandit_exception
   ]
 
   @doc false
@@ -95,8 +101,8 @@ defmodule NewRelic.Telemetry.Plug do
     if NewRelic.Config.enabled?(),
       do: DistributedTrace.start(:http, meta.req.headers)
 
-    add_start_attrs(meta, system_time)
-    maybe_report_queueing(meta)
+    add_start_attrs(meta, system_time, :cowboy)
+    maybe_report_queueing(meta, :cowboy)
   end
 
   def handle_event(
@@ -114,7 +120,7 @@ defmodule NewRelic.Telemetry.Plug do
         meta,
         _config
       ) do
-    add_stop_attrs(meas, meta, duration)
+    add_stop_attrs(meas, meta, duration, :cowboy)
     add_stop_error_attrs(meta)
 
     Transaction.Reporter.stop_transaction(:web)
@@ -127,7 +133,7 @@ defmodule NewRelic.Telemetry.Plug do
         %{resp_status: "404" <> _} = meta,
         _config
       ) do
-    add_stop_attrs(meas, meta, duration)
+    add_stop_attrs(meas, meta, duration, :cowboy)
 
     Transaction.Reporter.stop_transaction(:web)
   end
@@ -138,7 +144,59 @@ defmodule NewRelic.Telemetry.Plug do
         %{kind: kind} = meta,
         _config
       ) do
-    add_stop_attrs(meas, meta, duration)
+    add_stop_attrs(meas, meta, duration, :cowboy)
+    {reason, stack} = reason_and_stack(meta)
+
+    Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
+    Transaction.Reporter.stop_transaction(:web)
+  end
+
+  def handle_event(
+        @bandit_start,
+        %{monotonic_time: monotonic_time},
+        meta,
+        _config
+      ) do
+
+    Transaction.Reporter.start_transaction(:web)
+
+    if NewRelic.Config.enabled?(),
+      do: DistributedTrace.start(:http, Map.new(meta.conn.req_headers))
+
+    add_start_attrs(meta, monotonic_time, :bandit)
+    maybe_report_queueing(meta, :bandit)
+  end
+
+  def handle_event(
+        @bandit_stop,
+        %{duration: duration} = meas,
+        meta,
+        _config
+      ) do
+    add_stop_attrs(meas, meta, duration, :bandit)
+    add_stop_error_attrs(meta)
+
+    Transaction.Reporter.stop_transaction(:web)
+  end
+
+  def handle_event(
+        @bandit_exception,
+        %{duration: duration} = meas,
+        %{resp_status: "404" <> _} = meta,
+        _config
+      ) do
+    add_stop_attrs(meas, meta, duration, :bandit)
+
+    Transaction.Reporter.stop_transaction(:web)
+  end
+
+  def handle_event(
+        @bandit_exception,
+        %{duration: duration} = meas,
+        %{kind: kind} = meta,
+        _config
+      ) do
+    add_stop_attrs(meas, meta, duration, :bandit)
     {reason, stack} = reason_and_stack(meta)
 
     Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
@@ -149,7 +207,7 @@ defmodule NewRelic.Telemetry.Plug do
     :ignore
   end
 
-  defp add_start_attrs(meta, system_time) do
+  defp add_start_attrs(meta, system_time, :cowboy) do
     [
       pid: inspect(self()),
       system_time: system_time,
@@ -164,8 +222,25 @@ defmodule NewRelic.Telemetry.Plug do
     |> NewRelic.add_attributes()
   end
 
+  defp add_start_attrs(meta, system_time, :bandit) do
+    headers = Map.new(meta.conn.req_headers)
+    [
+      pid: inspect(self()),
+      system_time: system_time,
+      host: meta.conn.host,
+      path: meta.conn.request_path,
+      remote_ip: meta.conn.remote_ip |> :inet_parse.ntoa() |> to_string(),
+      referer: headers["referer"],
+      user_agent: headers["user-agent"],
+      content_type: headers["content-type"],
+      request_method: meta.conn.method
+    ]
+    |> NewRelic.add_attributes()
+  end
+
   @kb 1024
-  defp add_stop_attrs(meas, meta, duration) do
+
+  defp add_stop_attrs(meas, meta, duration, :cowboy) do
     info = Process.info(self(), [:memory, :reductions])
 
     [
@@ -177,6 +252,21 @@ defmodule NewRelic.Telemetry.Plug do
       "cowboy.resp_duration_ms": meas[:resp_duration] |> to_ms,
       "cowboy.req_body_length": meas[:req_body_length],
       "cowboy.resp_body_length": meas[:resp_body_length]
+    ]
+    |> NewRelic.add_attributes()
+  end
+
+  defp add_stop_attrs(meas, meta, duration, :bandit) do
+    info = Process.info(self(), [:memory, :reductions])
+
+    [
+      duration: duration,
+      status: status_code(meta),
+      memory_kb: info[:memory] / @kb,
+      reductions: info[:reductions],
+      "bandit.monotonic_time": meas[:monotonic_time] |> to_ms,
+      "bandit.resp_duration_ms": (meas[:resp_start_time] |> to_ms) - (meas[:resp_end_time] |> to_ms),
+      "bandit.resp_body_bytes": meas[:resp_body_bytes]
     ]
     |> NewRelic.add_attributes()
   end
@@ -216,9 +306,19 @@ defmodule NewRelic.Telemetry.Plug do
     do: System.convert_time_unit(duration, :native, :microsecond) / 1000
 
   @request_start_header "x-request-start"
-  defp maybe_report_queueing(meta) do
+  defp maybe_report_queueing(meta, :cowboy) do
     with true <- NewRelic.Config.feature?(:request_queuing_metrics),
          request_start when is_binary(request_start) <- meta.req.headers[@request_start_header],
+         {:ok, request_start_s} <- Util.RequestStart.parse(request_start) do
+      NewRelic.add_attributes(request_start_s: request_start_s)
+    end
+  end
+
+  defp maybe_report_queueing(meta, :bandit) do
+    headers = Map.new(meta.conn.req_headers)
+
+    with true <- NewRelic.Config.feature?(:request_queuing_metrics),
+         request_start when is_binary(request_start) <- headers[@request_start_header],
          {:ok, request_start_s} <- Util.RequestStart.parse(request_start) do
       NewRelic.add_attributes(request_start_s: request_start_s)
     end
@@ -236,6 +336,10 @@ defmodule NewRelic.Telemetry.Plug do
   defp status_code(%{resp_status: status})
        when is_binary(status) do
     String.split(status) |> List.first() |> String.to_integer()
+  end
+
+  defp status_code(%{conn: %{status: status}}) do
+    status
   end
 
   defp reason_and_stack(%{reason: %{__exception__: true} = reason, stacktrace: stack}) do
