@@ -91,18 +91,20 @@ defmodule NewRelic.Telemetry.Plug do
 
   @doc false
   def handle_event(
-        @cowboy_start,
-        %{system_time: system_time},
+        [server, :request, :start],
+        measurements,
         meta,
         _config
       ) do
     Transaction.Reporter.start_transaction(:web)
 
-    if NewRelic.Config.enabled?(),
-      do: DistributedTrace.start(:http, meta.req.headers)
+    system_time = get_system_time(measurements)
 
-    add_start_attrs(meta, system_time, :cowboy)
-    maybe_report_queueing(meta, :cowboy)
+    if NewRelic.Config.enabled?(),
+      do: DistributedTrace.start(:http, get_headers(meta, server))
+
+    add_start_attrs(meta, system_time, server)
+    maybe_report_queueing(meta, server)
   end
 
   def handle_event(
@@ -115,12 +117,12 @@ defmodule NewRelic.Telemetry.Plug do
   end
 
   def handle_event(
-        @cowboy_stop,
+        [server, :request, :stop],
         %{duration: duration} = meas,
         meta,
         _config
       ) do
-    add_stop_attrs(meas, meta, duration, :cowboy)
+    add_stop_attrs(meas, meta, duration, server)
     add_stop_error_attrs(meta)
 
     Transaction.Reporter.stop_transaction(:web)
@@ -128,75 +130,23 @@ defmodule NewRelic.Telemetry.Plug do
 
   # Don't treat 404 as an exception
   def handle_event(
-        @cowboy_exception,
+        [server, :request, :exception],
         %{duration: duration} = meas,
         %{resp_status: "404" <> _} = meta,
         _config
       ) do
-    add_stop_attrs(meas, meta, duration, :cowboy)
+    add_stop_attrs(meas, meta, duration, server)
 
     Transaction.Reporter.stop_transaction(:web)
   end
 
   def handle_event(
-        @cowboy_exception,
+        [server, :request, :exception],
         %{duration: duration} = meas,
         %{kind: kind} = meta,
         _config
       ) do
-    add_stop_attrs(meas, meta, duration, :cowboy)
-    {reason, stack} = reason_and_stack(meta)
-
-    Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
-    Transaction.Reporter.stop_transaction(:web)
-  end
-
-  def handle_event(
-        @bandit_start,
-        %{monotonic_time: monotonic_time},
-        meta,
-        _config
-      ) do
-
-    Transaction.Reporter.start_transaction(:web)
-
-    if NewRelic.Config.enabled?(),
-      do: DistributedTrace.start(:http, Map.new(meta.conn.req_headers))
-
-    add_start_attrs(meta, monotonic_time, :bandit)
-    maybe_report_queueing(meta, :bandit)
-  end
-
-  def handle_event(
-        @bandit_stop,
-        %{duration: duration} = meas,
-        meta,
-        _config
-      ) do
-    add_stop_attrs(meas, meta, duration, :bandit)
-    add_stop_error_attrs(meta)
-
-    Transaction.Reporter.stop_transaction(:web)
-  end
-
-  def handle_event(
-        @bandit_exception,
-        %{duration: duration} = meas,
-        %{resp_status: "404" <> _} = meta,
-        _config
-      ) do
-    add_stop_attrs(meas, meta, duration, :bandit)
-
-    Transaction.Reporter.stop_transaction(:web)
-  end
-
-  def handle_event(
-        @bandit_exception,
-        %{duration: duration} = meas,
-        %{kind: kind} = meta,
-        _config
-      ) do
-    add_stop_attrs(meas, meta, duration, :bandit)
+    add_stop_attrs(meas, meta, duration, server)
     {reason, stack} = reason_and_stack(meta)
 
     Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
@@ -306,22 +256,25 @@ defmodule NewRelic.Telemetry.Plug do
     do: System.convert_time_unit(duration, :native, :microsecond) / 1000
 
   @request_start_header "x-request-start"
-  defp maybe_report_queueing(meta, :cowboy) do
-    with true <- NewRelic.Config.feature?(:request_queuing_metrics),
-         request_start when is_binary(request_start) <- meta.req.headers[@request_start_header],
-         {:ok, request_start_s} <- Util.RequestStart.parse(request_start) do
-      NewRelic.add_attributes(request_start_s: request_start_s)
-    end
-  end
-
-  defp maybe_report_queueing(meta, :bandit) do
-    headers = Map.new(meta.conn.req_headers)
+  defp maybe_report_queueing(meta, server) do
+    headers = get_headers(meta, server)
 
     with true <- NewRelic.Config.feature?(:request_queuing_metrics),
          request_start when is_binary(request_start) <- headers[@request_start_header],
          {:ok, request_start_s} <- Util.RequestStart.parse(request_start) do
       NewRelic.add_attributes(request_start_s: request_start_s)
     end
+  end
+
+  defp get_system_time(%{system_time: system_time}), do: system_time
+  defp get_system_time(%{monotonic_time: monotonic_time}), do: monotonic_time
+
+  defp get_headers(meta, :bandit) do
+    Map.new(meta.conn.req_headers)
+  end
+
+  defp get_headers(meta, :cowboy) do
+    meta.req.headers
   end
 
   defp status_code(%{resp_status: :undefined}) do
