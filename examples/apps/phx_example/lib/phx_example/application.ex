@@ -5,6 +5,7 @@ defmodule PhxExample.Application do
 
   def start(_type, _args) do
     children = [
+      {Phoenix.PubSub, name: PhxExample.PubSub},
       PhxExampleWeb.Endpoint
     ]
 
