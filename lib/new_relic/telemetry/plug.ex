@@ -214,7 +214,6 @@ defmodule NewRelic.Telemetry.Plug do
       status: status_code(meta),
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions],
-      "bandit.monotonic_time": meas[:monotonic_time] |> to_ms,
       "bandit.resp_duration_ms": (meas[:resp_start_time] |> to_ms) - (meas[:resp_end_time] |> to_ms),
       "bandit.resp_body_bytes": meas[:resp_body_bytes]
     ]
