@@ -139,7 +139,7 @@ jobs:
 
     - name: Start integration test dependencies
       run: |
-        docker-compose up -d
+        docker compose up -d
         until pg_isready -h localhost; do sleep 1; done;
         until mysqladmin --protocol tcp ping; do sleep 1; done;
 
