@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.30`
+
+* adjust metadata_reporter :transaction report_error [#443](https://github.com/newrelic/elixir_agent/pull/443)
+
+
 ### `v1.29`
 
 Features
