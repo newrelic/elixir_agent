@@ -96,15 +96,16 @@ defmodule NewRelic.Telemetry.Plug do
         meta,
         _config
       ) do
-    Transaction.Reporter.start_transaction(:web)
+    measurements = Map.put_new(measurements, :system_time, System.system_time())
 
-    system_time = get_system_time(measurements)
+    Transaction.Reporter.start_transaction(:web)
+    headers = get_headers(meta, server)
 
     if NewRelic.Config.enabled?(),
-      do: DistributedTrace.start(:http, get_headers(meta, server))
+      do: DistributedTrace.start(:http, headers)
 
-    add_start_attrs(meta, system_time, server)
-    maybe_report_queueing(meta, server)
+    add_start_attrs(meta, measurements, headers, server)
+    maybe_report_queueing(headers)
   end
 
   def handle_event(
@@ -118,35 +119,35 @@ defmodule NewRelic.Telemetry.Plug do
 
   def handle_event(
         [server, :request, :stop],
-        %{duration: duration} = meas,
+        meas,
         meta,
         _config
       ) do
-    add_stop_attrs(meas, meta, duration, server)
+    add_stop_attrs(meas, meta, server)
     add_stop_error_attrs(meta)
 
     Transaction.Reporter.stop_transaction(:web)
   end
 
-  # Don't treat 404 as an exception
+  # Don't treat cowboy 404 as an exception
   def handle_event(
-        [server, :request, :exception],
-        %{duration: duration} = meas,
+        [:cowboy, :request, :exception],
+        meas,
         %{resp_status: "404" <> _} = meta,
         _config
       ) do
-    add_stop_attrs(meas, meta, duration, server)
+    add_stop_attrs(meas, meta, :cowboy)
 
     Transaction.Reporter.stop_transaction(:web)
   end
 
   def handle_event(
         [server, :request, :exception],
-        %{duration: duration} = meas,
+        meas,
         %{kind: kind} = meta,
         _config
       ) do
-    add_stop_attrs(meas, meta, duration, server)
+    add_stop_attrs(meas, meta, server)
     {reason, stack} = reason_and_stack(meta)
 
     Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
@@ -157,27 +158,25 @@ defmodule NewRelic.Telemetry.Plug do
     :ignore
   end
 
-  defp add_start_attrs(meta, system_time, :cowboy) do
+  defp add_start_attrs(meta, meas, headers, :cowboy) do
     [
       pid: inspect(self()),
-      system_time: system_time,
+      system_time: meas[:system_time],
       host: meta.req.host,
       path: meta.req.path,
       remote_ip: meta.req.peer |> elem(0) |> :inet_parse.ntoa() |> to_string(),
-      referer: meta.req.headers["referer"],
-      user_agent: meta.req.headers["user-agent"],
-      content_type: meta.req.headers["content-type"],
+      referer: headers["referer"],
+      user_agent: headers["user-agent"],
+      content_type: headers["content-type"],
       request_method: meta.req.method
     ]
     |> NewRelic.add_attributes()
   end
 
-  defp add_start_attrs(meta, system_time, :bandit) do
-    headers = Map.new(meta.conn.req_headers)
-
+  defp add_start_attrs(meta, meas, headers, :bandit) do
     [
       pid: inspect(self()),
-      system_time: system_time,
+      system_time: meas[:system_time],
       host: meta.conn.host,
       path: meta.conn.request_path,
       remote_ip: meta.conn.remote_ip |> :inet_parse.ntoa() |> to_string(),
@@ -191,11 +190,11 @@ defmodule NewRelic.Telemetry.Plug do
 
   @kb 1024
 
-  defp add_stop_attrs(meas, meta, duration, :cowboy) do
+  defp add_stop_attrs(meas, meta, :cowboy) do
     info = Process.info(self(), [:memory, :reductions])
 
     [
-      duration: duration,
+      duration: meas[:duration],
       status: status_code(meta),
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions],
@@ -207,16 +206,20 @@ defmodule NewRelic.Telemetry.Plug do
     |> NewRelic.add_attributes()
   end
 
-  defp add_stop_attrs(meas, meta, duration, :bandit) do
+  defp add_stop_attrs(meas, meta, :bandit) do
     info = Process.info(self(), [:memory, :reductions])
+    duration = meas[:duration] || System.monotonic_time() - meas[:monotonic_time]
+
+    resp_duration_ms =
+      meas[:resp_start_time] &&
+        (meas[:resp_start_time] |> to_ms) - (meas[:resp_end_time] |> to_ms)
 
     [
       duration: duration,
-      status: status_code(meta),
+      status: status_code(meta) || 500,
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions],
-      "bandit.resp_duration_ms":
-        (meas[:resp_start_time] |> to_ms) - (meas[:resp_end_time] |> to_ms),
+      "bandit.resp_duration_ms": resp_duration_ms,
       "bandit.resp_body_bytes": meas[:resp_body_bytes]
     ]
     |> NewRelic.add_attributes()
@@ -257,18 +260,13 @@ defmodule NewRelic.Telemetry.Plug do
     do: System.convert_time_unit(duration, :native, :microsecond) / 1000
 
   @request_start_header "x-request-start"
-  defp maybe_report_queueing(meta, server) do
-    headers = get_headers(meta, server)
-
+  defp maybe_report_queueing(headers) do
     with true <- NewRelic.Config.feature?(:request_queuing_metrics),
          request_start when is_binary(request_start) <- headers[@request_start_header],
          {:ok, request_start_s} <- Util.RequestStart.parse(request_start) do
       NewRelic.add_attributes(request_start_s: request_start_s)
     end
   end
-
-  defp get_system_time(%{system_time: system_time}), do: system_time
-  defp get_system_time(%{monotonic_time: monotonic_time}), do: monotonic_time
 
   defp get_headers(meta, :bandit) do
     Map.new(meta.conn.req_headers)
