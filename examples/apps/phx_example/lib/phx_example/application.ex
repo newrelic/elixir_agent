@@ -6,7 +6,8 @@ defmodule PhxExample.Application do
   def start(_type, _args) do
     children = [
       {Phoenix.PubSub, name: PhxExample.PubSub},
-      PhxExampleWeb.Endpoint
+      PhxExampleWeb.Endpoint,
+      PhxExampleWeb.BanditEndpoint
     ]
 
     opts = [strategy: :one_for_one, name: PhxExample.Supervisor]
@@ -15,6 +16,7 @@ defmodule PhxExample.Application do
 
   def config_change(changed, _new, removed) do
     PhxExampleWeb.Endpoint.config_change(changed, removed)
+    PhxExampleWeb.BanditEndpoint.config_change(changed, removed)
     :ok
   end
 end

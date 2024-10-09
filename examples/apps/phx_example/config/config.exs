@@ -10,6 +10,16 @@ config :phx_example, PhxExampleWeb.Endpoint,
   live_view: [signing_salt: "dB7qn7EQ"],
   secret_key_base: "A+gtEDayUNx4ZyfHvUKETwRC4RjxK0FDlrLjuRhaBnr3Ll3ynfu5RlSSGe5E7zbW"
 
+config :phx_example, PhxExampleWeb.BanditEndpoint,
+  url: [host: "localhost"],
+  render_errors: [formats: [html: PhxExampleWeb.ErrorHTML], layout: false],
+  http: [port: 4005],
+  server: true,
+  adapter: Bandit.PhoenixAdapter,
+  pubsub_server: PhxExample.PubSub,
+  live_view: [signing_salt: "dB7qn7EQ"],
+  secret_key_base: "A+gtEDayUNx4ZyfHvUKETwRC4RjxK0FDlrLjuRhaBnr3Ll3ynfu5RlSSGe5E7zbW"
+
 config :logger, level: :warning
 
 config :phoenix, :json_library, Jason
