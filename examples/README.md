@@ -7,7 +7,7 @@ A set example apps demonstrating and validating built-in instrumentation.
 In CI, these test are always run. When developing locally, you can run the tests easily by first starting the dependent docker services:
 
 ```
-docker-compose up
+docker compose up
 mix test
 ```
 
