@@ -9,7 +9,6 @@ defmodule NewRelic.Error.MetadataReporter do
   # Before elixir 1.15, ignore terminating errors so they don't get reported twice
   before_elixir_version("1.15.0", def(report_error(_, {{_, :terminating}, _}), do: nil))
 
-
   def report_error(:transaction, {_cause, metadata}) do
     kind = :error
     {reason, stacktrace} = metadata.reason
