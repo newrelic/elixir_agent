@@ -11,14 +11,14 @@ defmodule NewRelic.Error.MetadataReporter do
 
   def report_error(:transaction, {_cause, metadata}) do
     kind = :error
-    {_exception_type, reason, stacktrace, _expected} = parse_reason(metadata.reason)
+    {exception, stacktrace} = metadata.reason
     process_name = parse_process_name(metadata[:registered_name], stacktrace)
 
     NewRelic.add_attributes(process: process_name)
 
     NewRelic.Transaction.Reporter.error(%{
       kind: kind,
-      reason: reason,
+      reason: exception,
       stack: stacktrace
     })
   end
@@ -81,6 +81,7 @@ defmodule NewRelic.Error.MetadataReporter do
 
   defp parse_process_name([], [{module, _f, _a, _} | _]), do: inspect(module)
   defp parse_process_name([], _stacktrace), do: "UnknownProcess"
+  defp parse_process_name(nil, _stacktrace), do: "UnknownProcess"
   defp parse_process_name(registered_name, _stacktrace), do: inspect(registered_name)
 
   defp parse_error_expected(%{expected: true}), do: true
