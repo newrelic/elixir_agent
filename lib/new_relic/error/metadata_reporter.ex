@@ -11,14 +11,14 @@ defmodule NewRelic.Error.MetadataReporter do
 
   def report_error(:transaction, {_cause, metadata}) do
     kind = :error
-    {reason, stacktrace} = metadata.reason
+    {exception, stacktrace} = metadata.reason
     process_name = parse_process_name(metadata[:registered_name], stacktrace)
 
     NewRelic.add_attributes(process: process_name)
 
     NewRelic.Transaction.Reporter.error(%{
       kind: kind,
-      reason: reason,
+      reason: exception,
       stack: stacktrace
     })
   end
