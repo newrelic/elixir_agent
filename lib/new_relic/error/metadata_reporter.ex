@@ -9,9 +9,10 @@ defmodule NewRelic.Error.MetadataReporter do
   # Before elixir 1.15, ignore terminating errors so they don't get reported twice
   before_elixir_version("1.15.0", def(report_error(_, {{_, :terminating}, _}), do: nil))
 
+
   def report_error(:transaction, {_cause, metadata}) do
     kind = :error
-    {_exception_type, reason, stacktrace, _expected} = parse_reason(metadata.reason)
+    {reason, stacktrace} = metadata.reason
     process_name = parse_process_name(metadata[:registered_name], stacktrace)
 
     NewRelic.add_attributes(process: process_name)
@@ -81,6 +82,7 @@ defmodule NewRelic.Error.MetadataReporter do
 
   defp parse_process_name([], [{module, _f, _a, _} | _]), do: inspect(module)
   defp parse_process_name([], _stacktrace), do: "UnknownProcess"
+  defp parse_process_name(nil, _stacktrace), do: "UnknownProcess"
   defp parse_process_name(registered_name, _stacktrace), do: inspect(registered_name)
 
   defp parse_error_expected(%{expected: true}), do: true
