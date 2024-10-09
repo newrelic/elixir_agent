@@ -4,6 +4,7 @@
 
 * adjust metadata_reporter :transaction report_error [#443](https://github.com/newrelic/elixir_agent/pull/443)
 * Identify Phoenix LiveView metrics [#424](https://github.com/newrelic/elixir_agent/pull/424)
+* Add Bandit HTTP server support [#445](https://github.com/newrelic/elixir_agent/pull/445)
 
 ### `v1.29`
 
