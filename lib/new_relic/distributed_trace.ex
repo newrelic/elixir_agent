@@ -231,12 +231,113 @@ defmodule NewRelic.DistributedTrace do
     Process.get(:nr_current_span_attrs) || %{}
   end
 
+  @max_open_span_count Application.get_env(:new_relic, :max_open_span_count, 20)
+
+  def start_span(options) do
+    id = Keyword.fetch!(options, :id)
+    name = Keyword.fetch!(options, :name)
+    path = Keyword.get(options, :path)
+    parent_path = Keyword.get(options, :parent_path)
+
+    {_current, parent} =
+      set_current_span_with_parent(
+        label: {name, path},
+        ref: id,
+        parent_path: parent_path
+      )
+
+    case Process.get(:nr_open_span_count, 0) do
+      over when over >= @max_open_span_count ->
+        Process.put(:nr_open_span_count, over + 1)
+
+        NewRelic.incr_attributes(skipped_span_count: 1)
+
+      under ->
+        Process.put(:nr_open_span_count, under + 1)
+
+        start_time = Keyword.get(options, :start_time, System.system_time())
+        attributes = Keyword.get(options, :attributes, []) |> Map.new()
+
+        Process.put({:nr_span, id}, {name, parent, start_time, attributes})
+    end
+
+    :ok
+  end
+
+  def stop_span(options) do
+    id = Keyword.fetch!(options, :id)
+    duration = Keyword.fetch!(options, :duration)
+    aggregate = Keyword.get(options, :aggregate)
+
+    case Process.get({:nr_span, id}) do
+      nil ->
+        :no_such_span
+
+      {name, parent, start_time, attributes} ->
+        Process.put(:nr_open_span_count, Process.get(:nr_open_span_count) - 1)
+
+        path = Keyword.get(options, :path, name)
+        timestamp_us = System.convert_time_unit(start_time, :native, :microsecond)
+        duration_us = System.convert_time_unit(duration, :native, :microsecond)
+        start_attributes = attributes |> Map.new()
+        stop_attributes = Keyword.get(options, :attributes, []) |> Map.new()
+
+        if Keyword.get(options, :is_segment?) do
+          NewRelic.Transaction.Reporter.add_trace_segment(%{
+            primary_name:
+              "#{name}"
+              |> String.trim("&")
+              |> String.trim("/3")
+              |> String.trim("/2"),
+            secondary_name: "#{path}",
+            attributes: attributes,
+            pid: inspect(self()),
+            id: {name, id},
+            parent_id: parent || :root,
+            start_time: start_time,
+            start_time_mono: start_attributes.start_time_mono,
+            end_time_mono: System.monotonic_time()
+          })
+        end
+
+        NewRelic.report_span(
+          timestamp_ms: timestamp_us / 1000,
+          duration_s: duration_us / 1_000_000,
+          name: name,
+          edge: [span: {name, id}, parent: parent || :root],
+          category: "generic",
+          attributes: Map.merge(attributes, stop_attributes)
+        )
+
+        if aggregate do
+          NewRelic.report_aggregate(
+            %{
+              :name => aggregate.name,
+              aggregate.method_key => name
+            },
+            %{duration_ms: duration_us / 1000, call_count: 1}
+          )
+        end
+    end
+
+    :ok
+  end
+
   def set_current_span(label: label, ref: ref) do
     current = {label, ref}
     previous_span = Process.get(:nr_current_span)
     previous_span_attrs = Process.get(:nr_current_span_attrs)
     Process.put(:nr_current_span, current)
     {current, previous_span, previous_span_attrs}
+  end
+
+  def set_current_span_with_parent(label: label, ref: ref, parent_path: parent_path) do
+    {name, path} = label
+    current = {name, ref}
+    parent_span = Process.get({:spans, parent_path})
+    Process.put(:nr_current_span, current)
+    Process.put({:spans, path}, current)
+    {current, parent_span || :root}
   end
 
   def get_current_span_guid() do
