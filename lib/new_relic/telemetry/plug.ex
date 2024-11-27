@@ -268,8 +268,12 @@ defmodule NewRelic.Telemetry.Plug do
     end
   end
 
-  defp get_headers(meta, :bandit) do
-    Map.new(meta.conn.req_headers)
+  defp get_headers(%{conn: conn}, :bandit) do
+    Map.new(conn.req_headers)
+  end
+
+  defp get_headers(_, :bandit) do
+    %{}
   end
 
   defp get_headers(meta, :cowboy) do
