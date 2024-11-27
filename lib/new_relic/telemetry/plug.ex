@@ -270,6 +270,8 @@ defmodule NewRelic.Telemetry.Plug do
 
   defp get_headers(meta, :bandit) do
     Map.new(meta.conn.req_headers)
+  rescue
+    Bandit.HTTPError -> %{}
   end
 
   defp get_headers(meta, :cowboy) do
