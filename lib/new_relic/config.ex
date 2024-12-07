@@ -97,6 +97,27 @@ defmodule NewRelic.Config do
     do: get(:labels)
 
   @doc """
+  An optional list of paths that will be used to ignore Web Transactions.
+
+  Individual items can be Strings or Regexes.
+
+  Common use cases include:
+  * Ignore health checks: `"/health"`
+  * Ignore Phoenix longpoll http requests: `"/live/longpoll"`
+
+  Example:
+  ```
+  config :new_relic_agent,
+    ignore_paths: [
+      "/health",
+      ~r/longpoll/
+    ]
+  ```
+  """
+  def ignore_paths,
+    do: get(:ignore_paths)
+
+  @doc """
   Some Agent features can be toggled via configuration.
 
   ### Security

@@ -13,7 +13,7 @@ defmodule NewRelic.Transaction.Sidecar do
 
   def track(type) do
     # We use `GenServer.start` to avoid a bi-directional link
-    # and guarentee that we never crash the Transaction process
+    # and guarantee that we never crash the Transaction process
     # even in the case of an unexpected bug. Additionally, this
     # blocks the Transaction process the smallest amount possible
     {:ok, sidecar} = GenServer.start(__MODULE__, {self(), type})

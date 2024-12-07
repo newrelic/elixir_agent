@@ -169,6 +169,14 @@ defmodule TransactionTest do
       send_resp(conn, 200, "ignored")
     end
 
+    get "/ignore/this" do
+      send_resp(conn, 200, "ignore me!")
+    end
+
+    get "/ignore/these/too" do
+      send_resp(conn, 200, "ignore me!")
+    end
+
     get "/total_time" do
       Process.sleep(10)
 
@@ -408,6 +416,17 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
+    assert events == []
+  end
+
+  test "Allow a transaction to be ignored via configuration" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    Task.Supervisor.start_link(name: TestTaskSup)
+
+    assert %{status_code: 200} = TestHelper.request(TestPlugApp, conn(:get, "/ignore/this"))
+    assert %{status_code: 200} = TestHelper.request(TestPlugApp, conn(:get, "/ignore/these/too"))
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
     assert events == []
   end
 

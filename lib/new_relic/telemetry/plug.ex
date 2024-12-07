@@ -98,14 +98,15 @@ defmodule NewRelic.Telemetry.Plug do
       ) do
     measurements = Map.put_new(measurements, :system_time, System.system_time())
 
-    Transaction.Reporter.start_transaction(:web)
-    headers = get_headers(meta, server)
+    with :collect <- Transaction.Reporter.start_transaction(:web, path(meta, server)) do
+      headers = get_headers(meta, server)
 
-    if NewRelic.Config.enabled?(),
-      do: DistributedTrace.start(:http, headers)
+      if NewRelic.Config.enabled?(),
+        do: DistributedTrace.start(:http, headers)
 
-    add_start_attrs(meta, measurements, headers, server)
-    maybe_report_queueing(headers)
+      add_start_attrs(meta, measurements, headers, server)
+      maybe_report_queueing(headers)
+    end
   end
 
   def handle_event(
@@ -267,6 +268,10 @@ defmodule NewRelic.Telemetry.Plug do
       NewRelic.add_attributes(request_start_s: request_start_s)
     end
   end
+
+  defp path(%{req: %{path: path}}, :cowboy), do: path
+  defp path(%{conn: %{request_path: path}}, :bandit), do: path
+  defp path(_, _), do: "unknown"
 
   defp get_headers(%{conn: conn}, :bandit) do
     Map.new(conn.req_headers)

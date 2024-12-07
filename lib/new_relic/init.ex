@@ -39,6 +39,7 @@ defmodule NewRelic.Init do
       region_prefix: region_prefix,
       automatic_attributes: determine_automatic_attributes(),
       labels: determine_config(:labels) |> parse_labels(),
+      ignore_paths: determine_config(:ignore_paths, []),
       telemetry_hosts: telemetry_hosts,
       trace_mode: determine_trace_mode()
     })

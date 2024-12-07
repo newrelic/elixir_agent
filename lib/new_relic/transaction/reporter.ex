@@ -26,9 +26,15 @@ defmodule NewRelic.Transaction.Reporter do
     Transaction.Sidecar.add(custom_name: custom_name)
   end
 
-  def start_transaction(:web) do
-    Transaction.ErlangTrace.trace()
-    Transaction.Sidecar.track(:web)
+  def start_transaction(:web, path) do
+    if NewRelic.Util.path_match?(path, NewRelic.Config.ignore_paths()) do
+      ignore_transaction()
+      :ignore
+    else
+      Transaction.ErlangTrace.trace()
+      Transaction.Sidecar.track(:web)
+      :collect
+    end
   end
 
   def start_transaction(:other) do
