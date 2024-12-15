@@ -3,18 +3,20 @@ defmodule NewRelic.Tracer do
   Function Tracing
 
   To enable function tracing in a particular module, `use NewRelic.Tracer`,
-  and annotate the functions you want to `@trace`.
+  and annotate the functions you want to trace with `@trace`.
 
   Traced functions will report as:
   - Segments in Transaction Traces
   - Span Events in Distributed Traces
   - Special custom attributes on Transaction Events
 
-  #### Notes:
-
-  * Traced functions will *not* be tail-call-recursive. **Don't use this for recursive functions**.
+  > #### Warning {: .error}
+  >
+  > Traced functions will *not* be tail-call-recursive. **Don't use this for recursive functions**.
 
   #### Example
+
+  Trace as a function:
 
   ```elixir
   defmodule MyModule do
@@ -31,7 +33,7 @@ defmodule NewRelic.Tracer do
 
   To categorize External Service calls you must give the trace annotation a category.
 
-  You may also call `NewRelic.set_span` to provide better naming for metrics & spans, and additonally annotate the outgoing HTTP headers with the Distributed Tracing context to track calls across services.
+  You may also call `NewRelic.set_span/2` to provide better naming for metrics & spans, and additonally annotate the outgoing HTTP headers with the Distributed Tracing context to track calls across services.
 
   ```elixir
   defmodule MyExternalService do
