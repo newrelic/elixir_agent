@@ -22,8 +22,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.Supervisor do
 
   def data_supervisor(namespace, key) do
     Supervisor.child_spec(
-      {Harvest.DataSupervisor,
-       [namespace: namespace, key: key, lookup_module: TelemetrySdk.Config]},
+      {Harvest.DataSupervisor, [namespace: namespace, key: key, lookup_module: TelemetrySdk.Config]},
       id: make_ref()
     )
   end

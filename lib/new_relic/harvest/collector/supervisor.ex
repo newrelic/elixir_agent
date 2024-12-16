@@ -26,8 +26,7 @@ defmodule NewRelic.Harvest.Collector.Supervisor do
 
   def data_supervisor(namespace, key) do
     Supervisor.child_spec(
-      {Harvest.DataSupervisor,
-       [namespace: namespace, key: key, lookup_module: Collector.AgentRun]},
+      {Harvest.DataSupervisor, [namespace: namespace, key: key, lookup_module: Collector.AgentRun]},
       id: make_ref()
     )
   end

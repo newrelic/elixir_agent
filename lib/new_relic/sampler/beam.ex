@@ -90,8 +90,7 @@ defmodule NewRelic.Sampler.Beam do
       input_kb: current.input_kb - previous.input_kb,
       output_kb: current.output_kb - previous.output_kb,
       reductions: current.reductions - previous.reductions,
-      scheduler_utilization:
-        delta(:util, previous.scheduler_utilization, current.scheduler_utilization)
+      scheduler_utilization: delta(:util, previous.scheduler_utilization, current.scheduler_utilization)
     }
   end
 

@@ -125,8 +125,7 @@ defmodule MetricTransactionTest do
 
     assert TestHelper.find_metric(
              metrics,
-             {"External/MetricTransactionTest.External.call",
-              "WebTransaction/Plug/GET//foo/:blah"}
+             {"External/MetricTransactionTest.External.call", "WebTransaction/Plug/GET//foo/:blah"}
            )
   end
 
@@ -146,8 +145,7 @@ defmodule MetricTransactionTest do
     # Scoped
     assert TestHelper.find_metric(
              metrics,
-             {"Function/MetricTransactionTest.External.make_queries/0",
-              "WebTransaction/Plug/GET//foo/:blah"}
+             {"Function/MetricTransactionTest.External.make_queries/0", "WebTransaction/Plug/GET//foo/:blah"}
            )
   end
 

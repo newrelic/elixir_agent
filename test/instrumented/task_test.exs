@@ -157,9 +157,7 @@ defmodule InstrumentedTaskTest do
         Task.Supervisor.async_nolink(TestTaskSup, __MODULE__, :do_task, [:via_mfa])
         |> Task.await()
 
-        Task.Supervisor.async_nolink(TestTaskSup, __MODULE__, :do_task, [:via_mfa_opt],
-          shutdown: 1000
-        )
+        Task.Supervisor.async_nolink(TestTaskSup, __MODULE__, :do_task, [:via_mfa_opt], shutdown: 1000)
         |> Task.await()
       end)
       |> Task.await()
