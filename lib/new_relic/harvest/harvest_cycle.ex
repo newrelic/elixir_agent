@@ -140,7 +140,10 @@ defmodule NewRelic.Harvest.HarvestCycle do
 
   defp stop_harvest_cycle(timer), do: timer && Process.cancel_timer(timer)
 
-  defp trigger_harvest_cycle(%{lookup_module: lookup_module, harvest_cycle_key: harvest_cycle_key}) do
+  defp trigger_harvest_cycle(%{
+         lookup_module: lookup_module,
+         harvest_cycle_key: harvest_cycle_key
+       }) do
     harvest_cycle = lookup_module.lookup(harvest_cycle_key) || 60_000
     Process.send_after(self(), :harvest_cycle, harvest_cycle)
   end
