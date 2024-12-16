@@ -96,13 +96,12 @@ defmodule NewRelic.Sampler.Beam do
   end
 
   defp delta(:util, previous, current) do
-    {active, total} =
+    {_, {active, total}} =
       Enum.zip(previous, current)
       |> Enum.map_reduce({0, 0}, fn
         {{n, a0, t0}, {n, a1, t1}}, {acc_a, acc_t} ->
           {{n, a1 - a0, t1 - t0}, {acc_a + (a1 - a0), acc_t + (t1 - t0)}}
       end)
-      |> elem(1)
 
     safe_div(active, total)
   end
