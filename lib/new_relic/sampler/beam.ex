@@ -106,7 +106,7 @@ defmodule NewRelic.Sampler.Beam do
     safe_div(active, total)
   end
 
-  if Version.match?(System.version(), ">= 1.16.0") do
+  if NewRelic.Util.ConditionalCompile.match?(">= 1.16.0") do
     defp safe_div(_, +0.0), do: 0.0
     defp safe_div(_, -0.0), do: 0.0
   else

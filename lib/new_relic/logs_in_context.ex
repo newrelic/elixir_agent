@@ -4,36 +4,29 @@ defmodule NewRelic.LogsInContext do
   alias NewRelic.Harvest.Collector.AgentRun
   alias NewRelic.Harvest.TelemetrySdk
 
-  @elixir_version_requirement ">= 1.10.0"
-  def elixir_version_supported?(mode) do
-    case Version.match?(System.version(), @elixir_version_requirement) do
-      true ->
-        true
-
-      false ->
-        mode in [:direct, :forwarder] &&
-          NewRelic.log(:error, ":logs_in_context requires Elixir 1.10 or greater")
-
-        false
+  if NewRelic.Util.ConditionalCompile.match?(">= 1.10.0") do
+    def configure(:direct) do
+      :logger.add_primary_filter(:nr_logs_in_context, {&primary_filter/2, %{mode: :direct}})
     end
-  end
 
-  def configure(:direct) do
-    :logger.add_primary_filter(:nr_logs_in_context, {&primary_filter/2, %{mode: :direct}})
-  end
+    def configure(:forwarder) do
+      :logger.add_primary_filter(:nr_logs_in_context, {&primary_filter/2, %{mode: :forwarder}})
+      Logger.configure_backend(:console, format: {NewRelic.LogsInContext, :format})
+    end
 
-  def configure(:forwarder) do
-    :logger.add_primary_filter(:nr_logs_in_context, {&primary_filter/2, %{mode: :forwarder}})
-    Logger.configure_backend(:console, format: {NewRelic.LogsInContext, :format})
-  end
+    def configure(:disabled) do
+      :skip
+    end
 
-  def configure(:disabled) do
-    :skip
-  end
-
-  def configure(unknown) do
-    NewRelic.log(:error, "Unknown :logs_in_context mode: #{inspect(unknown)}")
-    :skip
+    def configure(unknown) do
+      NewRelic.log(:error, "Unknown :logs_in_context mode: #{inspect(unknown)}")
+      :skip
+    end
+  else
+    def configure(_) do
+      NewRelic.log(:error, "Logs in context not supported, upgrade Elixir")
+      :skip
+    end
   end
 
   def primary_filter(%{msg: {:string, _msg}} = log, %{mode: :direct}) do
