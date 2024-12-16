@@ -78,7 +78,7 @@ defmodule NewRelic.Util do
       {key, value} when is_bitstring(value) ->
         case String.valid?(value) do
           true -> [{key, value}]
-          false -> [bad_value(key, value)]
+          false -> [{key, "[BINARY_VALUE]"}]
         end
 
       {key, value} when is_reference(value) when is_pid(value) when is_port(value) ->

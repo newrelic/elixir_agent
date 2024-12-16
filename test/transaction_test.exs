@@ -207,7 +207,6 @@ defmodule TransactionTest do
            end)
   end
 
-  @bad "[BAD_VALUE]"
   test "Attribute coercion" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
@@ -233,11 +232,13 @@ defmodule TransactionTest do
     assert {:ok, _} = Date.from_iso8601(event[:date])
     assert {:ok, _} = Time.from_iso8601(event[:time])
 
+    # Binary values
+    assert event[:binary] == "[BINARY_VALUE]"
+
     # Bad values
-    assert event[:binary] == @bad
-    assert event[:tuple] == @bad
-    assert event[:function] == @bad
-    assert event[:struct] == @bad
+    assert event[:tuple] == "[BAD_VALUE]"
+    assert event[:function] == "[BAD_VALUE]"
+    assert event[:struct] == "[BAD_VALUE]"
 
     # Don't report nil values
     refute Map.has_key?(event, :nilValue)
