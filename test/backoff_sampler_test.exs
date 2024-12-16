@@ -5,8 +5,9 @@ defmodule BackoffSamplerTest do
   test "Backoff behavior as best as we can" do
     # This is testing an inherently random algorithm
 
-    send(BackoffSampler, :reset)
+    BackoffSampler.reset()
 
+    # Target is 10, so it will sample the first 10
     assert BackoffSampler.sample?()
     assert BackoffSampler.sample?()
     assert BackoffSampler.sample?()
@@ -18,6 +19,7 @@ defmodule BackoffSamplerTest do
     assert BackoffSampler.sample?()
     assert BackoffSampler.sample?()
 
+    # The rest will be ignored
     refute BackoffSampler.sample?()
     refute BackoffSampler.sample?()
     refute BackoffSampler.sample?()
@@ -29,8 +31,25 @@ defmodule BackoffSamplerTest do
     refute BackoffSampler.sample?()
     refute BackoffSampler.sample?()
 
-    send(BackoffSampler, :cycle)
+    BackoffSampler.cycle()
 
+    # Next cycle it will adjust and take some, but not all
+    decisions = [
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?()
+    ]
+
+    assert true in decisions
+    assert false in decisions
+
+    # Next cycle it will adjust and take some, but not all
     decisions = [
       BackoffSampler.sample?(),
       BackoffSampler.sample?(),
