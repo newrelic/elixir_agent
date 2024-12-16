@@ -9,9 +9,20 @@ defmodule NewRelic.DistributedTrace do
   alias NewRelic.Harvest.Collector.AgentRun
   alias NewRelic.Transaction
 
+  def start(type, headers \\ %{})
+
   def start(:http, headers) do
-    determine_context(:http, headers)
-    |> track_transaction(transport_type: "HTTP")
+    if NewRelic.Config.feature?(:distributed_tracing) do
+      determine_context(:http, headers)
+      |> track_transaction(transport_type: "HTTP")
+    end
+  end
+
+  def start(:other, _) do
+    if NewRelic.Config.feature?(:distributed_tracing) do
+      generate_new_context()
+      |> track_transaction(transport_type: "Other")
+    end
   end
 
   defp determine_context(:http, headers) do

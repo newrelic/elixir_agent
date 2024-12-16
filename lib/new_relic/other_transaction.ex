@@ -3,9 +3,7 @@ defmodule NewRelic.OtherTransaction do
 
   def start_transaction(category, name) do
     NewRelic.Transaction.Reporter.start_transaction(:other)
-
-    NewRelic.DistributedTrace.generate_new_context()
-    |> NewRelic.DistributedTrace.track_transaction(transport_type: "Other")
+    NewRelic.DistributedTrace.start(:other)
 
     NewRelic.add_attributes(
       pid: inspect(self()),

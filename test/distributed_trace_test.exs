@@ -15,8 +15,10 @@ defmodule DistributedTraceTest do
     plug(:dispatch)
 
     get "/" do
-      [{_, outbound_payload} | _] = NewRelic.distributed_trace_headers(:http)
-      send_resp(conn, 200, outbound_payload)
+      case NewRelic.distributed_trace_headers(:http) do
+        [{_, outbound_payload} | _] -> send_resp(conn, 200, outbound_payload)
+        [] -> send_resp(conn, 200, "nothin")
+      end
     end
 
     get "/w3c" do
@@ -64,6 +66,35 @@ defmodule DistributedTraceTest do
     end)
 
     :ok
+  end
+
+  test "can disable Distributed Tracing" do
+    reset_config =
+      TestHelper.update(:nr_features,
+        distributed_tracing: false
+      )
+
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    TestHelper.request(
+      TestPlugApp,
+      conn(:get, "/")
+      |> put_req_header(@dt_header, generate_inbound_payload(:app))
+    )
+
+    [[_, attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert attrs[:name]
+    refute attrs[:error_reason]
+
+    refute attrs[:"parent.app"]
+    refute attrs[:parentId]
+    refute attrs[:parentSpanId]
+    refute attrs[:traceId]
+
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    reset_config.()
   end
 
   test "Annotate Transaction event with DT attrs" do
@@ -135,7 +166,7 @@ defmodule DistributedTraceTest do
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
-  test "propigate the context through connected Elixir processes" do
+  test "propagate the context through connected Elixir processes" do
     response =
       TestHelper.request(
         TestPlugApp,
