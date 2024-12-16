@@ -106,7 +106,12 @@ defmodule NewRelic.Sampler.Beam do
     safe_div(active, total)
   end
 
-  defp safe_div(_, +0.0), do: 0.0
-  defp safe_div(_, -0.0), do: 0.0
+  if Version.match?(System.version(), ">= 1.16.0") do
+    defp safe_div(_, +0.0), do: 0.0
+    defp safe_div(_, -0.0), do: 0.0
+  else
+    defp safe_div(_, 0.0), do: 0.0
+  end
+
   defp safe_div(a, b), do: a / b
 end
