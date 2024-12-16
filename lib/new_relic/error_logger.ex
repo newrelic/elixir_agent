@@ -4,15 +4,15 @@ defmodule NewRelic.ErrorLogger do
   """
   @behaviour :gen_event
 
-  import NewRelic.ConditionalCompile
-
-  def init(opts) do
-    after_elixir_version(
-      "1.15.0",
+  if NewRelic.Util.ConditionalCompile.match?(">= 1.15.0") do
+    def init(opts) do
       Logger.add_translator({__MODULE__, :translator})
-    )
-
-    {:ok, opts}
+      {:ok, opts}
+    end
+  else
+    def init(opts) do
+      {:ok, opts}
+    end
   end
 
   def handle_call(_opts, state), do: {:ok, :ok, state}
@@ -23,13 +23,15 @@ defmodule NewRelic.ErrorLogger do
 
   def code_change(_old_vsn, state, _extra), do: {:ok, state}
 
-  def terminate(_reason, _state) do
-    after_elixir_version(
-      "1.15.0",
+  if NewRelic.Util.ConditionalCompile.match?(">= 1.15.0") do
+    def terminate(_reason, _state) do
       Logger.remove_translator({__MODULE__, :translator})
-    )
-
-    :ok
+      :ok
+    end
+  else
+    def terminate(_reason, _state) do
+      Logger.remove_translator({__MODULE__, :translator})
+    end
   end
 
   # Don't log SASL progress reports
