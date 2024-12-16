@@ -81,13 +81,7 @@ defmodule NewRelic.Logger do
 
   defp elixir_logger(:debug, message), do: Logger.debug(message)
   defp elixir_logger(:info, message), do: Logger.info(message)
-
-  if NewRelic.Util.ConditionalCompile.match?(">= 1.11.0") do
-    defp elixir_logger(:warn, message), do: Logger.warning(message)
-  else
-    defp elixir_logger(:warn, message), do: Logger.warn(message)
-  end
-
+  defp elixir_logger(:warn, message), do: Logger.warning(message)
   defp elixir_logger(:error, message), do: Logger.error(message)
 
   @sep " - "
