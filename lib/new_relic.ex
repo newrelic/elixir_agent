@@ -9,7 +9,7 @@ defmodule NewRelic do
   The first segment will be treated as the Transaction namespace,
   and commonly contains the name of the framework.
 
-  **Notes:**
+  ## Notes
   * At least 2 segments are required to light up the Transactions UI in APM
 
   In the following example, you will see `/custom/transaction/name`
@@ -43,7 +43,7 @@ defmodule NewRelic do
     # "list.length" => 3
   ```
 
-  **Notes:**
+  ## Notes
   * Nested Lists and Maps are truncated at 10 items since there are a limited number
   of attributes that can be reported on Transaction events
   """
@@ -59,23 +59,26 @@ defmodule NewRelic do
   (ie: Not a "Web" Transaction). The first argument will be considered
   the "category", the second is the "name".
 
-  Examples:
+  ## Examples
 
   ```elixir
   NewRelic.start_transaction("GenStage", "MyConsumer/EventType")
   NewRelic.start_transaction("Task", "TaskName")
   ```
 
-  **Notes:**
+  > #### Warning {: .error}
+  >
+  > * You can't start a new transaction within an existing one. Any process
+  > spawned inside a transaction belongs to that transaction.
+  > * Do _not_ use this for processes that live a very long time, doing so
+  > will risk a memory leak tracking attributes in the transaction!
+
+  ## Notes
 
   * Don't use this to track Web Transactions - Plug based HTTP servers
   are auto-instrumented based on `telemetry` events.
-  * Do _not_ use this for processes that live a very long time, doing so
-  will risk a memory leak tracking attributes in the transaction!
-  * You can't start a new transaction within an existing one. Any process
-  spawned inside a transaction belongs to that transaction.
   * If multiple transactions are started in the same Process, you must
-  call `NewRelic.stop_transaction()` to mark the end of the transaction.
+  call `NewRelic.stop_transaction/0` to mark the end of the transaction.
   """
   @spec start_transaction(String.t(), String.t()) :: :ok
   defdelegate start_transaction(category, name), to: NewRelic.OtherTransaction
@@ -84,7 +87,7 @@ defmodule NewRelic do
   Stop an "Other" Transaction.
 
   If multiple transactions are started in the same Process, you must
-  call `NewRelic.stop_transaction()` to mark the end of the transaction.
+  call `NewRelic.stop_transaction/0` to mark the end of the transaction.
   """
   @spec stop_transaction() :: :ok
   defdelegate stop_transaction(), to: NewRelic.OtherTransaction
@@ -93,10 +96,10 @@ defmodule NewRelic do
   Define an "Other" transaction with the given block. The return value of
   the block is returned.
 
-  See `start_transaction` and `stop_transaction` for more details about
+  See `start_transaction/2` and `stop_transaction/0` for more details about
   Transactions.
 
-  Example:
+  ## Example
 
   ```elixir
   defmodule Worker do
@@ -122,6 +125,8 @@ defmodule NewRelic do
   @doc """
   Call within a transaction to prevent it from reporting.
 
+  ## Example
+
   ```elixir
   def index(conn, _) do
     NewRelic.ignore_transaction()
@@ -139,20 +144,20 @@ defmodule NewRelic do
   @doc """
   Advanced:
   Return a Transaction reference that can be used to manually connect a
-  process to a Transaction with `NewRelic.connect_to_transaction()`
+  process to a Transaction with `NewRelic.connect_to_transaction/1`
   """
   defdelegate get_transaction(), to: NewRelic.Transaction.Reporter
 
   @doc """
   Advanced:
   Call to manually connect the current process to a Transaction. Pass in a reference
-  returned by `NewRelic.get_transaction()`
+  returned by `NewRelic.get_transaction/0`
 
   Only use this when there is no auto-discoverable connection (ex: the process was
   spawned without links or the logic is within a message handling callback).
 
   This connection will persist until the process exits or
-  `NewRelic.disconnect_from_transaction()` is called.
+  `NewRelic.disconnect_from_transaction/0` is called.
   """
   defdelegate connect_to_transaction(ref), to: NewRelic.Transaction.Reporter
 
@@ -166,9 +171,22 @@ defmodule NewRelic do
   Store information about the type of work the current span is doing.
 
   Options:
-  - `:generic, custom: attributes`
-  - `:http, url: url, method: method, component: component`
-  - `:datastore, statement: statement, instance: instance, address: address, hostname: hostname, component: component`
+  - `:type`
+    - `:generic` - Pass custom attributes
+    - `:http` - Pass attributes `:url`, `:method`, `:component`
+    - `:datastore` - Pass attrributes `:statement`, `:instance`, `:address`, `:hostname`,
+      `:component`
+
+  ## Examples
+
+  ```elixir
+  NewRelic.set_span(:generic, some: "attribute")
+
+  NewRelic.set_span(:http, url: "https://elixir-lang.org", method: "GET", component: "HTTPoison")
+
+  NewRelic.set_span(:datastore, statement: statement, instance: instance, address: address,
+  hostname: hostname, component: component)
+  ```
   """
   defdelegate set_span(type, attributes), to: NewRelic.DistributedTrace
 
@@ -182,14 +200,17 @@ defmodule NewRelic do
   HTTPoison.get(url, ["x-api-key": "secret"] ++ NewRelic.distributed_trace_headers(:http))
   ```
 
-  **Notes:**
+  ## Notes
 
-  * Call `NewRelic.distributed_trace_headers` immediately before making the
+  * Call `distributed_trace_headers` immediately before making the
   request since calling the function marks the "start" time of the request.
   """
   defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
 
-  @deprecated "Use distributed_trace_headers/1 instead"
+  @doc """
+  See: `NewRelic.distributed_trace_headers/1`
+  """
+  @deprecated "Use distributed_trace_headers instead"
   defdelegate create_distributed_trace_payload(type),
     to: NewRelic.DistributedTrace,
     as: :distributed_trace_headers
@@ -222,6 +243,8 @@ defmodule NewRelic do
   @doc """
   Report a Custom event to NRDB.
 
+  ## Example
+
   ```elixir
   NewRelic.report_custom_event("EventType", %{"foo" => "bar"})
   ```
@@ -233,6 +256,8 @@ defmodule NewRelic do
   Report a Dimensional Metric.
   Valid types: `:count`, `:gauge`, and `:summary`.
 
+  ## Example
+
   ```elixir
   NewRelic.report_dimensional_metric(:count, "my_metric_name", 1, %{some: "attributes"})
   ```
@@ -243,6 +268,8 @@ defmodule NewRelic do
   @doc """
   Report a Custom metric.
 
+  ## Example
+
   ```elixir
   NewRelic.report_custom_metric("My/Metric", 123)
   ```
@@ -252,6 +279,8 @@ defmodule NewRelic do
 
   @doc """
   Increment a Custom metric.
+
+  ## Example
 
   ```elixir
   NewRelic.increment_custom_metric("My/Metric")
