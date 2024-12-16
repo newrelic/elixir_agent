@@ -71,6 +71,11 @@ defmodule NewRelic.Init do
             "NEW_RELIC_DB_QUERY_COLLECTION_ENABLED",
             :db_query_collection_enabled
           ),
+      distributed_tracing:
+        determine_feature(
+          "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED",
+          :distributed_tracing_enabled
+        ),
       ecto_instrumentation:
         determine_feature(
           "NEW_RELIC_ECTO_INSTRUMENTATION_ENABLED",

@@ -115,6 +115,8 @@ defmodule NewRelic.Config do
 
   * `:plug_instrumentation_enabled` (default `true`)
     * Controls all Plug instrumentation
+  * `:distributed_tracing` (default `true`)
+    * Controls Distributed Tracking
   * `:ecto_instrumentation_enabled` (default `true`)
     * Controls all Ecto instrumentation
   * `:redix_instrumentation_enabled` (default `true`)
@@ -137,6 +139,10 @@ defmodule NewRelic.Config do
 
   def feature?(:db_query_collection) do
     get(:features, :db_query_collection)
+  end
+
+  def feature?(:distributed_tracing) do
+    get(:features, :distributed_tracing)
   end
 
   def feature?(:plug_instrumentation) do
