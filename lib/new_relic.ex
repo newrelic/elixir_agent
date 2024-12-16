@@ -202,7 +202,7 @@ defmodule NewRelic do
 
   ## Notes
 
-  * Call distributed_trace_headers immediately before making the
+  * Call `distributed_trace_headers` immediately before making the
   request since calling the function marks the "start" time of the request.
   """
   defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
