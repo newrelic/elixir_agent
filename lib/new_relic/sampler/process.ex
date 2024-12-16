@@ -69,21 +69,26 @@ defmodule NewRelic.Sampler.Process do
     {current_sample, stats}
   end
 
-  @kb 1024
   def take_sample(pid) do
     # http://erlang.org/doc/man/erlang.html#process_info-2
     info = Process.info(pid, [:message_queue_len, :memory, :reductions, :registered_name])
 
     %{
       pid: inspect(pid),
-      memory_kb: info[:memory] / @kb,
+      memory_kb: kb(info[:memory]),
       message_queue_length: info[:message_queue_len],
       name: parse(:name, info[:registered_name]) || inspect(pid),
       reductions: info[:reductions]
     }
   end
 
-  defp delta(previous, current), do: %{reductions: current.reductions - previous.reductions}
+  @kb 1024
+  defp kb(nil), do: nil
+  defp kb(bytes), do: bytes / @kb
+
+  defp delta(%{reductions: nil}, _), do: nil
+  defp delta(_, %{reductions: nil}), do: nil
+  defp delta(%{reductions: prev}, %{reductions: curr}), do: %{reductions: curr - prev}
 
   defp parse(:name, []), do: nil
   defp parse(:name, name), do: inspect(name)
