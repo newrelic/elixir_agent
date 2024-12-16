@@ -30,7 +30,7 @@ defmodule NewRelic.ErrorLogger do
     end
   else
     def terminate(_reason, _state) do
-      Logger.remove_translator({__MODULE__, :translator})
+      :ok
     end
   end
 
