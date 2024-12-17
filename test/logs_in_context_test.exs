@@ -63,9 +63,7 @@ defmodule LogsInContextTest do
   test "LogsInContext in :direct mode" do
     TestHelper.restart_harvest_cycle(TelemetrySdk.Logs.HarvestCycle)
 
-    TestHelper.restart_harvest_cycle(
-      NewRelic.Harvest.Collector.TransactionErrorEvent.HarvestCycle
-    )
+    TestHelper.restart_harvest_cycle(NewRelic.Harvest.Collector.TransactionErrorEvent.HarvestCycle)
 
     configure_logs_in_context(:direct)
 

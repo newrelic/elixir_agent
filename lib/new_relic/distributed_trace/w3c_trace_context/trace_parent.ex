@@ -19,11 +19,8 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceParent do
   def decode(<<_::binary-size(@version), "-", "00000000000000000000000000000000", _::binary>>),
     do: invalid()
 
-  def decode(
-        <<_::binary-size(@version), "-", _::binary-size(@trace_id), "-", "0000000000000000",
-          _::binary>>
-      ),
-      do: invalid()
+  def decode(<<_::binary-size(@version), "-", _::binary-size(@trace_id), "-", "0000000000000000", _::binary>>),
+    do: invalid()
 
   def decode(
         <<version::binary-size(@version), "-", trace_id::binary-size(@trace_id), "-",

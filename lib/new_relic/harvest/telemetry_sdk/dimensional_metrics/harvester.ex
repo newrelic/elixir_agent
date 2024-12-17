@@ -85,8 +85,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester do
          %{type: type, name: name, value: new_value, attributes: attributes} = metric,
          metrics_acc
        ),
-       do:
-         Map.update(metrics_acc, {type, name, attributes}, metric, &update_metric(&1, new_value))
+       do: Map.update(metrics_acc, {type, name, attributes}, metric, &update_metric(&1, new_value))
 
   defp update_metric(
          %{type: :count, value: value} = current_metric,
