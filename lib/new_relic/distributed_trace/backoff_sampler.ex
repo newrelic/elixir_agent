@@ -3,7 +3,8 @@ defmodule NewRelic.DistributedTrace.BackoffSampler do
   alias NewRelic.Harvest.Collector.AgentRun
 
   # This GenServer tracks the sampling rate across sampling periods,
-  # which is used to determine when to sample a Distributed Trace
+  # which is used to determine when to sample a Distributed Trace.
+  # State is stored in erlang `counters` which are super fast
 
   @moduledoc false
 
@@ -11,52 +12,57 @@ defmodule NewRelic.DistributedTrace.BackoffSampler do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
+  # Counter indexes
+  @size 5
+  @cycle_number 1
+  @sampled_true_count 2
+  @decided_count 3
+  @decided_count_last 4
+  @sampling_target 5
+
   def init(:ok) do
     NewRelic.sample_process()
-    trigger_next_cycle()
-    {:ok, init_state()}
+
+    :persistent_term.put({__MODULE__, :counter}, new(@size, []))
+    put(@sampling_target, AgentRun.lookup(:sampling_target) || 10)
+
+    {:ok, %{}}
   end
 
-  def init_state() do
-    %{
-      sampling_target: AgentRun.lookup(:sampling_target) || 10,
-      cycle_number: 0,
-      sampled_true_count: 0,
-      decided_count: 0,
-      decided_count_last: 0
-    }
-  end
-
-  def sample?, do: GenServer.call(__MODULE__, :sample?)
-
-  def handle_call(:sample?, _from, state) do
-    {sampled, state} = calculate(state)
-    {:reply, sampled, state}
+  def sample? do
+    calculate(%{
+      cycle_number: get(@cycle_number),
+      sampled_true_count: get(@sampled_true_count),
+      decided_count: get(@decided_count),
+      decided_count_last: get(@decided_count_last),
+      sampling_target: get(@sampling_target)
+    })
   end
 
   def handle_info(:cycle, state) do
+    cycle()
     trigger_next_cycle()
-    {:noreply, cycle(state)}
+    {:noreply, state}
   end
 
-  def handle_info(:reset, _state) do
-    {:noreply, init_state()}
+  def reset() do
+    put(@cycle_number, 0)
+    put(@decided_count_last, 0)
+    put(@decided_count, 0)
+    put(@sampled_true_count, 0)
   end
 
-  def cycle(state) do
-    %{
-      state
-      | cycle_number: state.cycle_number + 1,
-        sampled_true_count: 0,
-        decided_count: 0,
-        decided_count_last: state.decided_count
-    }
+  def cycle() do
+    incr(@cycle_number)
+    put(@decided_count_last, get(@decided_count))
+    put(@decided_count, 0)
+    put(@sampled_true_count, 0)
   end
 
   def calculate(state) do
     sampled = do_sample?(state)
-    state = update_state(sampled, state)
-    {sampled, state}
+    update_state(sampled)
+    sampled
   end
 
   def do_sample?(%{
@@ -91,18 +97,22 @@ defmodule NewRelic.DistributedTrace.BackoffSampler do
     Process.send_after(self(), :cycle, cycle_period)
   end
 
-  def update_state(false = _sampled?, state) do
-    %{state | decided_count: state.decided_count + 1}
+  def update_state(false = _sampled?) do
+    incr(@decided_count)
   end
 
-  def update_state(true = _sampled?, state) do
-    %{
-      state
-      | decided_count: state.decided_count + 1,
-        sampled_true_count: state.sampled_true_count + 1
-    }
+  def update_state(true = _sampled?) do
+    incr(@decided_count)
+    incr(@sampled_true_count)
   end
 
   def random(0), do: 0
   def random(n), do: :rand.uniform(n)
+
+  @compile {:inline, new: 2, incr: 1, put: 2, get: 1, pt: 0}
+  defp new(size, opts), do: :counters.new(size, opts)
+  defp incr(index), do: :counters.add(pt(), index, 1)
+  defp put(index, value), do: :counters.put(pt(), index, value)
+  defp get(index), do: :counters.get(pt(), index)
+  def pt(), do: :persistent_term.get({__MODULE__, :counter})
 end
