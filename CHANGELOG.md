@@ -1,10 +1,36 @@
 ## CHANGELOG
 
+### `v1.31`
+
+Notable change
+* Use Elixir Logger as the default agent logger [#455](https://github.com/newrelic/elixir_agent/pull/455)
+
+Features
+* Make Distributed Tracing configurable [#457](https://github.com/newrelic/elixir_agent/pull/457)
+* Support ignoring web transaction paths via configuration [#451](https://github.com/newrelic/elixir_agent/pull/451)
+
+Tweaks
+* Doc improvements [#453](https://github.com/newrelic/elixir_agent/pull/453) Thanks @axelson!
+* Performance refactor to use map_reduce [#423](https://github.com/newrelic/elixir_agent/pull/423) Thanks @bradhanks!
+* Handle binary attribute values better [#458](https://github.com/newrelic/elixir_agent/pull/458)
+* Safer math in Process sampler [#461](https://github.com/newrelic/elixir_agent/pull/461)
+* Speed up BackoffSampler with counters [#460](https://github.com/newrelic/elixir_agent/pull/460)
+* Conditional compilation to address warnings [#456](https://github.com/newrelic/elixir_agent/pull/456)
+
+Fixes
+* Handle when Bandit telemetry doesn't include the conn [#449](https://github.com/newrelic/elixir_agent/pull/449)
+* Enable Logger calls to be compile time purgable [#402](https://github.com/newrelic/elixir_agent/pull/402) Thanks @TylerWitt!
+
+------
+
 ### `v1.30`
 
+Features
 * adjust metadata_reporter :transaction report_error [#443](https://github.com/newrelic/elixir_agent/pull/443)
 * Identify Phoenix LiveView metrics [#424](https://github.com/newrelic/elixir_agent/pull/424)
 * Add Bandit HTTP server support [#445](https://github.com/newrelic/elixir_agent/pull/445)
+
+------
 
 ### `v1.29`
 
@@ -16,6 +42,7 @@ Features
   [#427](https://github.com/newrelic/elixir_agent/pull/427). Thank you so
   much @tmaszk and @XiXiaPdx!
 
+------
 
 ### `v1.28`
 
@@ -25,6 +52,7 @@ Features
 * Add support for [Dimensional Metrics](https://docs.newrelic.com/docs/query-your-data/nrql-new-relic-query-language/nrql-query-tutorials/query-infrastructure-dimensional-metrics-nrql/).
 [#408](https://github.com/newrelic/elixir_agent/pull/408) Thanks @XiXiaPdx!
 
+------
 
 ### `v1.27.8`
 
