@@ -14,15 +14,16 @@ defmodule NewRelic.Telemetry.Ecto do
   * Transaction datastore attributes
   * Distributed Trace span events
 
-  You can opt-out of this instrumentation as a whole and specifically of
-  SQL query collection via configuration. See `NewRelic.Config` for details.
+  You can opt-out of this instrumentation as a whole with `:ecto_instrumentation_enabled`
+  and specifically of query collection with `:query_collection_enabled` via configuration.
+  See `NewRelic.Config` for details.
   """
 
   @doc false
   def start_link(repo: repo, opts: opts) do
     config = %{
       enabled?: NewRelic.Config.feature?(:ecto_instrumentation),
-      collect_db_query?: NewRelic.Config.feature?(:db_query_collection),
+      collect_db_query?: NewRelic.Config.feature?(:query_collection),
       handler_id: {:new_relic_ecto, repo},
       event: opts[:telemetry_prefix] ++ [:query],
       opts: opts

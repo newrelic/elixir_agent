@@ -12,7 +12,8 @@ defmodule NewRelic.Telemetry.Finch do
   * External metrics
   * External spans
 
-  You can opt-out of this instrumentation via configuration. See `NewRelic.Config` for details.
+  You can opt-out of this instrumentation with `:finch_instrumentation_enabled` via configuration.
+  See `NewRelic.Config` for details.
   """
   def start_link(_) do
     config = %{

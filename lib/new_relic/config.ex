@@ -77,7 +77,7 @@ defmodule NewRelic.Config do
 
   Example:
 
-  ```
+  ```elixir
   config :new_relic_agent,
     automatic_attributes: [
       environment: {:system, "APP_ENV"},
@@ -115,7 +115,7 @@ defmodule NewRelic.Config do
   * Ignore Phoenix longpoll http requests: `"/live/longpoll"`
 
   Example:
-  ```
+  ```elixir
   config :new_relic_agent,
     ignore_paths: [
       "/health",
@@ -127,47 +127,40 @@ defmodule NewRelic.Config do
     do: get(:ignore_paths)
 
   @doc """
-  Some Agent features can be toggled via configuration.
+  Some Agent features can be toggled via configuration. These all default to `true`, but can be configured in two ways:
+  * Environment variables: `NEW_RELIC_ERROR_COLLECTOR_ENABLED=false`
+  * Application config: `config :new_relic_agent, error_collector_enabled: false`
+
+  ### Built-in features
+
+  * `:distributed_tracing`
+    * Toggles reading of incoming distributed tracing headers
+  * `:request_queuing_metrics_enabled`
+    * Toggles collection of request queuing metrics
+  * `:extended_attributes`
+    * Toggles reporting extended per-source attributes for datastore, external and function traces
 
   ### Security
 
-  * `:error_collector_enabled` (default `true`)
+  * `:error_collector_enabled`
     * Toggles collection of any Error traces or metrics
-  * `:db_query_collection_enabled` (default `true`)
-    * Toggles collection of Database query strings
-  * `function_argument_collection_enabled` (default `true`)
+  * `:query_collection_enabled`
+    * Toggles collection of any kind of query string
+  * `:function_argument_collection_enabled`
     * Toggles collection of traced function arguments
 
-  ### Instrumentation
+  ### Common library instrumentation
 
   Opting out of Instrumentation means that `:telemetry` handlers
   will not be attached, reducing the performance impact to zero.
 
-  * `:plug_instrumentation_enabled` (default `true`)
-    * Controls all Plug instrumentation
-  * `:distributed_tracing` (default `true`)
-    * Controls Distributed Tracking
-  * `:ecto_instrumentation_enabled` (default `true`)
-    * Controls all Ecto instrumentation
-  * `:redix_instrumentation_enabled` (default `true`)
-    * Controls all Redix instrumentation
-  * `:oban_instrumentation_enabled` (default `true`)
-    * Controls all Oban instrumentation
-  * `:finch_instrumentation_enabled` (default `true`)
-    * Controls all Finch instrumentation
-  * `:absinthe_instrumentation_enabled` (default `true`)
-    * Controls all Absinthe instrumentation
-  * `:request_queuing_metrics_enabled`
-    * Controls collection of request queuing metrics
-  * `:extended_attributes` (default `true`)
-    * Controls reporting extended per-source attributes for datastore, external and function traces
-
-
-  ### Configuration
-
-  Each of these features can be configured in two ways, for example:
-  * Environment variables: `NEW_RELIC_ERROR_COLLECTOR_ENABLED=false`
-  * Application config: `config :new_relic_agent, error_collector_enabled: false`
+  * `:plug_instrumentation_enabled`
+  * `:phoenix_instrumentation_enabled`
+  * `:ecto_instrumentation_enabled`
+  * `:redix_instrumentation_enabled`
+  * `:oban_instrumentation_enabled`
+  * `:finch_instrumentation_enabled`
+  * `:absinthe_instrumentation_enabled`
   """
   def feature?(toggleable_agent_feature)
 
@@ -175,8 +168,8 @@ defmodule NewRelic.Config do
     get(:features, :error_collector)
   end
 
-  def feature?(:db_query_collection) do
-    get(:features, :db_query_collection)
+  def feature?(:query_collection) do
+    get(:features, :query_collection)
   end
 
   def feature?(:distributed_tracing) do

@@ -1,10 +1,56 @@
 ## CHANGELOG
 
+### `v1.31`
+
+A big release after a long time dormant!
+
+#### Notable changes
+* Use Elixir Logger as the default agent logger [#455](https://github.com/newrelic/elixir_agent/pull/455)
+  - Changes where internal New Relic agent logs will go by default
+* Use logger primary filter to hook into error reporting [#466](https://github.com/newrelic/elixir_agent/pull/466)
+  - No longer need to add `ErrorLogger` to your `:logger` `:backend` config
+* Finch Instrumentation [#469](https://github.com/newrelic/elixir_agent/pull/469)
+  - No longer need to `@trace` with `category: :external` to instrument Finch based HTTP requests
+
+#### Features
+* Make Distributed Tracing configurable [#457](https://github.com/newrelic/elixir_agent/pull/457)
+* Support ignoring web transaction paths via configuration [#451](https://github.com/newrelic/elixir_agent/pull/451)
+* Support host display name [#464](https://github.com/newrelic/elixir_agent/pull/464)
+* Oban Instrumentation [#463](https://github.com/newrelic/elixir_agent/pull/463)
+* Absinthe Instrumentation [#471](https://github.com/newrelic/elixir_agent/pull/471)
+* Added `NewRelic.notice_error` to report rescued exceptions [#470](https://github.com/newrelic/elixir_agent/pull/470)
+* Added `NewRelic.add_span_attributes` [#478](https://github.com/newrelic/elixir_agent/pull/478)
+* Added `NewRelic.span` macro [#471](https://github.com/newrelic/elixir_agent/pull/471)
+
+#### Tweaks
+* Doc improvements [#453](https://github.com/newrelic/elixir_agent/pull/453) Thanks @axelson!
+* Performance refactor to use map_reduce [#423](https://github.com/newrelic/elixir_agent/pull/423) Thanks @bradhanks!
+* Handle binary attribute values better [#458](https://github.com/newrelic/elixir_agent/pull/458)
+* Safer math in Process sampler [#461](https://github.com/newrelic/elixir_agent/pull/461)
+* Speed up BackoffSampler with counters [#460](https://github.com/newrelic/elixir_agent/pull/460)
+* Conditional compilation to address warnings [#456](https://github.com/newrelic/elixir_agent/pull/456)
+* Add spansaction for regular DT [#467](https://github.com/newrelic/elixir_agent/pull/467)
+* Only start telemetry handlers when agent is enabled [#474](https://github.com/newrelic/elixir_agent/pull/474)
+* Only start os_mon when agent enabled [#473](https://github.com/newrelic/elixir_agent/pull/473)
+* Add extended attributes for function tracers, make extended attributes configurable [#479](https://github.com/newrelic/elixir_agent/pull/479)
+
+#### Fixes
+* Handle when Bandit telemetry doesn't include the conn [#449](https://github.com/newrelic/elixir_agent/pull/449)
+* Fix a few Bandit attributes [#480](https://github.com/newrelic/elixir_agent/pull/480)
+* Enable Logger calls to be compile time purgable [#402](https://github.com/newrelic/elixir_agent/pull/402) Thanks @TylerWitt!
+* Tracer - Create a proper list when tail of list is ignored [#465](https://github.com/newrelic/elixir_agent/pull/465)
+* Add bandit optional dependency [#472](https://github.com/newrelic/elixir_agent/pull/472)
+
+------
+
 ### `v1.30`
 
+Features
 * adjust metadata_reporter :transaction report_error [#443](https://github.com/newrelic/elixir_agent/pull/443)
 * Identify Phoenix LiveView metrics [#424](https://github.com/newrelic/elixir_agent/pull/424)
 * Add Bandit HTTP server support [#445](https://github.com/newrelic/elixir_agent/pull/445)
+
+------
 
 ### `v1.29`
 
@@ -16,6 +62,7 @@ Features
   [#427](https://github.com/newrelic/elixir_agent/pull/427). Thank you so
   much @tmaszk and @XiXiaPdx!
 
+------
 
 ### `v1.28`
 
@@ -25,6 +72,7 @@ Features
 * Add support for [Dimensional Metrics](https://docs.newrelic.com/docs/query-your-data/nrql-new-relic-query-language/nrql-query-tutorials/query-infrastructure-dimensional-metrics-nrql/).
 [#408](https://github.com/newrelic/elixir_agent/pull/408) Thanks @XiXiaPdx!
 
+------
 
 ### `v1.27.8`
 
