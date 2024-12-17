@@ -5,10 +5,6 @@ defmodule LogsInContextTest do
 
   alias NewRelic.Harvest.TelemetrySdk
 
-  unless NewRelic.LogsInContext.elixir_version_supported?(:direct) do
-    @moduletag :skip
-  end
-
   test "LogsInContext formats log messages" do
     configure_logs_in_context(:forwarder)
 

@@ -31,7 +31,7 @@ defmodule TestHelper do
 
   def gather_harvest(harvester) do
     Process.sleep(300)
-    harvester.gather_harvest
+    harvester.gather_harvest()
   end
 
   def restart_harvest_cycle(harvest_cycle) do
