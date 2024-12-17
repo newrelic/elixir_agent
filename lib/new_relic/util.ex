@@ -179,6 +179,16 @@ defmodule NewRelic.Util do
     with {:ok, name} <- :inet.gethostname(), do: to_string(name)
   end
 
+  def path_match?(_path, []), do: false
+
+  def path_match?(path, path_set) do
+    Enum.any?(path_set, fn
+      string when is_binary(string) -> path == string
+      %Regex{} = regex -> path =~ regex
+      _ -> false
+    end)
+  end
+
   def uuid4() do
     "#{u(4)}-#{u(2)}-4a#{u(1)}-#{u(2)}-#{u(6)}"
   end
