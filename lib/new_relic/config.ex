@@ -40,11 +40,12 @@ defmodule NewRelic.Config do
   This controls how the Agent logs it's own behavior, and doesn't impact your
   applications own logging at all.
 
-  Defaults to the File `"tmp/new_relic.log"`.
+  Defaults to using `Logger`.
 
   Options:
+  - `"Logger"` Send Agent logs to Elixir's `Logger`
+  - `"tmp"` Write to `tmp/new_relic.log`
   - `"stdout"` Write directly to Standard Out
-  - `"Logger"` Send Agent logs to Elixir's Logger
   - `"file_name.log"` Write to a chosen file
 
   Agent logging can be configured in two ways:

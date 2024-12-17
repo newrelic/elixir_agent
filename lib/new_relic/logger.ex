@@ -61,7 +61,8 @@ defmodule NewRelic.Logger do
 
   def initial_logger do
     case NewRelic.Config.logger() do
-      nil -> {:file, "tmp/new_relic.log"}
+      nil -> :logger
+      "file" -> {:file, "tmp/new_relic.log"}
       "stdout" -> :stdio
       "memory" -> :memory
       "Logger" -> :logger
