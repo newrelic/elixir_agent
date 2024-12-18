@@ -103,14 +103,15 @@ defmodule NewRelic.Telemetry.Oban do
       pid: inspect(self()),
       system_time: system_time,
       other_transaction_name: "Oban/#{meta.job.worker}/perform",
-      "oban.state": meta.job.state,
-      "oban.worker": meta.job.worker,
-      "oban.queue": meta.job.queue,
-      "oban.tags": meta.job.tags,
-      "oban.attempt": meta.job.attempt,
-      "oban.attempted_by": meta.job.attempted_by,
-      "oban.max_attempts": meta.job.max_attempts,
-      "oban.priority": meta.job.priority
+      "oban.job.args": meta.job.args,
+      "oban.job.state": meta.job.state,
+      "oban.job.worker": meta.job.worker,
+      "oban.job.queue": meta.job.queue,
+      "oban.job.tags": meta.job.tags |> Enum.join(","),
+      "oban.job.attempt": meta.job.attempt,
+      "oban.job.attempted_by": meta.job.attempted_by |> Enum.join("."),
+      "oban.job.max_attempts": meta.job.max_attempts,
+      "oban.job.priority": meta.job.priority
     ]
     |> NewRelic.add_attributes()
   end
