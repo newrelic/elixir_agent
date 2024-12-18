@@ -97,6 +97,11 @@ defmodule NewRelic.Init do
           "NEW_RELIC_PHOENIX_INSTRUMENTATION_ENABLED",
           :phoenix_instrumentation_enabled
         ),
+      oban_instrumentation:
+        determine_feature(
+          "NEW_RELIC_OBAN_INSTRUMENTATION_ENABLED",
+          :oban_instrumentation_enabled
+        ),
       function_argument_collection:
         determine_feature(
           "NEW_RELIC_FUNCTION_ARGUMENT_COLLECTION_ENABLED",

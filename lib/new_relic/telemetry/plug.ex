@@ -149,7 +149,7 @@ defmodule NewRelic.Telemetry.Plug do
         _config
       ) do
     add_stop_attrs(meas, meta, server)
-    {reason, stack} = reason_and_stack(meta)
+    {reason, stack} = NewRelic.Util.Telemetry.reason_and_stack(meta)
 
     Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
     Transaction.Reporter.stop_transaction(:web)
@@ -301,23 +301,6 @@ defmodule NewRelic.Telemetry.Plug do
 
   defp status_code(%{conn: %{status: status}}) do
     status
-  end
-
-  defp reason_and_stack(%{reason: %{__exception__: true} = reason, stacktrace: stack}) do
-    {reason, stack}
-  end
-
-  defp reason_and_stack(%{reason: {{reason, stack}, _init_call}}) do
-    {reason, stack}
-  end
-
-  defp reason_and_stack(%{reason: {reason, _init_call}}) do
-    {reason, []}
-  end
-
-  defp reason_and_stack(unexpected_cowboy_exception) do
-    NewRelic.log(:debug, "unexpected_cowboy_exception: #{inspect(unexpected_cowboy_exception)}")
-    {:unexpected_cowboy_exception, []}
   end
 
   defp plug_name(conn, match_path) do
