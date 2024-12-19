@@ -30,9 +30,17 @@ defmodule NewRelic.Config do
   def license_key,
     do: get(:license_key)
 
-  @doc false
-  def host,
-    do: get(:host)
+  @doc """
+  Configure the Agent host display name.
+
+  This can help connecting data from the Infrastructure Agent to the APM application.
+
+  Host display name can be configured in two ways:
+  * Environment variable: `NEW_RELIC_HOST_DISPLAY_NAME=my-host-name`
+  * Application config: `config :new_relic_agent, host_display_name: "my-host-name"`
+  """
+  def host_display_name,
+    do: get(:host_display_name)
 
   @doc """
   Configure the Agent logging mechanism.

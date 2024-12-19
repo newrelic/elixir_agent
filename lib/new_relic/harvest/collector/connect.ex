@@ -7,6 +7,7 @@ defmodule NewRelic.Harvest.Collector.Connect do
         language: "elixir",
         pid: NewRelic.Util.pid(),
         host: NewRelic.Util.hostname(),
+        display_host: NewRelic.Config.host_display_name(),
         app_name: NewRelic.Config.app_name(),
         labels:
           Enum.map(NewRelic.Config.labels(), fn [key, value] ->
