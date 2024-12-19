@@ -37,6 +37,8 @@ defmodule CollectorProtocolTest do
     assert get_in(payload, [:environment])
            |> Enum.find(&match?(["ERTS Version", _], &1))
 
+    assert Map.has_key?(payload, :display_host)
+
     Jason.encode!(payload)
   end
 

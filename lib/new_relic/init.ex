@@ -30,6 +30,7 @@ defmodule NewRelic.Init do
     NewRelic.Config.put(%{
       log: determine_config(:log),
       host: host,
+      display_host: determine_config(:display_host),
       port: determine_config(:port, 443) |> parse_port,
       scheme: determine_config(:scheme, "https"),
       app_name: determine_config(:app_name) |> parse_app_names,

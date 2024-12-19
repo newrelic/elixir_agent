@@ -13,6 +13,7 @@ defmodule NewRelic.Transaction.Complete do
       |> transform_time_attrs
       |> identify_transaction_type
       |> transform_queue_duration
+      |> add_host_display_name(NewRelic.Config.host_display_name())
       |> extract_transaction_info(pid)
 
     report_transaction_event(tx_attrs)
@@ -91,6 +92,11 @@ defmodule NewRelic.Transaction.Complete do
   end
 
   defp transform_queue_duration(tx), do: tx
+
+  defp add_host_display_name(tx, nil), do: tx
+
+  defp add_host_display_name(tx, host_display_name),
+    do: Map.put(tx, :"host.displayName", host_display_name)
 
   defp extract_transaction_info(tx_attrs, pid) do
     {function_segments, tx_attrs} = Map.pop(tx_attrs, :function_segments, [])

@@ -409,6 +409,21 @@ defmodule TransactionTest do
            end)
   end
 
+  test "Support setting host display name" do
+    reset_config = TestHelper.update(:nr_config, host_display_name: "my-test-host")
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/map"))
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    assert Enum.find(events, fn [_, event] ->
+             event[:path] == "/map" && event[:"host.displayName"] == "my-test-host"
+           end)
+
+    reset_config.()
+  end
+
   test "Allow a transaction to be ignored" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     Task.Supervisor.start_link(name: TestTaskSup)
