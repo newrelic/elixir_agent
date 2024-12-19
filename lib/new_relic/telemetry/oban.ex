@@ -102,11 +102,10 @@ defmodule NewRelic.Telemetry.Oban do
     [
       pid: inspect(self()),
       system_time: system_time,
-      other_transaction_name: "Oban/#{meta.job.worker}/perform",
+      other_transaction_name: "Oban/#{meta.queue}/#{meta.worker}/perform",
+      "oban.worker": meta.worker,
+      "oban.queue": meta.queue,
       "oban.job.args": meta.job.args,
-      "oban.job.state": meta.job.state,
-      "oban.job.worker": meta.job.worker,
-      "oban.job.queue": meta.job.queue,
       "oban.job.tags": meta.job.tags |> Enum.join(","),
       "oban.job.attempt": meta.job.attempt,
       "oban.job.attempted_by": meta.job.attempted_by |> Enum.join("."),
@@ -117,14 +116,15 @@ defmodule NewRelic.Telemetry.Oban do
   end
 
   @kb 1024
-  defp add_stop_attrs(meas, _meta, duration) do
+  defp add_stop_attrs(meas, meta, duration) do
     info = Process.info(self(), [:memory, :reductions])
 
     [
       duration: duration,
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions],
-      "oban.queue_time": meas.queue_time
+      "oban.job.result": meta.state,
+      "oban.job.queue_time": meas.queue_time
     ]
     |> NewRelic.add_attributes()
   end
