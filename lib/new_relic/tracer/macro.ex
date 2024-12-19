@@ -281,6 +281,11 @@ defmodule NewRelic.Tracer.Macro do
     end
   end
 
+  # Replace :__ignored__ with [] when it's the tail of a list so we don't create an improper list
+  def rewrite_call_term({:|, line, [left, :__ignored__]}) do
+    {:|, line, [left, []]}
+  end
+
   def rewrite_call_term(term), do: term
 
   def is_variable?({name, _, context}) when is_variable(name, context), do: true

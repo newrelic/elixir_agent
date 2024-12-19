@@ -29,6 +29,20 @@ defmodule NewRelic.Tracer.MacroTest do
       assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
     end
 
+    test "create a proper list when ignoring tail of a list" do
+      ast =
+        quote do
+          [a | _ignored]
+        end
+
+      expected =
+        quote do
+          [a | []]
+        end
+
+      assert expected == NewRelic.Tracer.Macro.build_call_args(ast)
+    end
+
     test "strip default values" do
       ast =
         quote do
