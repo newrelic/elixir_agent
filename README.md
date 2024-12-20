@@ -72,16 +72,6 @@ config :new_relic_agent,
   httpc_request_options: [connect_timeout: 5000]
 ```
 
-#### For Elixir 1.15 and higher
-
-Due to changes in the Elixir 1.15 Logger, additional logger configuration is needed for NewRelic to capture all errors. Update your logger configuration by setting `handle_sasl_reports` to `true` and adding `NewRelic.ErrorLogger` to your logger backends.
-
-```elixir
-config :logger,
-  handle_sasl_reports: true,
-  backends: [:console, NewRelic.ErrorLogger]
-```
-
 ## Telemetry-based Instrumentation
 
 Some common Elixir packages are auto-instrumented via [`telemetry`](https://github.com/beam-telemetry/telemetry)

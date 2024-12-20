@@ -187,6 +187,7 @@ defmodule ErrorTest do
            end)
   end
 
+  @tag :capture_log
   test "Catch a function clause error inside a Task" do
     TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
 

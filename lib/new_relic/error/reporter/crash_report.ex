@@ -1,4 +1,4 @@
-defmodule NewRelic.Error.Reporter do
+defmodule NewRelic.Error.Reporter.CrashReport do
   @moduledoc false
 
   alias NewRelic.Util

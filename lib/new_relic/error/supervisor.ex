@@ -16,15 +16,15 @@ defmodule NewRelic.Error.Supervisor do
     ]
 
     if NewRelic.Config.feature?(:error_collector) do
-      add_handler()
+      add_filter()
     end
 
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  def add_handler(),
-    do: NewRelic.Error.LoggerHandler.add_handler()
+  def add_filter(),
+    do: NewRelic.Error.LoggerFilter.add_filter()
 
-  def remove_handler(),
-    do: NewRelic.Error.LoggerHandler.remove_handler()
+  def remove_filter(),
+    do: NewRelic.Error.LoggerFilter.remove_filter()
 end
