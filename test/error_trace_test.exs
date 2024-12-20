@@ -141,7 +141,7 @@ defmodule ErrorTraceTest do
 
   test "Doesn't report an error if the handler is not installed" do
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-    NewRelic.Error.Supervisor.remove_handler()
+    NewRelic.Error.Supervisor.remove_filter()
 
     :proc_lib.spawn(fn ->
       raise "RAISE"
@@ -152,7 +152,7 @@ defmodule ErrorTraceTest do
     traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
     assert length(traces) == 0
 
-    NewRelic.Error.Supervisor.add_handler()
+    NewRelic.Error.Supervisor.add_filter()
 
     :proc_lib.spawn(fn ->
       raise "RAISE"
