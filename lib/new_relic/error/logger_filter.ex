@@ -28,6 +28,18 @@ defmodule NewRelic.Error.LoggerFilter do
     :ignore
   end
 
+  if NewRelic.Util.ConditionalCompile.match?("< 1.15.0") do
+    def filter(
+          %{
+            meta: %{error_logger: %{tag: :error_msg}},
+            msg: {:report, %{label: {_, :terminating}}}
+          },
+          _opts
+        ) do
+      :ignore
+    end
+  end
+
   def filter(
         %{
           meta: %{error_logger: %{tag: :error_msg}},
