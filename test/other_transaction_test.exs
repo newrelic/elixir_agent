@@ -79,7 +79,7 @@ defmodule OtherTransactionTest do
            )
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-    assert length(span_events) == 3
+    assert length(span_events) == 4
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
@@ -200,7 +200,7 @@ defmodule OtherTransactionTest do
 
     spansaction =
       Enum.find(spans, fn %{attributes: attr} ->
-        attr[:category] == "Transaction" && attr[:name] == "Test/Error"
+        attr[:"nr.entryPoint"] == true && attr[:name] == "Test/Error"
       end)
 
     assert spansaction.attributes[:error]
@@ -241,7 +241,7 @@ defmodule OtherTransactionTest do
 
     spansaction =
       Enum.find(spans, fn %{attributes: attr} ->
-        attr[:category] == "Transaction" && attr[:name] == "Test/ExpectedError"
+        attr[:"nr.entryPoint"] == true && attr[:name] == "Test/ExpectedError"
       end)
 
     refute spansaction.attributes[:error]

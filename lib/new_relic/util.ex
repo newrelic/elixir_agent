@@ -72,6 +72,9 @@ defmodule NewRelic.Util do
       {_key, nil} ->
         []
 
+      {_key, ""} ->
+        []
+
       {key, value} when is_number(value) when is_boolean(value) ->
         [{key, value}]
 

@@ -264,7 +264,7 @@ defmodule SidecarTest do
 
     spansaction =
       Enum.find(spans, fn %{attributes: attr} ->
-        attr[:category] == "Transaction"
+        attr[:"nr.entryPoint"] == true
       end)
 
     assert spansaction.attributes[:root] == "YES"
@@ -352,7 +352,7 @@ defmodule SidecarTest do
 
     spansaction =
       Enum.find(spans, fn %{attributes: attr} ->
-        attr[:category] == "Transaction" && attr[:name] == "Test/double_connect_test"
+        attr[:"nr.entryPoint"] == true && attr[:name] == "Test/double_connect_test"
       end)
 
     assert spansaction.attributes[:root] == "YES"
