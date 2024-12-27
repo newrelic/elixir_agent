@@ -163,7 +163,7 @@ defmodule NewRelic do
 
   @doc """
   Advanced:
-  Call to manually disconnect the current proccess from the current Transaction.
+  Call to manually disconnect the current process from the current Transaction.
   """
   defdelegate disconnect_from_transaction(), to: NewRelic.Transaction.Reporter
 
@@ -174,7 +174,7 @@ defmodule NewRelic do
   - `:type`
     - `:generic` - Pass custom attributes
     - `:http` - Pass attributes `:url`, `:method`, `:component`
-    - `:datastore` - Pass attrributes `:statement`, `:instance`, `:address`, `:hostname`,
+    - `:datastore` - Pass attributes `:statement`, `:instance`, `:address`, `:hostname`,
       `:component`
 
   ## Examples
@@ -205,6 +205,7 @@ defmodule NewRelic do
   * Call `distributed_trace_headers` immediately before making the
   request since calling the function marks the "start" time of the request.
   """
+  @spec distributed_trace_headers(:http) :: [{key :: binary, value :: binary}]
   defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
 
   @doc """

@@ -82,7 +82,7 @@ defmodule NewRelic.Tracer.Macro do
 
   def trace_deprecated?({_, category: :datastore}, module, name) do
     Logger.warning(
-      "[New Relic] Trace `:datastore` deprecated in favor of automatic ecto instrumentation. " <>
+      "[New Relic] Trace `:datastore` deprecated in favor of automatic Ecto instrumentation. " <>
         "Please remove @trace from #{inspect(module)}.#{name}"
     )
 
@@ -177,6 +177,11 @@ defmodule NewRelic.Tracer.Macro do
 
   def traced_function_body(body, module, function, args, trace_info) do
     quote do
+      with {_, opts} <- unquote(trace_info),
+           :external <- Keyword.get(opts, :category) do
+        Process.put(:nr_already_tracing_external, true)
+      end
+
       current_ref = make_ref()
 
       {span, previous_span, previous_span_attrs} =
@@ -236,6 +241,8 @@ defmodule NewRelic.Tracer.Macro do
           previous_span: previous_span,
           previous_span_attrs: previous_span_attrs
         )
+
+        Process.delete(:nr_already_tracing_external)
       end
     end
   end

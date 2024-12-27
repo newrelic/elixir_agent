@@ -153,6 +153,8 @@ defmodule NewRelic.Config do
     * Controls all Redix instrumentation
   * `:oban_instrumentation_enabled` (default `true`)
     * Controls all Oban instrumentation
+  * `:finch_instrumentation_enabled` (default `true`)
+    * Controls all Finch instrumentation
   * `:request_queuing_metrics_enabled`
     * Controls collection of request queuing metrics
 
@@ -195,6 +197,10 @@ defmodule NewRelic.Config do
 
   def feature?(:oban_instrumentation) do
     get(:features, :oban_instrumentation)
+  end
+
+  def feature?(:finch_instrumentation) do
+    get(:features, :finch_instrumentation)
   end
 
   def feature?(:function_argument_collection) do

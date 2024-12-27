@@ -90,6 +90,7 @@ Some common Elixir packages are auto-instrumented via [`telemetry`](https://gith
 * [`Phoenix`](https://github.com/phoenixframework/phoenix): See [NewRelic.Telemetry.Phoenix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Phoenix.html) for details.
 * [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Ecto.html) for details.
 * [`Redix`](https://github.com/whatyouhide/redix): See [NewRelic.Telemetry.Redix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Redix.html) for details.
+* [`Finch`](https://github.com/sneako/finch): See [NewRelic.Telemetry.Finch](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Finch.html) for details.
 
 ## Agent features
 
@@ -118,13 +119,13 @@ spawn(fn ->
 end)
 ```
 
-If you are using a `Task` to spawn work, you can use the pre-instrumented `NewRelic.Instrumented.Task` convienince module to make this easier. Just `alias` it in your module and all your Tasks will be instrumented. You may also use the functions directly.
+If you are using a `Task` to spawn work, you can use the pre-instrumented `NewRelic.Instrumented.Task` convenience module to make this easier. Just `alias` it in your module and all your Tasks will be instrumented. You may also use the functions directly.
 
 ```elixir
 alias NewRelic.Instrumented.Task
 
 Task.Supervisor.async_nolink(MyTaskSupervisor, fn ->
-  # This process wil be automatically connected to the Transaction...
+  # This process will be automatically connected to the current Transaction...
 end)
 ```
 
@@ -145,15 +146,11 @@ end
 
 #### Distributed Tracing
 
-Requests to other services can be traced with the combination of an additional outgoing header and an `:external` tracer.
+Requests to other services can be connected with an additional outgoing header.
 
 ```elixir
 defmodule MyExternalService do
-  use NewRelic.Tracer
-
-  @trace {:request, category: :external}
   def request(method, url, headers) do
-    NewRelic.set_span(:http, url: url, method: method, component: "HttpClient")
     headers = headers ++ NewRelic.distributed_trace_headers(:http)
     HttpClient.request(method, url, headers)
   end
