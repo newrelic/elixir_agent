@@ -69,7 +69,7 @@ defmodule TestHelper do
   def simulate_agent_run(_context) do
     reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
     reset_agent_run = TestHelper.update(:nr_agent_run, trusted_account_key: "190")
-    send(NewRelic.DistributedTrace.BackoffSampler, :reset)
+    NewRelic.DistributedTrace.BackoffSampler.reset()
 
     ExUnit.Callbacks.on_exit(fn ->
       reset_config.()

@@ -33,7 +33,7 @@ defmodule W3CTraceContextTest do
 
     reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
 
-    send(DistributedTrace.BackoffSampler, :reset)
+    DistributedTrace.BackoffSampler.reset()
 
     on_exit(fn ->
       reset_agent_run.()
