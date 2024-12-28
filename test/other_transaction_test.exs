@@ -246,4 +246,30 @@ defmodule OtherTransactionTest do
 
     refute spansaction.attributes[:error]
   end
+
+  test "Report a raise that is rescued inside a Transaction" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
+
+    {:ok, pid} =
+      Task.start(fn ->
+        NewRelic.start_transaction("TestTransaction", "Rescued")
+
+        try do
+          raise RuntimeError, "RESCUED"
+        rescue
+          exception ->
+            NewRelic.notice_error(exception, __STACKTRACE__)
+            :move_on
+        end
+      end)
+
+    Process.monitor(pid)
+    assert_receive {:DOWN, _ref, :process, ^pid, _reason}, 1_000
+
+    events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
+
+    assert Enum.find(events, fn [intrinsic, _, _] ->
+             intrinsic[:"error.message"] =~ "RESCUED"
+           end)
+  end
 end

@@ -84,6 +84,14 @@ defmodule NewRelic.Transaction.Reporter do
     :ok
   end
 
+  def notice_error(exception, stacktrace) do
+    if NewRelic.Config.feature?(:error_collector) do
+      error(%{kind: :error, reason: exception, stack: stacktrace})
+    end
+
+    :ok
+  end
+
   def error(error) do
     Transaction.Sidecar.add(transaction_error: {:error, error})
   end
