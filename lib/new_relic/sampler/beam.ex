@@ -15,7 +15,7 @@ defmodule NewRelic.Sampler.Beam do
     :erlang.system_flag(:scheduler_wall_time, true)
 
     # throw away first value
-    :cpu_sup.util()
+    NewRelic.OsMon.util()
     :erlang.statistics(:scheduler_wall_time)
 
     NewRelic.sample_process()
@@ -80,7 +80,7 @@ defmodule NewRelic.Sampler.Beam do
       schedulers: :erlang.system_info(:schedulers),
       scheduler_utilization: :erlang.statistics(:scheduler_wall_time) |> Enum.sort(),
       cpu_count: :erlang.system_info(:logical_processors),
-      cpu_utilization: :cpu_sup.util()
+      cpu_utilization: NewRelic.OsMon.util()
     }
   end
 
