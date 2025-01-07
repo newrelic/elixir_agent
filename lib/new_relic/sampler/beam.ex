@@ -105,7 +105,9 @@ defmodule NewRelic.Sampler.Beam do
     safe_div(active, total)
   end
 
-  defp safe_div(_, +0.0), do: 0.0
-  defp safe_div(_, -0.0), do: 0.0
-  defp safe_div(a, b), do: a / b
+  defp safe_div(a, b) do
+    a / b
+  rescue
+    ArithmeticError -> 0.0
+  end
 end
