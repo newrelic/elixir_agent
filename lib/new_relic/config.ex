@@ -151,6 +151,8 @@ defmodule NewRelic.Config do
     * Controls all Ecto instrumentation
   * `:redix_instrumentation_enabled` (default `true`)
     * Controls all Redix instrumentation
+  * `:oban_instrumentation_enabled` (default `true`)
+    * Controls all Oban instrumentation
   * `:request_queuing_metrics_enabled`
     * Controls collection of request queuing metrics
 
@@ -189,6 +191,10 @@ defmodule NewRelic.Config do
 
   def feature?(:redix_instrumentation) do
     get(:features, :redix_instrumentation)
+  end
+
+  def feature?(:oban_instrumentation) do
+    get(:features, :oban_instrumentation)
   end
 
   def feature?(:function_argument_collection) do
