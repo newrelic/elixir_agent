@@ -34,6 +34,13 @@ defmodule TestSupport do
     end)
   end
 
+  def find_span(spans, name) do
+    Enum.find_value(spans, fn
+      [%{name: ^name} = span, _, _] -> span
+      _span -> false
+    end)
+  end
+
   def simulate_agent_enabled(_context) do
     Process.whereis(Harvest.TaskSupervisor) ||
       NewRelic.EnabledSupervisor.start_link(:ok)

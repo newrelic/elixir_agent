@@ -67,7 +67,7 @@ defmodule InstrumentedTaskTest do
 
       spansaction =
         Enum.find(spans, fn %{attributes: attr} ->
-          attr[:category] == "Transaction"
+          attr[:"nr.entryPoint"] == true
         end)
 
       refute spansaction.attributes[:not_instrumented]
@@ -108,7 +108,7 @@ defmodule InstrumentedTaskTest do
 
       spansaction =
         Enum.find(spans, fn %{attributes: attr} ->
-          attr[:category] == "Transaction"
+          attr[:"nr.entryPoint"] == true
         end)
 
       refute spansaction.attributes[:not_instrumented]
@@ -166,7 +166,7 @@ defmodule InstrumentedTaskTest do
 
       spansaction =
         Enum.find(spans, fn %{attributes: attr} ->
-          attr[:category] == "Transaction"
+          attr[:"nr.entryPoint"] == true
         end)
 
       refute spansaction.attributes[:not_instrumented]
@@ -248,7 +248,7 @@ defmodule InstrumentedTaskTest do
 
       spansaction =
         Enum.find(spans, fn %{attributes: attr} ->
-          attr[:category] == "Transaction"
+          attr[:"nr.entryPoint"] == true
         end)
 
       refute spansaction.attributes[:not_instrumented]
@@ -320,7 +320,7 @@ defmodule InstrumentedTaskTest do
 
       spansaction =
         Enum.find(spans, fn %{attributes: attr} ->
-          attr[:category] == "Transaction"
+          attr[:"nr.entryPoint"] == true
         end)
 
       refute spansaction.attributes[:not_instrumented]
@@ -383,7 +383,7 @@ defmodule InstrumentedTaskTest do
 
       spansaction =
         Enum.find(spans, fn %{attributes: attr} ->
-          attr[:category] == "Transaction"
+          attr[:"nr.entryPoint"] == true
         end)
 
       refute spansaction.attributes[:not_instrumented]
@@ -412,7 +412,7 @@ defmodule InstrumentedTaskTest do
 
       spansaction =
         Enum.find(spans, fn %{attributes: attr} ->
-          attr[:category] == "Transaction"
+          attr[:"nr.entryPoint"] == true
         end)
 
       refute spansaction.attributes[:not_instrumented]

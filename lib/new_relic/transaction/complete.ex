@@ -195,7 +195,7 @@ defmodule NewRelic.Transaction.Complete do
 
   defp extract_span_events(:sampling, %{sampled: true} = tx_attrs, pid, spawns, exits) do
     spawned_process_span_events(tx_attrs, spawns, exits)
-    |> add_root_process_span_event(tx_attrs, pid)
+    |> add_spansactions(tx_attrs, pid)
   end
 
   defp extract_span_events(_trace_mode, _tx_attrs, _pid, _spawns, _exits) do
@@ -212,31 +212,6 @@ defmodule NewRelic.Transaction.Complete do
 
   defp calculate_apdex(%{duration_s: duration_s}, nil) do
     Util.Apdex.calculate(duration_s, apdex_t())
-  end
-
-  defp add_root_process_span_event(spans, tx_attrs, pid) do
-    [
-      %NewRelic.Span.Event{
-        trace_id: tx_attrs[:traceId],
-        transaction_id: tx_attrs[:guid],
-        sampled: tx_attrs[:sampled],
-        priority: tx_attrs[:priority],
-        category: "generic",
-        name: "Transaction Root Process",
-        guid: DistributedTrace.generate_guid(pid: pid),
-        parent_id: tx_attrs[:parentSpanId],
-        timestamp: tx_attrs[:start_time],
-        duration: tx_attrs[:duration_s],
-        entry_point: true,
-        category_attributes:
-          %{
-            pid: inspect(pid)
-          }
-          |> maybe_add(:tracingVendors, tx_attrs[:tracingVendors])
-          |> maybe_add(:trustedParentId, tx_attrs[:trustedParentId])
-      }
-      | spans
-    ]
   end
 
   @spansaction_exclude_attrs [
@@ -259,7 +234,9 @@ defmodule NewRelic.Transaction.Complete do
         trace_id: tx_attrs[:traceId],
         parent_id: tx_attrs[:parentSpanId],
         name: tx_attrs[:name],
-        category: "Transaction",
+        sampled: tx_attrs[:sampled],
+        priority: tx_attrs[:priority],
+        category: "generic",
         entry_point: true,
         timestamp: tx_attrs[:start_time],
         duration: tx_attrs[:duration_s],
@@ -267,8 +244,10 @@ defmodule NewRelic.Transaction.Complete do
           tx_attrs
           |> Map.drop(@spansaction_exclude_attrs)
           |> Map.merge(NewRelic.Config.automatic_attributes())
-          |> maybe_add(:tracingVendors, tx_attrs[:tracingVendors])
-          |> maybe_add(:trustedParentId, tx_attrs[:trustedParentId])
+          |> Map.merge(%{
+            tracingVendors: tx_attrs[:tracingVendors],
+            trustedParentId: tx_attrs[:trustedParentId]
+          })
       },
       %NewRelic.Span.Event{
         guid: DistributedTrace.generate_guid(pid: pid),
@@ -276,6 +255,8 @@ defmodule NewRelic.Transaction.Complete do
         trace_id: tx_attrs[:traceId],
         category: "generic",
         name: "Transaction Root Process",
+        sampled: tx_attrs[:sampled],
+        priority: tx_attrs[:priority],
         parent_id: tx_attrs[:guid],
         timestamp: tx_attrs[:start_time],
         duration: tx_attrs[:duration_s],
@@ -284,10 +265,6 @@ defmodule NewRelic.Transaction.Complete do
       | spans
     ]
   end
-
-  def maybe_add(attrs, _key, nil), do: attrs
-  def maybe_add(attrs, _key, ""), do: attrs
-  def maybe_add(attrs, key, value), do: Map.put(attrs, key, value)
 
   defp spawned_process_span_events(tx_attrs, process_spawns, process_exits) do
     process_spawns

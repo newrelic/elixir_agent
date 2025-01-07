@@ -139,7 +139,7 @@ defmodule InfiniteTracingTest do
 
     tx_span =
       Enum.find(spans, fn %{attributes: attr} ->
-        attr[:category] == "Transaction"
+        attr[:"nr.entryPoint"] == true
       end)
 
     tx_root_process_span =

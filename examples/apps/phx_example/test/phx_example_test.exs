@@ -53,6 +53,19 @@ defmodule PhxExampleTest do
         assert event[:status] == 200
       end
 
+      test "Phoenix spans generated" do
+        TestSupport.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+        {:ok, %{body: body}} = request("/phx/home", unquote(server))
+        assert body =~ "Some content"
+
+        span_events = TestSupport.gather_harvest(Collector.SpanEvent.Harvester)
+
+        tx_span = TestSupport.find_span(span_events, "/Phoenix/PhxExampleWeb.HomeLive/index")
+        process_span = TestSupport.find_span(span_events, "Transaction Root Process")
+
+        assert process_span[:parentId] == tx_span[:guid]
+      end
+
       @tag :capture_log
       test "Phoenix error" do
         TestSupport.restart_harvest_cycle(Collector.Metric.HarvestCycle)

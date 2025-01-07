@@ -193,8 +193,11 @@ defmodule SpanEventTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    [tx_root_process_event, _, _] =
+    [spansaction_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] -> ev[:"nr.entryPoint"] == true end)
+
+    [tx_root_process_event, _, _] =
+      Enum.find(span_events, fn [ev, _, _] -> ev[:parentId] == spansaction_event[:guid] end)
 
     [request_process_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] -> ev[:parentId] == tx_root_process_event[:guid] end)
@@ -220,6 +223,7 @@ defmodule SpanEventTest do
     assert tx_event[:parentId] == "7d3efb1b173fecfa"
 
     assert tx_event[:traceId] == "d6b4ba0c3a712ca"
+    assert spansaction_event[:traceId] == "d6b4ba0c3a712ca"
     assert tx_root_process_event[:traceId] == "d6b4ba0c3a712ca"
     assert request_process_event[:traceId] == "d6b4ba0c3a712ca"
     assert function_event[:traceId] == "d6b4ba0c3a712ca"
@@ -227,6 +231,7 @@ defmodule SpanEventTest do
     assert task_event[:traceId] == "d6b4ba0c3a712ca"
     assert nested_external_event[:traceId] == "d6b4ba0c3a712ca"
 
+    assert spansaction_event[:transactionId] == tx_event[:guid]
     assert tx_root_process_event[:transactionId] == tx_event[:guid]
     assert request_process_event[:transactionId] == tx_event[:guid]
     assert function_event[:transactionId] == tx_event[:guid]
@@ -235,6 +240,7 @@ defmodule SpanEventTest do
     assert nested_external_event[:transactionId] == tx_event[:guid]
 
     assert tx_event[:sampled] == true
+    assert spansaction_event[:sampled] == true
     assert tx_root_process_event[:sampled] == true
     assert request_process_event[:sampled] == true
     assert function_event[:sampled] == true
@@ -243,6 +249,7 @@ defmodule SpanEventTest do
     assert nested_external_event[:sampled] == true
 
     assert tx_event[:priority] == 0.987654
+    assert spansaction_event[:priority] == 0.987654
     assert tx_root_process_event[:priority] == 0.987654
     assert request_process_event[:priority] == 0.987654
     assert function_event[:priority] == 0.987654
@@ -255,7 +262,8 @@ defmodule SpanEventTest do
     assert function_event[:"tracer.reductions"] |> is_number
     assert function_event[:"tracer.reductions"] > 1
 
-    assert tx_root_process_event[:parentId] == "5f474d64b9cc9b2a"
+    assert spansaction_event[:parentId] == "5f474d64b9cc9b2a"
+    assert tx_root_process_event[:parentId] == spansaction_event[:guid]
     assert request_process_event[:parentId] == tx_root_process_event[:guid]
     assert function_event[:parentId] == request_process_event[:guid]
     assert nested_function_event[:parentId] == function_event[:guid]
