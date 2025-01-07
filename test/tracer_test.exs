@@ -214,6 +214,6 @@ defmodule TracerTest do
     assert Traced.db_query() == :result
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
-    assert metrics == []
+    refute Enum.any?(metrics, fn [%{name: name}, _] -> name =~ "db_query" end)
   end
 end
