@@ -160,7 +160,7 @@ defmodule MyExternalService do
 end
 ```
 
-#### Pre-Instrumented Modules
+#### Mix Tasks
 
 `NewRelic.Instrumented.Mix.Task` To enable the agent and record an Other Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, records a Transaction, and is shut down.
 
@@ -173,13 +173,6 @@ defmodule Mix.Tasks.Example do
     # ...
   end
 end
-```
-
-`NewRelic.Instrumented.HTTPoison` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace.
-
-```elixir
-alias NewRelic.Instrumented.HTTPoison
-HTTPoison.get("http://www.example.com")
 ```
 
 #### Other Transactions
