@@ -58,7 +58,7 @@ defmodule DistributedTraceTest do
         primary_application_id: 1441
       )
 
-    send(DistributedTrace.BackoffSampler, :reset)
+    NewRelic.DistributedTrace.BackoffSampler.reset()
 
     on_exit(fn ->
       reset_config.()

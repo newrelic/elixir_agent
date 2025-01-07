@@ -6,7 +6,7 @@ defmodule OtherTransactionTest do
 
   setup do
     reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
-    send(NewRelic.DistributedTrace.BackoffSampler, :reset)
+    NewRelic.DistributedTrace.BackoffSampler.reset()
 
     on_exit(fn ->
       reset_config.()
