@@ -289,6 +289,25 @@ defmodule NewRelic do
   defdelegate increment_custom_metric(name, count \\ 1),
     to: NewRelic.Harvest.Collector.Metric.Harvester
 
+  @doc """
+  Report an Exception inside a Transaction.
+
+  This should only be used when you `rescue` an exception inside a Transaction,
+  but still want to report it. All un-rescued exceptions are already reported as errors.
+
+  ## Example
+
+  ```elixir
+  try do
+    raise RuntimeError
+  rescue
+    exception -> NewRelic.notice_error(exception, __STACKTRACE__)
+  end
+  ```
+  """
+  @spec notice_error(Exception.t(), Exception.stacktrace()) :: :ok
+  defdelegate notice_error(exception, stacktrace), to: NewRelic.Transaction.Reporter
+
   @doc false
   defdelegate enable_erlang_trace, to: NewRelic.Transaction.ErlangTraceManager
 
