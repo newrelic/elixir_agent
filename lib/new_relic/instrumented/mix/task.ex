@@ -8,9 +8,7 @@ defmodule NewRelic.Instrumented.Mix.Task do
         _ ->
           require Logger
 
-          Logger.error(
-            "[New Relic] Unable to instrument #{inspect(__MODULE__)} since it isn't a Mix.Task"
-          )
+          Logger.error("[New Relic] Unable to instrument #{inspect(__MODULE__)} since it isn't a Mix.Task")
       end
     end
   end

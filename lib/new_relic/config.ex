@@ -256,8 +256,7 @@ defmodule NewRelic.Config do
   def event_harvest_config() do
     %{
       harvest_limits: %{
-        analytic_event_data:
-          Application.get_env(:new_relic_agent, :analytic_event_per_minute, 1000),
+        analytic_event_data: Application.get_env(:new_relic_agent, :analytic_event_per_minute, 1000),
         custom_event_data: Application.get_env(:new_relic_agent, :custom_event_per_minute, 1000),
         error_event_data: Application.get_env(:new_relic_agent, :error_event_per_minute, 100),
         span_event_data: Application.get_env(:new_relic_agent, :span_event_per_minute, 1000)

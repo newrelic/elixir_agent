@@ -2,9 +2,7 @@ defmodule DimensionalMetricTest do
   use ExUnit.Case
 
   test "reports dimensional metrics" do
-    TestHelper.restart_harvest_cycle(
-      NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle
-    )
+    TestHelper.restart_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
 
     NewRelic.report_dimensional_metric(:count, "memory.foo_baz", 100, %{cpu: 1000})
     NewRelic.report_dimensional_metric(:summary, "memory.foo_bar", 50, %{cpu: 2000})
@@ -28,9 +26,7 @@ defmodule DimensionalMetricTest do
   end
 
   test "gauge dimensional metric is updated" do
-    TestHelper.restart_harvest_cycle(
-      NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle
-    )
+    TestHelper.restart_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
 
     NewRelic.report_dimensional_metric(:gauge, "mem_percent.foo_baz", 10, %{cpu: 1000})
     NewRelic.report_dimensional_metric(:gauge, "mem_percent.foo_baz", 40, %{cpu: 1000})
@@ -51,9 +47,7 @@ defmodule DimensionalMetricTest do
   end
 
   test "count dimensional metric is updated" do
-    TestHelper.restart_harvest_cycle(
-      NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle
-    )
+    TestHelper.restart_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
 
     NewRelic.report_dimensional_metric(:count, "OOM", 1, %{cpu: 1000})
     NewRelic.report_dimensional_metric(:count, "OOM", 1, %{cpu: 1000})
@@ -74,9 +68,7 @@ defmodule DimensionalMetricTest do
   end
 
   test "summary dimensional metric is updated" do
-    TestHelper.restart_harvest_cycle(
-      NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle
-    )
+    TestHelper.restart_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
 
     NewRelic.report_dimensional_metric(:summary, "duration", 40.5, %{cpu: 1000})
     NewRelic.report_dimensional_metric(:summary, "duration", 20.5, %{cpu: 1000})
