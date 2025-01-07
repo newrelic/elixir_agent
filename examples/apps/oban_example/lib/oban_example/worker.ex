@@ -6,7 +6,7 @@ defmodule ObanExample.Worker do
     {:error, message}
   end
 
-  def perform(%Oban.Job{args: args}) do
+  def perform(%Oban.Job{args: _args}) do
     Process.sleep(:rand.uniform(50))
     :ok
   end
