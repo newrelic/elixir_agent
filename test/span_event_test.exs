@@ -117,6 +117,7 @@ defmodule SpanEventTest do
     def function do
       Process.sleep(10)
       NewRelic.set_span(:generic, some: "attribute")
+      NewRelic.add_span_attributes(another: "attr")
       http_request()
     end
 
@@ -173,6 +174,7 @@ defmodule SpanEventTest do
 
     assert function[:category] == "generic"
     assert function[:some] == "attribute"
+    assert function[:another] == "attr"
     refute function[:url]
 
     assert http_request[:category] == "http"

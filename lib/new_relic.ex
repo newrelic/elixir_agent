@@ -19,6 +19,7 @@ defmodule NewRelic do
   NewRelic.set_transaction_name("/Plug/custom/transaction/name")
   ```
   """
+  @spec set_transaction_name(String.t()) :: any()
   defdelegate set_transaction_name(name), to: NewRelic.Transaction.Reporter
 
   @doc """
@@ -47,10 +48,12 @@ defmodule NewRelic do
   * Nested Lists and Maps are truncated at 10 items since there are a limited number
   of attributes that can be reported on Transaction events
   """
-  defdelegate add_attributes(custom_attributes), to: NewRelic.Transaction.Reporter
+  @spec add_attributes(attributes :: Keyword.t()) :: any()
+  defdelegate add_attributes(attributes), to: NewRelic.Transaction.Reporter
 
   @doc false
-  defdelegate incr_attributes(attrs), to: NewRelic.Transaction.Reporter
+  @spec incr_attributes(attributes :: Keyword.t()) :: any()
+  defdelegate incr_attributes(attributes), to: NewRelic.Transaction.Reporter
 
   @doc """
   Start an "Other" Transaction.
@@ -80,7 +83,7 @@ defmodule NewRelic do
   * If multiple transactions are started in the same Process, you must
   call `NewRelic.stop_transaction/0` to mark the end of the transaction.
   """
-  @spec start_transaction(String.t(), String.t()) :: :ok
+  @spec start_transaction(String.t(), String.t()) :: any()
   defdelegate start_transaction(category, name), to: NewRelic.OtherTransaction
 
   @doc """
@@ -89,7 +92,7 @@ defmodule NewRelic do
   If multiple transactions are started in the same Process, you must
   call `NewRelic.stop_transaction/0` to mark the end of the transaction.
   """
-  @spec stop_transaction() :: :ok
+  @spec stop_transaction() :: any()
   defdelegate stop_transaction(), to: NewRelic.OtherTransaction
 
   @doc """
@@ -134,11 +137,13 @@ defmodule NewRelic do
   end
   ```
   """
+  @spec ignore_transaction() :: any()
   defdelegate ignore_transaction(), to: NewRelic.Transaction.Reporter
 
   @doc """
   Call to exclude the current process from being part of the Transaction.
   """
+  @spec exclude_from_transaction() :: any()
   defdelegate exclude_from_transaction(), to: NewRelic.Transaction.Reporter
 
   @doc """
@@ -146,6 +151,8 @@ defmodule NewRelic do
   Return a Transaction reference that can be used to manually connect a
   process to a Transaction with `NewRelic.connect_to_transaction/1`
   """
+  @type tx_ref :: any()
+  @spec get_transaction() :: tx_ref
   defdelegate get_transaction(), to: NewRelic.Transaction.Reporter
 
   @doc """
@@ -159,12 +166,14 @@ defmodule NewRelic do
   This connection will persist until the process exits or
   `NewRelic.disconnect_from_transaction/0` is called.
   """
+  @spec connect_to_transaction(tx_ref) :: any()
   defdelegate connect_to_transaction(ref), to: NewRelic.Transaction.Reporter
 
   @doc """
   Advanced:
   Call to manually disconnect the current process from the current Transaction.
   """
+  @spec disconnect_from_transaction() :: any()
   defdelegate disconnect_from_transaction(), to: NewRelic.Transaction.Reporter
 
   @doc """
@@ -188,7 +197,31 @@ defmodule NewRelic do
   hostname: hostname, component: component)
   ```
   """
+  @spec set_span(:generic, attributes :: Keyword.t()) :: any()
+  @spec set_span(:http, url: String.t(), method: String.t(), component: String.t()) :: any()
+  @spec set_span(:datastore,
+          statement: String.t(),
+          instance: String.t(),
+          address: String.t(),
+          hostname: String.t(),
+          component: String.t()
+        ) :: any()
   defdelegate set_span(type, attributes), to: NewRelic.DistributedTrace
+
+  @doc """
+  Add additional attributes to the current Span (not the current Transaction).
+
+  Useful for reporting additional information about work being done in, for example,
+  a function being traced with `@trace`
+
+  ## Example
+
+  ```elixir
+  NewRelic.add_span_attributes(some: "attribute")
+  ```
+  """
+  @spec add_span_attributes(attributes :: Keyword.t()) :: any()
+  defdelegate add_span_attributes(attributes), to: NewRelic.DistributedTrace
 
   @doc """
   You must manually instrument outgoing HTTP calls to connect them to a Distributed Trace.
@@ -205,7 +238,7 @@ defmodule NewRelic do
   * Call `distributed_trace_headers` immediately before making the
   request since calling the function marks the "start" time of the request.
   """
-  @spec distributed_trace_headers(:http) :: [{key :: binary, value :: binary}]
+  @spec distributed_trace_headers(:http) :: [{key :: String.t(), value :: String.t()}]
   defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
 
   @doc """
@@ -239,6 +272,7 @@ defmodule NewRelic do
   * `reductions`
   * `memory_kb`
   """
+  @spec sample_process() :: any()
   defdelegate sample_process, to: NewRelic.Sampler.Process
 
   @doc """
@@ -250,7 +284,8 @@ defmodule NewRelic do
   NewRelic.report_custom_event("EventType", %{"foo" => "bar"})
   ```
   """
-  defdelegate report_custom_event(type, attributes),
+  @spec report_custom_event(type :: String.t(), event :: map()) :: any()
+  defdelegate report_custom_event(type, event),
     to: NewRelic.Harvest.Collector.CustomEvent.Harvester
 
   @doc """
@@ -263,6 +298,12 @@ defmodule NewRelic do
   NewRelic.report_dimensional_metric(:count, "my_metric_name", 1, %{some: "attributes"})
   ```
   """
+  @spec report_dimensional_metric(
+          type :: :count | :gauge | :summary,
+          name :: String.t(),
+          value :: number,
+          attributes :: map()
+        ) :: any()
   defdelegate report_dimensional_metric(type, name, value, attributes \\ %{}),
     to: NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.Harvester
 
@@ -275,6 +316,7 @@ defmodule NewRelic do
   NewRelic.report_custom_metric("My/Metric", 123)
   ```
   """
+  @spec report_custom_event(name :: String.t(), value :: number()) :: any()
   defdelegate report_custom_metric(name, value),
     to: NewRelic.Harvest.Collector.Metric.Harvester
 
@@ -287,6 +329,7 @@ defmodule NewRelic do
   NewRelic.increment_custom_metric("My/Metric")
   ```
   """
+  @spec increment_custom_metric(name :: String.t(), count :: integer()) :: any()
   defdelegate increment_custom_metric(name, count \\ 1),
     to: NewRelic.Harvest.Collector.Metric.Harvester
 
@@ -306,7 +349,7 @@ defmodule NewRelic do
   end
   ```
   """
-  @spec notice_error(Exception.t(), Exception.stacktrace()) :: :ok
+  @spec notice_error(Exception.t(), Exception.stacktrace()) :: any()
   defdelegate notice_error(exception, stacktrace), to: NewRelic.Transaction.Reporter
 
   @doc false
