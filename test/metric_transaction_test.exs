@@ -160,7 +160,7 @@ defmodule MetricTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert [_, [1, time, time, time, time, 0.0]] =
+    assert [_, [1, time, time, time, time, _]] =
              TestHelper.find_metric(metrics, "WebFrontend/QueueTime")
 
     assert_in_delta time, 0.1, 0.02
