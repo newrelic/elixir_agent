@@ -8,14 +8,23 @@ defmodule NewRelic.Telemetry.Supervisor do
   end
 
   def init(_) do
-    children = [
+    Supervisor.init(
+      children(enabled: NewRelic.Config.enabled?()),
+      strategy: :one_for_one
+    )
+  end
+
+  defp children(enabled: true) do
+    [
       NewRelic.Telemetry.Ecto.Supervisor,
       NewRelic.Telemetry.Redix,
       NewRelic.Telemetry.Plug,
       NewRelic.Telemetry.Phoenix,
       NewRelic.Telemetry.Oban
     ]
+  end
 
-    Supervisor.init(children, strategy: :one_for_one)
+  defp children(enabled: false) do
+    []
   end
 end

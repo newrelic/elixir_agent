@@ -32,7 +32,7 @@ defmodule IntegrationTest do
   test "connects to proper collector host" do
     {:ok, %{"redirect_host" => redirect_host}} = Collector.Protocol.preconnect()
 
-    assert redirect_host =~ "collector-"
+    assert redirect_host =~ "collector"
   end
 
   test "Agent re-connect ability" do

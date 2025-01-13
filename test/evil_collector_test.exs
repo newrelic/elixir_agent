@@ -28,6 +28,7 @@ defmodule EvilCollectorTest do
 
   setup_all do
     Application.put_env(:new_relic_agent, :collector_instance_host, "localhost")
+    Application.put_env(:new_relic_agent, :bypass_collector, false)
 
     reset_config =
       TestHelper.update(:nr_config,
@@ -39,6 +40,7 @@ defmodule EvilCollectorTest do
 
     on_exit(fn ->
       Application.delete_env(:new_relic_agent, :collector_instance_host)
+      Application.put_env(:new_relic_agent, :bypass_collector, true)
       reset_config.()
     end)
 
