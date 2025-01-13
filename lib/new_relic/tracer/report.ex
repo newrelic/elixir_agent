@@ -16,12 +16,7 @@ defmodule NewRelic.Tracer.Report do
         edge,
         timing
       ) do
-    {name, options} =
-      case trace_annotation do
-        {name, options} -> {name, options}
-        name -> {name, []}
-      end
-
+    {name, options} = trace_annotation
     category = Keyword.get(options, :category, :function)
 
     report(

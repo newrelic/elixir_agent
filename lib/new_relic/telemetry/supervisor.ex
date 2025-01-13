@@ -20,7 +20,8 @@ defmodule NewRelic.Telemetry.Supervisor do
       NewRelic.Telemetry.Redix,
       NewRelic.Telemetry.Plug,
       NewRelic.Telemetry.Phoenix,
-      NewRelic.Telemetry.Oban
+      NewRelic.Telemetry.Oban,
+      NewRelic.Telemetry.Finch
     ]
   end
 

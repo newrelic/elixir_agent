@@ -103,6 +103,11 @@ defmodule NewRelic.Init do
           "NEW_RELIC_OBAN_INSTRUMENTATION_ENABLED",
           :oban_instrumentation_enabled
         ),
+      finch_instrumentation:
+        determine_feature(
+          "NEW_RELIC_FINCH_INSTRUMENTATION_ENABLED",
+          :finch_instrumentation_enabled
+        ),
       function_argument_collection:
         determine_feature(
           "NEW_RELIC_FUNCTION_ARGUMENT_COLLECTION_ENABLED",

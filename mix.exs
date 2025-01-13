@@ -54,7 +54,8 @@ defmodule NewRelic.Mixfile do
       {:ecto_sql, ">= 3.4.0", optional: true},
       {:ecto, ">= 3.9.5", optional: true},
       {:redix, ">= 0.11.0", optional: true},
-      {:oban, ">= 2.0.0", optional: true}
+      {:oban, ">= 2.0.0", optional: true},
+      {:finch, ">= 0.18.0", optional: true}
     ]
   end
 

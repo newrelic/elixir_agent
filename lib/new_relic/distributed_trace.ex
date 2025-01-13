@@ -244,8 +244,8 @@ defmodule NewRelic.DistributedTrace do
 
   def set_current_span(label: label, ref: ref) do
     current = {label, ref}
-    previous_span = Process.get(:nr_current_span)
-    previous_span_attrs = Process.get(:nr_current_span_attrs)
+    previous_span = Process.delete(:nr_current_span)
+    previous_span_attrs = Process.delete(:nr_current_span_attrs)
     Process.put(:nr_current_span, current)
     {current, previous_span, previous_span_attrs}
   end

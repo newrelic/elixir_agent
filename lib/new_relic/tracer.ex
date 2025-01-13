@@ -16,52 +16,21 @@ defmodule NewRelic.Tracer do
 
   #### Example
 
-  Trace as a function:
+  Trace a function:
 
   ```elixir
   defmodule MyModule do
     use NewRelic.Tracer
 
-    @trace :func
-    def func do
-      # Will report as `MyModule.func/0`
+    @trace :my_function
+    def my_function do
+      # Will report as `MyModule.my_function/0`
     end
-  end
-  ```
 
-  #### Categories
-
-  To categorize External Service calls you must give the trace annotation a category.
-
-  You may also call `NewRelic.set_span/2` to provide better naming for metrics & spans, and additonally annotate the outgoing HTTP headers with the Distributed Tracing context to track calls across services.
-
-  ```elixir
-  defmodule MyExternalService do
-    use NewRelic.Tracer
-
-    @trace {:request, category: :external}
-    def request(method, url, headers) do
-      NewRelic.set_span(:http, url: url, method: method, component: "HttpClient")
-      headers ++ NewRelic.distributed_trace_headers(:http)
-      HttpClient.request(method, url, headers)
+    @trace :alias
+    def my_function do
+      # Will report as `MyModule.my_function:alias/0`
     end
-  end
-  ```
-
-  This will:
-  * Post `External` metrics to APM
-  * Add custom attributes to Transaction events:
-    - `external_call_count`
-    - `external_duration_ms`
-    - `external.MyExternalService.query.call_count`
-    - `external.MyExternalService.query.duration_ms`
-
-  Transactions that call the traced `ExternalService` functions will contain `external_call_count` attribute
-
-  ```elixir
-  get "/endpoint" do
-    ExternalService.request(:get, url, headers)
-    send_resp(conn, 200, "ok")
   end
   ```
 
@@ -83,6 +52,31 @@ defmodule NewRelic.Tracer do
   This will prevent the argument values from becoming part of Transaction Traces.
 
   This may also be configured globally via `Application` config. See `NewRelic.Config` for details.
+
+  #### External Service calls
+
+  > #### Finch {: .warning}
+  >
+  > `Finch` requests are auto-instrumented, so you don't need to use `category: :external` tracers or call `set_span` if you use `Finch`.
+  > You may still want to use a normal tracer for functions that make HTTP requests if they do additional work worth instrumenting.
+  > Automatic `Finch` instrumentation can not inject Distributed Trace headers, so that must still be done manually.
+
+  To manually instrument External Service calls you must give the trace annotation a category.
+
+  You may also call `NewRelic.set_span/2` to provide better naming for metrics & spans, and additionally annotate the outgoing HTTP headers with the Distributed Tracing context to track calls across services.
+
+  ```elixir
+  defmodule MyExternalService do
+    use NewRelic.Tracer
+
+    @trace {:request, category: :external}
+    def request(method, url, headers) do
+      NewRelic.set_span(:http, url: url, method: method, component: "HttpClient")
+      headers ++ NewRelic.distributed_trace_headers(:http)
+      HttpClient.request(method, url, headers)
+    end
+  end
+  ```
   """
 
   defmacro __using__(_args) do
