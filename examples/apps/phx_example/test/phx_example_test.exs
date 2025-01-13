@@ -23,6 +23,10 @@ defmodule PhxExampleTest do
 
         [[_, event]] = TestSupport.gather_harvest(Collector.TransactionEvent.Harvester)
 
+        if event[:"bandit.resp_duration_ms"] do
+          assert event[:"bandit.resp_duration_ms"] > 0
+        end
+
         assert event[:"phoenix.endpoint"] =~ "PhxExampleWeb"
         assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
         assert event[:"phoenix.controller"] == "PhxExampleWeb.PageController"
