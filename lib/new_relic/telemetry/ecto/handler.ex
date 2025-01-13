@@ -88,10 +88,15 @@ defmodule NewRelic.Telemetry.Ecto.Handler do
         databaseCallCount: 1,
         databaseDuration: duration_s,
         datastore_call_count: 1,
-        datastore_duration_ms: duration_ms,
-        "datastore.#{table}.call_count": 1,
-        "datastore.#{table}.duration_ms": duration_ms
+        datastore_duration_ms: duration_ms
       )
+
+      if NewRelic.Config.feature?(:extended_attributes) do
+        NewRelic.incr_attributes(
+          "datastore.#{table}.call_count": 1,
+          "datastore.#{table}.duration_ms": duration_ms
+        )
+      end
     end
   end
 

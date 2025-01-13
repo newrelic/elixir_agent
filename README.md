@@ -72,16 +72,6 @@ config :new_relic_agent,
   httpc_request_options: [connect_timeout: 5000]
 ```
 
-#### For Elixir 1.15 and higher
-
-Due to changes in the Elixir 1.15 Logger, additional logger configuration is needed for NewRelic to capture all errors. Update your logger configuration by setting `handle_sasl_reports` to `true` and adding `NewRelic.ErrorLogger` to your logger backends.
-
-```elixir
-config :logger,
-  handle_sasl_reports: true,
-  backends: [:console, NewRelic.ErrorLogger]
-```
-
 ## Telemetry-based Instrumentation
 
 Some common Elixir packages are auto-instrumented via [`telemetry`](https://github.com/beam-telemetry/telemetry)
@@ -157,7 +147,7 @@ defmodule MyExternalService do
 end
 ```
 
-#### Pre-Instrumented Modules
+#### Mix Tasks
 
 `NewRelic.Instrumented.Mix.Task` To enable the agent and record an Other Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, records a Transaction, and is shut down.
 
@@ -170,13 +160,6 @@ defmodule Mix.Tasks.Example do
     # ...
   end
 end
-```
-
-`NewRelic.Instrumented.HTTPoison` Automatically wraps HTTP calls in a span, and adds an outbound header to track the request as part of a Distributed Trace.
-
-```elixir
-alias NewRelic.Instrumented.HTTPoison
-HTTPoison.get("http://www.example.com")
 ```
 
 #### Other Transactions

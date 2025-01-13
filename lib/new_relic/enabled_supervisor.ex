@@ -19,6 +19,8 @@ defmodule NewRelic.EnabledSupervisor do
       NewRelic.Aggregate.Supervisor
     ]
 
+    NewRelic.OsMon.start()
+
     Supervisor.init(children, strategy: :one_for_one)
   end
 end

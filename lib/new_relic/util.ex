@@ -126,7 +126,7 @@ defmodule NewRelic.Util do
     %{
       metadata_version: 5,
       logical_processors: :erlang.system_info(:logical_processors),
-      total_ram_mib: get_system_memory(),
+      total_ram_mib: NewRelic.OsMon.get_system_memory(),
       hostname: hostname()
     }
     |> maybe_add_ip_addresses
@@ -167,14 +167,6 @@ defmodule NewRelic.Util do
     case :net_adm.dns_hostname(:net_adm.localhost()) do
       {:ok, fqdn} -> Map.put(util, :full_hostname, to_string(fqdn))
       _ -> util
-    end
-  end
-
-  @mb 1024 * 1024
-  defp get_system_memory() do
-    case :memsup.get_system_memory_data()[:system_total_memory] do
-      nil -> nil
-      bytes -> trunc(bytes / @mb)
     end
   end
 

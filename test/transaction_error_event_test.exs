@@ -148,6 +148,7 @@ defmodule TransactionErrorEventTest do
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
   end
 
+  @tag :capture_log
   test "instrument & harvest" do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
@@ -179,6 +180,7 @@ defmodule TransactionErrorEventTest do
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
+  @tag :capture_log
   test "cowboy request process exit" do
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     Logger.remove_backend(:console)
@@ -211,6 +213,7 @@ defmodule TransactionErrorEventTest do
     TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
   end
 
+  @tag :capture_log
   test "Report a nested error inside the transaction if we catch it" do
     Logger.remove_backend(:console)
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)

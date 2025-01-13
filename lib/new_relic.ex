@@ -182,7 +182,7 @@ defmodule NewRelic do
   ```elixir
   NewRelic.set_span(:generic, some: "attribute")
 
-  NewRelic.set_span(:http, url: "https://elixir-lang.org", method: "GET", component: "HTTPoison")
+  NewRelic.set_span(:http, url: "https://elixir-lang.org", method: "GET", component: "HttpClient")
 
   NewRelic.set_span(:datastore, statement: statement, instance: instance, address: address,
   hostname: hostname, component: component)
@@ -197,7 +197,7 @@ defmodule NewRelic do
   of an incoming Distributed Trace, but outgoing requests need an extra header:
 
   ```elixir
-  HTTPoison.get(url, ["x-api-key": "secret"] ++ NewRelic.distributed_trace_headers(:http))
+  Req.get(url, headers: ["x-api-key": "secret"] ++ NewRelic.distributed_trace_headers(:http))
   ```
 
   ## Notes

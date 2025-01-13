@@ -55,8 +55,16 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     do:
       params
       |> collector_method_url
-      |> NewRelic.Util.HTTP.post(payload, collector_headers())
+      |> post(payload)
       |> parse_http_response(params)
+
+  defp post(url, payload) do
+    if Application.get_env(:new_relic_agent, :bypass_collector, false) do
+      {:error, :bypass_collector}
+    else
+      NewRelic.Util.HTTP.post(url, payload, collector_headers())
+    end
+  end
 
   defp retry_call({:ok, response}, _params, _payload), do: {:ok, response}
 
@@ -118,6 +126,10 @@ defmodule NewRelic.Harvest.Collector.Protocol do
     NewRelic.report_metric({:supportability, :collector}, status: status)
     log_error(status, :unexpected_response, params, body)
     {:error, status}
+  end
+
+  defp parse_http_response({:error, :bypass_collector}, _params) do
+    {:error, :bypass_collector}
   end
 
   defp parse_http_response({:error, reason}, params) do

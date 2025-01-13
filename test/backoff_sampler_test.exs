@@ -19,7 +19,7 @@ defmodule BackoffSamplerTest do
     assert BackoffSampler.sample?()
     assert BackoffSampler.sample?()
 
-    # The rest will be ignored
+    # The rest will be dropped
     refute BackoffSampler.sample?()
     refute BackoffSampler.sample?()
     refute BackoffSampler.sample?()
@@ -95,5 +95,49 @@ defmodule BackoffSamplerTest do
       sampling_target: 10,
       decided_count_last: 0
     })
+  end
+
+  test "cycles trigger" do
+    Application.put_env(:new_relic_agent, :sampling_target_period, 100)
+
+    BackoffSampler.reset()
+    BackoffSampler.trigger_next_cycle()
+
+    # Target is 10, so it will sample the first 10
+    assert BackoffSampler.sample?()
+    assert BackoffSampler.sample?()
+    assert BackoffSampler.sample?()
+    assert BackoffSampler.sample?()
+    assert BackoffSampler.sample?()
+    assert BackoffSampler.sample?()
+    assert BackoffSampler.sample?()
+    assert BackoffSampler.sample?()
+    assert BackoffSampler.sample?()
+    assert BackoffSampler.sample?()
+
+    # The rest will be dropped
+    refute BackoffSampler.sample?()
+    refute BackoffSampler.sample?()
+    refute BackoffSampler.sample?()
+    refute BackoffSampler.sample?()
+
+    # Wait until the next cycle
+    Process.sleep(110)
+
+    # Next cycle it will adjust and take some, but not all
+    decisions = [
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?(),
+      BackoffSampler.sample?()
+    ]
+
+    assert true in decisions
+    assert false in decisions
   end
 end

@@ -13,7 +13,7 @@ defmodule NewRelic.GracefulShutdown do
 
   def terminate(_reason, _state) do
     NewRelic.log(:info, "Attempting graceful shutdown")
-    NewRelic.Error.Supervisor.remove_handler()
+    NewRelic.Error.Supervisor.remove_filter()
     NewRelic.Harvest.Supervisor.manual_shutdown()
   end
 end

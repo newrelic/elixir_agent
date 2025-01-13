@@ -26,6 +26,7 @@ defmodule NewRelic.DistributedTrace.BackoffSampler do
     :persistent_term.put({__MODULE__, :counter}, new(@size, []))
     put(@sampling_target, AgentRun.lookup(:sampling_target) || 10)
 
+    trigger_next_cycle()
     {:ok, %{}}
   end
 
@@ -94,7 +95,7 @@ defmodule NewRelic.DistributedTrace.BackoffSampler do
 
   def trigger_next_cycle() do
     cycle_period = AgentRun.lookup(:sampling_target_period) || 60_000
-    Process.send_after(self(), :cycle, cycle_period)
+    Process.send_after(__MODULE__, :cycle, cycle_period)
   end
 
   def update_state(false = _sampled?) do
