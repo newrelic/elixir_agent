@@ -29,6 +29,11 @@ defmodule TransactionTest do
       send_resp(conn, 200, "bar")
     end
 
+    get "/fn_trace" do
+      HelperModule.function(10)
+      send_resp(conn, 200, "fn_trace")
+    end
+
     get "/incr" do
       NewRelic.set_transaction_name("/incr")
       NewRelic.incr_attributes(one: 1, two: 1, four: 2)
@@ -539,5 +544,33 @@ defmodule TransactionTest do
     [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
     assert event[:"cowboy.connection_error"] == "timeout"
+  end
+
+  describe "Extended attributes" do
+    test "can be turned on" do
+      reset_features = TestHelper.update(:nr_features, extended_attributes: true)
+      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+      TestHelper.request(TestPlugApp, conn(:get, "/fn_trace"))
+
+      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+      assert event[:"function.TransactionTest.HelperModule.function/1.call_count"] == 1
+
+      reset_features.()
+    end
+
+    test "can be turned off" do
+      reset_features = TestHelper.update(:nr_features, extended_attributes: false)
+      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+      TestHelper.request(TestPlugApp, conn(:get, "/fn_trace"))
+
+      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+      refute event[:"function.TransactionTest.HelperModule.function/1.call_count"]
+
+      reset_features.()
+    end
   end
 end

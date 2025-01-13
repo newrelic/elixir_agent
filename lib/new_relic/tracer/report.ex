@@ -86,10 +86,12 @@ defmodule NewRelic.Tracer.Report do
             })
         )
 
-        NewRelic.incr_attributes(
-          "external.#{host}.call_count": 1,
-          "external.#{host}.duration_ms": duration_ms
-        )
+        if NewRelic.Config.feature?(:extended_attributes) do
+          NewRelic.incr_attributes(
+            "external.#{host}.call_count": 1,
+            "external.#{host}.duration_ms": duration_ms
+          )
+        end
 
         NewRelic.report_metric({:external, url, component, method}, duration_s: duration_s)
 
@@ -126,10 +128,12 @@ defmodule NewRelic.Tracer.Report do
             })
         )
 
-        NewRelic.incr_attributes(
-          "external.#{function_name}.call_count": 1,
-          "external.#{function_name}.duration_ms": duration_ms
-        )
+        if NewRelic.Config.feature?(:extended_attributes) do
+          NewRelic.incr_attributes(
+            "external.#{function_name}.call_count": 1,
+            "external.#{function_name}.duration_ms": duration_ms
+          )
+        end
 
         NewRelic.report_metric({:external, function_name}, duration_s: duration_s)
 
@@ -192,6 +196,13 @@ defmodule NewRelic.Tracer.Report do
           "tracer.reductions": reductions
         })
     )
+
+    if NewRelic.Config.feature?(:extended_attributes) do
+      NewRelic.incr_attributes(
+        "function.#{function_name}.call_count": 1,
+        "function.#{function_name}.duration_ms": duration_ms
+      )
+    end
 
     NewRelic.report_metric(
       {:function, function_name},

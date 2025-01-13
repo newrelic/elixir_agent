@@ -117,6 +117,11 @@ defmodule NewRelic.Init do
         determine_feature(
           "NEW_RELIC_REQUEST_QUEUING_METRICS_ENABLED",
           :request_queuing_metrics_enabled
+        ),
+      extended_attributes:
+        determine_feature(
+          "NEW_RELIC_EXTENDED_ATTRIBUTES_ENABLED",
+          :extended_attributes_enabled
         )
     })
   end
