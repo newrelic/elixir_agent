@@ -123,7 +123,7 @@ defmodule SpanEventTest do
     @trace {:http_request, category: :external}
     def http_request do
       Process.sleep(10)
-      NewRelic.set_span(:http, url: "http://example.com", method: "GET", component: "HTTPoison")
+      NewRelic.set_span(:http, url: "http://example.com", method: "GET", component: "HttpClient")
       "bar"
     end
   end
@@ -168,7 +168,7 @@ defmodule SpanEventTest do
 
     [http_request, _, _] =
       Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "External/example.com/HTTPoison/GET"
+        ev[:name] == "External/example.com/HttpClient/GET"
       end)
 
     assert function[:category] == "generic"
@@ -215,7 +215,7 @@ defmodule SpanEventTest do
 
     [nested_external_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "External/example.com/HTTPoison/GET"
+        ev[:name] == "External/example.com/HttpClient/GET"
       end)
 
     [[_intrinsics, tx_event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
@@ -278,7 +278,7 @@ defmodule SpanEventTest do
     assert nested_external_event[:"http.url"] == "http://example.com"
     assert nested_external_event[:"http.method"] == "GET"
     assert nested_external_event[:"span.kind"] == "client"
-    assert nested_external_event[:component] == "HTTPoison"
+    assert nested_external_event[:component] == "HttpClient"
     assert nested_external_event[:"tracer.reductions"] |> is_number
     assert nested_external_event[:"tracer.reductions"] > 1
 
