@@ -209,14 +209,10 @@ defmodule NewRelic.Telemetry.Plug do
 
   defp add_stop_attrs(meas, meta, :bandit) do
     info = Process.info(self(), [:memory, :reductions])
-    duration = meas[:duration] || System.monotonic_time() - meas[:monotonic_time]
-
-    resp_duration_ms =
-      meas[:resp_start_time] &&
-        (meas[:resp_start_time] |> to_ms) - (meas[:resp_end_time] |> to_ms)
+    resp_duration_ms = meas[:resp_start_time] && to_ms(meas[:resp_end_time]) - to_ms(meas[:resp_start_time])
 
     [
-      duration: duration,
+      duration: meas[:duration] || 0,
       status: status_code(meta) || 500,
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions],
