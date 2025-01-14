@@ -96,7 +96,7 @@ defmodule NewRelic do
   defdelegate stop_transaction(), to: NewRelic.OtherTransaction
 
   @doc """
-  Define an "Other" transaction with the given block. The return value of
+  Record an "Other" transaction within the given block. The return value of
   the block is returned.
 
   See `start_transaction/2` and `stop_transaction/0` for more details about
@@ -240,6 +240,30 @@ defmodule NewRelic do
   """
   @spec distributed_trace_headers(:http) :: [{key :: String.t(), value :: String.t()}]
   defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
+
+  @type name :: binary() | {primary_name :: binary(), secondary_name :: binary()}
+
+  @doc """
+  Record a "Span" within the given block. The return value of the block is returned.
+
+  ```elixir
+  NewRelic.span("do.some_work", user_id: "abc123") do
+    # do some work
+  end
+  ```
+
+  Note: You can also use `@trace` annotations to instrument functions without modifying code.
+  """
+  @spec span(name :: name, attributes :: Keyword.t()) :: term()
+  defmacro span(name, attributes \\ [], do: block) do
+    quote do
+      id = make_ref()
+      NewRelic.Tracer.Direct.start_span(id, name: unquote(name), attributes: unquote(attributes))
+      res = unquote(block)
+      NewRelic.Tracer.Direct.stop_span(id)
+      res
+    end
+  end
 
   @doc """
   See: `NewRelic.distributed_trace_headers/1`

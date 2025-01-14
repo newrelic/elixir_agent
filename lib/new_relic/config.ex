@@ -155,7 +155,9 @@ defmodule NewRelic.Config do
     * Controls all Oban instrumentation
   * `:finch_instrumentation_enabled` (default `true`)
     * Controls all Finch instrumentation
-  * `:request_queuing_metrics_enabled` (default `true`)
+  * `:absinthe_instrumentation_enabled` (default `true`)
+    * Controls all Absinthe instrumentation
+  * `:request_queuing_metrics_enabled`
     * Controls collection of request queuing metrics
   * `:extended_attributes` (default `true`)
     * Controls reporting extended per-source attributes for datastore, external and function traces
@@ -203,6 +205,10 @@ defmodule NewRelic.Config do
 
   def feature?(:finch_instrumentation) do
     get(:features, :finch_instrumentation)
+  end
+
+  def feature?(:absinthe_instrumentation) do
+    get(:features, :absinthe_instrumentation)
   end
 
   def feature?(:function_argument_collection) do

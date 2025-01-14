@@ -55,7 +55,8 @@ defmodule NewRelic.Mixfile do
       {:ecto, ">= 3.9.5", optional: true},
       {:redix, ">= 0.11.0", optional: true},
       {:oban, ">= 2.0.0", optional: true},
-      {:finch, ">= 0.18.0", optional: true}
+      {:finch, ">= 0.18.0", optional: true},
+      {:absinthe, ">= 1.6.0", optional: true}
     ]
   end
 
