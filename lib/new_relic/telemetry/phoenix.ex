@@ -61,7 +61,7 @@ defmodule NewRelic.Telemetry.Phoenix do
         end,
       "phoenix.format": conn.private[:phoenix_format],
       "phoenix.template": conn.private[:phoenix_template],
-      "phoenix.view": conn.private[:phoenix_view] |> inspect()
+      "phoenix.view": conn.private[:phoenix_view] && inspect(conn.private[:phoenix_view])
     ]
     |> NewRelic.add_attributes()
   end
