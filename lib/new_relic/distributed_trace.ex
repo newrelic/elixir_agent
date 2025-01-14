@@ -207,35 +207,43 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def set_span(:generic, attrs) do
-    Process.put(:nr_current_span_attrs, Enum.into(attrs, %{}))
+    add_span_attributes(Enum.into(attrs, %{}))
   end
 
   def set_span(:http, url: url, method: method, component: component) do
-    Process.put(:nr_current_span_attrs, %{url: url, method: method, component: component})
+    add_span_attributes(%{url: url, method: method, component: component})
   end
 
   def set_span(:error, message: message) do
-    Process.put(
-      :nr_current_span_attrs,
-      Map.merge(get_span_attrs(), %{error: true, "error.message": message})
-    )
+    add_span_attributes(%{error: true, "error.message": message})
   end
 
-  def set_span(
-        :datastore,
+  def set_span(:datastore,
         statement: statement,
         instance: instance,
         address: address,
         hostname: hostname,
         component: component
       ) do
-    Process.put(:nr_current_span_attrs, %{
+    add_span_attributes(%{
       statement: statement,
       instance: instance,
       address: address,
       hostname: hostname,
       component: component
     })
+  end
+
+  def add_span_attributes(attrs) do
+    Process.put(
+      :nr_current_span_attrs,
+      Map.merge(
+        get_span_attrs(),
+        Enum.into(attrs, %{})
+      )
+    )
+
+    :ok
   end
 
   def get_span_attrs() do
