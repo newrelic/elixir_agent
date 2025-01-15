@@ -63,7 +63,7 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 
 #### HTTP Client Settings
 
-httpc client settings can be overridden if needed. For example, the HTTP connect timeout can be increased which can help alleviate errors related to timeouts connecting to New Relic:
+`httpc` client settings can be overridden if needed. For example, the HTTP connect timeout can be increased which can help alleviate errors related to timeouts connecting to New Relic:
 
 ```elixir
 config :new_relic_agent,
@@ -81,6 +81,8 @@ Some common Elixir packages are auto-instrumented via [`telemetry`](https://gith
 * [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Ecto.html) for details.
 * [`Redix`](https://github.com/whatyouhide/redix): See [NewRelic.Telemetry.Redix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Redix.html) for details.
 * [`Finch`](https://github.com/sneako/finch): See [NewRelic.Telemetry.Finch](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Finch.html) for details.
+* [`Oban`](https://github.com/oban-bg/oban): See [NewRelic.Telemetry.Oban](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Oban.html) for details.
+* [`Absinthe`](https://github.com/absinthe-graphql/absinthe): See [NewRelic.Telemetry.Absinthe](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Absinthe.html) for details.
 
 ## Agent features
 
@@ -98,6 +100,8 @@ The `Plug` and `Phoenix` instrumentation automatically report a Transaction for 
 
 These Transactions will follow across any process spawned and linked (ex: `Task.async`), but will _not_ follow a process that isn't linked (ex: `Task.Supervisor.async_nolink`).
 
+---
+
 To manually connect a Transaction to an unlinked process, you can use `NewRelic.get_transaction` and `NewRelic.connect_to_transaction`. See the docs for those functions for further details.
 
 ```elixir
@@ -108,6 +112,37 @@ spawn(fn ->
   # ...
 end)
 ```
+
+---
+
+To exclude a process from the Transaction:
+
+```elixir
+Task.async(fn ->
+  NewRelic.exclude_from_transaction()
+  Work.wont_be_tracked()
+end)
+```
+
+---
+
+To prevent reporting an individual transaction:
+
+```elixir
+NewRelic.ignore_transaction()
+```
+
+You can configure some paths to be automatically ignored:
+
+```elixir
+config :new_relic_agent,
+  ignore_paths: [
+    "/health",
+    ~r/longpoll/
+  ]
+```
+
+---
 
 If you are using a `Task` to spawn work, you can use the pre-instrumented `NewRelic.Instrumented.Task` convenience module to make this easier. Just `alias` it in your module and all your Tasks will be instrumented. You may also use the functions directly.
 
@@ -130,6 +165,23 @@ defmodule MyModule do
   @trace :work
   def work do
     # Will report as `MyModule.work/0`
+  end
+end
+```
+
+If you want to trace a sub-set of a function, you can use the `NewRelic.span` macro.
+
+```elixir
+defmodule MyModule do
+  use NewRelic.Tracer
+
+  def work do
+    # Do some stuff..
+
+    NewRelic.span "do.some_work", user_id: "abc123" do
+      # Will report as `do.some_work`
+      # Will return the result of the block
+    end
   end
 end
 ```
@@ -166,16 +218,16 @@ end
 
 You may start an "Other" Transaction for non-HTTP related work. This could used be while consuming from a message queue, for example.
 
-To start an Other Transaction:
-
 ```elixir
-NewRelic.start_transaction(category, name)
-```
+defmodule Worker do
+  use NewRelic.Tracer
 
-And to stop the Transaction within the same process:
-
-```elixir
-NewRelic.stop_transaction()
+  def process_messages do
+    NewRelic.other_transaction("Worker", "ProcessMessages") do
+      # ...
+    end
+  end
+end
 ```
 
 #### Adapters

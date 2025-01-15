@@ -241,7 +241,7 @@ defmodule NewRelic do
   @spec distributed_trace_headers(:http) :: [{key :: String.t(), value :: String.t()}]
   defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
 
-  @type name :: binary() | {primary_name :: binary(), secondary_name :: binary()}
+  @type name :: String.t() | {primary_name :: String.t(), secondary_name :: String.t()}
 
   @doc """
   Record a "Span" within the given block. The return value of the block is returned.

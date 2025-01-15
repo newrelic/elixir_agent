@@ -13,8 +13,9 @@ defmodule NewRelic.Telemetry.Redix do
   * Transaction datastore attributes
   * Distributed Trace span events
 
-  You can opt-out of this instrumentation as a whole and specifically of
-  query collection via configuration. See `NewRelic.Config` for details.
+  You can opt-out of this instrumentation as a whole with `:redix_instrumentation_enabled`
+  and specifically of query collection with `:query_collection_enabled` via configuration.
+  See `NewRelic.Config` for details.
   """
 
   @doc false
@@ -36,7 +37,7 @@ defmodule NewRelic.Telemetry.Redix do
     config = %{
       handler_id: {:new_relic, :redix},
       connections: %{},
-      collect_db_query?: NewRelic.Config.feature?(:db_query_collection)
+      collect_db_query?: NewRelic.Config.feature?(:query_collection)
     }
 
     :telemetry.attach_many(

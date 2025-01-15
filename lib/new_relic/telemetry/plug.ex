@@ -12,30 +12,8 @@ defmodule NewRelic.Telemetry.Plug do
   * Transaction Traces
   * Distributed Traces
 
-  You can opt-out of this instrumentation via configuration. See `NewRelic.Config` for details.
-
-  ----
-
-  To prevent reporting an individual transaction:
-
-  ```elixir
-  NewRelic.ignore_transaction()
-  ```
-
-  ----
-
-  Inside a Transaction, the agent will track work across processes that are spawned and linked.
-  You can signal to the agent not to track work done inside a spawned process, which will
-  exclude it from the current Transaction.
-
-  To exclude a process from the Transaction:
-
-  ```elixir
-  Task.async(fn ->
-    NewRelic.exclude_from_transaction()
-    Work.wont_be_tracked()
-  end)
-  ```
+  You can opt-out of this instrumentation with `:plug_instrumentation_enabled` via configuration.
+  See `NewRelic.Config` for details.
   """
 
   alias NewRelic.{Transaction, DistributedTrace, Util}

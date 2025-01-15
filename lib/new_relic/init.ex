@@ -63,7 +63,7 @@ defmodule NewRelic.Init do
           "NEW_RELIC_ERROR_COLLECTOR_ENABLED",
           :error_collector_enabled
         ),
-      db_query_collection:
+      query_collection:
         determine_feature(
           "NEW_RELIC_SQL_COLLECTION_ENABLED",
           :sql_collection_enabled,
@@ -71,7 +71,12 @@ defmodule NewRelic.Init do
         ) ||
           determine_feature(
             "NEW_RELIC_DB_QUERY_COLLECTION_ENABLED",
-            :db_query_collection_enabled
+            :db_query_collection_enabled,
+            false
+          ) ||
+          determine_feature(
+            "NEW_RELIC_QUERY_COLLECTION_ENABLED",
+            :query_collection_enabled
           ),
       distributed_tracing:
         determine_feature(

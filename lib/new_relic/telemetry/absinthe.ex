@@ -9,8 +9,9 @@ defmodule NewRelic.Telemetry.Absinthe do
   * Transaction name
   * Distributed Trace span events
 
-  You can opt-out of this instrumentation as a whole and specifically of
-  query collection via configuration. See `NewRelic.Config` for details.
+  You can opt-out of this instrumentation as a whole with `:absinthe_instrumentation_enabled`
+  and specifically of query collection with `:query_collection_enabled` via configuration.
+  See `NewRelic.Config` for details.
   """
 
   @doc false
@@ -37,7 +38,7 @@ defmodule NewRelic.Telemetry.Absinthe do
   def init(enabled: true) do
     config = %{
       handler_id: {:new_relic, :absinthe},
-      collect_query?: NewRelic.Config.feature?(:db_query_collection),
+      collect_query?: NewRelic.Config.feature?(:query_collection),
       collect_args?: NewRelic.Config.feature?(:function_argument_collection)
     }
 

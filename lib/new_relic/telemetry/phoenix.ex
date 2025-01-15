@@ -6,6 +6,9 @@ defmodule NewRelic.Telemetry.Phoenix do
 
   This instrumentation adds extra Phoenix specific instrumentation
   on top of the base `NewRelic.Telemetry.Plug` instrumentation.
+
+  You can opt-out of this instrumentation with `:phoenix_instrumentation_enabled` via configuration.
+  See `NewRelic.Config` for details.
   """
   def start_link(_) do
     config = %{

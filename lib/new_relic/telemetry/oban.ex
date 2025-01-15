@@ -12,7 +12,8 @@ defmodule NewRelic.Telemetry.Oban do
   * Transaction Traces
   * Distributed Traces
 
-  You can opt-out of this instrumentation via configuration. See `NewRelic.Config` for details.
+  You can opt-out of this instrumentation with `:oban_instrumentation_enabled` via configuration.
+  See `NewRelic.Config` for details.
   """
 
   alias NewRelic.Transaction
