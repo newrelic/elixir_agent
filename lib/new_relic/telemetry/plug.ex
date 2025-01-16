@@ -152,17 +152,25 @@ defmodule NewRelic.Telemetry.Plug do
     |> NewRelic.add_attributes()
   end
 
-  defp add_start_attrs(meta, meas, headers, :bandit) do
+  defp add_start_attrs(%{conn: conn}, meas, headers, :bandit) do
     [
       pid: inspect(self()),
       start_time: meas[:system_time],
-      host: meta.conn.host,
-      path: meta.conn.request_path,
-      remote_ip: meta.conn.remote_ip |> :inet_parse.ntoa() |> to_string(),
+      host: conn.host,
+      path: conn.request_path,
+      remote_ip: conn.remote_ip |> :inet_parse.ntoa() |> to_string(),
       referer: headers["referer"],
       user_agent: headers["user-agent"],
       content_type: headers["content-type"],
-      request_method: meta.conn.method
+      request_method: conn.method
+    ]
+    |> NewRelic.add_attributes()
+  end
+
+  defp add_start_attrs(_meta, meas, _headers, :bandit) do
+    [
+      pid: inspect(self()),
+      start_time: meas[:system_time]
     ]
     |> NewRelic.add_attributes()
   end
@@ -276,6 +284,8 @@ defmodule NewRelic.Telemetry.Plug do
   defp status_code(%{conn: %{status: status}}) do
     status
   end
+
+  defp status_code(_), do: nil
 
   defp plug_name(conn, match_path) do
     "/Plug/#{conn.method}/#{match_path}"
