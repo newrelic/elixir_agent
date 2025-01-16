@@ -7,7 +7,7 @@ defmodule ObanExample.Worker do
   end
 
   def perform(%Oban.Job{args: _args}) do
-    Process.sleep(:rand.uniform(50))
+    Process.sleep(15 + :rand.uniform(50))
     :ok
   end
 end

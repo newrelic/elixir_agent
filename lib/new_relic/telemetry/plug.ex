@@ -140,7 +140,7 @@ defmodule NewRelic.Telemetry.Plug do
   defp add_start_attrs(meta, meas, headers, :cowboy) do
     [
       pid: inspect(self()),
-      system_time: meas[:system_time],
+      start_time: meas[:system_time],
       host: meta.req.host,
       path: meta.req.path,
       remote_ip: meta.req.peer |> elem(0) |> :inet_parse.ntoa() |> to_string(),
@@ -155,7 +155,7 @@ defmodule NewRelic.Telemetry.Plug do
   defp add_start_attrs(meta, meas, headers, :bandit) do
     [
       pid: inspect(self()),
-      system_time: meas[:system_time],
+      start_time: meas[:system_time],
       host: meta.conn.host,
       path: meta.conn.request_path,
       remote_ip: meta.conn.remote_ip |> :inet_parse.ntoa() |> to_string(),

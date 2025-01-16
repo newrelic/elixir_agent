@@ -23,7 +23,11 @@ defmodule ObanExampleTest do
            )
 
     assert [
-             %{:name => "OtherTransaction/Oban/default/ObanExample.Worker/perform"},
+             %{
+               :name => "OtherTransaction/Oban/default/ObanExample.Worker/perform",
+               :timestamp => timestamp,
+               :duration => duration
+             },
              %{
                :"oban.worker" => "ObanExample.Worker",
                :"oban.queue" => "default",
@@ -31,6 +35,9 @@ defmodule ObanExampleTest do
                :"oban.job.tags" => "foo,bar"
              }
            ] = event
+
+    assert timestamp |> is_number
+    assert duration >= 0.015
   end
 
   test "instruments a failed job" do

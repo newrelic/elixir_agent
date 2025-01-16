@@ -61,14 +61,14 @@ defmodule NewRelic.Telemetry.Oban do
   @doc false
   def handle_event(
         @oban_start,
-        %{system_time: system_time},
+        %{system_time: start_time},
         meta,
         _config
       ) do
     Transaction.Reporter.start_transaction(:other)
     NewRelic.DistributedTrace.start(:other)
 
-    add_start_attrs(meta, system_time)
+    add_start_attrs(meta, start_time)
   end
 
   def handle_event(
@@ -99,10 +99,10 @@ defmodule NewRelic.Telemetry.Oban do
     :ignore
   end
 
-  defp add_start_attrs(meta, system_time) do
+  defp add_start_attrs(meta, start_time) do
     [
       pid: inspect(self()),
-      system_time: system_time,
+      start_time: start_time,
       other_transaction_name: "Oban/#{meta.queue}/#{meta.worker}/perform",
       "oban.worker": meta.worker,
       "oban.queue": meta.queue,

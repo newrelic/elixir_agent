@@ -66,7 +66,7 @@ defmodule NewRelic.Tracer.Direct do
           pid: self(),
           id: span,
           parent_id: previous_span || :root,
-          system_time: start_time,
+          start_time: start_time,
           duration: duration
         })
 

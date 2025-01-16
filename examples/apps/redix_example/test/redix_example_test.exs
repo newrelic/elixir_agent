@@ -60,6 +60,8 @@ defmodule RedixExampleTest do
     assert get_event[:"db.statement"] == "GET mykey"
     assert get_event[:"redix.connection"] =~ "PID"
     assert get_event[:"redix.connection_name"] == ":redix"
+    assert get_event[:timestamp] |> is_number
+    assert get_event[:duration] > 0.0
 
     [pipeline_event, _, _] =
       Enum.find(span_events, fn [ev, _, _] ->
