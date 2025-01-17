@@ -258,7 +258,7 @@ defmodule NewRelic do
   defmacro span(name, attributes \\ [], do: block) do
     quote do
       id = make_ref()
-      NewRelic.Tracer.Direct.start_span(id, name: unquote(name), attributes: unquote(attributes))
+      NewRelic.Tracer.Direct.start_span(id, unquote(name), attributes: unquote(attributes))
       res = unquote(block)
       NewRelic.Tracer.Direct.stop_span(id)
       res
