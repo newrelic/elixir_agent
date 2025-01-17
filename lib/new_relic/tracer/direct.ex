@@ -3,7 +3,7 @@ defmodule NewRelic.Tracer.Direct do
 
   @max_open_span_count Application.compile_env(:new_relic, :max_open_span_count, 20)
 
-  def start_span(id, name, options) do
+  def start_span(id, name, options \\ []) do
     case Process.get(:nr_open_span_count, 0) do
       over when over >= @max_open_span_count ->
         Process.put(:nr_open_span_count, over + 1)
@@ -30,7 +30,7 @@ defmodule NewRelic.Tracer.Direct do
     :ok
   end
 
-  def stop_span(id, options) do
+  def stop_span(id, options \\ []) do
     case Process.get({:nr_span, id}) do
       nil ->
         :no_such_span
@@ -66,7 +66,7 @@ defmodule NewRelic.Tracer.Direct do
           pid: self(),
           id: span,
           parent_id: previous_span || :root,
-          system_time: start_time,
+          start_time: start_time,
           duration: duration
         })
 

@@ -41,14 +41,15 @@ defmodule NewRelic.Transaction.Complete do
   defp identify_transaction_type(tx),
     do: Map.put(tx, :transactionType, :Web)
 
-  defp transform_time_attrs(%{system_time: system_time, duration: duration} = tx) do
-    start_time_ms = System.convert_time_unit(system_time, :native, :millisecond)
+  # instrumentation reports time via start_time :: native and duration :: native
+  defp transform_time_attrs(%{start_time: start_time, duration: duration} = tx) do
+    start_time_ms = System.convert_time_unit(start_time, :native, :millisecond)
     duration_us = System.convert_time_unit(duration, :native, :microsecond)
     duration_ms = duration_us / 1000
     duration_s = duration_ms / 1000
 
     tx
-    |> Map.drop([:system_time, :duration, :end_time_mono])
+    |> Map.drop([:system_time, :duration, :start_time_mono, :end_time_mono])
     |> Map.merge(%{
       start_time: start_time_ms,
       end_time: start_time_ms + duration_ms,
@@ -58,17 +59,17 @@ defmodule NewRelic.Transaction.Complete do
     })
   end
 
+  # sidecar reports time via system_time :: native, start_time_mono :: native, end_time_mono :: native
   defp transform_time_attrs(
-         %{start_time: start_time, end_time_mono: end_time_mono, start_time_mono: start_time_mono} =
-           tx
+         %{system_time: system_time, end_time_mono: end_time_mono, start_time_mono: start_time_mono} = tx
        ) do
-    start_time_ms = System.convert_time_unit(start_time, :native, :millisecond)
+    start_time_ms = System.convert_time_unit(system_time, :native, :millisecond)
     duration_us = System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond)
     duration_ms = duration_us / 1000
     duration_s = duration_ms / 1000
 
     tx
-    |> Map.drop([:start_time_mono, :end_time_mono])
+    |> Map.drop([:system_time, :duration, :start_time_mono, :end_time_mono])
     |> Map.merge(%{
       start_time: start_time_ms,
       end_time: start_time_ms + duration_ms,

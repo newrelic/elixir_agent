@@ -5,7 +5,7 @@ defmodule NewRelic.Telemetry.FinchTest do
   setup do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-    send(NewRelic.DistributedTrace.BackoffSampler, :reset)
+    NewRelic.DistributedTrace.BackoffSampler.reset()
 
     start_supervised({Finch, name: __MODULE__})
 

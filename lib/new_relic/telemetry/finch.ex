@@ -56,7 +56,7 @@ defmodule NewRelic.Telemetry.Finch do
 
   def handle_event(
         @finch_request_start,
-        %{monotonic_time: monotonic_time, system_time: system_time},
+        %{system_time: start_time},
         %{request: request},
         config
       ) do
@@ -70,8 +70,7 @@ defmodule NewRelic.Telemetry.Finch do
       Process.put(
         config.handler_id,
         %{
-          start_time_mono: monotonic_time,
-          system_time: system_time,
+          start_time: start_time,
           span: span,
           previous_span: previous_span,
           previous_span_attrs: previous_span_attrs
@@ -82,85 +81,83 @@ defmodule NewRelic.Telemetry.Finch do
 
   def handle_event(
         @finch_request_stop,
-        %{monotonic_time: end_time_mono, duration: duration},
+        %{duration: duration},
         %{name: finch_pool, request: request, result: result},
         config
       ) do
     if instrument?() do
-      %{
-        start_time_mono: start_time_mono,
-        system_time: start_time,
-        span: span,
-        previous_span: previous_span,
-        previous_span_attrs: previous_span_attrs
-      } = Process.delete(config.handler_id)
+      with %{
+             start_time: start_time,
+             span: span,
+             previous_span: previous_span,
+             previous_span_attrs: previous_span_attrs
+           } <- Process.delete(config.handler_id) do
+        metric_name = "External/#{request.host}/Finch/#{request.method}"
+        secondary_name = "#{request.host} - Finch/#{request.method}"
 
-      metric_name = "External/#{request.host}/Finch/#{request.method}"
-      secondary_name = "#{request.host} - Finch/#{request.method}"
+        duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+        duration_s = duration_ms / 1000
 
-      duration_ms = System.convert_time_unit(duration, :native, :millisecond)
-      duration_s = duration_ms / 1000
+        id = span
+        parent_id = previous_span || :root
 
-      id = span
-      parent_id = previous_span || :root
+        url =
+          URI.to_string(%URI{scheme: "#{request.scheme}", host: request.host, path: request.path})
 
-      url =
-        URI.to_string(%URI{scheme: "#{request.scheme}", host: request.host, path: request.path})
+        result_attrs =
+          case result do
+            {:ok, %{__struct__: Finch.Response} = response} -> %{"response.status": response.status}
+            {:ok, _acc} -> %{}
+            {:error, exception} -> %{error: true, "error.message": Exception.message(exception)}
+          end
 
-      result_attrs =
-        case result do
-          {:ok, %{__struct__: Finch.Response} = response} -> %{"response.status": response.status}
-          {:ok, _acc} -> %{}
-          {:error, exception} -> %{error: true, "error.message": Exception.message(exception)}
-        end
+        NewRelic.Transaction.Reporter.add_trace_segment(%{
+          primary_name: metric_name,
+          secondary_name: secondary_name,
+          attributes: %{},
+          pid: self(),
+          id: span,
+          parent_id: parent_id,
+          start_time: start_time,
+          duration: duration
+        })
 
-      NewRelic.Transaction.Reporter.add_trace_segment(%{
-        primary_name: metric_name,
-        secondary_name: secondary_name,
-        attributes: %{},
-        pid: self(),
-        id: span,
-        parent_id: parent_id,
-        start_time: start_time,
-        start_time_mono: start_time_mono,
-        end_time_mono: end_time_mono
-      })
+        NewRelic.report_span(
+          timestamp_ms: System.convert_time_unit(start_time, :native, :millisecond),
+          duration_s: duration_s,
+          name: metric_name,
+          edge: [span: id, parent: parent_id],
+          category: "http",
+          attributes:
+            %{
+              "request.url": url,
+              "request.method": request.method,
+              "request.client": "Finch",
+              "finch.pool": finch_pool
+            }
+            |> Map.merge(result_attrs)
+        )
 
-      NewRelic.report_span(
-        timestamp_ms: System.convert_time_unit(start_time, :native, :millisecond),
-        duration_s: duration_s,
-        name: metric_name,
-        edge: [span: id, parent: parent_id],
-        category: "http",
-        attributes:
-          %{
-            "request.url": url,
-            "request.method": request.method,
-            "request.client": "Finch",
-            "finch.pool": finch_pool
-          }
-          |> Map.merge(result_attrs)
-      )
+        NewRelic.incr_attributes(
+          "external.#{request.host}.call_count": 1,
+          "external.#{request.host}.duration_ms": duration_ms
+        )
 
-      NewRelic.incr_attributes(
-        "external.#{request.host}.call_count": 1,
-        "external.#{request.host}.duration_ms": duration_ms
-      )
+        NewRelic.report_metric(
+          {:external, url, "Finch", request.method},
+          duration_s: duration_s
+        )
 
-      NewRelic.report_metric(
-        {:external, url, "Finch", request.method},
-        duration_s: duration_s
-      )
+        NewRelic.Transaction.Reporter.track_metric({
+          {:external, url, "Finch", request.method},
+          duration_s: duration_s
+        })
 
-      NewRelic.Transaction.Reporter.track_metric({
-        {:external, url, "Finch", request.method},
-        duration_s: duration_s
-      })
-
-      NewRelic.DistributedTrace.reset_span(
-        previous_span: previous_span,
-        previous_span_attrs: previous_span_attrs
-      )
+        NewRelic.DistributedTrace.reset_span(
+          previous_span: previous_span,
+          previous_span_attrs: previous_span_attrs
+        )
+      end
     end
   end
 
@@ -171,46 +168,45 @@ defmodule NewRelic.Telemetry.Finch do
         config
       ) do
     if instrument?() do
-      %{
-        system_time: start_time,
-        span: span,
-        previous_span: previous_span,
-        previous_span_attrs: previous_span_attrs
-      } = Process.delete(config.handler_id)
+      with %{
+             start_time: start_time,
+             span: span,
+             previous_span: previous_span,
+             previous_span_attrs: previous_span_attrs
+           } <- Process.delete(config.handler_id) do
+        metric_name = "External/#{request.host}/Finch/#{request.method}"
 
-      metric_name = "External/#{request.host}/Finch/#{request.method}"
+        duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+        duration_s = duration_ms / 1000
 
-      duration_ms = System.convert_time_unit(duration, :native, :millisecond)
-      duration_s = duration_ms / 1000
+        id = span
+        parent_id = previous_span || :root
 
-      id = span
-      parent_id = previous_span || :root
+        url = URI.to_string(%URI{scheme: "#{request.scheme}", host: request.host, path: request.path})
 
-      url =
-        URI.to_string(%URI{scheme: "#{request.scheme}", host: request.host, path: request.path})
+        error_message = NewRelic.Util.Error.format_reason(kind, reason)
 
-      error_message = NewRelic.Util.Error.format_reason(kind, reason)
+        NewRelic.report_span(
+          timestamp_ms: System.convert_time_unit(start_time, :native, :millisecond),
+          duration_s: duration_s,
+          name: metric_name,
+          edge: [span: id, parent: parent_id],
+          category: "http",
+          attributes: %{
+            error: true,
+            "error.message": error_message,
+            "request.url": url,
+            "request.method": request.method,
+            "request.client": "Finch",
+            "finch.pool": finch_pool
+          }
+        )
 
-      NewRelic.report_span(
-        timestamp_ms: System.convert_time_unit(start_time, :native, :millisecond),
-        duration_s: duration_s,
-        name: metric_name,
-        edge: [span: id, parent: parent_id],
-        category: "http",
-        attributes: %{
-          error: true,
-          "error.message": error_message,
-          "request.url": url,
-          "request.method": request.method,
-          "request.client": "Finch",
-          "finch.pool": finch_pool
-        }
-      )
-
-      NewRelic.DistributedTrace.reset_span(
-        previous_span: previous_span,
-        previous_span_attrs: previous_span_attrs
-      )
+        NewRelic.DistributedTrace.reset_span(
+          previous_span: previous_span,
+          previous_span_attrs: previous_span_attrs
+        )
+      end
     end
   end
 

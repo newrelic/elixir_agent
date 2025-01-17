@@ -118,6 +118,15 @@ defmodule SpanEventTest do
       Process.sleep(10)
       NewRelic.set_span(:generic, some: "attribute")
       NewRelic.add_span_attributes(another: "attr")
+
+      NewRelic.span "single.span" do
+        Process.sleep(5)
+      end
+
+      NewRelic.span "another.span", with: "an attribute" do
+        Process.sleep(5)
+      end
+
       http_request()
     end
 
@@ -144,6 +153,11 @@ defmodule SpanEventTest do
       |> Task.await()
 
       send_resp(conn, 200, Traced.hello())
+    end
+
+    get "/span_macro" do
+      Traced.function()
+      send_resp(conn, 200, "Yo.")
     end
 
     get "/reset_span" do
@@ -179,6 +193,32 @@ defmodule SpanEventTest do
 
     assert http_request[:category] == "http"
     assert http_request[:"http.url"]
+
+    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+  end
+
+  test "span macro" do
+    TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+
+    TestHelper.request(TestPlugApp, conn(:get, "/span_macro"))
+
+    span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+
+    [another_span, _, _] =
+      Enum.find(span_events, fn [ev, _, _] ->
+        ev[:name] == "another.span"
+      end)
+
+    assert another_span[:category] == "generic"
+    assert another_span[:with] == "an attribute"
+
+    [single_span, _, _] =
+      Enum.find(span_events, fn [ev, _, _] ->
+        ev[:name] == "single.span"
+      end)
+
+    assert single_span[:category] == "generic"
 
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)

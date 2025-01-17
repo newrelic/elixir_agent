@@ -37,7 +37,7 @@ defmodule NewRelic.Tracer.Report do
          name,
          pid,
          {id, parent_id},
-         {start_time, start_time_mono, end_time_mono, _child_duration_ms, reductions}
+         {system_time, start_time_mono, end_time_mono, _child_duration_ms, reductions}
        ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
@@ -62,13 +62,13 @@ defmodule NewRelic.Tracer.Report do
           pid: pid,
           id: id,
           parent_id: parent_id,
-          start_time: start_time,
+          system_time: system_time,
           start_time_mono: start_time_mono,
           end_time_mono: end_time_mono
         })
 
         NewRelic.report_span(
-          timestamp_ms: System.convert_time_unit(start_time, :native, :millisecond),
+          timestamp_ms: System.convert_time_unit(system_time, :native, :millisecond),
           duration_s: duration_s,
           name: metric_name,
           edge: [span: id, parent: parent_id],
@@ -105,13 +105,13 @@ defmodule NewRelic.Tracer.Report do
           pid: pid,
           id: id,
           parent_id: parent_id,
-          start_time: start_time,
+          system_time: system_time,
           start_time_mono: start_time_mono,
           end_time_mono: end_time_mono
         })
 
         NewRelic.report_span(
-          timestamp_ms: System.convert_time_unit(start_time, :native, :millisecond),
+          timestamp_ms: System.convert_time_unit(system_time, :native, :millisecond),
           duration_s: duration_s,
           name: function_arity_name,
           edge: [span: id, parent: parent_id],
@@ -155,7 +155,7 @@ defmodule NewRelic.Tracer.Report do
          name,
          pid,
          {id, parent_id},
-         {start_time, start_time_mono, end_time_mono, child_duration_ms, reductions}
+         {system_time, start_time_mono, end_time_mono, child_duration_ms, reductions}
        ) do
     duration_ms = duration_ms(start_time_mono, end_time_mono)
     duration_s = duration_ms / 1000
@@ -174,13 +174,13 @@ defmodule NewRelic.Tracer.Report do
       pid: pid,
       id: id,
       parent_id: parent_id,
-      start_time: start_time,
+      system_time: system_time,
       start_time_mono: start_time_mono,
       end_time_mono: end_time_mono
     })
 
     NewRelic.report_span(
-      timestamp_ms: System.convert_time_unit(start_time, :native, :millisecond),
+      timestamp_ms: System.convert_time_unit(system_time, :native, :millisecond),
       duration_s: duration_s,
       name: function_name,
       edge: [span: id, parent: parent_id],
