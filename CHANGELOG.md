@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.31.1`
+
+#### Fixes
+* Fixes for a few bugs: transaction time attribute, span macro, bandit missing conn [#483](https://github.com/newrelic/elixir_agent/pull/483)
+
 ### `v1.31`
 
 A big release after a long time dormant!

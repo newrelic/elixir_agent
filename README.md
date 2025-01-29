@@ -31,8 +31,8 @@ The open-source Elixir agent is licensed under the Apache 2.0 License.
 Install the [Hex package](https://hex.pm/packages/new_relic_agent)
 
 Requirements:
-* Erlang/OTP 22
-* Elixir 1.9
+* Erlang/OTP 24
+* Elixir 1.11
 
 ```elixir
 defp deps do
@@ -63,7 +63,7 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 
 #### HTTP Client Settings
 
-`httpc` client settings can be overridden if needed. For example, the HTTP connect timeout can be increased which can help alleviate errors related to timeouts connecting to New Relic:
+`:httpc` client settings can be overridden if needed. For example, the HTTP connect timeout can be increased which can help alleviate errors related to timeouts connecting to New Relic:
 
 ```elixir
 config :new_relic_agent,
