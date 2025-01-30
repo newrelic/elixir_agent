@@ -39,12 +39,12 @@ defmodule NewRelic.Aggregate.Reporter do
     {:reply, :ok, %{}}
   end
 
-  def record_aggregates(state) do
-    Enum.map(state, fn {_meta, metric} ->
+  defp record_aggregates(state) do
+    Enum.each(state, fn {_meta, metric} ->
       NewRelic.report_custom_event(aggregate_event_type(), Aggregate.annotate(metric))
     end)
   end
 
-  def aggregate_event_type,
+  defp aggregate_event_type,
     do: Application.get_env(:new_relic_agent, :aggregate_event_type, "ElixirAggregate")
 end

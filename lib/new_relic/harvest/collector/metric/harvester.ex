@@ -60,13 +60,13 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
     {:reply, build_metric_data(state.metrics), state}
   end
 
-  def merge(metrics, state) do
+  defp merge(metrics, state) do
     metrics
     |> List.wrap()
     |> Enum.reduce(state.metrics, &merge_metric/2)
   end
 
-  def send_harvest(state) do
+  defp send_harvest(state) do
     metric_data = build_metric_data(state.metrics)
 
     Collector.Protocol.metric_data([
@@ -83,7 +83,7 @@ defmodule NewRelic.Harvest.Collector.Metric.Harvester do
     log_harvest(length(metric_data))
   end
 
-  def log_harvest(harvest_size) do
+  defp log_harvest(harvest_size) do
     NewRelic.report_metric({:supportability, "MetricData"}, harvest_size: harvest_size)
     NewRelic.log(:debug, "Completed Metric harvest - size: #{harvest_size}")
   end

@@ -70,11 +70,11 @@ defmodule NewRelic.Logger do
     end
   end
 
-  def device(:stdio), do: {:ok, :stdio}
-  def device(:memory), do: StringIO.open("")
-  def device(:logger), do: {:ok, Logger}
+  defp device(:stdio), do: {:ok, :stdio}
+  defp device(:memory), do: StringIO.open("")
+  defp device(:logger), do: {:ok, Logger}
 
-  def device({:file, logfile}) do
+  defp device({:file, logfile}) do
     log(:info, "Log File: #{Path.absname(logfile)}")
     logfile |> Path.dirname() |> File.mkdir_p!()
     {:ok, _file} = File.open(logfile, [:append, :utf8])
@@ -86,13 +86,13 @@ defmodule NewRelic.Logger do
   defp elixir_logger(:error, message), do: Logger.error(message)
 
   @sep " - "
-  def formatted(level, message), do: [formatted(level), @sep, timestamp(), @sep, message, "\n"]
-  def formatted(:debug), do: "[DEBUG]"
-  def formatted(:info), do: "[INFO]"
-  def formatted(:warning), do: "[WARN]"
-  def formatted(:error), do: "[ERROR]"
+  defp formatted(level, message), do: [formatted(level), @sep, timestamp(), @sep, message, "\n"]
+  defp formatted(:debug), do: "[DEBUG]"
+  defp formatted(:info), do: "[INFO]"
+  defp formatted(:warning), do: "[WARN]"
+  defp formatted(:error), do: "[ERROR]"
 
-  def timestamp do
+  defp timestamp do
     :calendar.local_time()
     |> NaiveDateTime.from_erl!()
     |> NaiveDateTime.to_string()

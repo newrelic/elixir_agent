@@ -121,13 +121,13 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
 
   # Helpers
 
-  def store_event(%{sampling: %{reservoir_size: size}} = state, %{priority: key} = event),
+  defp store_event(%{sampling: %{reservoir_size: size}} = state, %{priority: key} = event),
     do: %{state | events: Util.PriorityQueue.insert(state.events, size, key, event)}
 
-  def store_sampling(%{sampling: sampling} = state),
+  defp store_sampling(%{sampling: sampling} = state),
     do: %{state | sampling: Map.update!(sampling, :events_seen, &(&1 + 1))}
 
-  def send_harvest(state) do
+  defp send_harvest(state) do
     spans = build_payload(state)
 
     Collector.Protocol.span_event([
@@ -139,12 +139,12 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
     log_harvest(length(spans), state.sampling.events_seen, state.sampling.reservoir_size)
   end
 
-  def generate_guid(:root), do: DistributedTrace.generate_guid(pid: self())
+  defp generate_guid(:root), do: DistributedTrace.generate_guid(pid: self())
 
-  def generate_guid({label, ref}),
+  defp generate_guid({label, ref}),
     do: DistributedTrace.generate_guid(pid: self(), label: label, ref: ref)
 
-  def log_harvest(harvest_size, events_seen, reservoir_size) do
+  defp log_harvest(harvest_size, events_seen, reservoir_size) do
     NewRelic.report_metric({:supportability, "SpanEventData"}, harvest_size: harvest_size)
 
     NewRelic.report_metric({:supportability, "SpanEventData"},
@@ -159,7 +159,7 @@ defmodule NewRelic.Harvest.Collector.SpanEvent.Harvester do
     )
   end
 
-  def build_payload(state) do
+  defp build_payload(state) do
     state.events
     |> Util.PriorityQueue.values()
     |> Event.format_events()

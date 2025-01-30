@@ -73,7 +73,7 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
     end
   end
 
-  def matching_new_relic_state?(context) do
+  defp matching_new_relic_state?(context) do
     context.key == :new_relic &&
       context.value.trusted_account_key == AgentRun.trusted_account_key()
   end

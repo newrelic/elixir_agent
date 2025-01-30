@@ -83,7 +83,7 @@ defmodule NewRelic.Transaction.ErlangTrace do
     ArgumentError -> :process_gone
   end
 
-  def enable_trace_patterns do
+  defp enable_trace_patterns do
     # Use function tracers to notice when linked work has been kicked off
     #   http://erlang.org/doc/man/erlang.html#trace_3_trace_messages_return_from
     #   http://erlang.org/doc/apps/erts/match_spec.html

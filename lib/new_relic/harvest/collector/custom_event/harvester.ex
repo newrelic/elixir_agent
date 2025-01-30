@@ -74,28 +74,28 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
 
   # Helpers
 
-  def process(event) do
+  defp process(event) do
     event
     |> NewRelic.Util.coerce_attributes()
     |> Map.merge(NewRelic.Config.automatic_attributes())
   end
 
-  def store_event(%{sampling: %{events_seen: seen, reservoir_size: size}} = state, event)
-      when seen < size,
-      do: %{state | custom_events: [event | state.custom_events]}
+  defp store_event(%{sampling: %{events_seen: seen, reservoir_size: size}} = state, event)
+       when seen < size,
+       do: %{state | custom_events: [event | state.custom_events]}
 
-  def store_event(state, _event), do: state
+  defp store_event(state, _event), do: state
 
-  def store_sampling(%{sampling: sampling} = state),
+  defp store_sampling(%{sampling: sampling} = state),
     do: %{state | sampling: Map.update!(sampling, :events_seen, &(&1 + 1))}
 
-  def send_harvest(state) do
+  defp send_harvest(state) do
     events = build_payload(state)
     Collector.Protocol.custom_event([Collector.AgentRun.agent_run_id(), state.sampling, events])
     log_harvest(length(events), state.sampling.events_seen, state.sampling.reservoir_size)
   end
 
-  def log_harvest(harvest_size, events_seen, reservoir_size) do
+  defp log_harvest(harvest_size, events_seen, reservoir_size) do
     NewRelic.report_metric({:supportability, "CustomEventData"}, harvest_size: harvest_size)
 
     NewRelic.report_metric({:supportability, "CustomEventData"},
@@ -110,5 +110,5 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
     )
   end
 
-  def build_payload(state), do: Event.format_events(state.custom_events)
+  defp build_payload(state), do: Event.format_events(state.custom_events)
 end

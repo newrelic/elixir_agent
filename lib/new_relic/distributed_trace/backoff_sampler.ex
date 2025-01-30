@@ -60,7 +60,7 @@ defmodule NewRelic.DistributedTrace.BackoffSampler do
     put(@sampled_true_count, 0)
   end
 
-  def calculate(state) do
+  defp calculate(state) do
     sampled = do_sample?(state)
     update_state(sampled)
     sampled
@@ -98,22 +98,22 @@ defmodule NewRelic.DistributedTrace.BackoffSampler do
     Process.send_after(__MODULE__, :cycle, cycle_period)
   end
 
-  def update_state(false = _sampled?) do
+  defp update_state(false = _sampled?) do
     incr(@decided_count)
   end
 
-  def update_state(true = _sampled?) do
+  defp update_state(true = _sampled?) do
     incr(@decided_count)
     incr(@sampled_true_count)
   end
 
-  def random(0), do: 0
-  def random(n), do: :rand.uniform(n)
+  defp random(0), do: 0
+  defp random(n), do: :rand.uniform(n)
 
   @compile {:inline, new: 2, incr: 1, put: 2, get: 1, pt: 0}
   defp new(size, opts), do: :counters.new(size, opts)
   defp incr(index), do: :counters.add(pt(), index, 1)
   defp put(index, value), do: :counters.put(pt(), index, value)
   defp get(index), do: :counters.get(pt(), index)
-  def pt(), do: :persistent_term.get({__MODULE__, :counter})
+  defp pt(), do: :persistent_term.get({__MODULE__, :counter})
 end

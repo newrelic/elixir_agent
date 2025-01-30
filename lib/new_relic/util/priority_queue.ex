@@ -30,10 +30,6 @@ defmodule NewRelic.Util.PriorityQueue do
     :gb_trees.values(tree)
   end
 
-  def list(tree) do
-    :gb_trees.to_list(tree)
-  end
-
   defp differentiator() do
     :erlang.unique_integer()
   end

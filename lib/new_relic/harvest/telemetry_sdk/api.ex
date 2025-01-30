@@ -5,7 +5,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.API do
     url = url(:log)
     payload = {:logs, logs, generate_request_id()}
 
-    request(url, payload)
+    post(url, payload)
     |> maybe_retry(url, payload)
   end
 
@@ -13,7 +13,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.API do
     url = url(:trace)
     payload = {:spans, spans, generate_request_id()}
 
-    request(url, payload)
+    post(url, payload)
     |> maybe_retry(url, payload)
   end
 
@@ -21,30 +21,26 @@ defmodule NewRelic.Harvest.TelemetrySdk.API do
     url = url(:metric)
     payload = {:metrics, metrics, generate_request_id()}
 
-    request(url, payload)
-    |> maybe_retry(url, payload)
-  end
-
-  def request(url, payload) do
     post(url, payload)
+    |> maybe_retry(url, payload)
   end
 
   @success 200..299
   @drop [400, 401, 403, 405, 409, 410, 411]
-  def maybe_retry({:ok, %{status_code: status_code}} = result, _, _)
-      when status_code in @success
-      when status_code in @drop do
+  defp maybe_retry({:ok, %{status_code: status_code}} = result, _, _)
+       when status_code in @success
+       when status_code in @drop do
     result
   end
 
   # 413 split
 
   # 408, 500+
-  def maybe_retry(_result, url, payload) do
+  defp maybe_retry(_result, url, payload) do
     post(url, payload)
   end
 
-  def post(url, {_, payload, request_id}) do
+  defp post(url, {_, payload, request_id}) do
     NewRelic.Util.HTTP.post(url, payload, headers(request_id))
   end
 

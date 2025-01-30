@@ -11,7 +11,7 @@ defmodule NewRelic.Custom.Event do
     Enum.map(events, &format_event/1)
   end
 
-  def format_event(%__MODULE__{} = event) do
+  defp format_event(%__MODULE__{} = event) do
     [
       %{
         type: event.type,

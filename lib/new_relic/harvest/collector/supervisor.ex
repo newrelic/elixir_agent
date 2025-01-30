@@ -24,7 +24,7 @@ defmodule NewRelic.Harvest.Collector.Supervisor do
     Supervisor.init(children, strategy: :one_for_all)
   end
 
-  def data_supervisor(namespace, key) do
+  defp data_supervisor(namespace, key) do
     Supervisor.child_spec(
       {Harvest.DataSupervisor, [namespace: namespace, key: key, lookup_module: Collector.AgentRun]},
       id: make_ref()

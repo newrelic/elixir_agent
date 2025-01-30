@@ -1,9 +1,7 @@
 defmodule NewRelic.Util.Event do
   @moduledoc false
 
-  def process(events), do: Enum.map(events, &process_event/1)
-
-  def process_event(event), do: Enum.into(event, %{}, &process_attr/1)
+  def process_event(event), do: Map.new(event, &process_attr/1)
 
   defp process_attr({key, val}) when is_binary(val), do: {key, val |> limit_size}
   defp process_attr({key, val}) when is_bitstring(val), do: {key, val |> inspect |> limit_size}

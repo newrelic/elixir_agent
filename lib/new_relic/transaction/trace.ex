@@ -34,7 +34,7 @@ defmodule NewRelic.Transaction.Trace do
     Enum.map(traces, &format_trace/1)
   end
 
-  def format_trace(%__MODULE__{} = trace) do
+  defp format_trace(%__MODULE__{} = trace) do
     trace_segments = format_segments(trace)
     trace_details = [trace.start_time, @unused_map, @unused_map, trace_segments, trace.attributes]
 
@@ -52,11 +52,11 @@ defmodule NewRelic.Transaction.Trace do
     ]
   end
 
-  def format_segments(%{
-        segments: [first_segment | _] = segments,
-        duration: duration,
-        metric_name: metric_name
-      }) do
+  defp format_segments(%{
+         segments: [first_segment | _] = segments,
+         duration: duration,
+         metric_name: metric_name
+       }) do
     attributes = first_segment.attributes |> NewRelic.Util.coerce_attributes()
 
     [
@@ -76,7 +76,7 @@ defmodule NewRelic.Transaction.Trace do
     ]
   end
 
-  def format_child_segments(%Segment{} = segment) do
+  defp format_child_segments(%Segment{} = segment) do
     [
       segment.relative_start_time,
       segment.relative_end_time,

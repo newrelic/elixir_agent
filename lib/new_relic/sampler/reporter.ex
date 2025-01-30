@@ -4,7 +4,7 @@ defmodule NewRelic.Sampler.Reporter do
   def report_sample(category, sample) when is_map(sample),
     do: NewRelic.report_custom_event(sampler_event_type(), Map.put(sample, :category, category))
 
-  def sampler_event_type,
+  defp sampler_event_type,
     do: Application.get_env(:new_relic_agent, :sample_event_type, "ElixirSample")
 
   def sample_cycle, do: Application.get_env(:new_relic_agent, :sample_cycle, 15_000)

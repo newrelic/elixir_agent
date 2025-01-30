@@ -15,11 +15,11 @@ defmodule NewRelic.Util.Error do
     {exception_type, exception_reason, exception_stacktrace}
   end
 
-  def format_type(:error, %ErlangError{original: {_reason, {module, function, args}}}),
+  defp format_type(:error, %ErlangError{original: {_reason, {module, function, args}}}),
     do: Exception.format_mfa(module, function, length(args))
 
-  def format_type(:error, %{__struct__: struct}), do: inspect(struct)
-  def format_type(:exit, _reason), do: "EXIT"
+  defp format_type(:error, %{__struct__: struct}), do: inspect(struct)
+  defp format_type(:exit, _reason), do: "EXIT"
 
   def format_reason(:error, %ErlangError{original: {reason, {module, function, args}}}),
     do: "(" <> Exception.format_mfa(module, function, length(args)) <> ") " <> inspect(reason)

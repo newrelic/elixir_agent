@@ -135,7 +135,7 @@ defmodule NewRelic.Util do
     |> Vendor.maybe_add_vendors()
   end
 
-  def maybe_heroku_dyno_hostname do
+  defp maybe_heroku_dyno_hostname do
     System.get_env("DYNO")
     |> case do
       nil -> nil
@@ -145,14 +145,14 @@ defmodule NewRelic.Util do
     end
   end
 
-  def maybe_add_linux_boot_id(util) do
+  defp maybe_add_linux_boot_id(util) do
     case File.read("/proc/sys/kernel/random/boot_id") do
       {:ok, boot_id} -> Map.put(util, "boot_id", boot_id)
       _ -> util
     end
   end
 
-  def maybe_add_ip_addresses(util) do
+  defp maybe_add_ip_addresses(util) do
     case :inet.getif() do
       {:ok, addrs} ->
         ip_address = Enum.map(addrs, fn {ip, _, _} -> to_string(:inet.ntoa(ip)) end)
@@ -163,7 +163,7 @@ defmodule NewRelic.Util do
     end
   end
 
-  def maybe_add_fqdn(util) do
+  defp maybe_add_fqdn(util) do
     case :net_adm.dns_hostname(:net_adm.localhost()) do
       {:ok, fqdn} -> Map.put(util, :full_hostname, to_string(fqdn))
       _ -> util

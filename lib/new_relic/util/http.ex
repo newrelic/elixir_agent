@@ -34,14 +34,12 @@ defmodule NewRelic.Util.HTTP do
     end
   end
 
-  @doc """
-  Certs are from `CAStore`.
-  https://github.com/elixir-mint/castore
+  # Certs are from `CAStore`.
+  # https://github.com/elixir-mint/castore
 
-  SSL configured according to EEF Security guide:
-  https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
-  """
-  def http_options(opts \\ []) do
+  # SSL configured according to EEF Security guide:
+  # https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
+  defp http_options(opts \\ []) do
     env_opts = Application.get_env(:new_relic_agent, :httpc_request_options, [])
 
     [

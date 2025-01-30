@@ -15,7 +15,7 @@ defmodule NewRelic.Error.Trace do
     Enum.map(errors, &format_error/1)
   end
 
-  def format_error(%__MODULE__{} = error) do
+  defp format_error(%__MODULE__{} = error) do
     [
       error.timestamp,
       error.transaction_name,
