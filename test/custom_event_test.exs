@@ -69,6 +69,10 @@ defmodule CustomEventTest do
   end
 
   test "harvest cycle" do
+    original_env = Application.get_env(:new_relic_agent, :custom_event_harvest_cycle)
+
+    on_exit(fn -> TestHelper.reset_env(:custom_event_harvest_cycle, original_env) end)
+
     Application.put_env(:new_relic_agent, :custom_event_harvest_cycle, 300)
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
@@ -85,7 +89,6 @@ defmodule CustomEventTest do
     assert Process.alive?(second)
 
     TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-    Application.delete_env(:new_relic_agent, :custom_event_harvest_cycle)
 
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
@@ -165,6 +168,14 @@ defmodule CustomEventTest do
   end
 
   test "Annotate events with user's configured attributes" do
+    original_env = Application.get_env(:new_relic_agent, :automatic_attributes)
+
+    on_exit(fn ->
+      TestHelper.reset_env(:automatic_attributes, original_env)
+      NewRelic.Init.init_config()
+      System.delete_env("MY_SERVICE_NAME")
+    end)
+
     System.put_env("MY_SERVICE_NAME", "cool-service")
 
     Application.put_env(
@@ -183,14 +194,13 @@ defmodule CustomEventTest do
     assert Enum.find(events, fn [_, event, _] ->
              event[:key] == "TestEvent" && event[:service_name] == "cool-service"
            end)
-
-    Application.put_env(:new_relic_agent, :automatic_attributes, [])
-    NewRelic.Init.init_config()
-
-    System.delete_env("MY_SERVICE_NAME")
   end
 
   test "Respect the reservoir_size" do
+    original_env = Application.get_env(:new_relic_agent, :custom_event_reservoir_size)
+
+    on_exit(fn -> TestHelper.reset_env(:custom_event_reservoir_size, original_env) end)
+
     Application.put_env(:new_relic_agent, :custom_event_reservoir_size, 3)
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
@@ -203,7 +213,6 @@ defmodule CustomEventTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
     assert length(events) == 3
 
-    Application.delete_env(:new_relic_agent, :custom_event_reservoir_size)
     TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
 end

@@ -88,7 +88,14 @@ defmodule LogsInContextTest do
 
   test "prevent overload of log harvester" do
     configure_logs_in_context(:direct)
+    original_env = Application.get_env(:new_relic_agent, :log_reservoir_size)
     Application.put_env(:new_relic_agent, :log_reservoir_size, 3)
+
+    on_exit(fn ->
+      configure_logs_in_context(:disabled)
+      TestHelper.reset_env(:log_reservoir_size, original_env)
+    end)
+
     TestHelper.restart_harvest_cycle(TelemetrySdk.Logs.HarvestCycle)
 
     capture_log(fn ->
@@ -102,9 +109,6 @@ defmodule LogsInContextTest do
     [harvest] = TestHelper.gather_harvest(TelemetrySdk.Logs.Harvester)
 
     assert length(harvest[:logs]) == 3
-
-    configure_logs_in_context(:disabled)
-    Application.delete_env(:new_relic_agent, :log_reservoir_size)
   end
 
   @default_pattern "\n$time $metadata[$level] $message\n"

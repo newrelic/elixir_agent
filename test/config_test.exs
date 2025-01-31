@@ -9,6 +9,9 @@ defmodule ConfigTest do
     inital_logger = NewRelic.Logger.initial_logger()
 
     reset_config = TestHelper.update(:nr_config, log: "stdout")
+
+    on_exit(fn -> reset_config.() end)
+
     assert :stdio == NewRelic.Logger.initial_logger()
 
     TestHelper.update(:nr_config, log: "some_file.log")
@@ -22,6 +25,13 @@ defmodule ConfigTest do
   end
 
   test "hydrate automatic attributes" do
+    original_automatic_attributes = Application.get_env(:new_relic_agent, :automatic_attributes)
+
+    on_exit(fn ->
+      TestHelper.reset_env(:automatic_attributes, original_automatic_attributes)
+      System.delete_env("ENV_VAR_NAME")
+    end)
+
     System.put_env("ENV_VAR_NAME", "env-var-value")
 
     Application.put_env(
@@ -37,12 +47,17 @@ defmodule ConfigTest do
              raw: "attribute",
              function_call: "FUN"
            }
-
-    Application.put_env(:new_relic_agent, :automatic_attributes, [])
-    System.delete_env("ENV_VAR_NAME")
   end
 
   test "Can configure error collecting via ENV and Application" do
+    original_env = Application.get_env(:new_relic_agent, :error_collector_enabled)
+
+    on_exit(fn ->
+      System.delete_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED")
+      TestHelper.reset_env(:error_collector_enabled, original_env)
+      NewRelic.Init.init_features()
+    end)
+
     # Via ENV
     System.put_env("NEW_RELIC_ERROR_COLLECTOR_ENABLED", "false")
     NewRelic.Init.init_features()
