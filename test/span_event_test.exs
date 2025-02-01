@@ -9,15 +9,10 @@ defmodule SpanEventTest do
   @dt_header "newrelic"
 
   setup do
-    reset_agent_run = TestHelper.update(:nr_agent_run, trusted_account_key: "190")
-    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+    TestHelper.run_with(:nr_agent_run, trusted_account_key: "190")
+    TestHelper.run_with(:nr_config, license_key: "dummy_key", harvest_enabled: true)
 
     DistributedTrace.BackoffSampler.reset()
-
-    on_exit(:reset_nr_config, fn ->
-      reset_agent_run.()
-      reset_config.()
-    end)
 
     :ok
   end
@@ -41,13 +36,7 @@ defmodule SpanEventTest do
   end
 
   test "collect and store top priority events" do
-    original_env = Application.get_env(:new_relic_agent, :span_event_reservoir_size)
-
-    Application.put_env(:new_relic_agent, :span_event_reservoir_size, 2)
-
-    on_exit(fn ->
-      TestHelper.reset_env(:span_event_reservoir_size, original_env)
-    end)
+    TestHelper.run_with(:application_config, span_event_reservoir_size: 2)
 
     {:ok, harvester} =
       DynamicSupervisor.start_child(

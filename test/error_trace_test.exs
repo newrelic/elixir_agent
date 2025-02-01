@@ -54,12 +54,7 @@ defmodule ErrorTraceTest do
   end
 
   test "harvest cycle" do
-    original_env = Application.get_env(:new_relic_agent, :data_report_period)
-
-    Application.put_env(:new_relic_agent, :data_report_period, 300)
-
-    on_exit(fn -> TestHelper.reset_env(:data_report_period, original_env) end)
-
+    TestHelper.run_with(:application_config, data_report_period: 300)
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
 
     first = Harvest.HarvestCycle.current_harvester(Collector.ErrorTrace.HarvestCycle)

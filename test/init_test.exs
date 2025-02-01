@@ -12,10 +12,8 @@ defmodule InitTest do
   end
 
   test "handle config default properly" do
-    original_env = Application.get_env(:new_relic_agent, :harvest_enabled)
-
     on_exit(fn ->
-      TestHelper.reset_env(:harvest_enabled, original_env)
+      Application.delete_env(:new_relic_agent, :harvest_enabled)
       System.delete_env("NEW_RELIC_HARVEST_ENABLED")
       NewRelic.Init.init_config()
     end)

@@ -7,7 +7,6 @@ defmodule W3CTraceContextTest do
   alias NewRelic.DistributedTrace.W3CTraceContext.TraceState
 
   alias NewRelic.Harvest.Collector
-  alias NewRelic.DistributedTrace
 
   @w3c_traceparent "traceparent"
   @w3c_tracestate "tracestate"
@@ -25,21 +24,7 @@ defmodule W3CTraceContextTest do
   end
 
   setup_all do
-    reset_agent_run =
-      TestHelper.update(:nr_agent_run,
-        trusted_account_key: "190",
-        account_id: 190
-      )
-
-    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
-
-    DistributedTrace.BackoffSampler.reset()
-
-    on_exit(fn ->
-      reset_agent_run.()
-      reset_config.()
-    end)
-
+    TestHelper.simulate_agent_run()
     :ok
   end
 
@@ -156,10 +141,9 @@ defmodule W3CTraceContextTest do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
 
-    reset_agent_run =
-      TestHelper.update(:nr_agent_run,
-        trusted_account_key: "1349956"
-      )
+    TestHelper.run_with(:nr_agent_run,
+      trusted_account_key: "1349956"
+    )
 
     conn =
       conn(:get, "/w3c")
@@ -194,8 +178,6 @@ defmodule W3CTraceContextTest do
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-
-    reset_agent_run.()
   end
 
   test "Annotate Events with W3C attrs - incoming non-NR tracestate" do
@@ -233,10 +215,7 @@ defmodule W3CTraceContextTest do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
 
-    reset_agent_run =
-      TestHelper.update(:nr_agent_run,
-        trusted_account_key: "33"
-      )
+    TestHelper.run_with(:nr_agent_run, trusted_account_key: "33")
 
     conn =
       conn(:get, "/w3c")
@@ -271,16 +250,10 @@ defmodule W3CTraceContextTest do
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-
-    reset_agent_run.()
   end
 
   test "Generate expected outbound W3C headers" do
-    reset_agent_run =
-      TestHelper.update(:nr_agent_run,
-        account_id: 3482,
-        primary_application_id: 53442
-      )
+    TestHelper.run_with(:nr_agent_run, account_id: 3482, primary_application_id: 53442)
 
     conn =
       conn(:get, "/w3c")
@@ -304,16 +277,10 @@ defmodule W3CTraceContextTest do
 
     assert tracestate_header =~ expected_tracestate
     assert traceparent_header =~ expected_traceparent
-
-    reset_agent_run.()
   end
 
   test "Generate expected outbound W3C headers - no tracestate" do
-    reset_agent_run =
-      TestHelper.update(:nr_agent_run,
-        account_id: 3482,
-        primary_application_id: 53442
-      )
+    TestHelper.run_with(:nr_agent_run, account_id: 3482, primary_application_id: 53442)
 
     conn =
       conn(:get, "/w3c")
@@ -333,8 +300,6 @@ defmodule W3CTraceContextTest do
 
     assert tracestate_header =~ expected_tracestate
     assert traceparent_header =~ expected_traceparent
-
-    reset_agent_run.()
   end
 
   test "Generate expected outbound W3C headers - bad traceparent" do

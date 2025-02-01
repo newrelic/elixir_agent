@@ -44,11 +44,7 @@ defmodule TransactionEventTest do
   end
 
   test "collect and store top priority events" do
-    original_env = Application.get_env(:new_relic_agent, :transaction_event_reservoir_size)
-
-    on_exit(fn -> TestHelper.reset_env(:transaction_event_reservoir_size, original_env) end)
-
-    Application.put_env(:new_relic_agent, :transaction_event_reservoir_size, 2)
+    TestHelper.run_with(:application_config, transaction_event_reservoir_size: 2)
 
     {:ok, harvester} =
       DynamicSupervisor.start_child(
@@ -94,11 +90,7 @@ defmodule TransactionEventTest do
   end
 
   test "harvest cycle" do
-    original_env = Application.get_env(:new_relic_agent, :transaction_event_harvest_cycle)
-
-    on_exit(fn -> TestHelper.reset_env(:transaction_event_harvest_cycle, original_env) end)
-
-    Application.put_env(:new_relic_agent, :transaction_event_harvest_cycle, 300)
+    TestHelper.run_with(:application_config, transaction_event_harvest_cycle: 300)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     first = Harvest.HarvestCycle.current_harvester(Collector.TransactionEvent.HarvestCycle)
@@ -150,11 +142,7 @@ defmodule TransactionEventTest do
   end
 
   test "Respect the reservoir_size" do
-    original_env = Application.get_env(:new_relic_agent, :transaction_event_reservoir_size)
-
-    on_exit(fn -> TestHelper.reset_env(:transaction_event_reservoir_size, original_env) end)
-
-    Application.put_env(:new_relic_agent, :transaction_event_reservoir_size, 3)
+    TestHelper.run_with(:application_config, transaction_event_reservoir_size: 3)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     TestHelper.request(TestPlugApp, conn(:get, "/"))

@@ -73,33 +73,50 @@ defmodule TestHelper do
     :ok
   end
 
-  def simulate_agent_run(_context) do
-    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
-    reset_agent_run = TestHelper.update(:nr_agent_run, trusted_account_key: "190")
+  def simulate_agent_run() do
+    TestHelper.run_with(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+    TestHelper.run_with(:nr_agent_run, trusted_account_key: "190", account_id: 190)
     NewRelic.DistributedTrace.BackoffSampler.reset()
-
-    ExUnit.Callbacks.on_exit(fn ->
-      reset_config.()
-      reset_agent_run.()
-    end)
 
     :ok
   end
 
-  def update(key, updates) do
+  # :nr_config
+  #  - agent configuration ex: NewRelic.Config.app_name
+  #  - determined and set in NewRelic.Init
+
+  # :nr_features
+  #  - agent feature configuration NewRelic.Config.feature(:key)
+  #  - determined and set in NewRelic.Init
+
+  # :nr_agent_run
+  #  - Agent configuration that comes from collector, ex: AgentRun.entity_guid
+  #  - determined and set in NewRelic.Harvest.Collector.AgentRun
+
+  # :application_config
+  #  - internal agent configuration values
+
+  def run_with(:application_config, [{key, value}]) do
+    original = Application.get_env(:new_relic_agent, key)
+
+    Application.put_env(:new_relic_agent, key, value)
+
+    ExUnit.Callbacks.on_exit(fn ->
+      case original do
+        nil -> Application.delete_env(:new_relic_agent, key)
+        original -> Application.put_env(:new_relic_agent, key, original)
+      end
+    end)
+  end
+
+  def run_with(key, updates) do
     original = :persistent_term.get(key, %{})
     updates = Map.new(updates)
 
     :persistent_term.put(key, Map.merge(original, updates))
 
-    fn -> :persistent_term.put(key, original) end
-  end
-
-  def reset_env(key, nil) do
-    Application.delete_env(:new_relic_agent, key)
-  end
-
-  def reset_env(key, original) do
-    Application.put_env(:new_relic_agent, key, original)
+    ExUnit.Callbacks.on_exit(fn ->
+      :persistent_term.put(key, original)
+    end)
   end
 end

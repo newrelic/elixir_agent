@@ -27,25 +27,15 @@ defmodule EvilCollectorTest do
   end
 
   setup_all do
-    orginal_collector = Application.get_env(:new_relic_agent, :collector_instance_host)
-    original_bypass = Application.get_env(:new_relic_agent, :bypass_collector)
+    TestHelper.run_with(:application_config, bypass_collector: false)
+    TestHelper.run_with(:application_config, collector_instance_host: "localhost")
 
-    Application.put_env(:new_relic_agent, :collector_instance_host, "localhost")
-    Application.put_env(:new_relic_agent, :bypass_collector, false)
-
-    reset_config =
-      TestHelper.update(:nr_config,
-        port: 8881,
-        scheme: "http",
-        license_key: "key",
-        harvest_enabled: true
-      )
-
-    on_exit(fn ->
-      TestHelper.reset_env(:collector_instance_host, orginal_collector)
-      TestHelper.reset_env(:bypass_collector, original_bypass)
-      reset_config.()
-    end)
+    TestHelper.run_with(:nr_config,
+      port: 8881,
+      scheme: "http",
+      license_key: "key",
+      harvest_enabled: true
+    )
 
     :ok
   end

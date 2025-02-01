@@ -343,7 +343,7 @@ defmodule TransactionTest do
 
   @tag capture_log: true
   test "Allow disabling error detail collection" do
-    reset_features = TestHelper.update(:nr_features, error_collector: false)
+    TestHelper.run_with(:nr_features, error_collector: false)
 
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
@@ -355,8 +355,6 @@ defmodule TransactionTest do
              event[:status] == 500 && event[:error] == true && event[:error_reason] == nil &&
                event[:error_kind] == nil && event[:error_stack] == nil
            end)
-
-    reset_features.()
   end
 
   test "Transaction with traced external service call" do
@@ -415,7 +413,7 @@ defmodule TransactionTest do
   end
 
   test "Support setting host display name" do
-    reset_config = TestHelper.update(:nr_config, host_display_name: "my-test-host")
+    TestHelper.run_with(:nr_config, host_display_name: "my-test-host")
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     TestHelper.request(TestPlugApp, conn(:get, "/map"))
@@ -425,8 +423,6 @@ defmodule TransactionTest do
     assert Enum.find(events, fn [_, event] ->
              event[:path] == "/map" && event[:"host.displayName"] == "my-test-host"
            end)
-
-    reset_config.()
   end
 
   test "Allow a transaction to be ignored" do
@@ -502,7 +498,7 @@ defmodule TransactionTest do
     end
 
     test "Controlled via config" do
-      reset_features = TestHelper.update(:nr_features, request_queuing_metrics: false)
+      TestHelper.run_with(:nr_features, request_queuing_metrics: false)
       TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
       request_start = System.system_time(:microsecond) - 1_500_000
@@ -516,8 +512,6 @@ defmodule TransactionTest do
       [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
       refute event[:queueDuration]
-
-      reset_features.()
     end
   end
 
@@ -548,7 +542,7 @@ defmodule TransactionTest do
 
   describe "Extended attributes" do
     test "can be turned on" do
-      reset_features = TestHelper.update(:nr_features, extended_attributes: true)
+      TestHelper.run_with(:nr_features, extended_attributes: true)
       TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
       TestHelper.request(TestPlugApp, conn(:get, "/fn_trace"))
@@ -556,12 +550,10 @@ defmodule TransactionTest do
       [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
       assert event[:"function.TransactionTest.HelperModule.function/1.call_count"] == 1
-
-      reset_features.()
     end
 
     test "can be turned off" do
-      reset_features = TestHelper.update(:nr_features, extended_attributes: false)
+      TestHelper.run_with(:nr_features, extended_attributes: false)
       TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
       TestHelper.request(TestPlugApp, conn(:get, "/fn_trace"))
@@ -569,8 +561,6 @@ defmodule TransactionTest do
       [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
       refute event[:"function.TransactionTest.HelperModule.function/1.call_count"]
-
-      reset_features.()
     end
   end
 end

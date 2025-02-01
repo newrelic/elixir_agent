@@ -4,19 +4,8 @@ defmodule InstrumentedTaskTest do
   alias NewRelic.Harvest.TelemetrySdk
 
   setup do
-    reset_agent_run = TestHelper.update(:nr_agent_run, trusted_account_key: "190")
-
-    reset_config =
-      TestHelper.update(:nr_config,
-        license_key: "dummy_key",
-        harvest_enabled: true,
-        trace_mode: :infinite
-      )
-
-    on_exit(fn ->
-      reset_agent_run.()
-      reset_config.()
-    end)
+    TestHelper.simulate_agent_run()
+    TestHelper.run_with(:nr_config, trace_mode: :infinite)
 
     :ok
   end

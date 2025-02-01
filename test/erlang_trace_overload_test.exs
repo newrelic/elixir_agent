@@ -6,17 +6,13 @@ defmodule ErlangTraceOverloadTest do
 
   @tag :capture_log
   test "Handle process spawn overload in ErlangTrace" do
-    original_queue_len = Application.get_env(:new_relic_agent, :overload_queue_len)
-    original_backoff = Application.get_env(:new_relic_agent, :overload_backoff)
+    TestHelper.run_with(:application_config, overload_queue_len: @test_queue_len)
+    TestHelper.run_with(:application_config, overload_backoff: @test_backoff)
 
-    Application.put_env(:new_relic_agent, :overload_queue_len, @test_queue_len)
-    Application.put_env(:new_relic_agent, :overload_backoff, @test_backoff)
     NewRelic.disable_erlang_trace()
     NewRelic.enable_erlang_trace()
 
     on_exit(fn ->
-      TestHelper.reset_env(:overload_queue_len, original_queue_len)
-      TestHelper.reset_env(:overload_backoff, original_backoff)
       NewRelic.disable_erlang_trace()
       NewRelic.enable_erlang_trace()
     end)

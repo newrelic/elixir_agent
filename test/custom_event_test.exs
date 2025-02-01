@@ -69,11 +69,7 @@ defmodule CustomEventTest do
   end
 
   test "harvest cycle" do
-    original_env = Application.get_env(:new_relic_agent, :custom_event_harvest_cycle)
-
-    on_exit(fn -> TestHelper.reset_env(:custom_event_harvest_cycle, original_env) end)
-
-    Application.put_env(:new_relic_agent, :custom_event_harvest_cycle, 300)
+    TestHelper.run_with(:application_config, custom_event_harvest_cycle: 300)
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
     first = Harvest.HarvestCycle.current_harvester(Collector.CustomEvent.HarvestCycle)
@@ -168,40 +164,18 @@ defmodule CustomEventTest do
   end
 
   test "Annotate events with user's configured attributes" do
-    original_env = Application.get_env(:new_relic_agent, :automatic_attributes)
-
-    on_exit(fn ->
-      TestHelper.reset_env(:automatic_attributes, original_env)
-      NewRelic.Init.init_config()
-      System.delete_env("MY_SERVICE_NAME")
-    end)
-
-    System.put_env("MY_SERVICE_NAME", "cool-service")
-
-    Application.put_env(
-      :new_relic_agent,
-      :automatic_attributes,
-      service_name: {:system, "MY_SERVICE_NAME"}
-    )
-
-    NewRelic.Init.init_config()
-
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
     NewRelic.report_custom_event(:Event, %{key: "TestEvent"})
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
     assert Enum.find(events, fn [_, event, _] ->
-             event[:key] == "TestEvent" && event[:service_name] == "cool-service"
+             event[:key] == "TestEvent" && event[:test_attribute] == "test_value"
            end)
   end
 
   test "Respect the reservoir_size" do
-    original_env = Application.get_env(:new_relic_agent, :custom_event_reservoir_size)
-
-    on_exit(fn -> TestHelper.reset_env(:custom_event_reservoir_size, original_env) end)
-
-    Application.put_env(:new_relic_agent, :custom_event_reservoir_size, 3)
+    TestHelper.run_with(:application_config, custom_event_reservoir_size: 3)
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
     NewRelic.report_custom_event(:Event, %{key: "TestEvent1"})

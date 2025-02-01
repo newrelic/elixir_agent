@@ -19,11 +19,7 @@ defmodule TelemetrySdk.SpanHarvesterTest do
   end
 
   test "harvest cycle" do
-    original_env = Application.get_env(:new_relic_agent, :spans_harvest_cycle)
-    on_exit(fn -> TestHelper.reset_env(:spans_harvest_cycle, original_env) end)
-
-    Application.put_env(:new_relic_agent, :spans_harvest_cycle, 300)
-
+    TestHelper.run_with(:application_config, spans_harvest_cycle: 300)
     TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
 
     first = Harvest.HarvestCycle.current_harvester(TelemetrySdk.Spans.HarvestCycle)

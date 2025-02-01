@@ -125,13 +125,7 @@ defmodule TransactionErrorEventTest do
   end
 
   test "harvest cycle" do
-    original_env = Application.get_env(:new_relic_agent, :error_event_harvest_cycle)
-
-    on_exit(fn ->
-      TestHelper.reset_env(:error_event_harvest_cycle, original_env)
-    end)
-
-    Application.put_env(:new_relic_agent, :error_event_harvest_cycle, 300)
+    TestHelper.run_with(:application_config, error_event_harvest_cycle: 300)
     TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
 
     first = Harvest.HarvestCycle.current_harvester(Collector.TransactionErrorEvent.HarvestCycle)

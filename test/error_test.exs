@@ -39,7 +39,7 @@ defmodule ErrorTest do
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     ErrorDummy.start_link()
 
-    reset_features = TestHelper.update(:nr_features, stacktrace_argument_collection: false)
+    TestHelper.run_with(:nr_features, stacktrace_argument_collection: false)
 
     capture_log(fn ->
       catch_exit do
@@ -61,8 +61,6 @@ defmodule ErrorTest do
              List.first(trace_error.stack_trace),
              "Not.secretfun(\"DISABLED (arity: 2)\")"
            )
-
-    reset_features.()
   end
 
   test "Catch a raised Error" do
@@ -123,7 +121,7 @@ defmodule ErrorTest do
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     ErrorDummy.start_link()
 
-    reset_features = TestHelper.update(:nr_features, stacktrace_argument_collection: false)
+    TestHelper.run_with(:nr_features, stacktrace_argument_collection: false)
 
     capture_log(fn ->
       catch_exit do
@@ -134,8 +132,6 @@ defmodule ErrorTest do
     [[_, event_error, _]] = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
     assert String.contains?(event_error.stacktrace, "init(\"DISABLED (arity: 1)\")")
-
-    reset_features.()
   end
 
   test "Catch a simple raise" do

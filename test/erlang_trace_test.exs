@@ -22,38 +22,28 @@ defmodule ErlangTraceTest do
   end
 
   test "config option to disable at boot" do
-    original_env = Application.get_env(:new_relic_agent, :disable_erlang_trace)
+    restart_erlang_trace_supervisor()
+    on_exit(fn -> restart_erlang_trace_supervisor() end)
+
+    # Make sure it starts up with the default setting
+    assert Process.whereis(NewRelic.Transaction.ErlangTraceSupervisor)
+    assert Process.whereis(NewRelic.Transaction.ErlangTrace)
 
     # Pretend the app is starting up with the config option
-    Application.put_env(:new_relic_agent, :disable_erlang_trace, true)
-
-    on_exit(fn ->
-      TestHelper.reset_env(:disable_erlang_trace, original_env)
-    end)
-
-    supervisor = Process.whereis(NewRelic.Transaction.ErlangTraceSupervisor)
-    Process.monitor(supervisor)
-    Process.exit(supervisor, :kill)
-    assert_receive {:DOWN, _ref, _, ^supervisor, _}
-
-    Process.sleep(100)
+    TestHelper.run_with(:application_config, disable_erlang_trace: true)
+    restart_erlang_trace_supervisor()
 
     # Make sure we didn't start the ErlangTrace process
     assert Process.whereis(NewRelic.Transaction.ErlangTraceSupervisor)
     refute Process.whereis(NewRelic.Transaction.ErlangTrace)
+  end
 
-    # Pretend the app is starting up with the default setting
-    Application.delete_env(:new_relic_agent, :disable_erlang_trace)
-
+  defp restart_erlang_trace_supervisor() do
     supervisor = Process.whereis(NewRelic.Transaction.ErlangTraceSupervisor)
     Process.monitor(supervisor)
     Process.exit(supervisor, :kill)
     assert_receive {:DOWN, _ref, _, ^supervisor, _}
 
     Process.sleep(100)
-
-    # Make sure it starts up enabled
-    assert Process.whereis(NewRelic.Transaction.ErlangTraceSupervisor)
-    assert Process.whereis(NewRelic.Transaction.ErlangTrace)
   end
 end
