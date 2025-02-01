@@ -108,30 +108,19 @@ defmodule NewRelic.Transaction.Complete do
 
     function_segments =
       function_segments
-      |> Enum.map(&transform_time_attrs/1)
-      |> Enum.map(&transform_trace_time_attrs(&1, tx_attrs.start_time))
-      |> Enum.map(&transform_trace_name_attrs/1)
-      |> Enum.map(&struct(Transaction.Trace.Segment, &1))
+      |> transform_function_segments(tx_attrs.start_time)
       |> Enum.group_by(& &1.pid)
       |> Enum.into(%{}, &generate_segment_tree(&1))
 
     root_process_segment =
       tx_attrs
-      |> Map.take([:name, :pid, :start_time, :end_time])
-      |> List.wrap()
-      |> Enum.map(&transform_trace_time_attrs(&1, tx_attrs.start_time))
-      |> Enum.map(&transform_trace_name_attrs/1)
-      |> Enum.map(&struct(Transaction.Trace.Segment, &1))
-      |> List.first()
+      |> transform_root_process_segment()
       |> Map.put(:id, pid)
 
     process_segments =
       process_spawns
       |> collect_process_segments(process_exits)
-      |> Enum.map(&transform_trace_time_attrs(&1, tx_attrs.start_time))
-      |> Enum.map(&transform_trace_name_attrs/1)
-      |> Enum.map(&struct(Transaction.Trace.Segment, &1))
-      |> Enum.reject(&(&1.relative_start_time == &1.relative_end_time))
+      |> transform_process_segments(tx_attrs.start_time)
       |> Enum.sort_by(& &1.relative_start_time)
 
     {merged_process_function_segments, remaining_function_segments} =
@@ -168,6 +157,40 @@ defmodule NewRelic.Transaction.Complete do
       |> Map.put(:process_spawns, length(process_spawns))
 
     {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
+  end
+
+  defp transform_root_process_segment(tx_attrs) do
+    transformed =
+      tx_attrs
+      |> Map.take([:name, :pid, :start_time, :end_time])
+      |> transform_trace_time_attrs(tx_attrs.start_time)
+      |> transform_trace_name_attrs()
+
+    struct(Transaction.Trace.Segment, transformed)
+  end
+
+  defp transform_function_segments(function_segments, start_time) do
+    for segment <- function_segments do
+      segment = transform_function_segment(segment, start_time)
+      struct(Transaction.Trace.Segment, segment)
+    end
+  end
+
+  defp transform_function_segment(segment, start_time) do
+    segment
+    |> transform_time_attrs()
+    |> transform_trace_time_attrs(start_time)
+    |> transform_trace_name_attrs()
+  end
+
+  defp transform_process_segments(process_segments, start_time) do
+    for segment <- process_segments,
+        time_attr_segment = transform_trace_time_attrs(segment, start_time),
+        time_attr_segment.relative_start_time != time_attr_segment.relative_end_time do
+      segment = transform_trace_name_attrs(time_attr_segment)
+
+      struct(Transaction.Trace.Segment, segment)
+    end
   end
 
   defp total_time_s(%{transactionType: :Web}, concurrent_process_time_ms) do
@@ -259,10 +282,9 @@ defmodule NewRelic.Transaction.Complete do
   end
 
   defp spawned_process_span_events(tx_attrs, process_spawns, process_exits) do
-    process_spawns
-    |> collect_process_segments(process_exits)
-    |> Enum.map(&transform_trace_name_attrs/1)
-    |> Enum.map(fn proc ->
+    for process_segment <- collect_process_segments(process_spawns, process_exits) do
+      proc = transform_trace_name_attrs(process_segment)
+
       %NewRelic.Span.Event{
         trace_id: tx_attrs[:traceId],
         transaction_id: tx_attrs[:guid],
@@ -282,7 +304,7 @@ defmodule NewRelic.Transaction.Complete do
           pid: proc.pid
         }
       }
-    end)
+    end
   end
 
   defp collect_process_segments(spawns, exits) do
