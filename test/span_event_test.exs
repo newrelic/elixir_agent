@@ -14,7 +14,7 @@ defmodule SpanEventTest do
 
     DistributedTrace.BackoffSampler.reset()
 
-    on_exit(fn ->
+    on_exit(:reset_nr_config, fn ->
       reset_agent_run.()
       reset_config.()
     end)
@@ -41,7 +41,13 @@ defmodule SpanEventTest do
   end
 
   test "collect and store top priority events" do
+    original_env = Application.get_env(:new_relic_agent, :span_event_reservoir_size)
+
     Application.put_env(:new_relic_agent, :span_event_reservoir_size, 2)
+
+    on_exit(fn ->
+      TestHelper.reset_env(:span_event_reservoir_size, original_env)
+    end)
 
     {:ok, harvester} =
       DynamicSupervisor.start_child(
@@ -68,8 +74,6 @@ defmodule SpanEventTest do
     Process.monitor(harvester)
     Harvest.HarvestCycle.send_harvest(Collector.SpanEvent.HarvesterSupervisor, harvester)
     assert_receive {:DOWN, _ref, _, ^harvester, :shutdown}, 1000
-
-    Application.delete_env(:new_relic_agent, :span_event_reservoir_size)
   end
 
   test "report a span event through the harvester" do

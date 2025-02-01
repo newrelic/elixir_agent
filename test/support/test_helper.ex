@@ -94,4 +94,12 @@ defmodule TestHelper do
 
     fn -> :persistent_term.put(key, original) end
   end
+
+  def reset_env(key, nil) do
+    Application.delete_env(:new_relic_agent, key)
+  end
+
+  def reset_env(key, original) do
+    Application.put_env(:new_relic_agent, key, original)
+  end
 end

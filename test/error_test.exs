@@ -12,7 +12,7 @@ defmodule ErrorTest do
     def handle_call(:secretfun, _from, _state), do: Not.secretfun("secretvalue", "other_secret")
     def handle_call(:sleep, _from, _state), do: :timer.sleep(:infinity)
     def handle_call(:raise, _from, _state), do: raise("ERROR")
-    def handle_call(:erlang_error, _from, _state), do: raise(:erlang.error(:badarg))
+    def handle_call(:erlang_error, _from, _state), do: :erlang.error(:badarg)
   end
 
   test "Catch and harvest errors" do

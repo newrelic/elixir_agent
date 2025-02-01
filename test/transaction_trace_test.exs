@@ -116,6 +116,10 @@ defmodule TransactionTraceTest do
   end
 
   test "harvest cycle" do
+    original_env = Application.get_env(:new_relic_agent, :data_report_period)
+
+    on_exit(fn -> TestHelper.reset_env(:data_report_period, original_env) end)
+
     Application.put_env(:new_relic_agent, :data_report_period, 300)
     TestHelper.restart_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
 
@@ -132,7 +136,6 @@ defmodule TransactionTraceTest do
     assert Process.alive?(second)
 
     TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
-    Application.delete_env(:new_relic_agent, :data_report_period)
 
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
@@ -225,6 +228,8 @@ defmodule TransactionTraceTest do
   test "Transaction Trace when erlang trace disabled" do
     NewRelic.disable_erlang_trace()
 
+    on_exit(fn -> NewRelic.enable_erlang_trace() end)
+
     TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
 
     traces = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
@@ -236,8 +241,6 @@ defmodule TransactionTraceTest do
     assert trace_str =~ "TransactionTraceTest.ExternalService.query"
     assert trace_str =~ "TransactionTraceTest.ExternalService.secret_query"
     assert trace_str =~ "TransactionTraceTest.HelperModule.function"
-
-    NewRelic.enable_erlang_trace()
   end
 
   test "Don't report traces with a short duration" do

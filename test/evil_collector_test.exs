@@ -27,6 +27,9 @@ defmodule EvilCollectorTest do
   end
 
   setup_all do
+    orginal_collector = Application.get_env(:new_relic_agent, :collector_instance_host)
+    original_bypass = Application.get_env(:new_relic_agent, :bypass_collector)
+
     Application.put_env(:new_relic_agent, :collector_instance_host, "localhost")
     Application.put_env(:new_relic_agent, :bypass_collector, false)
 
@@ -39,14 +42,15 @@ defmodule EvilCollectorTest do
       )
 
     on_exit(fn ->
-      Application.delete_env(:new_relic_agent, :collector_instance_host)
-      Application.put_env(:new_relic_agent, :bypass_collector, true)
+      TestHelper.reset_env(:collector_instance_host, orginal_collector)
+      TestHelper.reset_env(:bypass_collector, original_bypass)
       reset_config.()
     end)
 
     :ok
   end
 
+  @tag :capture_log
   test "Retry on 503" do
     EvilCollector.start(code: 503, body: ":(")
 
@@ -62,6 +66,7 @@ defmodule EvilCollectorTest do
     assert {:error, :not_connected} = Collector.Protocol.transaction_trace([agent_run_id, []])
   end
 
+  @tag :capture_log
   test "Handle unexpected HTTP code" do
     EvilCollector.start(code: 404, body: "??")
 
@@ -73,12 +78,14 @@ defmodule EvilCollectorTest do
     EvilCollector.stop()
   end
 
+  @tag :capture_log
   test "Handle when unable to connect" do
     # Don't start an EvilCollector
     assert {:error, reason} = Collector.Protocol.preconnect()
     assert {:failed_connect, _} = reason
   end
 
+  @tag :capture_log
   test "Log out collector error response" do
     EvilCollector.start(code: 418, body: "c(_)/")
     previous_logger = GenServer.call(NewRelic.Logger, {:logger, :memory})
@@ -94,6 +101,7 @@ defmodule EvilCollectorTest do
     EvilCollector.stop()
   end
 
+  @tag :capture_log
   test "Handle mangled collector response" do
     EvilCollector.start(code: 200, body: "<badJSON>")
     previous_logger = GenServer.call(NewRelic.Logger, {:logger, :memory})
@@ -108,6 +116,7 @@ defmodule EvilCollectorTest do
     EvilCollector.stop()
   end
 
+  @tag :capture_log
   test "Log out collector Exception" do
     exception = %{
       "exception" => %{
