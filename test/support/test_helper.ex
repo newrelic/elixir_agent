@@ -66,15 +66,15 @@ defmodule TestHelper do
     end)
   end
 
-  def simulate_agent_enabled(_context) do
+  def simulate_agent_enabled() do
     Process.whereis(Harvest.TaskSupervisor) ||
       NewRelic.EnabledSupervisor.start_link(:ok)
 
     :ok
   end
 
-  def simulate_agent_run() do
-    TestHelper.run_with(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+  def simulate_agent_run(extra_nr_config \\ []) do
+    TestHelper.run_with(:nr_config, Keyword.merge([license_key: "dummy_key", harvest_enabled: true], extra_nr_config))
     TestHelper.run_with(:nr_agent_run, trusted_account_key: "190", account_id: 190)
     NewRelic.DistributedTrace.BackoffSampler.reset()
 

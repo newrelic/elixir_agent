@@ -4,25 +4,27 @@ defmodule AbsintheExampleTest do
   alias NewRelic.Harvest.TelemetrySdk
   alias NewRelic.Harvest.Collector
 
-  setup_all context, do: TestSupport.simulate_agent_run(context, trace_mode: :infinite)
-  setup_all context, do: TestSupport.simulate_agent_enabled(context)
+  setup_all do
+    TestHelper.simulate_agent_enabled()
+    TestHelper.simulate_agent_run(trace_mode: :infinite)
+  end
 
   test "Absinthe instrumentation" do
-    TestSupport.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-    TestSupport.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
 
     {:ok, %{body: _body}} = request("query TestQuery { one { two { three(value: 3) } } }")
 
-    metrics = TestSupport.gather_harvest(Collector.Metric.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert TestSupport.find_metric(metrics, "WebTransaction")
+    assert TestHelper.find_metric(metrics, "WebTransaction")
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "WebTransactionTotalTime/Absinthe/AbsintheExample.Schema/query/one.two.three"
            )
 
-    [%{spans: spans}] = TestSupport.gather_harvest(TelemetrySdk.Spans.Harvester)
+    [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
     spansaction =
       Enum.find(spans, fn %{attributes: attr} ->

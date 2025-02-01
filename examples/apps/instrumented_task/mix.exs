@@ -9,6 +9,7 @@ defmodule InstrumentedTask.MixProject do
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
+      elixirc_paths: ["lib", Path.expand(__DIR__ <> "../../../../test/support")],
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps()

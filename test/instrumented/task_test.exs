@@ -4,9 +4,7 @@ defmodule InstrumentedTaskTest do
   alias NewRelic.Harvest.TelemetrySdk
 
   setup do
-    TestHelper.simulate_agent_run()
-    TestHelper.run_with(:nr_config, trace_mode: :infinite)
-
+    TestHelper.simulate_agent_run(trace_mode: :infinite)
     :ok
   end
 
