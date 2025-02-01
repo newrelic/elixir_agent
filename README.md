@@ -96,9 +96,9 @@ There are a few agent features that can be enabled via configuration. Please see
 
 #### Transactions
 
-The `Plug` and `Phoenix` instrumentation automatically report a Transaction for each request.
+Transactions are the main unit of work reported to New Relic. `Plug` and `Phoenix` instrumentation automatically report a Web Transaction for each request. `Oban` instrumentation reports an "Other" Transaction for each job. You can also report custom transactions for work done in your app.
 
-These Transactions will follow across any process spawned and linked (ex: `Task.async`), but will _not_ follow a process that isn't linked (ex: `Task.Supervisor.async_nolink`).
+These Transactions will propagate to any process spawned and linked (ex: `Task.async`), but will _not_ follow a process that isn't linked (ex: `Task.Supervisor.async_nolink`).
 
 ---
 
@@ -154,6 +154,22 @@ Task.Supervisor.async_nolink(MyTaskSupervisor, fn ->
 end)
 ```
 
+---
+
+You may start an "Other" Transaction for non-HTTP related work. This could used be while consuming from a message queue, for example.
+
+```elixir
+defmodule Worker do
+  use NewRelic.Tracer
+
+  def process_messages do
+    NewRelic.other_transaction("Worker", "ProcessMessages") do
+      # ...
+    end
+  end
+end
+```
+
 #### Function Tracing
 
 `NewRelic.Tracer` enables detailed Function tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it. Install it by adding `use NewRelic.Tracer` to any module, and annotating any function with an `@trace` module attribute
@@ -165,6 +181,8 @@ defmodule MyModule do
   @trace :work
   def work do
     # Will report as `MyModule.work/0`
+
+    NewRelic.add_span_attributes(some: "attribute")
   end
 end
 ```
@@ -179,7 +197,7 @@ defmodule MyModule do
     # Do some stuff..
 
     NewRelic.span "do.some_work", user_id: "abc123" do
-      # Will report as `do.some_work`
+      # Span will report as `do.some_work` and have a `user_id` attribute
       # Will return the result of the block
     end
   end
@@ -213,28 +231,6 @@ defmodule Mix.Tasks.Example do
   end
 end
 ```
-
-#### Other Transactions
-
-You may start an "Other" Transaction for non-HTTP related work. This could used be while consuming from a message queue, for example.
-
-```elixir
-defmodule Worker do
-  use NewRelic.Tracer
-
-  def process_messages do
-    NewRelic.other_transaction("Worker", "ProcessMessages") do
-      # ...
-    end
-  end
-end
-```
-
-#### Adapters
-
-There are a few adapters which leverage this agent to provide library / framework specific instrumentation. Note that these will eventually be replaced with `telemetry` based instrumentation.
-
-* `Absinthe` https://github.com/binaryseed/new_relic_absinthe
 
 #### Disabling
 

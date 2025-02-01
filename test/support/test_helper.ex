@@ -81,18 +81,6 @@ defmodule TestHelper do
     :ok
   end
 
-  # :nr_config
-  #  - agent configuration ex: NewRelic.Config.app_name
-  #  - determined and set in NewRelic.Init
-
-  # :nr_features
-  #  - agent feature configuration NewRelic.Config.feature(:key)
-  #  - determined and set in NewRelic.Init
-
-  # :nr_agent_run
-  #  - Agent configuration that comes from collector, ex: AgentRun.entity_guid
-  #  - determined and set in NewRelic.Harvest.Collector.AgentRun
-
   # :application_config
   #  - internal agent configuration values
 
@@ -108,6 +96,18 @@ defmodule TestHelper do
       end
     end)
   end
+
+  # :nr_config
+  #  - user facing agent configuration, ex: NewRelic.Config.app_name
+  #  - determined and set in NewRelic.Init
+
+  # :nr_features
+  #  - user facing agent feature configuration, ex: NewRelic.Config.feature(:key)
+  #  - determined and set in NewRelic.Init
+
+  # :nr_agent_run
+  #  - Agent configuration that comes from collector, ex: AgentRun.entity_guid
+  #  - determined and set in NewRelic.Harvest.Collector.AgentRun
 
   def run_with(key, updates) do
     original = :persistent_term.get(key, %{})
