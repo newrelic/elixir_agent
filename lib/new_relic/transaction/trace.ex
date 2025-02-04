@@ -62,17 +62,9 @@ defmodule NewRelic.Transaction.Trace do
     [
       0,
       duration,
-      "ROOT",
+      metric_name,
       attributes,
-      [
-        [
-          0,
-          duration,
-          metric_name,
-          attributes,
-          Enum.map(segments, &format_child_segments/1)
-        ]
-      ]
+      Enum.map(segments, &format_child_segments/1)
     ]
   end
 
