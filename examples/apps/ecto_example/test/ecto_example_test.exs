@@ -33,19 +33,19 @@ defmodule EctoExampleTest do
 
     assert TestSupport.find_metric(
              metrics,
-             {"Datastore/statement/Postgres/counts/insert", "WebTransaction/Plug/GET//hello"},
+             {"Datastore/statement/Postgres/counts/insert", "WebTransaction/Plug/GET/hello"},
              3
            )
 
     assert TestSupport.find_metric(
              metrics,
-             {"Datastore/statement/MySQL/counts/insert", "WebTransaction/Plug/GET//hello"},
+             {"Datastore/statement/MySQL/counts/insert", "WebTransaction/Plug/GET/hello"},
              3
            )
 
     assert TestSupport.find_metric(
              metrics,
-             {"Datastore/statement/SQLite3/counts/insert", "WebTransaction/Plug/GET//hello"},
+             {"Datastore/statement/SQLite3/counts/insert", "WebTransaction/Plug/GET/hello"},
              3
            )
 

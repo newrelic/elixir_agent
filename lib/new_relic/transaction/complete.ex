@@ -246,6 +246,7 @@ defmodule NewRelic.Transaction.Complete do
           |> Map.drop(@spansaction_exclude_attrs)
           |> Map.merge(NewRelic.Config.automatic_attributes())
           |> Map.merge(%{
+            "transaction.name": Util.metric_join(["#{tx_attrs[:transactionType]}Transaction", tx_attrs.name]),
             tracingVendors: tx_attrs[:tracingVendors],
             trustedParentId: tx_attrs[:trustedParentId]
           })

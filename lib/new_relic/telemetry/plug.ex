@@ -288,7 +288,7 @@ defmodule NewRelic.Telemetry.Plug do
   defp status_code(_), do: nil
 
   defp plug_name(conn, match_path) do
-    "/Plug/#{conn.method}/#{match_path}"
+    "/Plug/#{conn.method}#{match_path}"
     |> String.replace("/*glob", "")
     |> String.replace("/*_path", "")
   end

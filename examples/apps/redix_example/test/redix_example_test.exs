@@ -47,7 +47,7 @@ defmodule RedixExampleTest do
 
     assert TestSupport.find_metric(
              metrics,
-             {"Datastore/operation/Redis/SET", "WebTransaction/Plug/GET//hello"},
+             {"Datastore/operation/Redis/SET", "WebTransaction/Plug/GET/hello"},
              1
            )
 
