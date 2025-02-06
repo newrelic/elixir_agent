@@ -135,10 +135,9 @@ defmodule NewRelic.Transaction.Complete do
       |> Enum.sort_by(& &1.relative_start_time)
 
     {merged_process_function_segments, remaining_function_segments} =
-      merge_process_function_segments(process_segments, function_segments)
+      merge_process_function_segments([root_process_segment | process_segments], function_segments)
 
-    segment_tree =
-      generate_process_tree(merged_process_function_segments, root: root_process_segment)
+    segment_tree = generate_process_tree(merged_process_function_segments, root: root_process_segment)
 
     top_children = List.wrap(function_segments[inspect(pid)])
     stray_children = Map.values(remaining_function_segments) |> List.flatten()
@@ -166,18 +165,9 @@ defmodule NewRelic.Transaction.Complete do
       |> Map.merge(NewRelic.Config.automatic_attributes())
       |> Map.put(:"nr.apdexPerfZone", Util.Apdex.label(apdex))
       |> Map.put(:total_time_s, total_time_s(tx_attrs, concurrent_process_time_ms))
-      |> Map.put(:process_spawns, process_spawn_count(tx_attrs, process_spawns))
+      |> Map.put(:process_spawns, length(process_spawns))
 
     {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
-  end
-
-  defp process_spawn_count(%{transactionType: :Web}, process_spawns) do
-    # Remove the cowboy Request process spawn
-    length(process_spawns) - 1
-  end
-
-  defp process_spawn_count(%{transactionType: :Other}, process_spawns) do
-    length(process_spawns)
   end
 
   defp total_time_s(%{transactionType: :Web}, concurrent_process_time_ms) do

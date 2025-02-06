@@ -464,7 +464,7 @@ defmodule TransactionTest do
     assert event[:total_time_s] > event[:duration_s]
     assert event[:total_time_s] < event[:duration_s] * 2
 
-    assert event[:process_spawns] == 1
+    assert event[:process_spawns] == 2
   end
 
   describe "Request queuing" do
