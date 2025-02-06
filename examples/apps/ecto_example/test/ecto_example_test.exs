@@ -3,110 +3,112 @@ defmodule EctoExampleTest do
 
   alias NewRelic.Harvest.Collector
 
-  setup_all context, do: TestSupport.simulate_agent_enabled(context)
+  setup_all do
+    TestHelper.simulate_agent_enabled()
+  end
 
   test "Datastore metrics generated" do
-    TestSupport.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
     {:ok, %{body: body}} = request()
     assert body =~ "world"
 
-    metrics = TestSupport.gather_harvest(Collector.Metric.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/Postgres/counts/insert",
              3
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/MySQL/counts/insert",
              3
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/SQLite3/counts/insert",
              3
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              {"Datastore/statement/Postgres/counts/insert", "WebTransaction/Plug/GET/hello"},
              3
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              {"Datastore/statement/MySQL/counts/insert", "WebTransaction/Plug/GET/hello"},
              3
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              {"Datastore/statement/SQLite3/counts/insert", "WebTransaction/Plug/GET/hello"},
              3
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/Postgres/counts/select",
              5
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/MySQL/counts/select",
              5
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/SQLite3/counts/select",
              4
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/Postgres/counts/delete"
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/MySQL/counts/delete"
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/statement/SQLite3/counts/delete"
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/MySQL/allWeb",
              12
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/Postgres/allWeb",
              12
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/SQLite3/allWeb",
              11
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/allWeb",
              35
            )
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "Datastore/all",
              35

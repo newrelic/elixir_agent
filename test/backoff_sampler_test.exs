@@ -97,8 +97,9 @@ defmodule BackoffSamplerTest do
     })
   end
 
+  @sampling_target 100
   test "cycles trigger" do
-    Application.put_env(:new_relic_agent, :sampling_target_period, 100)
+    TestHelper.run_with(:application_config, sampling_target_period: @sampling_target)
 
     BackoffSampler.reset()
     BackoffSampler.trigger_next_cycle()
@@ -122,7 +123,7 @@ defmodule BackoffSamplerTest do
     refute BackoffSampler.sample?()
 
     # Wait until the next cycle
-    Process.sleep(110)
+    Process.sleep(@sampling_target + 10)
 
     # Next cycle it will adjust and take some, but not all
     decisions = [

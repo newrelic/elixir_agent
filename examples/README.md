@@ -26,7 +26,6 @@ Point to the agent
 defp deps do
   [
     {:new_relic_agent, path: "../../../"},
-    {:test_support, in_umbrella: true},
     # ...
   ]
 end

@@ -9,6 +9,7 @@ defmodule EctoExample.MixProject do
       deps_path: "../../deps",
       config_path: "../../config/config.exs",
       lockfile: "../../mix.lock",
+      elixirc_paths: ["lib", Path.expand(__DIR__ <> "../../../../test/support")],
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -27,7 +28,6 @@ defmodule EctoExample.MixProject do
   defp deps do
     [
       {:new_relic_agent, path: "../../../"},
-      {:test_support, in_umbrella: true},
       {:plug_cowboy, "~> 2.0"},
       {:ecto_sql, "~> 3.9"},
       {:postgrex, ">= 0.0.0"},

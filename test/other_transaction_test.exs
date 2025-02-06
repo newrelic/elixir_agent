@@ -5,12 +5,8 @@ defmodule OtherTransactionTest do
   alias NewRelic.Harvest.TelemetrySdk
 
   setup do
-    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+    TestHelper.run_with(:nr_config, license_key: "dummy_key", harvest_enabled: true)
     NewRelic.DistributedTrace.BackoffSampler.reset()
-
-    on_exit(fn ->
-      reset_config.()
-    end)
 
     :ok
   end
@@ -171,14 +167,7 @@ defmodule OtherTransactionTest do
 
   @tag :capture_log
   test "do fail transaction on error exit" do
-    reset_config =
-      TestHelper.update(:nr_config,
-        trace_mode: :infinite
-      )
-
-    on_exit(fn ->
-      reset_config.()
-    end)
+    TestHelper.run_with(:nr_config, trace_mode: :infinite)
 
     TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
     {:ok, _sup} = Task.Supervisor.start_link(name: TestTaskSup)
@@ -212,14 +201,7 @@ defmodule OtherTransactionTest do
 
   @tag :capture_log
   test "don't fail transaction on expected error exit" do
-    reset_config =
-      TestHelper.update(:nr_config,
-        trace_mode: :infinite
-      )
-
-    on_exit(fn ->
-      reset_config.()
-    end)
+    TestHelper.run_with(:nr_config, trace_mode: :infinite)
 
     TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
     {:ok, _sup} = Task.Supervisor.start_link(name: TestTaskSup)

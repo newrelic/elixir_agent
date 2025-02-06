@@ -27,26 +27,20 @@ defmodule EvilCollectorTest do
   end
 
   setup_all do
-    Application.put_env(:new_relic_agent, :collector_instance_host, "localhost")
-    Application.put_env(:new_relic_agent, :bypass_collector, false)
+    TestHelper.run_with(:application_config, bypass_collector: false)
+    TestHelper.run_with(:application_config, collector_instance_host: "localhost")
 
-    reset_config =
-      TestHelper.update(:nr_config,
-        port: 8881,
-        scheme: "http",
-        license_key: "key",
-        harvest_enabled: true
-      )
-
-    on_exit(fn ->
-      Application.delete_env(:new_relic_agent, :collector_instance_host)
-      Application.put_env(:new_relic_agent, :bypass_collector, true)
-      reset_config.()
-    end)
+    TestHelper.run_with(:nr_config,
+      port: 8881,
+      scheme: "http",
+      license_key: "key",
+      harvest_enabled: true
+    )
 
     :ok
   end
 
+  @tag :capture_log
   test "Retry on 503" do
     EvilCollector.start(code: 503, body: ":(")
 
@@ -62,6 +56,7 @@ defmodule EvilCollectorTest do
     assert {:error, :not_connected} = Collector.Protocol.transaction_trace([agent_run_id, []])
   end
 
+  @tag :capture_log
   test "Handle unexpected HTTP code" do
     EvilCollector.start(code: 404, body: "??")
 
@@ -73,12 +68,14 @@ defmodule EvilCollectorTest do
     EvilCollector.stop()
   end
 
+  @tag :capture_log
   test "Handle when unable to connect" do
     # Don't start an EvilCollector
     assert {:error, reason} = Collector.Protocol.preconnect()
     assert {:failed_connect, _} = reason
   end
 
+  @tag :capture_log
   test "Log out collector error response" do
     EvilCollector.start(code: 418, body: "c(_)/")
     previous_logger = GenServer.call(NewRelic.Logger, {:logger, :memory})
@@ -94,6 +91,7 @@ defmodule EvilCollectorTest do
     EvilCollector.stop()
   end
 
+  @tag :capture_log
   test "Handle mangled collector response" do
     EvilCollector.start(code: 200, body: "<badJSON>")
     previous_logger = GenServer.call(NewRelic.Logger, {:logger, :memory})
@@ -108,6 +106,7 @@ defmodule EvilCollectorTest do
     EvilCollector.stop()
   end
 
+  @tag :capture_log
   test "Log out collector Exception" do
     exception = %{
       "exception" => %{

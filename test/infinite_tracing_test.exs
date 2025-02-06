@@ -6,20 +6,14 @@ defmodule InfiniteTracingTest do
   alias NewRelic.Harvest.Collector
 
   setup do
-    reset_agent_run = TestHelper.update(:nr_agent_run, trusted_account_key: "190")
+    TestHelper.run_with(:nr_agent_run, trusted_account_key: "190")
 
-    reset_config =
-      TestHelper.update(:nr_config,
-        license_key: "dummy_key",
-        harvest_enabled: true,
-        trace_mode: :infinite,
-        automatic_attributes: %{auto: "attribute"}
-      )
-
-    on_exit(fn ->
-      reset_agent_run.()
-      reset_config.()
-    end)
+    TestHelper.run_with(:nr_config,
+      license_key: "dummy_key",
+      harvest_enabled: true,
+      trace_mode: :infinite,
+      automatic_attributes: %{auto: "attribute"}
+    )
 
     :ok
   end

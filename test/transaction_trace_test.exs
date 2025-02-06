@@ -116,7 +116,8 @@ defmodule TransactionTraceTest do
   end
 
   test "harvest cycle" do
-    Application.put_env(:new_relic_agent, :data_report_period, 300)
+    TestHelper.run_with(:application_config, data_report_period: 300)
+
     TestHelper.restart_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
 
     first = Harvest.HarvestCycle.current_harvester(Collector.TransactionTrace.HarvestCycle)
@@ -132,7 +133,6 @@ defmodule TransactionTraceTest do
     assert Process.alive?(second)
 
     TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
-    Application.delete_env(:new_relic_agent, :data_report_period)
 
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
@@ -225,6 +225,8 @@ defmodule TransactionTraceTest do
   test "Transaction Trace when erlang trace disabled" do
     NewRelic.disable_erlang_trace()
 
+    on_exit(fn -> NewRelic.enable_erlang_trace() end)
+
     TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
 
     traces = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
@@ -236,8 +238,6 @@ defmodule TransactionTraceTest do
     assert trace_str =~ "TransactionTraceTest.ExternalService.query"
     assert trace_str =~ "TransactionTraceTest.ExternalService.secret_query"
     assert trace_str =~ "TransactionTraceTest.HelperModule.function"
-
-    NewRelic.enable_erlang_trace()
   end
 
   test "Don't report traces with a short duration" do
@@ -328,7 +328,7 @@ defmodule TransactionTraceTest do
   end
 
   test "Ensure that huge argument terms don't blow out memory" do
-    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+    TestHelper.run_with(:nr_config, license_key: "dummy_key", harvest_enabled: true)
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
@@ -339,13 +339,11 @@ defmodule TransactionTraceTest do
       end)
 
     assert String.length(span[:"tracer.args"]) < 500
-
-    reset_config.()
   end
 
   test "Don't trace arguments when disabled" do
-    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
-    reset_features = TestHelper.update(:nr_features, function_argument_collection: false)
+    TestHelper.run_with(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+    TestHelper.run_with(:nr_features, function_argument_collection: false)
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
@@ -356,13 +354,10 @@ defmodule TransactionTraceTest do
       end)
 
     assert span[:"tracer.args"] == "[DISABLED]"
-
-    reset_config.()
-    reset_features.()
   end
 
   test "Don't trace arguments when opted-out on individual function" do
-    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+    TestHelper.run_with(:nr_config, license_key: "dummy_key", harvest_enabled: true)
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
@@ -381,12 +376,10 @@ defmodule TransactionTraceTest do
       end)
 
     refute span[:"tracer.args"] == "[DISABLED]"
-
-    reset_config.()
   end
 
   test "Don't trace arguments when opted-out on individual external" do
-    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
+    TestHelper.run_with(:nr_config, license_key: "dummy_key", harvest_enabled: true)
 
     TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
 
@@ -405,7 +398,5 @@ defmodule TransactionTraceTest do
       end)
 
     refute span[:"tracer.args"] == "[DISABLED]"
-
-    reset_config.()
   end
 end

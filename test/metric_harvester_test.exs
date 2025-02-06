@@ -30,7 +30,7 @@ defmodule MetricHarvesterTest do
   end
 
   test "harvest cycle" do
-    Application.put_env(:new_relic_agent, :data_report_period, 300)
+    TestHelper.run_with(:application_config, data_report_period: 300)
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
     first = Harvest.HarvestCycle.current_harvester(Collector.Metric.HarvestCycle)
@@ -46,7 +46,6 @@ defmodule MetricHarvesterTest do
     assert Process.alive?(second)
 
     TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
-    Application.delete_env(:new_relic_agent, :data_report_period)
 
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000

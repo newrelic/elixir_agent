@@ -45,35 +45,24 @@ defmodule DistributedTraceTest do
   end
 
   setup do
-    reset_config =
-      TestHelper.update(:nr_config,
-        license_key: "dummy_key",
-        harvest_enabled: true
-      )
+    TestHelper.run_with(:nr_config,
+      license_key: "dummy_key",
+      harvest_enabled: true
+    )
 
-    reset_agent_run =
-      TestHelper.update(:nr_agent_run,
-        trusted_account_key: "190",
-        account_id: 190,
-        primary_application_id: 1441
-      )
+    TestHelper.run_with(:nr_agent_run,
+      trusted_account_key: "190",
+      account_id: 190,
+      primary_application_id: 1441
+    )
 
     NewRelic.DistributedTrace.BackoffSampler.reset()
-
-    on_exit(fn ->
-      reset_config.()
-      reset_agent_run.()
-    end)
 
     :ok
   end
 
   test "can disable Distributed Tracing" do
-    reset_config =
-      TestHelper.update(:nr_features,
-        distributed_tracing: false
-      )
-
+    TestHelper.run_with(:nr_features, distributed_tracing: false)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     TestHelper.request(
@@ -93,8 +82,6 @@ defmodule DistributedTraceTest do
     refute attrs[:traceId]
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
-    reset_config.()
   end
 
   test "Annotate Transaction event with DT attrs" do

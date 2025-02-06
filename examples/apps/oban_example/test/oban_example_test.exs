@@ -3,20 +3,22 @@ defmodule ObanExampleTest do
 
   alias NewRelic.Harvest.Collector
 
-  setup_all context, do: TestSupport.simulate_agent_enabled(context)
-  setup_all context, do: TestSupport.simulate_agent_run(context)
+  setup_all do
+    TestHelper.simulate_agent_enabled()
+    TestHelper.simulate_agent_run()
+  end
 
   test "instruments a job" do
-    TestSupport.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-    TestSupport.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     ObanExample.Worker.new(%{some: "args"}, tags: ["foo", "bar"])
     |> Oban.insert()
 
-    metrics = TestSupport.gather_harvest(Collector.Metric.Harvester)
-    [event | _] = TestSupport.gather_harvest(Collector.TransactionEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+    [event | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "OtherTransaction/Oban/default/ObanExample.Worker/perform",
              1
@@ -41,16 +43,16 @@ defmodule ObanExampleTest do
   end
 
   test "instruments a failed job" do
-    TestSupport.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-    TestSupport.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     ObanExample.Worker.new(%{error: "error!"}, tags: ["foo", "bar"])
     |> Oban.insert()
 
-    metrics = TestSupport.gather_harvest(Collector.Metric.Harvester)
-    [event | _] = TestSupport.gather_harvest(Collector.TransactionEvent.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+    [event | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert TestSupport.find_metric(
+    assert TestHelper.find_metric(
              metrics,
              "OtherTransaction/Oban/default/ObanExample.Worker/perform",
              1

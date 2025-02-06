@@ -12,6 +12,12 @@ defmodule InitTest do
   end
 
   test "handle config default properly" do
+    on_exit(fn ->
+      Application.delete_env(:new_relic_agent, :harvest_enabled)
+      System.delete_env("NEW_RELIC_HARVEST_ENABLED")
+      NewRelic.Init.init_config()
+    end)
+
     Application.put_env(:new_relic_agent, :harvest_enabled, true)
     NewRelic.Init.init_config()
     assert NewRelic.Config.get(:harvest_enabled)
@@ -27,8 +33,5 @@ defmodule InitTest do
     System.put_env("NEW_RELIC_HARVEST_ENABLED", "false")
     NewRelic.Init.init_config()
     refute NewRelic.Config.get(:harvest_enabled)
-
-    System.delete_env("NEW_RELIC_HARVEST_ENABLED")
-    NewRelic.Init.init_config()
   end
 end

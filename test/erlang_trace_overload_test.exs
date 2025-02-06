@@ -4,11 +4,18 @@ defmodule ErlangTraceOverloadTest do
   @test_queue_len 1
   @test_backoff 100
 
+  @tag :capture_log
   test "Handle process spawn overload in ErlangTrace" do
-    Application.put_env(:new_relic_agent, :overload_queue_len, @test_queue_len)
-    Application.put_env(:new_relic_agent, :overload_backoff, @test_backoff)
+    TestHelper.run_with(:application_config, overload_queue_len: @test_queue_len)
+    TestHelper.run_with(:application_config, overload_backoff: @test_backoff)
+
     NewRelic.disable_erlang_trace()
     NewRelic.enable_erlang_trace()
+
+    on_exit(fn ->
+      NewRelic.disable_erlang_trace()
+      NewRelic.enable_erlang_trace()
+    end)
 
     first_pid = Process.whereis(NewRelic.Transaction.ErlangTrace)
     Process.monitor(first_pid)
@@ -41,10 +48,5 @@ defmodule ErlangTraceOverloadTest do
     assert is_pid(second_pid)
 
     assert first_pid != second_pid
-
-    Application.delete_env(:new_relic_agent, :overload_queue_len)
-    Application.delete_env(:new_relic_agent, :overload_backoff)
-    NewRelic.disable_erlang_trace()
-    NewRelic.enable_erlang_trace()
   end
 end

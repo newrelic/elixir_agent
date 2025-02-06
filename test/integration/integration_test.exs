@@ -7,13 +7,9 @@ defmodule IntegrationTest do
   # env NR_INT_TEST=true mix test test/integration --include skip
 
   setup do
-    reset_config = TestHelper.update(:nr_config, harvest_enabled: true)
+    TestHelper.run_with(:nr_config, harvest_enabled: true)
     Collector.AgentRun.reconnect()
     GenServer.call(Collector.AgentRun, :ping)
-
-    on_exit(fn ->
-      reset_config.()
-    end)
 
     :ok
   end

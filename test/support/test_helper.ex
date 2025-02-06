@@ -66,32 +66,57 @@ defmodule TestHelper do
     end)
   end
 
-  def simulate_agent_enabled(_context) do
+  def simulate_agent_enabled() do
     Process.whereis(Harvest.TaskSupervisor) ||
       NewRelic.EnabledSupervisor.start_link(:ok)
 
     :ok
   end
 
-  def simulate_agent_run(_context) do
-    reset_config = TestHelper.update(:nr_config, license_key: "dummy_key", harvest_enabled: true)
-    reset_agent_run = TestHelper.update(:nr_agent_run, trusted_account_key: "190")
+  def simulate_agent_run(extra_nr_config \\ []) do
+    TestHelper.run_with(:nr_config, Keyword.merge([license_key: "dummy_key", harvest_enabled: true], extra_nr_config))
+    TestHelper.run_with(:nr_agent_run, trusted_account_key: "190", account_id: 190)
     NewRelic.DistributedTrace.BackoffSampler.reset()
-
-    ExUnit.Callbacks.on_exit(fn ->
-      reset_config.()
-      reset_agent_run.()
-    end)
 
     :ok
   end
 
-  def update(key, updates) do
+  # :application_config
+  #  - internal agent configuration values
+
+  def run_with(:application_config, [{key, value}]) do
+    original = Application.get_env(:new_relic_agent, key)
+
+    Application.put_env(:new_relic_agent, key, value)
+
+    ExUnit.Callbacks.on_exit(fn ->
+      case original do
+        nil -> Application.delete_env(:new_relic_agent, key)
+        original -> Application.put_env(:new_relic_agent, key, original)
+      end
+    end)
+  end
+
+  # :nr_config
+  #  - user facing agent configuration, ex: NewRelic.Config.app_name
+  #  - determined and set in NewRelic.Init
+
+  # :nr_features
+  #  - user facing agent feature configuration, ex: NewRelic.Config.feature(:key)
+  #  - determined and set in NewRelic.Init
+
+  # :nr_agent_run
+  #  - Agent configuration that comes from collector, ex: AgentRun.entity_guid
+  #  - determined and set in NewRelic.Harvest.Collector.AgentRun
+
+  def run_with(key, updates) do
     original = :persistent_term.get(key, %{})
     updates = Map.new(updates)
 
     :persistent_term.put(key, Map.merge(original, updates))
 
-    fn -> :persistent_term.put(key, original) end
+    ExUnit.Callbacks.on_exit(fn ->
+      :persistent_term.put(key, original)
+    end)
   end
 end

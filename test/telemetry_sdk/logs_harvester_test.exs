@@ -19,7 +19,7 @@ defmodule TelemetrySdk.LogsHarvesterTest do
   end
 
   test "harvest cycle" do
-    Application.put_env(:new_relic_agent, :logs_harvest_cycle, 300)
+    TestHelper.run_with(:application_config, logs_harvest_cycle: 300)
     TestHelper.restart_harvest_cycle(TelemetrySdk.Logs.HarvestCycle)
 
     first = Harvest.HarvestCycle.current_harvester(TelemetrySdk.Logs.HarvestCycle)
@@ -35,7 +35,6 @@ defmodule TelemetrySdk.LogsHarvesterTest do
     assert Process.alive?(second)
 
     TestHelper.pause_harvest_cycle(TelemetrySdk.Logs.HarvestCycle)
-    Application.delete_env(:new_relic_agent, :logs_harvest_cycle)
 
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
