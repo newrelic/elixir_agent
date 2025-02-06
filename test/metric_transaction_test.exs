@@ -99,7 +99,7 @@ defmodule MetricTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
+    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET/foo/:blah")
     refute TestHelper.find_metric(metrics, "WebFrontend/QueueTime")
     assert TestHelper.find_metric(metrics, "Apdex")
     assert TestHelper.find_metric(metrics, "HttpDispatcher")
@@ -110,7 +110,7 @@ defmodule MetricTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
+    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET/foo/:blah")
 
     # Unscoped
     assert TestHelper.find_metric(metrics, "External/domain.net/HttpClient/GET")
@@ -120,12 +120,12 @@ defmodule MetricTransactionTest do
     # Scoped
     assert TestHelper.find_metric(
              metrics,
-             {"External/domain.net/HttpClient/GET", "WebTransaction/Plug/GET//foo/:blah"}
+             {"External/domain.net/HttpClient/GET", "WebTransaction/Plug/GET/foo/:blah"}
            )
 
     assert TestHelper.find_metric(
              metrics,
-             {"External/MetricTransactionTest.External.call", "WebTransaction/Plug/GET//foo/:blah"}
+             {"External/MetricTransactionTest.External.call", "WebTransaction/Plug/GET/foo/:blah"}
            )
   end
 
@@ -134,7 +134,7 @@ defmodule MetricTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//foo/:blah")
+    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET/foo/:blah")
 
     # Unscoped
     assert TestHelper.find_metric(
@@ -145,7 +145,7 @@ defmodule MetricTransactionTest do
     # Scoped
     assert TestHelper.find_metric(
              metrics,
-             {"Function/MetricTransactionTest.External.make_queries/0", "WebTransaction/Plug/GET//foo/:blah"}
+             {"Function/MetricTransactionTest.External.make_queries/0", "WebTransaction/Plug/GET/foo/:blah"}
            )
   end
 
@@ -195,7 +195,7 @@ defmodule MetricTransactionTest do
 
     assert TestHelper.find_metric(
              metrics,
-             "WebTransaction/Plug/GET//fancy/:transaction/:_names/*supported"
+             "WebTransaction/Plug/GET/fancy/:transaction/:_names/*supported"
            )
   end
 
@@ -206,7 +206,7 @@ defmodule MetricTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//status/check", 2)
-    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET//status/info")
+    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET/status/check", 2)
+    assert TestHelper.find_metric(metrics, "WebTransaction/Plug/GET/status/info")
   end
 end

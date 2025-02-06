@@ -212,7 +212,7 @@ defmodule TransactionTest do
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
     assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/foo/1" && event[:name] == "/Plug/GET//foo/:blah" &&
+             event[:path] == "/foo/1" && event[:name] == "/Plug/GET/foo/:blah" &&
                event[:foo] == "BAR" && event[:duration_us] > 0 && event[:duration_us] < 50_000 &&
                event[:start_time] < 2_000_000_000_000 && event[:start_time] > 1_400_000_000_000 &&
                event[:start_time_mono] == nil && event[:test_attribute] == "test_value" &&
@@ -227,7 +227,7 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    [_, event] = Enum.find(events, fn [_, event] -> event[:name] == "/Plug/GET//funky_attrs" end)
+    [_, event] = Enum.find(events, fn [_, event] -> event[:name] == "/Plug/GET/funky_attrs" end)
 
     # Basic values
     assert event[:one] == 1
@@ -285,7 +285,7 @@ defmodule TransactionTest do
              event[:status] == 500 &&
                event[:query] =~ "query{}" &&
                event[:error] &&
-               event[:name] == "/Plug/GET//fail" &&
+               event[:name] == "/Plug/GET/fail" &&
                event[:error_reason] =~ "TransactionError" &&
                event[:error_kind] == :exit &&
                event[:error_stack] =~ "test/transaction_test.exs"
@@ -304,7 +304,7 @@ defmodule TransactionTest do
              event[:status] == 500 &&
                event[:query] =~ "query{}" &&
                event[:error] &&
-               event[:name] == "/Plug/GET//erlang_exit" &&
+               event[:name] == "/Plug/GET/erlang_exit" &&
                event[:error_reason] =~ "something_bad" &&
                event[:error_kind] == :exit
            end)
@@ -321,7 +321,7 @@ defmodule TransactionTest do
     assert Enum.find(events, fn [_, event] ->
              event[:status] == 500 &&
                event[:error] &&
-               event[:name] == "/Plug/GET//await_timeout" &&
+               event[:name] == "/Plug/GET/await_timeout" &&
                event[:error_reason] =~ "timeout" &&
                event[:error_kind] == :exit
            end)

@@ -264,6 +264,8 @@ defmodule SpanEventTest do
 
     assert tx_event[:parentId] == "7d3efb1b173fecfa"
 
+    assert spansaction_event[:"transaction.name"] == "WebTransaction/Plug/GET/hello"
+
     assert tx_event[:traceId] == "d6b4ba0c3a712ca"
     assert spansaction_event[:traceId] == "d6b4ba0c3a712ca"
     assert tx_root_process_event[:traceId] == "d6b4ba0c3a712ca"

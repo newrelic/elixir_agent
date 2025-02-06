@@ -233,7 +233,7 @@ defmodule TransactionErrorEventTest do
     assert [
              [
                _ts,
-               "WebTransaction/Plug/GET//caught/error",
+               "WebTransaction/Plug/GET/caught/error",
                _,
                _,
                %{userAttributes: %{nested: "process"}},
