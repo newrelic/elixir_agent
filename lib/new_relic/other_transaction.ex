@@ -7,7 +7,7 @@ defmodule NewRelic.OtherTransaction do
 
     NewRelic.add_attributes(
       pid: inspect(self()),
-      start_time: System.system_time(),
+      system_time: System.system_time(),
       start_time_mono: System.monotonic_time(),
       other_transaction_name: "#{category}/#{name}"
     )
