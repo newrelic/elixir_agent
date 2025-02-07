@@ -13,7 +13,7 @@ defmodule NewRelic.Util.Vendor do
   end
 
   @aws_url "http://169.254.169.254/2016-09-02/dynamic/instance-identity/document"
-  def maybe_add_aws(vendors, options \\ []) do
+  defp maybe_add_aws(vendors, options) do
     Keyword.get(options, :aws_url, @aws_url)
     |> aws_vendor_map()
     |> case do
@@ -22,7 +22,7 @@ defmodule NewRelic.Util.Vendor do
     end
   end
 
-  def maybe_add_kubernetes(vendors, _options) do
+  defp maybe_add_kubernetes(vendors, _options) do
     System.get_env("KUBERNETES_SERVICE_HOST")
     |> case do
       nil -> vendors
@@ -31,7 +31,7 @@ defmodule NewRelic.Util.Vendor do
   end
 
   @cgroup_filename "/proc/self/cgroup"
-  def maybe_add_docker(vendors, options) do
+  defp maybe_add_docker(vendors, options) do
     Keyword.get(options, :cgroup_filename, @cgroup_filename)
     |> docker_vendor_map()
     |> case do
@@ -41,7 +41,7 @@ defmodule NewRelic.Util.Vendor do
   end
 
   @cgroup_matcher ~r/\d+:.*cpu[,:].*(?<id>[0-9a-f]{64}).*/
-  def docker_vendor_map(cgroup_filename) do
+  defp docker_vendor_map(cgroup_filename) do
     File.read(cgroup_filename)
     |> case do
       {:ok, cgroup_file} ->
@@ -55,7 +55,7 @@ defmodule NewRelic.Util.Vendor do
   end
 
   @aws_vendor_data ["availabilityZone", "instanceId", "instanceType"]
-  def aws_vendor_map(url) do
+  defp aws_vendor_map(url) do
     case :httpc.request(:get, {~c(#{url}), []}, [{:timeout, 100}], []) do
       {:ok, {{_, 200, ~c"OK"}, _headers, body}} ->
         case Jason.decode(body) do

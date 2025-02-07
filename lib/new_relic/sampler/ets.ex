@@ -31,7 +31,7 @@ defmodule NewRelic.Sampler.Ets do
     {:reply, :ok, state}
   end
 
-  def record_sample, do: Enum.map(named_tables(), &record_sample/1)
+  defp record_sample, do: Enum.map(named_tables(), &record_sample/1)
 
   @size_threshold 500
   def record_sample(table) do
@@ -42,7 +42,7 @@ defmodule NewRelic.Sampler.Ets do
     end
   end
 
-  def named_tables, do: Enum.reject(:ets.all(), &is_reference/1)
+  defp named_tables, do: Enum.reject(:ets.all(), &is_reference/1)
 
   defp take_sample(table) do
     with words when is_number(words) <- :ets.info(table, :memory),

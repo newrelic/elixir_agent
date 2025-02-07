@@ -88,10 +88,7 @@ defmodule NewRelic.DistributedTrace.NewRelicContext do
     |> Base.encode64()
   end
 
-  def maybe_put(data, :trust_key, _key, account_id, account_id), do: data
-  def maybe_put(data, :trust_key, _key, _account_id, nil), do: data
-  def maybe_put(data, :trust_key, key, _account_id, trust_key), do: Map.put(data, key, trust_key)
-
-  def parse_int(nil), do: :error
-  def parse_int(field), do: Integer.parse(field)
+  defp maybe_put(data, :trust_key, _key, account_id, account_id), do: data
+  defp maybe_put(data, :trust_key, _key, _account_id, nil), do: data
+  defp maybe_put(data, :trust_key, key, _account_id, trust_key), do: Map.put(data, key, trust_key)
 end

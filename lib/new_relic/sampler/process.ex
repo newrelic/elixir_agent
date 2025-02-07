@@ -46,7 +46,7 @@ defmodule NewRelic.Sampler.Process do
     {:reply, :ok, %{state | previous: previous}}
   end
 
-  def record_samples(state) do
+  defp record_samples(state) do
     Enum.reduce(state.pids, %{}, fn {pid, true}, acc ->
       {current_sample, stats} = collect(pid, state.previous[pid])
       NewRelic.report_sample(:ProcessSample, stats)
@@ -54,22 +54,22 @@ defmodule NewRelic.Sampler.Process do
     end)
   end
 
-  def store_pid(true, state, _existing_pid), do: state
+  defp store_pid(true, state, _existing_pid), do: state
 
-  def store_pid(nil, state, pid) do
+  defp store_pid(nil, state, pid) do
     Process.monitor(pid)
     pids = Map.put(state.pids, pid, true)
     previous = Map.put(state.previous, pid, take_sample(pid))
     %{state | pids: pids, previous: previous}
   end
 
-  def collect(pid, previous) do
+  defp collect(pid, previous) do
     current_sample = take_sample(pid)
     stats = Map.merge(current_sample, delta(previous, current_sample))
     {current_sample, stats}
   end
 
-  def take_sample(pid) do
+  defp take_sample(pid) do
     # http://erlang.org/doc/man/erlang.html#process_info-2
     info = Process.info(pid, [:message_queue_len, :memory, :reductions, :registered_name])
 

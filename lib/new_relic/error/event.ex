@@ -16,7 +16,7 @@ defmodule NewRelic.Error.Event do
     Enum.map(errors, &format_event/1)
   end
 
-  def format_event(%__MODULE__{} = error) do
+  defp format_event(%__MODULE__{} = error) do
     [
       _intrinsic_attributes = %{
         type: error.type,
@@ -33,17 +33,17 @@ defmodule NewRelic.Error.Event do
     ]
   end
 
-  def format_agent_attributes(%{
-        http_response_code: http_response_code,
-        request_method: request_method
-      }) do
+  defp format_agent_attributes(%{
+         http_response_code: http_response_code,
+         request_method: request_method
+       }) do
     %{
       httpResponseCode: http_response_code,
       "request.headers.method": request_method
     }
   end
 
-  def format_agent_attributes(_agent_attributes) do
+  defp format_agent_attributes(_agent_attributes) do
     %{}
   end
 end

@@ -27,7 +27,7 @@ defmodule NewRelic.Sampler.Agent do
     {:reply, :ok, state}
   end
 
-  def record_sample do
+  defp record_sample do
     NewRelic.report_metric(
       {:supportability, :agent, "Sidecar/Process/ActiveCount"},
       value: NewRelic.Transaction.Sidecar.counter()

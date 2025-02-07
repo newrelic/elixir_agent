@@ -66,21 +66,21 @@ defmodule NewRelic.Tracer.Macro do
     end
   end
 
-  def trace_function?(module, name, arity),
+  defp trace_function?(module, name, arity),
     do:
       trace_function?(:via_annotation, module) ||
         trace_function?(:via_multiple_heads, module, name, arity)
 
-  def trace_function?(:via_annotation, module), do: Module.get_attribute(module, :trace)
+  defp trace_function?(:via_annotation, module), do: Module.get_attribute(module, :trace)
 
-  def trace_function?(:via_multiple_heads, module, name, arity) do
+  defp trace_function?(:via_multiple_heads, module, name, arity) do
     case Module.get_attribute(module, :nr_last_tracer) do
       {^name, ^arity, trace_info} -> trace_info
       _ -> false
     end
   end
 
-  def trace_deprecated?({_, category: :datastore}, module, name) do
+  defp trace_deprecated?({_, category: :datastore}, module, name) do
     Logger.warning(
       "[New Relic] Trace `:datastore` deprecated in favor of automatic Ecto instrumentation. " <>
         "Please remove @trace from #{inspect(module)}.#{name}"
@@ -89,35 +89,35 @@ defmodule NewRelic.Tracer.Macro do
     false
   end
 
-  def trace_deprecated?(trace_info, _, _) do
+  defp trace_deprecated?(trace_info, _, _) do
     trace_info
   end
 
-  def function_specs(module),
+  defp function_specs(module),
     do:
       module
       |> Module.get_attribute(:nr_tracers)
       |> Enum.map(&traced_function_spec/1)
       |> Enum.uniq()
 
-  def function_definitions(module),
+  defp function_definitions(module),
     do:
       module
       |> Module.get_attribute(:nr_tracers)
       |> Enum.map(&traced_function_definition/1)
       |> Enum.reverse()
 
-  def traced_function_spec(%{function: function, args: args}), do: {function, length(args)}
+  defp traced_function_spec(%{function: function, args: args}), do: {function, length(args)}
 
-  def traced_function_definition(%{
-        module: module,
-        access: :def,
-        function: function,
-        args: args,
-        body: body,
-        guards: [],
-        trace_info: trace_info
-      }) do
+  defp traced_function_definition(%{
+         module: module,
+         access: :def,
+         function: function,
+         args: args,
+         body: body,
+         guards: [],
+         trace_info: trace_info
+       }) do
     quote do
       def unquote(function)(unquote_splicing(build_function_args(args))) do
         unquote(traced_function_body(body, module, function, args, trace_info))
@@ -125,15 +125,15 @@ defmodule NewRelic.Tracer.Macro do
     end
   end
 
-  def traced_function_definition(%{
-        module: module,
-        access: :def,
-        function: function,
-        args: args,
-        body: body,
-        guards: guards,
-        trace_info: trace_info
-      }) do
+  defp traced_function_definition(%{
+         module: module,
+         access: :def,
+         function: function,
+         args: args,
+         body: body,
+         guards: guards,
+         trace_info: trace_info
+       }) do
     quote do
       def unquote(function)(unquote_splicing(build_function_args(args)))
           when unquote_splicing(guards) do
@@ -142,15 +142,15 @@ defmodule NewRelic.Tracer.Macro do
     end
   end
 
-  def traced_function_definition(%{
-        module: module,
-        access: :defp,
-        function: function,
-        args: args,
-        body: body,
-        guards: [],
-        trace_info: trace_info
-      }) do
+  defp traced_function_definition(%{
+         module: module,
+         access: :defp,
+         function: function,
+         args: args,
+         body: body,
+         guards: [],
+         trace_info: trace_info
+       }) do
     quote do
       defp unquote(function)(unquote_splicing(build_function_args(args))) do
         unquote(traced_function_body(body, module, function, args, trace_info))
@@ -158,15 +158,15 @@ defmodule NewRelic.Tracer.Macro do
     end
   end
 
-  def traced_function_definition(%{
-        module: module,
-        access: :defp,
-        function: function,
-        args: args,
-        body: body,
-        guards: guards,
-        trace_info: trace_info
-      }) do
+  defp traced_function_definition(%{
+         module: module,
+         access: :defp,
+         function: function,
+         args: args,
+         body: body,
+         guards: guards,
+         trace_info: trace_info
+       }) do
     quote do
       defp unquote(function)(unquote_splicing(build_function_args(args)))
            when unquote_splicing(guards) do
@@ -175,7 +175,7 @@ defmodule NewRelic.Tracer.Macro do
     end
   end
 
-  def traced_function_body(body, module, function, args, trace_info) do
+  defp traced_function_body(body, module, function, args, trace_info) do
     trace_annotation =
       case trace_info do
         {name, options} -> {name, options}
@@ -224,8 +224,7 @@ defmodule NewRelic.Tracer.Macro do
             nil -> :root
           end
 
-        duration_ms =
-          System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond) / 1000
+        duration_ms = System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond) / 1000
 
         duration_acc = Process.get({:nr_duration_acc, parent_ref}, 0)
         Process.put({:nr_duration_acc, parent_ref}, duration_acc + duration_ms)
@@ -253,13 +252,13 @@ defmodule NewRelic.Tracer.Macro do
     end
   end
 
-  def build_function_args(args) when is_list(args), do: Enum.map(args, &build_function_args/1)
+  defp build_function_args(args) when is_list(args), do: Enum.map(args, &build_function_args/1)
 
   # Don't try to re-declare the default argument
-  def build_function_args({:\\, _, [arg, _default]}),
+  defp build_function_args({:\\, _, [arg, _default]}),
     do: arg
 
-  def build_function_args(arg), do: arg
+  defp build_function_args(arg), do: arg
 
   def build_call_args(args) do
     Macro.postwalk(args, &rewrite_call_term/1)
@@ -267,16 +266,16 @@ defmodule NewRelic.Tracer.Macro do
 
   # Unwrap Struct literals into a Map, they can't be re-referenced directly due to enforced_keys
   @struct_keys [:__aliases__, :__MODULE__]
-  def rewrite_call_term({:%, line, [{key, _, _} = struct, {:%{}, _, members}]})
-      when key in @struct_keys do
+  defp rewrite_call_term({:%, line, [{key, _, _} = struct, {:%{}, _, members}]})
+       when key in @struct_keys do
     {:%{}, line, [{:__struct__, struct}] ++ members}
   end
 
   # Strip default arguments
-  def rewrite_call_term({:\\, _, [arg, _default]}), do: arg
+  defp rewrite_call_term({:\\, _, [arg, _default]}), do: arg
 
   # Drop the de-structuring side of a pattern match
-  def rewrite_call_term({:=, _, [left, right]}) do
+  defp rewrite_call_term({:=, _, [left, right]}) do
     cond do
       :__ignored__ == left -> right
       :__ignored__ == right -> left
@@ -286,7 +285,7 @@ defmodule NewRelic.Tracer.Macro do
   end
 
   # Replace ignored variables with an atom
-  def rewrite_call_term({name, _, context} = term) when is_variable(name, context) do
+  defp rewrite_call_term({name, _, context} = term) when is_variable(name, context) do
     case Atom.to_string(name) do
       "__" <> _special_form -> term
       "_" <> _ignored_var -> :__ignored__
@@ -295,12 +294,12 @@ defmodule NewRelic.Tracer.Macro do
   end
 
   # Replace :__ignored__ with [] when it's the tail of a list so we don't create an improper list
-  def rewrite_call_term({:|, line, [left, :__ignored__]}) do
+  defp rewrite_call_term({:|, line, [left, :__ignored__]}) do
     {:|, line, [left, []]}
   end
 
-  def rewrite_call_term(term), do: term
+  defp rewrite_call_term(term), do: term
 
-  def is_variable?({name, _, context}) when is_variable(name, context), do: true
-  def is_variable?(_term), do: false
+  defp is_variable?({name, _, context}) when is_variable(name, context), do: true
+  defp is_variable?(_term), do: false
 end

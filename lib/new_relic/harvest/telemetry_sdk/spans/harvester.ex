@@ -119,31 +119,31 @@ defmodule NewRelic.Harvest.TelemetrySdk.Spans.Harvester do
 
   # Helpers
 
-  def store_span(
-        %{trace_mode: :infinite, sampling: %{spans_seen: seen, reservoir_size: size}} = state,
-        span
-      )
-      when seen == size do
+  defp store_span(
+         %{trace_mode: :infinite, sampling: %{spans_seen: seen, reservoir_size: size}} = state,
+         span
+       )
+       when seen == size do
     Harvest.HarvestCycle.cycle(TelemetrySdk.Spans.HarvestCycle)
     %{state | spans: [span | state.spans]}
   end
 
-  def store_span(%{trace_mode: :infinite} = state, span) do
+  defp store_span(%{trace_mode: :infinite} = state, span) do
     %{state | spans: [span | state.spans]}
   end
 
-  def store_span(%{sampling: %{spans_seen: seen, reservoir_size: size}} = state, span)
-      when seen < size do
+  defp store_span(%{sampling: %{spans_seen: seen, reservoir_size: size}} = state, span)
+       when seen < size do
     %{state | spans: [span | state.spans]}
   end
 
-  def store_span(state, _span),
+  defp store_span(state, _span),
     do: state
 
-  def store_sampling(%{sampling: sampling} = state),
+  defp store_sampling(%{sampling: sampling} = state),
     do: %{state | sampling: Map.update!(sampling, :spans_seen, &(&1 + 1))}
 
-  def send_harvest(state) do
+  defp send_harvest(state) do
     TelemetrySdk.API.span(build_span_data(state.spans))
 
     log_harvest(
@@ -154,7 +154,7 @@ defmodule NewRelic.Harvest.TelemetrySdk.Spans.Harvester do
     )
   end
 
-  def log_harvest(harvest_size, spans_seen, reservoir_size, trace_mode) do
+  defp log_harvest(harvest_size, spans_seen, reservoir_size, trace_mode) do
     with :infinite <- trace_mode do
       NewRelic.report_metric({:supportability, :infinite_tracing}, harvest_size: harvest_size)
     end

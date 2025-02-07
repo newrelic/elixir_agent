@@ -17,7 +17,7 @@ defmodule NewRelic.Aggregate do
     |> Map.put(:category, :Metric)
   end
 
-  def averages(%{call_count: call_count} = values) do
+  defp averages(%{call_count: call_count} = values) do
     values
     |> Stream.reject(fn {key, _value} -> key == :call_count end)
     |> Enum.reduce(%{}, fn {key, value}, acc ->
@@ -25,5 +25,5 @@ defmodule NewRelic.Aggregate do
     end)
   end
 
-  def averages(_values), do: %{}
+  defp averages(_values), do: %{}
 end

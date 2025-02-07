@@ -32,7 +32,7 @@ defmodule NewRelic.DistributedTrace do
     end
   end
 
-  def accept_distributed_trace_headers(:http, headers) do
+  defp accept_distributed_trace_headers(:http, headers) do
     w3c_headers(headers) || newrelic_header(headers) || :no_payload
   end
 
@@ -77,7 +77,7 @@ defmodule NewRelic.DistributedTrace do
     end
   end
 
-  def generate_new_context() do
+  defp generate_new_context() do
     {priority, sampled} = generate_sampling()
 
     %Context{
@@ -90,7 +90,7 @@ defmodule NewRelic.DistributedTrace do
     }
   end
 
-  def track_transaction(context, transport_type: type) do
+  defp track_transaction(context, transport_type: type) do
     context
     |> assign_transaction_guid()
     |> maybe_generate_sampling()
@@ -101,25 +101,25 @@ defmodule NewRelic.DistributedTrace do
     |> set_tracing_context()
   end
 
-  def maybe_generate_sampling(%Context{sampled: nil, priority: nil} = context) do
+  defp maybe_generate_sampling(%Context{sampled: nil, priority: nil} = context) do
     {priority, sampled} = generate_sampling()
     %{context | sampled: sampled, priority: priority}
   end
 
-  def maybe_generate_sampling(context), do: context
+  defp maybe_generate_sampling(context), do: context
 
-  def maybe_generate_trace_id(%Context{trace_id: nil} = context) do
+  defp maybe_generate_trace_id(%Context{trace_id: nil} = context) do
     %{context | trace_id: generate_guid(16)}
   end
 
-  def maybe_generate_trace_id(context) do
+  defp maybe_generate_trace_id(context) do
     context
   end
 
-  def report_attributes(
-        %{source: {:w3c, %{tracestate: :non_new_relic}}} = context,
-        transport_type: type
-      ) do
+  defp report_attributes(
+         %{source: {:w3c, %{tracestate: :non_new_relic}}} = context,
+         transport_type: type
+       ) do
     [
       "parent.transportType": type,
       guid: context.trace_id,
@@ -134,13 +134,13 @@ defmodule NewRelic.DistributedTrace do
     context
   end
 
-  def report_attributes(
-        %Context{
-          parent_id: nil,
-          span_guid: nil
-        } = context,
-        transport_type: _type
-      ) do
+  defp report_attributes(
+         %Context{
+           parent_id: nil,
+           span_guid: nil
+         } = context,
+         transport_type: _type
+       ) do
     [
       guid: context.guid,
       traceId: context.trace_id,
@@ -152,7 +152,7 @@ defmodule NewRelic.DistributedTrace do
     context
   end
 
-  def report_attributes(context, transport_type: type) do
+  defp report_attributes(context, transport_type: type) do
     [
       "parent.type": context.type,
       "parent.app": context.app_id,
@@ -171,7 +171,7 @@ defmodule NewRelic.DistributedTrace do
     context
   end
 
-  def report_attributes(%{source: {:w3c, w3c}} = context, :w3c) do
+  defp report_attributes(%{source: {:w3c, w3c}} = context, :w3c) do
     NewRelic.add_attributes(tracingVendors: Enum.join(w3c.tracing_vendors, ","))
 
     w3c.tracestate == :new_relic &&
@@ -180,11 +180,11 @@ defmodule NewRelic.DistributedTrace do
     context
   end
 
-  def report_attributes(context, :w3c) do
+  defp report_attributes(context, :w3c) do
     context
   end
 
-  def convert_to_outbound(%Context{} = context) do
+  defp convert_to_outbound(%Context{} = context) do
     %Context{
       source: context.source,
       account_id: AgentRun.account_id(),
@@ -198,7 +198,7 @@ defmodule NewRelic.DistributedTrace do
     }
   end
 
-  def set_tracing_context(context) do
+  defp set_tracing_context(context) do
     Transaction.Sidecar.trace_context(context)
   end
 
@@ -258,7 +258,7 @@ defmodule NewRelic.DistributedTrace do
     {current, previous_span, previous_span_attrs}
   end
 
-  def get_current_span_guid() do
+  defp get_current_span_guid() do
     case Process.get(:nr_current_span) do
       nil -> generate_guid(pid: self())
       {label, ref} -> generate_guid(pid: self(), label: label, ref: ref)
@@ -289,7 +289,7 @@ defmodule NewRelic.DistributedTrace do
     :rand.uniform() |> Float.round(6)
   end
 
-  def assign_transaction_guid(context) do
+  defp assign_transaction_guid(context) do
     Map.put(context, :guid, generate_guid())
   end
 

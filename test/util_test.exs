@@ -2,9 +2,10 @@ defmodule UtilTest do
   use ExUnit.Case
 
   test "respects max attr size" do
-    events = [%{giant: String.duplicate("A", 5_000), gianter: String.duplicate("A", 10_000)}]
-    [%{giant: giant, gianter: gianter}] = NewRelic.Util.Event.process(events)
+    %{giant: giant} = NewRelic.Util.Event.process_event(%{giant: String.duplicate("A", 5_000)})
     assert String.length(giant) == 4095
+
+    %{gianter: gianter} = NewRelic.Util.Event.process_event(%{gianter: String.duplicate("A", 10_000)})
     assert String.length(gianter) == 4095
   end
 
@@ -223,16 +224,16 @@ defmodule UtilTest do
   def assert_docker_container_id(cgroup_file, id) do
     File.write!(@test_cgroup_filename, cgroup_file)
 
+    on_exit(fn -> File.rm(@test_cgroup_filename) end)
+
     expected =
       case id do
         :none -> %{}
-        id -> %{docker: %{"id" => id}}
+        id -> %{vendors: %{docker: %{"id" => id}}}
       end
 
     assert expected ==
-             NewRelic.Util.Vendor.maybe_add_docker(%{}, cgroup_filename: @test_cgroup_filename)
-
-    File.rm!(@test_cgroup_filename)
+             NewRelic.Util.Vendor.maybe_add_vendors(%{}, cgroup_filename: @test_cgroup_filename)
   end
 
   test "uuid4 generation" do

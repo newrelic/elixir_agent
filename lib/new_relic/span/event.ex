@@ -32,7 +32,7 @@ defmodule NewRelic.Span.Event do
     Enum.map(spans, &format_event/1)
   end
 
-  def format_event(%__MODULE__{} = span) do
+  defp format_event(%__MODULE__{} = span) do
     intrinsics =
       %{
         type: span.type,

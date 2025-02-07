@@ -77,7 +77,7 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     |> store_agent_run()
   end
 
-  def get(key),
+  defp get(key),
     do: :persistent_term.get(:nr_agent_run, %{})[key]
 
   defp store_agent_run({:ok, %{"agent_run_id" => _} = connect_response}) do

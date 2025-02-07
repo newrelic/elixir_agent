@@ -66,15 +66,15 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
 
   # Helpers
 
-  def store_event(%{sampling: %{reservoir_size: size}} = state, event) do
+  defp store_event(%{sampling: %{reservoir_size: size}} = state, event) do
     key = event.user_attributes[:priority] || :rand.uniform() |> Float.round(6)
     %{state | events: PriorityQueue.insert(state.events, size, key, event)}
   end
 
-  def store_sampling(%{sampling: sampling} = state),
+  defp store_sampling(%{sampling: sampling} = state),
     do: %{state | sampling: Map.update!(sampling, :events_seen, &(&1 + 1))}
 
-  def send_harvest(state) do
+  defp send_harvest(state) do
     events = build_payload(state)
 
     Collector.Protocol.transaction_event([
@@ -86,7 +86,7 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
     log_harvest(length(events), state.sampling.events_seen, state.sampling.reservoir_size)
   end
 
-  def log_harvest(harvest_size, events_seen, reservoir_size) do
+  defp log_harvest(harvest_size, events_seen, reservoir_size) do
     NewRelic.report_metric({:supportability, "AnalyticEventData"}, harvest_size: harvest_size)
 
     NewRelic.report_metric({:supportability, "AnalyticEventData"},
@@ -101,7 +101,7 @@ defmodule NewRelic.Harvest.Collector.TransactionEvent.Harvester do
     )
   end
 
-  def build_payload(state) do
+  defp build_payload(state) do
     state.events
     |> PriorityQueue.values()
     |> Event.format_events()

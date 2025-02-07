@@ -14,7 +14,7 @@ defmodule NewRelic.Transaction.Event do
     Enum.map(transactions, &format_event/1)
   end
 
-  def format_event(%__MODULE__{} = transaction) do
+  defp format_event(%__MODULE__{} = transaction) do
     [
       %{
         webDuration: transaction.web_duration,

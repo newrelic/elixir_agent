@@ -45,7 +45,7 @@ defmodule NewRelic.Sampler.TopProcess do
   end
 
   @size 5
-  def measure_and_insert(pid, {mem_pq, msg_pq}) do
+  defp measure_and_insert(pid, {mem_pq, msg_pq}) do
     case Process.info(pid, [:memory, :message_queue_len, :registered_name, :reductions]) do
       [memory: mem, message_queue_len: msg, registered_name: _, reductions: _] = info ->
         mem_pq = PQ.insert(mem_pq, @size, mem, {pid, info})
@@ -57,7 +57,7 @@ defmodule NewRelic.Sampler.TopProcess do
     end
   end
 
-  def report_sample({pid, info}) do
+  defp report_sample({pid, info}) do
     case Process.info(pid, :reductions) do
       {:reductions, current_reductions} ->
         NewRelic.report_sample(:ProcessSample, %{

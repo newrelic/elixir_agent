@@ -22,7 +22,7 @@ defmodule NewRelic.LogsInContext do
     :skip
   end
 
-  def primary_filter(%{msg: {:string, _msg}} = log, %{mode: :direct}) do
+  defp primary_filter(%{msg: {:string, _msg}} = log, %{mode: :direct}) do
     log
     |> prepare_log()
     |> TelemetrySdk.Logs.Harvester.report_log()
@@ -30,7 +30,7 @@ defmodule NewRelic.LogsInContext do
     log
   end
 
-  def primary_filter(%{msg: {:string, _msg}} = log, %{mode: :forwarder}) do
+  defp primary_filter(%{msg: {:string, _msg}} = log, %{mode: :forwarder}) do
     message =
       log
       |> prepare_log()
@@ -40,7 +40,7 @@ defmodule NewRelic.LogsInContext do
     %{log | msg: {:string, message}}
   end
 
-  def primary_filter(_log, _config) do
+  defp primary_filter(_log, _config) do
     :ignore
   end
 
@@ -90,7 +90,7 @@ defmodule NewRelic.LogsInContext do
     AgentRun.entity_metadata()
   end
 
-  def tracing_metadata() do
+  defp tracing_metadata() do
     context = NewRelic.DistributedTrace.get_tracing_context() || %{}
 
     %{

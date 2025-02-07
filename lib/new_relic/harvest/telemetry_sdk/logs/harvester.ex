@@ -62,22 +62,22 @@ defmodule NewRelic.Harvest.TelemetrySdk.Logs.Harvester do
 
   # Helpers
 
-  def store_log(%{sampling: %{logs_seen: seen, reservoir_size: size}} = state, log)
-      when seen < size,
-      do: %{state | logs: [log | state.logs]}
+  defp store_log(%{sampling: %{logs_seen: seen, reservoir_size: size}} = state, log)
+       when seen < size,
+       do: %{state | logs: [log | state.logs]}
 
-  def store_log(state, _log),
+  defp store_log(state, _log),
     do: state
 
-  def store_sampling(%{sampling: sampling} = state),
+  defp store_sampling(%{sampling: sampling} = state),
     do: %{state | sampling: Map.update!(sampling, :logs_seen, &(&1 + 1))}
 
-  def send_harvest(state) do
+  defp send_harvest(state) do
     TelemetrySdk.API.log(build_log_data(state.logs))
     log_harvest(length(state.logs), state.sampling.logs_seen, state.sampling.reservoir_size)
   end
 
-  def log_harvest(harvest_size, logs_seen, reservoir_size) do
+  defp log_harvest(harvest_size, logs_seen, reservoir_size) do
     NewRelic.log(
       :debug,
       "Completed TelemetrySdk.Logs harvest - " <>

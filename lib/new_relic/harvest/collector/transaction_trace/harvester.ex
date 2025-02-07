@@ -98,20 +98,20 @@ defmodule NewRelic.Harvest.Collector.TransactionTrace.Harvester do
 
   def store_slow_trace(state, _trace, _max_slow_traces), do: state
 
-  def send_harvest(state) do
+  defp send_harvest(state) do
     traces = build_trace_payload(state)
     Collector.Protocol.transaction_trace([Collector.AgentRun.agent_run_id(), traces])
     log_harvest(length(traces))
   end
 
-  def log_harvest(harvest_size) do
+  defp log_harvest(harvest_size) do
     NewRelic.report_metric({:supportability, "TransactionTraceData"}, harvest_size: harvest_size)
     NewRelic.log(:debug, "Completed Transaction Trace harvest - size: #{harvest_size}")
   end
 
-  def build_trace_payload(state), do: state |> collect_traces |> Trace.format_traces()
+  defp build_trace_payload(state), do: state |> collect_traces |> Trace.format_traces()
 
-  def collect_traces(%{slowest_traces: slowest_traces, traces_by_name: traces_by_name}),
+  defp collect_traces(%{slowest_traces: slowest_traces, traces_by_name: traces_by_name}),
     do: (slowest_traces ++ Map.values(traces_by_name)) |> List.flatten() |> Enum.uniq()
 
   defp min_duration,
