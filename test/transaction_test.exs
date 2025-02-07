@@ -257,7 +257,7 @@ defmodule TransactionTest do
     refute Map.has_key?(event, :nilValue)
 
     # Make sure it can serialize to JSON
-    Jason.encode!(events)
+    NewRelic.JSON.encode!(events)
   end
 
   test "Incrementing attribute counters" do

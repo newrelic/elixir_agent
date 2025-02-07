@@ -219,7 +219,7 @@ defmodule TransactionTraceTest do
 
     traces = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
     assert length(traces) == 2
-    Jason.encode!(traces)
+    NewRelic.JSON.encode!(traces)
   end
 
   test "Transaction Trace when erlang trace disabled" do
@@ -233,7 +233,7 @@ defmodule TransactionTraceTest do
 
     # tbh, the TT struct we have to send is too complicated to assert on structurally
     # so i'm just gonna make sure the expected string fragments are in there :)
-    trace_str = Jason.encode!(traces)
+    trace_str = NewRelic.JSON.encode!(traces)
 
     assert trace_str =~ "TransactionTraceTest.ExternalService.query"
     assert trace_str =~ "TransactionTraceTest.ExternalService.secret_query"

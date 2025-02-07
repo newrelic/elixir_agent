@@ -15,7 +15,7 @@ defmodule NewRelic.DistributedTrace.NewRelicContext do
 
   def decode(raw_payload) when is_binary(raw_payload) do
     with {:ok, json} <- Base.decode64(raw_payload),
-         {:ok, map} <- Jason.decode(json),
+         {:ok, map} <- NewRelic.JSON.decode(json),
          %Context{} = context <- validate(map) do
       NewRelic.report_metric(:supportability, [:dt, :accept, :success])
       context
@@ -84,7 +84,7 @@ defmodule NewRelic.DistributedTrace.NewRelicContext do
         }
         |> maybe_put(:trust_key, "tk", context.account_id, context.trust_key)
     }
-    |> Jason.encode!()
+    |> NewRelic.JSON.encode!()
     |> Base.encode64()
   end
 

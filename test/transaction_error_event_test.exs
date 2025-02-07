@@ -159,18 +159,18 @@ defmodule TransactionErrorEventTest do
 
     traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
     assert length(traces) == 1
-    assert Jason.encode!(traces)
+    assert NewRelic.JSON.encode!(traces)
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
     assert length(events) == 1
-    assert Jason.encode!(events)
+    assert NewRelic.JSON.encode!(events)
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
     assert TestHelper.find_metric(metrics, "Errors/all")
 
     traces = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
     assert length(traces) == 1
-    assert Jason.encode!(traces)
+    assert NewRelic.JSON.encode!(traces)
 
     Logger.add_backend(:console)
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)

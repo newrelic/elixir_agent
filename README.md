@@ -42,6 +42,12 @@ defp deps do
 end
 ```
 
+If using an Elixir version before 1.18.x, please also add `:jason` to your dependency list.
+
+```elixir
+{:jason, "~> 1.0"}
+```
+
 ## Configuration
 
 You need to set a few required configuration keys so we can authenticate properly.

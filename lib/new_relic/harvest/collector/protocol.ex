@@ -92,14 +92,10 @@ defmodule NewRelic.Harvest.Collector.Protocol do
   end
 
   defp parse_http_response({:ok, %{status_code: 200, body: body}}, _params) do
-    case Jason.decode(body) do
-      {:ok, response} ->
-        {:ok, response}
-
-      {:error, jason_exception} ->
-        NewRelic.log(:error, "Bad collector JSON: #{Exception.message(jason_exception)}")
-        {:error, :bad_collector_response}
-    end
+    {:ok, NewRelic.JSON.decode!(body)}
+  rescue e ->
+    NewRelic.log(:error, "Bad collector JSON: #{Exception.format_banner(:error, e)}")
+    {:error, :bad_collector_response}
   end
 
   defp parse_http_response({:ok, %{status_code: 202}}, _params) do
@@ -179,7 +175,7 @@ defmodule NewRelic.Harvest.Collector.Protocol do
   end
 
   defp log_error(status, error, params, body) do
-    case Jason.decode(body) do
+    case NewRelic.JSON.decode(body) do
       {:ok, %{"exception" => exception}} ->
         NewRelic.log(
           :error,

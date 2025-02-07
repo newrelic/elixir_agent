@@ -35,7 +35,7 @@ defmodule NewRelic.LogsInContext do
       log
       |> prepare_log()
       |> Map.merge(linking_metadata())
-      |> Jason.encode!()
+      |> NewRelic.JSON.encode!()
 
     %{log | msg: {:string, message}}
   end

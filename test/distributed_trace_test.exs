@@ -117,7 +117,7 @@ defmodule DistributedTraceTest do
     outbound_payload =
       response.body
       |> Base.decode64!()
-      |> Jason.decode!()
+      |> NewRelic.JSON.decode!()
 
     assert get_in(outbound_payload, ["d", "tr"]) == "d6b4ba0c3a712ca"
     assert get_in(outbound_payload, ["d", "ac"]) == "190"
@@ -164,7 +164,7 @@ defmodule DistributedTraceTest do
     outbound_payload =
       response.body
       |> Base.decode64!()
-      |> Jason.decode!()
+      |> NewRelic.JSON.decode!()
 
     data = outbound_payload["d"]
     assert "d6b4ba0c3a712ca" == data["tr"]
@@ -182,7 +182,7 @@ defmodule DistributedTraceTest do
     outbound_payload =
       response.body
       |> Base.decode64!()
-      |> Jason.decode!()
+      |> NewRelic.JSON.decode!()
 
     # Span GUID, Transaction ID, Trace ID initialized
     assert get_in(outbound_payload, ["d", "id"]) |> is_binary
@@ -208,7 +208,7 @@ defmodule DistributedTraceTest do
 
   describe "Context decoding" do
     test "ignore unknown version" do
-      payload = %{"v" => [666]} |> Jason.encode!() |> Base.encode64()
+      payload = %{"v" => [666]} |> NewRelic.JSON.encode!() |> Base.encode64()
 
       assert DistributedTrace.NewRelicContext.decode(payload) == :bad_dt_payload
     end

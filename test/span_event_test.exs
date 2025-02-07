@@ -325,8 +325,8 @@ defmodule SpanEventTest do
     assert nested_function_event[:"tracer.reductions"] > 1
 
     # Ensure these will encode properly
-    Jason.encode!(tx_event)
-    Jason.encode!(span_events)
+    NewRelic.JSON.encode!(tx_event)
+    NewRelic.JSON.encode!(span_events)
 
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
