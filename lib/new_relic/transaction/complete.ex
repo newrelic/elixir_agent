@@ -171,16 +171,14 @@ defmodule NewRelic.Transaction.Complete do
 
   defp transform_function_segments(function_segments, start_time) do
     for segment <- function_segments do
-      segment = transform_function_segment(segment, start_time)
+      segment =
+        segment
+        |> transform_time_attrs()
+        |> transform_trace_time_attrs(start_time)
+        |> transform_trace_name_attrs()
+
       struct(Transaction.Trace.Segment, segment)
     end
-  end
-
-  defp transform_function_segment(segment, start_time) do
-    segment
-    |> transform_time_attrs()
-    |> transform_trace_time_attrs(start_time)
-    |> transform_trace_name_attrs()
   end
 
   defp transform_process_segments(process_segments, start_time) do
