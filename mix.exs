@@ -44,7 +44,7 @@ defmodule NewRelic.Mixfile do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:castore, ">= 0.1.0"},
-      {:jason, "~> 1.0"},
+      {:jason, "~> 1.0", optional: true},
       {:telemetry, "~> 0.4 or ~> 1.0"},
       # Instrumentation:
       {:plug, ">= 1.10.4", optional: true},

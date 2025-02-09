@@ -21,7 +21,7 @@ defmodule LogsInContextTest do
 
     # Console logging is transformed into JSON structured log lines
     [_, json] = Regex.run(~r/.*({.*}).*/, log_line)
-    log = Jason.decode!(json)
+    log = NewRelic.JSON.decode!(json)
 
     assert log["timestamp"] |> is_integer
     assert log["message"] == "FOO"
@@ -49,7 +49,7 @@ defmodule LogsInContextTest do
 
     # Console logging is transformed into JSON structured log lines
     [_, json] = Regex.run(~r/.*({.*}).*/, log_line)
-    log = Jason.decode!(json)
+    log = NewRelic.JSON.decode!(json)
 
     assert log["message"] == "FOO BAR"
 

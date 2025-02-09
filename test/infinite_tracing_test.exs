@@ -258,8 +258,8 @@ defmodule InfiniteTracingTest do
     assert tx_span.attributes[:auto] == "attribute"
 
     # Ensure these will encode properly
-    Jason.encode!(tx_event)
-    Jason.encode!(spans)
+    NewRelic.JSON.encode!(tx_event)
+    NewRelic.JSON.encode!(spans)
 
     TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)

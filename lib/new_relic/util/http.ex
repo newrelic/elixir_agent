@@ -14,14 +14,12 @@ defmodule NewRelic.Util.HTTP do
   end
 
   def post(url, body, headers) do
-    case Jason.encode(body) do
-      {:ok, body} ->
-        post(url, body, headers)
-
-      {:error, message} ->
-        NewRelic.log(:debug, "Unable to JSON encode: #{inspect(body)}")
-        {:error, message}
-    end
+    body = NewRelic.JSON.encode!(body)
+    post(url, body, headers)
+  rescue
+    error ->
+      NewRelic.log(:debug, "Unable to JSON encode: #{inspect(body)}")
+      {:error, Exception.message(error)}
   end
 
   def get(url, headers \\ [], opts \\ []) do

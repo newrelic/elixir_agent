@@ -21,7 +21,7 @@ defmodule UtilTest do
     assert NewRelic.Util.Event.process_event(%{key: self()})
 
     # Don't inspect the nodename, we don't want the atom char in the attribute
-    json = NewRelic.Util.Event.process_event(%{key: Node.self()}) |> Jason.encode!()
+    json = NewRelic.Util.Event.process_event(%{key: Node.self()}) |> NewRelic.JSON.encode!()
     refute json =~ ":node"
   end
 

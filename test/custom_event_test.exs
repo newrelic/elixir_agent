@@ -138,7 +138,7 @@ defmodule CustomEventTest do
     })
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
-    Jason.encode!(events)
+    NewRelic.JSON.encode!(events)
 
     [[_, attrs, _]] = events
     assert attrs[:bad_value] == "[BAD_VALUE]"

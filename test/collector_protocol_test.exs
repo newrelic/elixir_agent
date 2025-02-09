@@ -19,7 +19,7 @@ defmodule CollectorProtocolTest do
 
     assert Map.has_key?(payload, :display_host)
 
-    Jason.encode!(payload)
+    NewRelic.JSON.encode!(payload)
   end
 
   test "determine correct collector host" do
