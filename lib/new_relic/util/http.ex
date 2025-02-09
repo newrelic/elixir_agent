@@ -16,9 +16,9 @@ defmodule NewRelic.Util.HTTP do
   def post(url, body, headers) do
     body = NewRelic.JSON.encode!(body)
     post(url, body, headers)
-  rescue e ->
+  rescue error ->
     NewRelic.log(:debug, "Unable to JSON encode: #{inspect(body)}")
-    {:error, Exception.format_banner(:error, e, __STACKTRACE__)}
+    {:error, Exception.message(error)}
   end
 
   def get(url, headers \\ [], opts \\ []) do
