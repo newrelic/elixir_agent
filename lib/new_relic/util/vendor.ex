@@ -58,7 +58,7 @@ defmodule NewRelic.Util.Vendor do
   def aws_vendor_map(url) do
     case :httpc.request(:get, {~c(#{url}), []}, [{:timeout, 100}], []) do
       {:ok, {{_, 200, ~c"OK"}, _headers, body}} ->
-        case NewRelic.JSON.decode(body) do
+        case NewRelic.JSON.decode(to_string(body)) do
           {:ok, data} -> Map.take(data, @aws_vendor_data)
           _ -> nil
         end
