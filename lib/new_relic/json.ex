@@ -15,5 +15,4 @@ defmodule NewRelic.JSON do
     true ->
       raise "[:new_relic_agent] No JSON library found, please add :jason as a dependency"
   end
-
 end
