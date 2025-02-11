@@ -170,12 +170,12 @@ defmodule NewRelic.Transaction.Complete do
     {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
   end
 
-  defp total_time_s(%{transactionType: :Web}, concurrent_process_time_ms) do
-    # Cowboy request process is already included in concurrent time
+  defp total_time_s(%{transactionType: :Web, "http.server": "cowboy"}, concurrent_process_time_ms) do
+    # Cowboy request process duration is already included in concurrent time
     concurrent_process_time_ms / 1000
   end
 
-  defp total_time_s(%{transactionType: :Other} = tx_attrs, concurrent_process_time_ms) do
+  defp total_time_s(tx_attrs, concurrent_process_time_ms) do
     (tx_attrs.duration_ms + concurrent_process_time_ms) / 1000
   end
 
