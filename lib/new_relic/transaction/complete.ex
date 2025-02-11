@@ -113,7 +113,7 @@ defmodule NewRelic.Transaction.Complete do
       |> Enum.map(&transform_trace_name_attrs/1)
       |> Enum.map(&struct(Transaction.Trace.Segment, &1))
       |> Enum.group_by(& &1.pid)
-      |> Enum.into(%{}, &generate_segment_tree(&1))
+      |> Map.new(&generate_segment_tree(&1))
 
     root_process_segment =
       tx_attrs

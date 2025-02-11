@@ -84,7 +84,8 @@ defmodule TransactionTraceTest do
     end
 
     get "/huge_args" do
-      Enum.into(1..10000, %{}, &{&1, &1})
+      1..10000
+      |> Map.new(&{&1, &1})
       |> HelperModule.do_work()
 
       HelperModule.work_hard(%{on: :something})

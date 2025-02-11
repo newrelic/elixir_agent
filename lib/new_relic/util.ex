@@ -119,7 +119,7 @@ defmodule NewRelic.Util do
   def metadata() do
     System.get_env()
     |> Enum.filter(fn {key, _} -> String.starts_with?(key, @nr_metadata_prefix) end)
-    |> Enum.into(%{})
+    |> Map.new()
   end
 
   def utilization() do
