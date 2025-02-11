@@ -60,11 +60,13 @@ defmodule NewRelic.Metric.MetricData do
           min_call_time: total_time_s,
           max_call_time: total_time_s
         },
-        # Transaction breakdown doesn't handle Elixir's level of concurrency,
-        # sending just call count improves things
         %Metric{
           name: join(["WebTransactionTotalTime", name]),
-          call_count: 1
+          call_count: 1,
+          total_call_time: total_time_s,
+          total_exclusive_time: total_time_s,
+          min_call_time: total_time_s,
+          max_call_time: total_time_s
         }
       ]
 
@@ -98,11 +100,13 @@ defmodule NewRelic.Metric.MetricData do
           min_call_time: total_time_s,
           max_call_time: total_time_s
         },
-        # Transaction breakdown doesn't handle Elixir's level of concurrency,
-        # sending just call count improves things
         %Metric{
           name: join(["OtherTransactionTotalTime", name]),
-          call_count: 1
+          call_count: 1,
+          total_call_time: total_time_s,
+          total_exclusive_time: total_time_s,
+          min_call_time: total_time_s,
+          max_call_time: total_time_s
         }
       ]
 
