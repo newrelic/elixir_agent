@@ -207,9 +207,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def set_span(:generic, attrs) do
-    attrs
-    |> Map.new()
-    |> add_span_attributes()
+    add_span_attributes(Map.new(attrs))
   end
 
   def set_span(:http, url: url, method: method, component: component) do
