@@ -7,12 +7,18 @@ defmodule PhxExampleTest do
     TestHelper.simulate_agent_enabled()
   end
 
+  setup do
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+    NewRelic.DistributedTrace.BackoffSampler.reset()
+    :ok
+  end
+
   for server <- [:cowboy, :bandit] do
     describe "Testing #{server}:" do
       test "Phoenix metrics generated" do
-        TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-        TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
         {:ok, %{body: body}} = request("/phx/bar", unquote(server))
         assert body =~ "Welcome to Phoenix"
 
@@ -48,9 +54,6 @@ defmodule PhxExampleTest do
       end
 
       test "Phoenix metrics generated for LiveView" do
-        TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-        TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
         {:ok, %{body: body}} = request("/phx/home", unquote(server))
         assert body =~ "Some content"
 
@@ -71,7 +74,6 @@ defmodule PhxExampleTest do
       end
 
       test "Phoenix spans generated" do
-        TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
         {:ok, %{body: body}} = request("/phx/home", unquote(server))
         assert body =~ "Some content"
 
@@ -79,15 +81,44 @@ defmodule PhxExampleTest do
 
         tx_span = TestHelper.find_span(span_events, "/Phoenix/PhxExampleWeb.HomeLive/index")
         process_span = TestHelper.find_span(span_events, "Transaction Root Process")
+        mount_span = TestHelper.find_span(span_events, "PhxExampleWeb.HomeLive:index.mount")
 
         assert process_span[:parentId] == tx_span[:guid]
+        assert mount_span[:"live_view.params"]
+      end
+
+      @endpoint PhxExampleWeb.Endpoint
+      test "Live View transaction and spans generated" do
+        import Phoenix.ConnTest
+        import Phoenix.LiveViewTest
+
+        conn =
+          Phoenix.ConnTest.build_conn()
+          |> Plug.Test.init_test_session([])
+
+        conn = get(conn, "/phx/home")
+        assert html_response(conn, 200) =~ "<p>Some content</p>"
+
+        {:ok, _view, _html} = live(conn)
+
+        span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+
+        tx_span =
+          TestHelper.find_span(span_events, "/Phoenix.LiveView/Live/PhxExampleWeb.HomeLive/index")
+
+        process_span = TestHelper.find_span(span_events, "Transaction Root Process")
+        mount_span = TestHelper.find_span(span_events, "PhxExampleWeb.HomeLive:index.mount")
+        render_span = TestHelper.find_span(span_events, "PhxExampleWeb.HomeLive:index.render")
+
+        assert tx_span[:"live_view.endpoint"] == "PhxExampleWeb.Endpoint"
+
+        assert process_span[:parentId] == tx_span[:guid]
+        assert mount_span[:parentId] == process_span[:guid]
+        assert render_span[:parentId] == process_span[:guid]
       end
 
       @tag :capture_log
       test "Phoenix error" do
-        TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-        TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
         {:ok, %{body: body, status_code: 500}} = request("/phx/error", unquote(server))
 
         assert body =~ "Oops, Internal Server Error"
@@ -111,9 +142,6 @@ defmodule PhxExampleTest do
 
       @tag :capture_log
       test "Phoenix LiveView error" do
-        TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-        TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
         {:ok, %{body: body, status_code: 500}} = request("/phx/live_error", unquote(server))
 
         assert body =~ "Oops, Internal Server Error"
@@ -136,10 +164,6 @@ defmodule PhxExampleTest do
       end
 
       test "Phoenix route not found" do
-        TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-        TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-        TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-
         {:ok, %{body: body, status_code: 404}} = request("/not_found", unquote(server))
         assert body =~ "Not Found"
 

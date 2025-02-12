@@ -156,6 +156,7 @@ defmodule NewRelic.Config do
 
   * `:plug_instrumentation_enabled`
   * `:phoenix_instrumentation_enabled`
+  * `:phoenix_live_view_instrumentation_enabled`
   * `:ecto_instrumentation_enabled`
   * `:redix_instrumentation_enabled`
   * `:oban_instrumentation_enabled`
@@ -182,6 +183,10 @@ defmodule NewRelic.Config do
 
   def feature?(:phoenix_instrumentation) do
     get(:features, :phoenix_instrumentation)
+  end
+
+  def feature?(:phoenix_live_view_instrumentation) do
+    get(:features, :phoenix_live_view_instrumentation)
   end
 
   def feature?(:ecto_instrumentation) do

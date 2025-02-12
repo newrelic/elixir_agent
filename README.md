@@ -84,6 +84,7 @@ Some common Elixir packages are auto-instrumented via [`telemetry`](https://gith
 
 * [`Plug`](https://github.com/elixir-plug/plug): See [NewRelic.Telemetry.Plug](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Plug.html) for details.
 * [`Phoenix`](https://github.com/phoenixframework/phoenix): See [NewRelic.Telemetry.Phoenix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Phoenix.html) for details.
+* [`Phoenix LiveView`](https://github.com/phoenixframework/phoenix_live_view): See [NewRelic.Telemetry.PhoenixLiveView](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.PhoenixLiveView.html) for details.
 * [`Ecto`](https://github.com/elixir-ecto/ecto): See [NewRelic.Telemetry.Ecto](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Ecto.html) for details.
 * [`Redix`](https://github.com/whatyouhide/redix): See [NewRelic.Telemetry.Redix](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Redix.html) for details.
 * [`Finch`](https://github.com/sneako/finch): See [NewRelic.Telemetry.Finch](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Finch.html) for details.
