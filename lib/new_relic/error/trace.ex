@@ -49,7 +49,7 @@ defmodule NewRelic.Error.Trace do
   defp format_user_attributes(user_attributes) do
     user_attributes
     |> Map.drop(@intrinsics)
-    |> Enum.into(%{}, fn {k, v} ->
+    |> Map.new(fn {k, v} ->
       (String.Chars.impl_for(v) && {k, v}) || {k, inspect(v)}
     end)
   end

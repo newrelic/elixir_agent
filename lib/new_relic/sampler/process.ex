@@ -47,10 +47,10 @@ defmodule NewRelic.Sampler.Process do
   end
 
   defp record_samples(state) do
-    Enum.reduce(state.pids, %{}, fn {pid, true}, acc ->
+    Map.new(state.pids, fn {pid, true} ->
       {current_sample, stats} = collect(pid, state.previous[pid])
       NewRelic.report_sample(:ProcessSample, stats)
-      Map.put(acc, pid, current_sample)
+      {pid, current_sample}
     end)
   end
 

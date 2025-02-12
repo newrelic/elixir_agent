@@ -32,7 +32,7 @@ defmodule UtilTest do
         nested: %{foo: %{bar: %{baz: "qux"}}},
         nested_list: [%{one: %{two: "three"}}, %{four: "five"}, %{}, "string", ["nested string"]],
         super_long_list: Enum.map(0..99, & &1),
-        big_map: String.graphemes("abcdefghijklmnopqrstuvwxyz") |> Enum.into(%{}, &{&1, &1})
+        big_map: String.graphemes("abcdefghijklmnopqrstuvwxyz") |> Map.new(&{&1, &1})
       )
 
     assert {"nested.foo.bar.baz", "qux"} in flattened

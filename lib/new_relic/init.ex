@@ -162,7 +162,7 @@ defmodule NewRelic.Init do
 
   def determine_automatic_attributes() do
     Application.get_env(:new_relic_agent, :automatic_attributes, [])
-    |> Enum.into(%{}, fn
+    |> Map.new(fn
       {name, {:system, env_var}} -> {name, System.get_env(env_var)}
       {name, {m, f, a}} -> {name, apply(m, f, a)}
       {name, value} -> {name, value}

@@ -20,9 +20,7 @@ defmodule NewRelic.Aggregate do
   defp averages(%{call_count: call_count} = values) do
     values
     |> Stream.reject(fn {key, _value} -> key == :call_count end)
-    |> Enum.reduce(%{}, fn {key, value}, acc ->
-      Map.put(acc, :"avg_#{key}", value / call_count)
-    end)
+    |> Map.new(fn {key, value} -> {:"avg_#{key}", value / call_count} end)
   end
 
   defp averages(_values), do: %{}

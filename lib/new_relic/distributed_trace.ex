@@ -207,7 +207,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def set_span(:generic, attrs) do
-    add_span_attributes(Enum.into(attrs, %{}))
+    add_span_attributes(Map.new(attrs))
   end
 
   def set_span(:http, url: url, method: method, component: component) do
@@ -237,10 +237,7 @@ defmodule NewRelic.DistributedTrace do
   def add_span_attributes(attrs) do
     Process.put(
       :nr_current_span_attrs,
-      Map.merge(
-        get_span_attrs(),
-        Enum.into(attrs, %{})
-      )
+      Map.merge(get_span_attrs(), Map.new(attrs))
     )
 
     :ok
