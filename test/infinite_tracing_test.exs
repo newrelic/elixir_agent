@@ -131,40 +131,13 @@ defmodule InfiniteTracingTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    tx_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:"nr.entryPoint"] == true
-      end)
-
-    tx_root_process_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "Transaction Root Process"
-      end)
-
-    cowboy_request_process_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:"parent.id"] == tx_root_process_span[:id]
-      end)
-
-    function_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "InfiniteTracingTest.Traced.hello/0"
-      end)
-
-    nested_function_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "InfiniteTracingTest.Traced.do_hello/0"
-      end)
-
-    task_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "Process" && attr[:"parent.id"] == cowboy_request_process_span[:id]
-      end)
-
-    nested_external_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "External/example.com/HttpClient/GET"
-      end)
+    tx_span = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true})
+    tx_root_process_span = TestHelper.find_infinite_span(spans, "Transaction Root Process")
+    cowboy_request_process_span = TestHelper.find_infinite_span(spans, %{"parent.id": tx_root_process_span[:id]})
+    function_span = TestHelper.find_infinite_span(spans, "InfiniteTracingTest.Traced.hello/0")
+    nested_function_span = TestHelper.find_infinite_span(spans, "InfiniteTracingTest.Traced.do_hello/0")
+    task_span = TestHelper.find_infinite_span(spans, %{name: "Process", "parent.id": cowboy_request_process_span[:id]})
+    nested_external_span = TestHelper.find_infinite_span(spans, "External/example.com/HttpClient/GET")
 
     [[_intrinsics, tx_event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
@@ -274,10 +247,7 @@ defmodule InfiniteTracingTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    error_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "InfiniteTracingTest.Traced.error/0"
-      end)
+    error_span = TestHelper.find_infinite_span(spans, "InfiniteTracingTest.Traced.error/0")
 
     assert error_span.attributes[:"error.message"] == "(RuntimeError) Err"
 
@@ -294,10 +264,7 @@ defmodule InfiniteTracingTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    exit_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "InfiniteTracingTest.Traced.exit/0"
-      end)
+    exit_span = TestHelper.find_infinite_span(spans, "InfiniteTracingTest.Traced.exit/0")
 
     assert exit_span.attributes[:"error.message"] == "(EXIT) :bad"
 

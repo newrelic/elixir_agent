@@ -140,7 +140,7 @@ defmodule SpanEventTest do
 
     get "/hello" do
       Task.async(fn ->
-        Process.register(self(), :named_process)
+        Process.register(self(), :named_task)
         Process.sleep(5)
         Traced.http_request()
       end)
@@ -170,15 +170,8 @@ defmodule SpanEventTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    [function, _, _] =
-      Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "SpanEventTest.Traced.function/0"
-      end)
-
-    [http_request, _, _] =
-      Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "External/example.com/HttpClient/GET"
-      end)
+    function = TestHelper.find_span(span_events, "SpanEventTest.Traced.function/0")
+    http_request = TestHelper.find_span(span_events, "External/example.com/HttpClient/GET")
 
     assert function[:category] == "generic"
     assert function[:some] == "attribute"
@@ -199,19 +192,13 @@ defmodule SpanEventTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    [another_span, _, _] =
-      Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "another.span"
-      end)
+    another_span = TestHelper.find_span(span_events, "another.span")
 
     assert another_span[:category] == "generic"
     assert another_span[:with] == "an attribute"
     assert another_span[:inside] == "attribute!"
 
-    [single_span, _, _] =
-      Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "single.span"
-      end)
+    single_span = TestHelper.find_span(span_events, "single.span")
 
     assert single_span[:category] == "generic"
 
@@ -229,31 +216,13 @@ defmodule SpanEventTest do
     )
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-
-    [spansaction_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] -> ev[:"nr.entryPoint"] == true end)
-
-    [tx_root_process_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] -> ev[:parentId] == spansaction_event[:guid] end)
-
-    [request_process_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] -> ev[:parentId] == tx_root_process_event[:guid] end)
-
-    [function_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.hello/0" end)
-
-    [nested_function_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "SpanEventTest.Traced.do_hello/0" end)
-
-    [task_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] ->
-        ev[:pid] && ev[:parentId] == request_process_event[:guid]
-      end)
-
-    [nested_external_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "External/example.com/HttpClient/GET"
-      end)
+    spansaction_event = TestHelper.find_span(span_events, %{"nr.entryPoint": true})
+    tx_root_process_event = TestHelper.find_span(span_events, %{parentId: spansaction_event[:guid]})
+    request_process_event = TestHelper.find_span(span_events, %{parentId: tx_root_process_event[:guid]})
+    function_event = TestHelper.find_span(span_events, "SpanEventTest.Traced.hello/0")
+    nested_function_event = TestHelper.find_span(span_events, "SpanEventTest.Traced.do_hello/0")
+    task_event = TestHelper.find_span(span_events, %{name: :named_task, parentId: request_process_event[:guid]})
+    nested_external_event = TestHelper.find_span(span_events, "External/example.com/HttpClient/GET")
 
     [[_intrinsics, tx_event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 

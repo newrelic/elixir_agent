@@ -59,6 +59,26 @@ defmodule TestHelper do
     end)
   end
 
+  def find_infinite_span(spans, attrs) when is_map(attrs) do
+    Enum.find(spans, fn %{attributes: attributes} ->
+      Enum.all?(attrs, fn {k, v} -> attributes[k] == v end)
+    end)
+  end
+
+  def find_infinite_span(spans, name) do
+    Enum.find(spans, fn %{attributes: attr} ->
+      attr[:name] == name
+    end)
+  end
+
+  def find_span(spans, attrs) when is_map(attrs) do
+    Enum.find_value(spans, fn
+      [span, _, _] ->
+        Enum.all?(attrs, fn {k, v} -> span[k] == v end) &&
+          span
+    end)
+  end
+
   def find_span(spans, name) do
     Enum.find_value(spans, fn
       [%{name: ^name} = span, _, _] -> span

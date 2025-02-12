@@ -55,8 +55,7 @@ defmodule RedixExampleTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    [get_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "Datastore/operation/Redis/GET" end)
+    get_event = TestHelper.find_span(span_events, "Datastore/operation/Redis/GET")
 
     assert get_event[:"peer.address"] == "localhost:6379"
     assert get_event[:"db.statement"] == "GET mykey"
@@ -65,18 +64,14 @@ defmodule RedixExampleTest do
     assert get_event[:timestamp] |> is_number
     assert get_event[:duration] > 0.0
 
-    [pipeline_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "Datastore/operation/Redis/PIPELINE"
-      end)
+    pipeline_event = TestHelper.find_span(span_events, "Datastore/operation/Redis/PIPELINE")
 
     assert pipeline_event[:"peer.address"] == "localhost:6379"
 
     assert pipeline_event[:"db.statement"] ==
              "DEL counter; INCR counter; INCR counter; GET counter"
 
-    [hset_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] -> ev[:name] == "Datastore/operation/Redis/HSET" end)
+    hset_event = TestHelper.find_span(span_events, "Datastore/operation/Redis/HSET")
 
     assert hset_event[:"peer.address"] == "localhost:6379"
   end
@@ -89,10 +84,7 @@ defmodule RedixExampleTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    [err_event, _, _] =
-      Enum.find(span_events, fn [ev, _, _] ->
-        ev[:name] == "Datastore/operation/Redis/PIPELINE"
-      end)
+    err_event = TestHelper.find_span(span_events, "Datastore/operation/Redis/PIPELINE")
 
     assert err_event[:"peer.address"] == "localhost:6379"
     # On elixir 1.14 OTP 26, the error message is "unknown POSIX error: timeout"

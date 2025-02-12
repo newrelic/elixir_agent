@@ -332,11 +332,9 @@ defmodule TransactionTraceTest do
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
-    [span, _, _] =
+    span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> Enum.find(fn [sp, _, _] ->
-        sp.name == "TransactionTraceTest.HelperModule.do_work/1"
-      end)
+      |> TestHelper.find_span("TransactionTraceTest.HelperModule.do_work/1")
 
     assert String.length(span[:"tracer.args"]) < 500
   end
@@ -347,11 +345,9 @@ defmodule TransactionTraceTest do
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
-    [span, _, _] =
+    span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> Enum.find(fn [sp, _, _] ->
-        sp.name == "TransactionTraceTest.HelperModule.do_work/1"
-      end)
+      |> TestHelper.find_span("TransactionTraceTest.HelperModule.do_work/1")
 
     assert span[:"tracer.args"] == "[DISABLED]"
   end
@@ -361,19 +357,15 @@ defmodule TransactionTraceTest do
 
     TestHelper.request(TestPlugApp, conn(:get, "/huge_args"))
 
-    [span, _, _] =
+    span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> Enum.find(fn [sp, _, _] ->
-        sp.name == "TransactionTraceTest.HelperModule.work_hard/1"
-      end)
+      |> TestHelper.find_span("TransactionTraceTest.HelperModule.work_hard/1")
 
     assert span[:"tracer.args"] == "[DISABLED]"
 
-    [span, _, _] =
+    span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> Enum.find(fn [sp, _, _] ->
-        sp.name == "TransactionTraceTest.HelperModule.do_work/1"
-      end)
+      |> TestHelper.find_span("TransactionTraceTest.HelperModule.do_work/1")
 
     refute span[:"tracer.args"] == "[DISABLED]"
   end
@@ -383,19 +375,15 @@ defmodule TransactionTraceTest do
 
     TestHelper.request(TestPlugApp, conn(:get, "/transaction_trace"))
 
-    [span, _, _] =
+    span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> Enum.find(fn [sp, _, _] ->
-        sp.name == "TransactionTraceTest.ExternalService.secret_query/1"
-      end)
+      |> TestHelper.find_span("TransactionTraceTest.ExternalService.secret_query/1")
 
     assert span[:"tracer.args"] == "[DISABLED]"
 
-    [span, _, _] =
+    span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> Enum.find(fn [sp, _, _] ->
-        sp.name == "TransactionTraceTest.ExternalService.query/1"
-      end)
+      |> TestHelper.find_span("TransactionTraceTest.ExternalService.query/1")
 
     refute span[:"tracer.args"] == "[DISABLED]"
   end
