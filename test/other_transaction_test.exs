@@ -186,10 +186,7 @@ defmodule OtherTransactionTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    spansaction =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:"nr.entryPoint"] == true && attr[:name] == "Test/Error"
-      end)
+    spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true, name: "Test/Error"})
 
     assert spansaction.attributes[:error]
     assert spansaction.attributes[:error_reason] =~ "RuntimeError"
@@ -220,10 +217,7 @@ defmodule OtherTransactionTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    spansaction =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:"nr.entryPoint"] == true && attr[:name] == "Test/ExpectedError"
-      end)
+    spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true, name: "Test/ExpectedError"})
 
     refute spansaction.attributes[:error]
   end

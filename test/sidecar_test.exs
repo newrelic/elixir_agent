@@ -256,52 +256,33 @@ defmodule SidecarTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    spansaction =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:"nr.entryPoint"] == true
-      end)
+    spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true})
 
     assert spansaction.attributes[:root] == "YES"
     refute spansaction.attributes[:async_nolink]
     assert spansaction.attributes[:async_nolink_connected] == "YES"
     assert spansaction.attributes[:async_stream_nolink_connected] == "YES"
 
-    tx_root_process_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "Transaction Root Process"
-      end)
+    tx_root_process_span = TestHelper.find_infinite_span(spans, "Transaction Root Process")
 
     task_triggering_function_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "SidecarTest.Traced.instrumented_task_async_nolink/1"
-      end)
+      TestHelper.find_infinite_span(spans, "SidecarTest.Traced.instrumented_task_async_nolink/1")
 
     assert task_triggering_function_span.attributes[:"parent.id"] == tx_root_process_span[:id]
 
     task_triggered_process_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "Process" &&
-          attr[:"parent.id"] == task_triggering_function_span[:id]
-      end)
+      TestHelper.find_infinite_span(spans, %{name: "Process", "parent.id": task_triggering_function_span[:id]})
 
-    hey_function_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "SidecarTest.Traced.hey/0"
-      end)
+    hey_function_span = TestHelper.find_infinite_span(spans, "SidecarTest.Traced.hey/0")
 
     assert hey_function_span.attributes[:"parent.id"] == task_triggered_process_span[:id]
 
     connected_stream_task_process_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:"parent.id"] == task_triggered_process_span[:id]
-      end)
+      TestHelper.find_infinite_span(spans, %{"parent.id": task_triggered_process_span[:id]})
 
     assert connected_stream_task_process_span.attributes[:name] == "Process"
 
-    hello_function_span =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "SidecarTest.Traced.hello/0"
-      end)
+    hello_function_span = TestHelper.find_infinite_span(spans, "SidecarTest.Traced.hello/0")
 
     assert hello_function_span.attributes[:"parent.id"] == connected_stream_task_process_span[:id]
   end
@@ -345,9 +326,7 @@ defmodule SidecarTest do
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
     spansaction =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:"nr.entryPoint"] == true && attr[:name] == "Test/double_connect_test"
-      end)
+      TestHelper.find_infinite_span(spans, %{name: "Test/double_connect_test", "nr.entryPoint": true})
 
     assert spansaction.attributes[:root] == "YES"
     assert spansaction.attributes[:async_nolink_connected] == "YES"
