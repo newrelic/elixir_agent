@@ -170,7 +170,9 @@ defmodule NewRelic.Telemetry.Plug do
   defp add_start_attrs(_meta, meas, _headers, :bandit) do
     [
       pid: inspect(self()),
-      start_time: meas[:system_time]
+      start_time: meas[:system_time],
+      host: "unknown",
+      path: "unknown"
     ]
     |> NewRelic.add_attributes()
   end
@@ -199,6 +201,7 @@ defmodule NewRelic.Telemetry.Plug do
 
     [
       duration: meas[:duration] || 0,
+      error: meta[:error],
       status: status_code(meta) || 500,
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions],
