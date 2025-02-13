@@ -52,10 +52,7 @@ defmodule InstrumentedTaskTest do
 
       [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-      spansaction =
-        Enum.find(spans, fn %{attributes: attr} ->
-          attr[:"nr.entryPoint"] == true
-        end)
+      spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true})
 
       refute spansaction.attributes[:not_instrumented]
       assert spansaction.attributes[:instrumented] == 6
@@ -93,10 +90,7 @@ defmodule InstrumentedTaskTest do
 
       [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-      spansaction =
-        Enum.find(spans, fn %{attributes: attr} ->
-          attr[:"nr.entryPoint"] == true
-        end)
+      spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true})
 
       refute spansaction.attributes[:not_instrumented]
       assert spansaction.attributes[:instrumented] == "check"
@@ -151,10 +145,7 @@ defmodule InstrumentedTaskTest do
 
       [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-      spansaction =
-        Enum.find(spans, fn %{attributes: attr} ->
-          attr[:"nr.entryPoint"] == true
-        end)
+      spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true})
 
       refute spansaction.attributes[:not_instrumented]
       assert spansaction.attributes[:instrumented] == "check"
@@ -233,10 +224,7 @@ defmodule InstrumentedTaskTest do
 
       [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-      spansaction =
-        Enum.find(spans, fn %{attributes: attr} ->
-          attr[:"nr.entryPoint"] == true
-        end)
+      spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true})
 
       refute spansaction.attributes[:not_instrumented]
       assert spansaction.attributes[:instrumented] == "check"
@@ -305,10 +293,7 @@ defmodule InstrumentedTaskTest do
 
       [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-      spansaction =
-        Enum.find(spans, fn %{attributes: attr} ->
-          attr[:"nr.entryPoint"] == true
-        end)
+      spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true})
 
       refute spansaction.attributes[:not_instrumented]
       assert spansaction.attributes[:instrumented] == 3
@@ -368,10 +353,7 @@ defmodule InstrumentedTaskTest do
 
       [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-      spansaction =
-        Enum.find(spans, fn %{attributes: attr} ->
-          attr[:"nr.entryPoint"] == true
-        end)
+      spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true})
 
       refute spansaction.attributes[:not_instrumented]
       assert spansaction.attributes[:instrumented] == 3
@@ -397,10 +379,7 @@ defmodule InstrumentedTaskTest do
 
       [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-      spansaction =
-        Enum.find(spans, fn %{attributes: attr} ->
-          attr[:"nr.entryPoint"] == true
-        end)
+      spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true})
 
       refute spansaction.attributes[:not_instrumented]
       assert spansaction.attributes[:instrumented] == "check"
