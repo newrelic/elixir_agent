@@ -140,6 +140,7 @@ defmodule NewRelic.Telemetry.Plug do
   defp add_start_attrs(meta, meas, headers, :cowboy) do
     [
       pid: inspect(self()),
+      "http.server": "cowboy",
       start_time: meas[:system_time],
       host: meta.req.host,
       path: meta.req.path,
@@ -155,6 +156,7 @@ defmodule NewRelic.Telemetry.Plug do
   defp add_start_attrs(%{conn: conn}, meas, headers, :bandit) do
     [
       pid: inspect(self()),
+      "http.server": "bandit",
       start_time: meas[:system_time],
       host: conn.host,
       path: conn.request_path,

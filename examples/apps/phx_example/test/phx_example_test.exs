@@ -34,6 +34,17 @@ defmodule PhxExampleTest do
         assert event[:"phoenix.controller"] == "PhxExampleWeb.PageController"
         assert event[:"phoenix.action"] == "index"
         assert event[:status] == 200
+
+        [
+          %{name: "WebTransactionTotalTime", scope: ""},
+          [1, value, _, _, _, _]
+        ] =
+          TestHelper.find_metric(
+            metrics,
+            "WebTransactionTotalTime"
+          )
+
+        assert_in_delta value, 0.3, 0.1
       end
 
       test "Phoenix metrics generated for LiveView" do
