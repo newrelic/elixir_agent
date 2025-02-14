@@ -55,9 +55,9 @@ defmodule SpanEventTest do
     events = GenServer.call(harvester, :gather_harvest)
     assert length(events) == 2
 
-    assert Enum.find(events, fn [span, _, _] -> span.priority == 3 end)
-    assert Enum.find(events, fn [span, _, _] -> span.priority == 2 end)
-    refute Enum.find(events, fn [span, _, _] -> span.priority == 1 end)
+    assert TestHelper.find_event(events, %{priority: 3})
+    assert TestHelper.find_event(events, %{priority: 2})
+    refute TestHelper.find_event(events, %{priority: 1})
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
@@ -170,8 +170,8 @@ defmodule SpanEventTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    function = TestHelper.find_span(span_events, "SpanEventTest.Traced.function/0")
-    http_request = TestHelper.find_span(span_events, "External/example.com/HttpClient/GET")
+    function = TestHelper.find_event(span_events, "SpanEventTest.Traced.function/0")
+    http_request = TestHelper.find_event(span_events, "External/example.com/HttpClient/GET")
 
     assert function[:category] == "generic"
     assert function[:some] == "attribute"
@@ -192,13 +192,13 @@ defmodule SpanEventTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    another_span = TestHelper.find_span(span_events, "another.span")
+    another_span = TestHelper.find_event(span_events, "another.span")
 
     assert another_span[:category] == "generic"
     assert another_span[:with] == "an attribute"
     assert another_span[:inside] == "attribute!"
 
-    single_span = TestHelper.find_span(span_events, "single.span")
+    single_span = TestHelper.find_event(span_events, "single.span")
 
     assert single_span[:category] == "generic"
 
@@ -216,13 +216,13 @@ defmodule SpanEventTest do
     )
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-    spansaction_event = TestHelper.find_span(span_events, %{"nr.entryPoint": true})
-    tx_root_process_event = TestHelper.find_span(span_events, %{parentId: spansaction_event[:guid]})
-    request_process_event = TestHelper.find_span(span_events, %{parentId: tx_root_process_event[:guid]})
-    function_event = TestHelper.find_span(span_events, "SpanEventTest.Traced.hello/0")
-    nested_function_event = TestHelper.find_span(span_events, "SpanEventTest.Traced.do_hello/0")
-    task_event = TestHelper.find_span(span_events, %{name: :named_task, parentId: request_process_event[:guid]})
-    nested_external_event = TestHelper.find_span(span_events, "External/example.com/HttpClient/GET")
+    spansaction_event = TestHelper.find_event(span_events, %{"nr.entryPoint": true})
+    tx_root_process_event = TestHelper.find_event(span_events, %{parentId: spansaction_event[:guid]})
+    request_process_event = TestHelper.find_event(span_events, %{parentId: tx_root_process_event[:guid]})
+    function_event = TestHelper.find_event(span_events, "SpanEventTest.Traced.hello/0")
+    nested_function_event = TestHelper.find_event(span_events, "SpanEventTest.Traced.do_hello/0")
+    task_event = TestHelper.find_event(span_events, %{name: :named_task, parentId: request_process_event[:guid]})
+    nested_external_event = TestHelper.find_event(span_events, "External/example.com/HttpClient/GET")
 
     [[_intrinsics, tx_event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 

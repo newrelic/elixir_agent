@@ -71,18 +71,17 @@ defmodule TestHelper do
     end)
   end
 
-  def find_span(spans, attrs) when is_map(attrs) do
-    Enum.find_value(spans, fn
-      [span, _, _] ->
-        Enum.all?(attrs, fn {k, v} -> span[k] == v end) &&
-          span
-    end)
+  def find_event(events, name) when is_binary(name) do
+    find_event(events, %{name: name})
   end
 
-  def find_span(spans, name) do
-    Enum.find_value(spans, fn
-      [%{name: ^name} = span, _, _] -> span
-      _span -> false
+  def find_event(events, attrs) when is_map(attrs) do
+    events
+    |> Enum.map(fn sections ->
+      Enum.reduce(sections, &Map.merge(&2, &1))
+    end)
+    |> Enum.find_value(fn event ->
+      Enum.all?(attrs, fn {k, v} -> event[k] == v end) && event
     end)
   end
 

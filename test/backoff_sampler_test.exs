@@ -97,9 +97,9 @@ defmodule BackoffSamplerTest do
            })
   end
 
-  @sampling_target 100
+  @sampling_target_period 100
   test "cycles trigger" do
-    TestHelper.run_with(:application_config, sampling_target_period: @sampling_target)
+    TestHelper.run_with(:application_config, sampling_target_period: @sampling_target_period)
 
     BackoffSampler.reset()
     BackoffSampler.trigger_next_cycle()
@@ -123,7 +123,7 @@ defmodule BackoffSamplerTest do
     refute BackoffSampler.sample?()
 
     # Wait until the next cycle
-    Process.sleep(@sampling_target + 10)
+    Process.sleep(@sampling_target_period + 10)
 
     # Next cycle it will adjust and take some, but not all
     decisions = [

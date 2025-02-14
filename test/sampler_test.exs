@@ -30,13 +30,12 @@ defmodule SamplerTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "BeamStat" &&
-               event[:reductions] > 0 &&
-               event[:process_count] > 0 &&
-               event[:scheduler_utilization] > 0.0 &&
-               event[:scheduler_utilization] < 1.0
-           end)
+    event = TestHelper.find_event(events, %{category: "BeamStat"})
+
+    assert event[:reductions] > 0
+    assert event[:process_count] > 0
+    assert event[:scheduler_utilization] > 0.0
+    assert event[:scheduler_utilization] < 1.0
 
     [%{name: "Memory/Physical"}, [_, mb, _, _, _, _]] =
       TestHelper.find_metric(metrics, "Memory/Physical")
@@ -57,10 +56,11 @@ defmodule SamplerTest do
     TestHelper.trigger_report(NewRelic.Sampler.Process)
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "ProcessSample" && event[:name] == "SamplerTest.TestProcess" &&
-               event[:message_queue_length] == 0
-           end)
+    assert TestHelper.find_event(events, %{
+             category: "ProcessSample",
+             name: "SamplerTest.TestProcess",
+             message_queue_length: 0
+           })
   end
 
   test "unnamed Process Sampler" do
@@ -71,17 +71,18 @@ defmodule SamplerTest do
     spawn(fn ->
       NewRelic.sample_process()
       TestHelper.trigger_report(NewRelic.Sampler.Process)
-      send(parent, :continue)
+      send(parent, {:pid, self()})
     end)
 
-    assert_receive :continue, 500
+    assert_receive {:pid, pid}, 500
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "ProcessSample" && event[:name] =~ "PID" &&
-               event[:message_queue_length] == 0
-           end)
+    assert TestHelper.find_event(events, %{
+             category: "ProcessSample",
+             name: inspect(pid),
+             message_queue_length: 0
+           })
   end
 
   test "Process Sampler - count work between samplings" do
@@ -92,10 +93,11 @@ defmodule SamplerTest do
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
-    [_, %{reductions: first_reductions}, _] =
-      Enum.find(events, fn [_, event, _] ->
-        event[:category] == "ProcessSample" && event[:name] == "SamplerTest.TestProcess"
-      end)
+    %{reductions: first_reductions} =
+      TestHelper.find_event(events, %{
+        category: "ProcessSample",
+        name: "SamplerTest.TestProcess"
+      })
 
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
@@ -105,10 +107,11 @@ defmodule SamplerTest do
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
-    [_, %{reductions: second_reductions}, _] =
-      Enum.find(events, fn [_, event, _] ->
-        event[:category] == "ProcessSample" && event[:name] == "SamplerTest.TestProcess"
-      end)
+    %{reductions: second_reductions} =
+      TestHelper.find_event(events, %{
+        category: "ProcessSample",
+        name: "SamplerTest.TestProcess"
+      })
 
     assert second_reductions > first_reductions
   end
@@ -123,10 +126,11 @@ defmodule SamplerTest do
       TestHelper.trigger_report(NewRelic.Sampler.Ets)
       events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
-      assert Enum.find(events, fn [_, event, _] ->
-               event[:category] == "EtsStat" && event[:table_name] == ":test_table" &&
-                 event[:size] == 510
-             end)
+      assert TestHelper.find_event(events, %{
+               category: "EtsStat",
+               table_name: ":test_table",
+               size: 510
+             })
     end
 
     test "record_sample/1 ignores non-existent tables" do

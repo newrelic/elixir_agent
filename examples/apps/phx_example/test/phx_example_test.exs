@@ -79,9 +79,9 @@ defmodule PhxExampleTest do
 
         span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-        tx_span = TestHelper.find_span(span_events, "/Phoenix/PhxExampleWeb.HomeLive/index")
-        process_span = TestHelper.find_span(span_events, "Transaction Root Process")
-        mount_span = TestHelper.find_span(span_events, "PhxExampleWeb.HomeLive:index.mount")
+        tx_span = TestHelper.find_event(span_events, "/Phoenix/PhxExampleWeb.HomeLive/index")
+        process_span = TestHelper.find_event(span_events, "Transaction Root Process")
+        mount_span = TestHelper.find_event(span_events, "PhxExampleWeb.HomeLive:index.mount")
 
         assert process_span[:parentId] == tx_span[:guid]
         assert mount_span[:"live_view.params"]

@@ -140,9 +140,7 @@ defmodule CustomEventTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
     NewRelic.JSON.encode!(events)
 
-    [[_, attrs, _]] = events
-    assert attrs[:bad_value] == "[BAD_VALUE]"
-    assert attrs[:good_value] == "A string"
+    assert TestHelper.find_event(events, %{good_value: "A string", bad_value: "[BAD_VALUE]"})
 
     TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
@@ -169,9 +167,7 @@ defmodule CustomEventTest do
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:key] == "TestEvent" && event[:test_attribute] == "test_value"
-           end)
+    assert TestHelper.find_event(events, %{key: "TestEvent", test_attribute: "test_value"})
   end
 
   test "Respect the reservoir_size" do

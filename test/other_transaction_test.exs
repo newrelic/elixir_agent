@@ -243,8 +243,6 @@ defmodule OtherTransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.message"] =~ "RESCUED"
-           end)
+    assert TestHelper.find_event(events, %{"error.message": "(RuntimeError) RESCUED"})
   end
 end

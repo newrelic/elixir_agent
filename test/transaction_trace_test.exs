@@ -334,7 +334,7 @@ defmodule TransactionTraceTest do
 
     span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> TestHelper.find_span("TransactionTraceTest.HelperModule.do_work/1")
+      |> TestHelper.find_event("TransactionTraceTest.HelperModule.do_work/1")
 
     assert String.length(span[:"tracer.args"]) < 500
   end
@@ -347,7 +347,7 @@ defmodule TransactionTraceTest do
 
     span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> TestHelper.find_span("TransactionTraceTest.HelperModule.do_work/1")
+      |> TestHelper.find_event("TransactionTraceTest.HelperModule.do_work/1")
 
     assert span[:"tracer.args"] == "[DISABLED]"
   end
@@ -359,13 +359,13 @@ defmodule TransactionTraceTest do
 
     span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> TestHelper.find_span("TransactionTraceTest.HelperModule.work_hard/1")
+      |> TestHelper.find_event("TransactionTraceTest.HelperModule.work_hard/1")
 
     assert span[:"tracer.args"] == "[DISABLED]"
 
     span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> TestHelper.find_span("TransactionTraceTest.HelperModule.do_work/1")
+      |> TestHelper.find_event("TransactionTraceTest.HelperModule.do_work/1")
 
     refute span[:"tracer.args"] == "[DISABLED]"
   end
@@ -377,13 +377,13 @@ defmodule TransactionTraceTest do
 
     span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> TestHelper.find_span("TransactionTraceTest.ExternalService.secret_query/1")
+      |> TestHelper.find_event("TransactionTraceTest.ExternalService.secret_query/1")
 
     assert span[:"tracer.args"] == "[DISABLED]"
 
     span =
       TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
-      |> TestHelper.find_span("TransactionTraceTest.ExternalService.query/1")
+      |> TestHelper.find_event("TransactionTraceTest.ExternalService.query/1")
 
     refute span[:"tracer.args"] == "[DISABLED]"
   end

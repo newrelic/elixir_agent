@@ -34,7 +34,7 @@ defmodule NewRelic.Telemetry.FinchTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    external_span = TestHelper.find_span(span_events, "External/httpstat.us/Finch/GET")
+    external_span = TestHelper.find_event(span_events, "External/httpstat.us/Finch/GET")
 
     assert external_span[:"request.url"] == "https://httpstat.us/200"
     assert external_span[:"response.status"] == 200
@@ -49,7 +49,7 @@ defmodule NewRelic.Telemetry.FinchTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    external_span = TestHelper.find_span(span_events, "External/httpstat.us/Finch/GET")
+    external_span = TestHelper.find_event(span_events, "External/httpstat.us/Finch/GET")
 
     assert external_span[:"request.url"] == "https://httpstat.us/500"
     assert external_span[:"response.status"] == 500
@@ -64,7 +64,7 @@ defmodule NewRelic.Telemetry.FinchTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    external_span = TestHelper.find_span(span_events, "External/nxdomain/Finch/GET")
+    external_span = TestHelper.find_event(span_events, "External/nxdomain/Finch/GET")
 
     assert external_span[:"request.url"] == "https://nxdomain/"
     assert external_span[:error] == true
@@ -84,7 +84,7 @@ defmodule NewRelic.Telemetry.FinchTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    external_span = TestHelper.find_span(span_events, "External/httpstat.us/Finch/GET")
+    external_span = TestHelper.find_event(span_events, "External/httpstat.us/Finch/GET")
 
     assert external_span[:"request.url"] == "https://httpstat.us/200"
     assert external_span[:error] == true
