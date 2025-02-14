@@ -59,14 +59,23 @@ defmodule NewRelic do
   Start an "Other" Transaction.
 
   This will begin monitoring the current process as an "Other" Transaction
-  (ie: Not a "Web" Transaction). The first argument will be considered
-  the "category", the second is the "name".
+  (ie: Not a "Web" Transaction).
+
+  The first argument will be considered the "category", the second is the "name".
+
+  The third argument is an optional map of headers that will connect this
+  Transaction to an existing Distributed Trace. You can provide W3C "traceparent"
+  and "tracestate" headers or another New Relic agent's "newrelic" header.
+
+  The Transaction will end when the process exits, or when you call
+  `NewRelic.stop_transaction()`
 
   ## Examples
 
   ```elixir
   NewRelic.start_transaction("GenStage", "MyConsumer/EventType")
   NewRelic.start_transaction("Task", "TaskName")
+  NewRelic.start_transaction("WebSocket", "Handler", %{"newrelic" => "..."})
   ```
 
   > #### Warning {: .error}
@@ -74,29 +83,32 @@ defmodule NewRelic do
   > * You can't start a new transaction within an existing one. Any process
   > spawned inside a transaction belongs to that transaction.
   > * Do _not_ use this for processes that live a very long time, doing so
-  > will risk a memory leak tracking attributes in the transaction!
+  > will risk increased memory growth tracking attributes in the transaction!
 
   ## Notes
 
   * Don't use this to track Web Transactions - Plug based HTTP servers
   are auto-instrumented based on `telemetry` events.
   * If multiple transactions are started in the same Process, you must
-  call `NewRelic.stop_transaction/0` to mark the end of the transaction.
+  call `NewRelic.stop_transaction/0` to mark the end of the Transaction.
   """
   @spec start_transaction(String.t(), String.t()) :: any()
   defdelegate start_transaction(category, name), to: NewRelic.OtherTransaction
 
+  @spec start_transaction(String.t(), String.t(), headers :: map) :: any()
+  defdelegate start_transaction(category, name, headers), to: NewRelic.OtherTransaction
+
   @doc """
   Stop an "Other" Transaction.
 
-  If multiple transactions are started in the same Process, you must
-  call `NewRelic.stop_transaction/0` to mark the end of the transaction.
+  If multiple Transactions are started in the same Process, you must
+  call `NewRelic.stop_transaction/0` to mark the end of the Transaction.
   """
   @spec stop_transaction() :: any()
   defdelegate stop_transaction(), to: NewRelic.OtherTransaction
 
   @doc """
-  Record an "Other" transaction within the given block. The return value of
+  Record an "Other" Transaction within the given block. The return value of
   the block is returned.
 
   See `start_transaction/2` and `stop_transaction/0` for more details about
@@ -119,6 +131,15 @@ defmodule NewRelic do
   defmacro other_transaction(category, name, do: block) do
     quote do
       NewRelic.start_transaction(unquote(category), unquote(name))
+      res = unquote(block)
+      NewRelic.stop_transaction()
+      res
+    end
+  end
+
+  defmacro other_transaction(category, name, headers, do: block) do
+    quote do
+      NewRelic.start_transaction(unquote(category), unquote(name), unquote(headers))
       res = unquote(block)
       NewRelic.stop_transaction()
       res
@@ -179,13 +200,6 @@ defmodule NewRelic do
   @doc """
   Store information about the type of work the current span is doing.
 
-  Options:
-  - `:type`
-    - `:generic` - Pass custom attributes
-    - `:http` - Pass attributes `:url`, `:method`, `:component`
-    - `:datastore` - Pass attributes `:statement`, `:instance`, `:address`, `:hostname`,
-      `:component`
-
   ## Examples
 
   ```elixir
@@ -226,7 +240,7 @@ defmodule NewRelic do
   @doc """
   You must manually instrument outgoing HTTP calls to connect them to a Distributed Trace.
 
-  The agent will automatically read request headers and detect if the request is a part
+  The agent will automatically read HTTP request headers and detect if the request is a part
   of an incoming Distributed Trace, but outgoing requests need an extra header:
 
   ```elixir
@@ -239,6 +253,7 @@ defmodule NewRelic do
   request since calling the function marks the "start" time of the request.
   """
   @spec distributed_trace_headers(:http) :: [{key :: String.t(), value :: String.t()}]
+  @spec distributed_trace_headers(:other) :: map()
   defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
 
   @type name :: String.t() | {primary_name :: String.t(), secondary_name :: String.t()}
@@ -283,7 +298,7 @@ defmodule NewRelic do
   defmodule ImportantProcess do
     use GenServer
     def init(:ok) do
-      NewRelic.sample_process
+      NewRelic.sample_process()
       {:ok, %{}}
     end
   end
@@ -314,6 +329,7 @@ defmodule NewRelic do
 
   @doc """
   Report a Dimensional Metric.
+
   Valid types: `:count`, `:gauge`, and `:summary`.
 
   ## Example

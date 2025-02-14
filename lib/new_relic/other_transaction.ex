@@ -1,9 +1,9 @@
 defmodule NewRelic.OtherTransaction do
   @moduledoc false
 
-  def start_transaction(category, name) do
+  def start_transaction(category, name, headers \\ %{}) do
     NewRelic.Transaction.Reporter.start_transaction(:other)
-    NewRelic.DistributedTrace.start(:other)
+    NewRelic.DistributedTrace.start(:other, headers)
 
     NewRelic.add_attributes(
       pid: inspect(self()),
