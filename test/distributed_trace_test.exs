@@ -206,6 +206,21 @@ defmodule DistributedTraceTest do
     |> Task.await()
   end
 
+  test "Start an Other transaction with inbound DT headers" do
+    headers = %{@dt_header => generate_inbound_payload(:browser)}
+
+    Task.async(fn ->
+      NewRelic.start_transaction("Category", "Name", headers)
+
+      headers = NewRelic.distributed_trace_headers(:other)
+
+      context = DistributedTrace.NewRelicContext.decode(Map.get(headers, @dt_header))
+
+      assert context.trace_id == "d6b4ba0c3a712ca"
+    end)
+    |> Task.await()
+  end
+
   describe "Context decoding" do
     test "ignore unknown version" do
       payload = %{"v" => [666]} |> NewRelic.JSON.encode!() |> Base.encode64()

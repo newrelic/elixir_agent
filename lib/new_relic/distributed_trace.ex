@@ -13,26 +13,30 @@ defmodule NewRelic.DistributedTrace do
 
   def start(:http, headers) do
     if NewRelic.Config.feature?(:distributed_tracing) do
-      determine_context(:http, headers)
+      determine_context(headers)
       |> track_transaction(transport_type: "HTTP")
     end
+
+    :ok
   end
 
-  def start(:other, _) do
+  def start(:other, headers) do
     if NewRelic.Config.feature?(:distributed_tracing) do
-      generate_new_context()
+      determine_context(headers)
       |> track_transaction(transport_type: "Other")
     end
+
+    :ok
   end
 
-  defp determine_context(:http, headers) do
-    case accept_distributed_trace_headers(:http, headers) do
+  defp determine_context(headers) do
+    case accept_distributed_trace_headers(headers) do
       %Context{} = context -> context
       _ -> generate_new_context()
     end
   end
 
-  defp accept_distributed_trace_headers(:http, headers) do
+  defp accept_distributed_trace_headers(headers) do
     w3c_headers(headers) || newrelic_header(headers) || :no_payload
   end
 
@@ -52,6 +56,10 @@ defmodule NewRelic.DistributedTrace do
     else
       _ -> false
     end
+  end
+
+  def distributed_trace_headers(:other) do
+    distributed_trace_headers(:http) |> Map.new()
   end
 
   def distributed_trace_headers(:http) do
