@@ -153,7 +153,9 @@ defmodule NewRelic.Telemetry.PhoenixLiveView do
   def handle_event(@live_view_render_stop, meas, meta, _config) do
     Tracer.Direct.stop_span(meta.telemetry_span_context, duration: meas.duration)
 
-    Transaction.Reporter.stop_transaction(:web)
+    if meta.socket.transport_pid do
+      Transaction.Reporter.stop_transaction(:web)
+    end
   end
 
   def handle_event(@live_view_render_exception, meas, meta, _config) do
@@ -163,7 +165,9 @@ defmodule NewRelic.Telemetry.PhoenixLiveView do
       attributes: [error: true, "error.kind": meta.kind, "error.reason": inspect(meta.reason)]
     )
 
-    Transaction.Reporter.stop_transaction(:web)
+    if meta.socket.transport_pid do
+      Transaction.Reporter.stop_transaction(:web)
+    end
   end
 
   def handle_event(_event, _meas, _meta, _config) do
