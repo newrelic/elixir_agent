@@ -12,7 +12,8 @@ defmodule NewRelic.Tracer.Direct do
       under ->
         Process.put(:nr_open_span_count, under + 1)
 
-        start_time = Keyword.get(options, :start_time, System.system_time())
+        system_time = Keyword.get(options, :system_time, System.system_time())
+        monotonic_time = Keyword.get(options, :monotonic_time, System.monotonic_time())
         attributes = Keyword.get(options, :attributes, []) |> Map.new()
 
         {span, previous_span, previous_span_attrs} =
@@ -23,7 +24,7 @@ defmodule NewRelic.Tracer.Direct do
 
         Process.put(
           {:nr_span, id},
-          {name, start_time, attributes, {span, previous_span, previous_span_attrs}}
+          {name, system_time, monotonic_time, attributes, {span, previous_span, previous_span_attrs}}
         )
     end
 
@@ -31,17 +32,17 @@ defmodule NewRelic.Tracer.Direct do
   end
 
   def stop_span(id, options \\ []) do
-    case Process.get({:nr_span, id}) do
+    case Process.delete({:nr_span, id}) do
       nil ->
         :no_such_span
 
-      {name, start_time, start_attributes, {span, previous_span, previous_span_attrs}} ->
+      {name, system_time, monotonic_start_time, start_attributes, {span, previous_span, previous_span_attrs}} ->
         Process.put(:nr_open_span_count, Process.get(:nr_open_span_count) - 1)
 
         {duration, duration_s} =
           case Keyword.get(options, :duration) do
             nil ->
-              duration = System.system_time() - start_time
+              duration = System.monotonic_time() - monotonic_start_time
               {duration, System.convert_time_unit(duration, :native, :millisecond) / 1_000}
 
             duration ->
@@ -51,7 +52,7 @@ defmodule NewRelic.Tracer.Direct do
         name = Keyword.get(options, :name, name)
         stop_attributes = Keyword.get(options, :attributes, []) |> Map.new()
         attributes = Map.merge(start_attributes, stop_attributes)
-        timestamp_ms = System.convert_time_unit(start_time, :native, :millisecond)
+        timestamp_ms = System.convert_time_unit(system_time, :native, :millisecond)
 
         {primary_name, secondary_name} =
           case name do
@@ -66,7 +67,7 @@ defmodule NewRelic.Tracer.Direct do
           pid: self(),
           id: span,
           parent_id: previous_span || :root,
-          start_time: start_time,
+          start_time: system_time,
           duration: duration
         })
 
@@ -78,6 +79,8 @@ defmodule NewRelic.Tracer.Direct do
           category: "generic",
           attributes: attributes
         )
+
+        NewRelic.report_metric({:function, primary_name}, duration_s: duration_s)
 
         NewRelic.DistributedTrace.reset_span(
           previous_span: previous_span,

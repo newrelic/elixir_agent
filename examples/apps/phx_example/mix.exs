@@ -30,6 +30,7 @@ defmodule PhxExample.MixProject do
       {:phoenix_html, "~> 3.3"},
       {:phoenix_view, "~> 2.0"},
       {:phoenix_live_view, "~> 0.20"},
+      {:floki, ">= 0.30.0", only: :test},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:bandit, "~> 1.0"}

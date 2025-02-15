@@ -108,6 +108,11 @@ defmodule NewRelic.Init do
           "NEW_RELIC_PHOENIX_INSTRUMENTATION_ENABLED",
           :phoenix_instrumentation_enabled
         ),
+      phoenix_live_view_instrumentation:
+        determine_feature(
+          "NEW_RELIC_PHOENIX_LIVE_VIEW_INSTRUMENTATION_ENABLED",
+          :phoenix_live_view_instrumentation_enabled
+        ),
       oban_instrumentation:
         determine_feature(
           "NEW_RELIC_OBAN_INSTRUMENTATION_ENABLED",

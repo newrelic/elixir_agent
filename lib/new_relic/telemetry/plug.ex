@@ -79,9 +79,7 @@ defmodule NewRelic.Telemetry.Plug do
     with :collect <- Transaction.Reporter.start_transaction(:web, path(meta, server)) do
       headers = get_headers(meta, server)
 
-      if NewRelic.Config.enabled?(),
-        do: DistributedTrace.start(:http, headers)
-
+      DistributedTrace.start(:http, headers)
       add_start_attrs(meta, measurements, headers, server)
       maybe_report_queueing(headers)
     end

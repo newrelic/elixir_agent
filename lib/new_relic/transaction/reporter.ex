@@ -27,16 +27,18 @@ defmodule NewRelic.Transaction.Reporter do
   end
 
   def start_transaction(:web, path) do
-    {system_time, start_time_mono} = {System.system_time(), System.monotonic_time()}
+    unless Transaction.Sidecar.tracking?() do
+      {system_time, start_time_mono} = {System.system_time(), System.monotonic_time()}
 
-    if NewRelic.Util.path_match?(path, NewRelic.Config.ignore_paths()) do
-      ignore_transaction()
-      :ignore
-    else
-      Transaction.ErlangTrace.trace()
-      Transaction.Sidecar.track(:web)
-      Transaction.Sidecar.add(system_time: system_time, start_time_mono: start_time_mono)
-      :collect
+      if NewRelic.Util.path_match?(path, NewRelic.Config.ignore_paths()) do
+        ignore_transaction()
+        :ignore
+      else
+        Transaction.ErlangTrace.trace()
+        Transaction.Sidecar.track(:web)
+        Transaction.Sidecar.add(system_time: system_time, start_time_mono: start_time_mono)
+        :collect
+      end
     end
   end
 

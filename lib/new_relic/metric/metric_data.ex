@@ -358,6 +358,16 @@ defmodule NewRelic.Metric.MetricData do
       max_call_time: duration_s
     }
 
+  def transform({:function, function_name}, duration_s: duration_s),
+    do: %Metric{
+      name: join(["Function", function_name]),
+      call_count: 1,
+      total_call_time: duration_s,
+      total_exclusive_time: duration_s,
+      min_call_time: duration_s,
+      max_call_time: duration_s
+    }
+
   def transform({:function, function_name},
         duration_s: duration_s,
         exclusive_time_s: exclusive_time_s

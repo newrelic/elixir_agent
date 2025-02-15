@@ -64,8 +64,8 @@ defmodule NewRelic.Telemetry.Absinthe do
 
     NewRelic.Tracer.Direct.start_span(
       meta.id,
-      "Operation",
-      start_time: meas.system_time,
+      "Absinthe/Operation",
+      system_time: meas.system_time,
       attributes: [
         "absinthe.schema": inspect(meta.options[:schema]),
         "absinthe.query": query
@@ -116,7 +116,7 @@ defmodule NewRelic.Telemetry.Absinthe do
     NewRelic.Tracer.Direct.start_span(
       meta.id,
       {resolver_name, "#{inspect(resolution.schema)}.#{path}"},
-      start_time: meas.system_time,
+      system_time: meas.system_time,
       attributes: [
         "absinthe.field.path": path,
         "absinthe.field.type": type,
@@ -160,11 +160,11 @@ defmodule NewRelic.Telemetry.Absinthe do
   end
 
   defp operation_span_name(%{type: type, name: name}) when is_binary(name) do
-    "#{to_string(type)}:#{name}"
+    "Absinthe/Operation/#{to_string(type)}:#{name}"
   end
 
   defp operation_span_name(%{type: type}) do
-    "#{to_string(type)}"
+    "Absinthe/Operation/#{to_string(type)}"
   end
 
   defp transaction_name(schema, operation) do

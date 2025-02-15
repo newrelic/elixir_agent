@@ -12,4 +12,7 @@ for config <- "../apps/*/config/config.exs" |> Path.expand(__DIR__) |> Path.wild
   import_config config
 end
 
-if File.exists?("config/secret.exs"), do: import_config("secret.exs")
+if Mix.env() != :test do
+  if File.exists?(Path.expand("./secret.exs", __DIR__)),
+    do: import_config("secret.exs")
+end

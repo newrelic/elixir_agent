@@ -43,7 +43,7 @@ defmodule AbsintheExampleTest do
 
     operation =
       Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "query:TestQuery"
+        attr[:name] == "Absinthe/Operation/query:TestQuery"
       end)
 
     one_resolver =
