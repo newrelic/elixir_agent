@@ -4,6 +4,7 @@
 
 #### Features
 * Improved Phoenix LiveView instrumentation [#500](https://github.com/newrelic/elixir_agent/pull/500)
+* Support connecting an Other Transaction to a Distributed Trace [#503](https://github.com/newrelic/elixir_agent/pull/503)
 * Support for native JSON library [#494](https://github.com/newrelic/elixir_agent/pull/494) Thanks @TylerWitt!
 
 #### Fixes
