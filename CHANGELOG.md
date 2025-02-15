@@ -1,5 +1,22 @@
 ## CHANGELOG
 
+### `v1.32.0`
+
+#### Features
+* Improved Phoenix LiveView instrumentation [#500](https://github.com/newrelic/elixir_agent/pull/500)
+* Support connecting an Other Transaction to a Distributed Trace [#503](https://github.com/newrelic/elixir_agent/pull/503)
+* Support for native JSON library [#494](https://github.com/newrelic/elixir_agent/pull/494) Thanks @TylerWitt!
+
+#### Fixes
+* Fix incomplete bandit response time metrics [#498](https://github.com/newrelic/elixir_agent/pull/498)
+* Fix another bug with missing bandit conn [#497](https://github.com/newrelic/elixir_agent/pull/497)
+* Fix double reported segments in TTs for bandit [#491](https://github.com/newrelic/elixir_agent/pull/491)
+
+#### Tweaks
+* Add transaction.name to Spansaction [#492](https://github.com/newrelic/elixir_agent/pull/492)
+
+------
+
 ### `v1.31.1`
 
 #### Fixes
