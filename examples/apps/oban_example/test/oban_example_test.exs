@@ -40,6 +40,7 @@ defmodule ObanExampleTest do
 
     assert timestamp |> is_number
     assert duration >= 0.015
+    assert duration <= 0.065
   end
 
   test "instruments a failed job" do
