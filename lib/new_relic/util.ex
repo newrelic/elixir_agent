@@ -37,22 +37,48 @@ defmodule NewRelic.Util do
   end
 
   def deep_flatten({key, list_value}) when is_list(list_value) do
-    list_value
-    |> Enum.slice(0..9)
-    |> Enum.with_index()
-    |> Enum.flat_map(fn {v, index} -> deep_flatten({"#{key}.#{index}", v}) end)
-    |> Enum.concat([{"#{key}.length", length(list_value)}])
+    attrs =
+      list_value
+      |> Enum.slice(0..9)
+      |> Enum.with_index()
+      |> Enum.flat_map(fn {v, index} -> deep_flatten({"#{key}.#{index}", v}) end)
+
+    case length(list_value) do
+      length when length <= 10 -> attrs
+      length -> Enum.concat(attrs, [{"#{key}.length", length}])
+    end
   end
 
-  def deep_flatten({key, %{__struct__: _} = value}) do
-    [{key, value}]
+  def deep_flatten({key, %{__struct__: struct} = struct_value})
+      when struct in [Date, DateTime, Time, NaiveDateTime] do
+    # Don't flatten time structs, we know how to format them into timestamps
+    [{key, struct_value}]
+  end
+
+  def deep_flatten({key, %struct{} = struct_value}) do
+    attrs =
+      struct_value
+      |> Map.from_struct()
+      |> Enum.slice(0..9)
+      |> Enum.flat_map(fn {k, v} -> deep_flatten({"#{key}.#{k}", v}) end)
+      |> Enum.concat([{"#{key}.__struct__", inspect(struct)}])
+
+    case map_size(struct_value) - 1 do
+      map_size when map_size <= 10 -> attrs
+      map_size -> Enum.concat(attrs, [{"#{key}.size", map_size}])
+    end
   end
 
   def deep_flatten({key, map_value}) when is_map(map_value) do
-    map_value
-    |> Enum.slice(0..9)
-    |> Enum.flat_map(fn {k, v} -> deep_flatten({"#{key}.#{k}", v}) end)
-    |> Enum.concat([{"#{key}.size", map_size(map_value)}])
+    attrs =
+      map_value
+      |> Enum.slice(0..9)
+      |> Enum.flat_map(fn {k, v} -> deep_flatten({"#{key}.#{k}", v}) end)
+
+    case map_size(map_value) do
+      map_size when map_size <= 10 -> attrs
+      map_size -> Enum.concat(attrs, [{"#{key}.size", map_size}])
+    end
   end
 
   def deep_flatten({key, value}) do
