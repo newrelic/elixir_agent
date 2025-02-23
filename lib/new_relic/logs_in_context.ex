@@ -22,18 +22,36 @@ defmodule NewRelic.LogsInContext do
     :skip
   end
 
-  defp primary_filter(%{msg: {:string, _msg}} = log, %{mode: :direct}) do
-    log
-    |> prepare_log()
+  defp primary_filter(%{msg: {:string, msg}} = log, %{mode: :direct}) do
+    [message: IO.iodata_to_binary(msg)]
+    |> prepare_log(log)
     |> TelemetrySdk.Logs.Harvester.report_log()
 
-    log
+    :ignore
   end
 
-  defp primary_filter(%{msg: {:string, _msg}} = log, %{mode: :forwarder}) do
+  defp primary_filter(%{msg: {:report, report}, meta: %{domain: [:elixir]}} = log, %{mode: :direct}) do
+    report
+    |> prepare_log(log)
+    |> TelemetrySdk.Logs.Harvester.report_log()
+
+    :ignore
+  end
+
+  defp primary_filter(%{msg: {:string, msg}} = log, %{mode: :forwarder}) do
     message =
-      log
-      |> prepare_log()
+      [message: IO.iodata_to_binary(msg)]
+      |> prepare_log(log)
+      |> Map.merge(linking_metadata())
+      |> NewRelic.JSON.encode!()
+
+    %{log | msg: {:string, message}}
+  end
+
+  defp primary_filter(%{msg: {:report, report}, meta: %{domain: [:elixir]}} = log, %{mode: :forwarder}) do
+    message =
+      report
+      |> prepare_log(log)
       |> Map.merge(linking_metadata())
       |> NewRelic.JSON.encode!()
 
@@ -44,12 +62,8 @@ defmodule NewRelic.LogsInContext do
     :ignore
   end
 
-  defp prepare_log(%{msg: {:string, msg}} = log) do
-    %{
-      message: IO.iodata_to_binary(msg),
-      timestamp: System.convert_time_unit(log.meta.time, :microsecond, :millisecond),
-      "log.level": log.level
-    }
+  defp prepare_log(metadata, log) do
+    Map.new(metadata)
     |> Map.merge(log_metadata(log))
     |> Map.merge(custom_metadata(log))
     |> Map.merge(tracing_metadata())
@@ -69,6 +83,8 @@ defmodule NewRelic.LogsInContext do
     {module, function, arity} = log.meta.mfa
 
     %{
+      timestamp: System.convert_time_unit(log.meta.time, :microsecond, :millisecond),
+      "log.level": log.level,
       "line.number": log.meta.line,
       "file.name": log.meta.file |> to_string,
       "module.name": inspect(module),
