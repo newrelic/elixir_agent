@@ -97,6 +97,15 @@ defmodule TestHelper do
     end)
   end
 
+  def run_with(:logs_in_context, mode) do
+    :logger.remove_primary_filter(:nr_logs_in_context)
+    NewRelic.LogsInContext.configure(mode)
+
+    ExUnit.Callbacks.on_exit(fn ->
+      :logger.remove_primary_filter(:nr_logs_in_context)
+    end)
+  end
+
   # :nr_config
   #  - user facing agent configuration, ex: NewRelic.Config.app_name
   #  - determined and set in NewRelic.Init
