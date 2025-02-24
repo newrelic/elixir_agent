@@ -7,7 +7,7 @@
 [![Hex Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/new_relic_agent/)
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-The experimental open-source Elixir agent allows you to monitor your `Elixir` applications with New Relic. It helps you track transactions, distributed traces, other parts of your application's behavior, and provides an overview of underlying [BEAM activity](https://github.com/newrelic/elixir_agent/wiki/BEAM-stats-page).
+The experimental open-source Elixir agent allows you to monitor your `Elixir` applications with New Relic. It helps you track transactions, distributed traces, other parts of your application's behavior, and provides an overview of underlying BEAM activity.
 
 [View the Documentation](https://hexdocs.pm/new_relic_agent)
 
@@ -50,7 +50,7 @@ If using an Elixir version before 1.18.x, please also add `:jason` to your depen
 
 ## Configuration
 
-You need to set a few required configuration keys so we can authenticate properly.
+You need to set two required configuration keys so we can authenticate properly.
 
 #### Via Application config
 
@@ -67,18 +67,7 @@ You can also configure these attributes via `ENV` vars, which helps keep secrets
 * `NEW_RELIC_APP_NAME`
 * `NEW_RELIC_LICENSE_KEY`
 
-#### HTTP Client Settings
-
-`:httpc` client settings can be overridden if needed. For example, the HTTP connect timeout can be increased which can help alleviate errors related to timeouts connecting to New Relic:
-
-```elixir
-config :new_relic_agent,
-  app_name: "My App",
-  license_key: "license_key",
-  httpc_request_options: [connect_timeout: 5000]
-```
-
-## Telemetry-based Instrumentation
+## Telemetry-based auto-instrumentation
 
 Some common Elixir packages are auto-instrumented via [`telemetry`](https://github.com/beam-telemetry/telemetry)
 
@@ -91,79 +80,21 @@ Some common Elixir packages are auto-instrumented via [`telemetry`](https://gith
 * [`Oban`](https://github.com/oban-bg/oban): See [NewRelic.Telemetry.Oban](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Oban.html) for details.
 * [`Absinthe`](https://github.com/absinthe-graphql/absinthe): See [NewRelic.Telemetry.Absinthe](https://hexdocs.pm/new_relic_agent/NewRelic.Telemetry.Absinthe.html) for details.
 
-## Agent features
+## Opt-In agent features
 
-There are a few agent features that can be enabled via configuration. Please see the documentation for more information.
+There are a few advanced agent features that can be enabled via configuration. Please see the documentation for more information.
 
-* [Logs In Context](https://hexdocs.pm/new_relic_agent/NewRelic.Config.html#feature/1-logs-in-context)
-* [Infinite Tracing](https://hexdocs.pm/new_relic_agent/NewRelic.Config.html#feature/1-infinite-tracing)
+* [Logs In Context](https://hexdocs.pm/new_relic_agent/NewRelic.Config.html#feature/1-logs-in-context) - See your logs in the context of the Transaction / Distributed Trace where they originated.
+* [Infinite Tracing](https://hexdocs.pm/new_relic_agent/NewRelic.Config.html#feature/1-infinite-tracing) - Use a New Relic Trace Observer to get tail based sampling of Distributed Traces.
 * [Security Controls](https://hexdocs.pm/new_relic_agent/NewRelic.Config.html#feature?/1-security)
 
-## Manual Instrumentation
+## Manual instrumentation
 
-#### Transactions
+#### Custom Transactions
 
-Transactions are the main unit of work reported to New Relic. `Plug` and `Phoenix` instrumentation automatically report a Web Transaction for each request. `Oban` instrumentation reports an "Other" Transaction for each job. You can also report custom transactions for work done in your app.
+Transactions are the main unit of work reported to New Relic. `Plug` and `Phoenix` instrumentation automatically report a Web Transaction for each request. `Oban` instrumentation reports an "Other" Transaction for each job. 
 
-These Transactions will propagate to any process spawned and linked (ex: `Task.async`), but will _not_ follow a process that isn't linked (ex: `Task.Supervisor.async_nolink`).
-
----
-
-To manually connect a Transaction to an unlinked process, you can use `NewRelic.get_transaction` and `NewRelic.connect_to_transaction`. See the docs for those functions for further details.
-
-```elixir
-tx = NewRelic.get_transaction()
-
-spawn(fn ->
-  NewRelic.connect_to_transaction(tx)
-  # ...
-end)
-```
-
----
-
-To exclude a process from the Transaction:
-
-```elixir
-Task.async(fn ->
-  NewRelic.exclude_from_transaction()
-  Work.wont_be_tracked()
-end)
-```
-
----
-
-To prevent reporting an individual transaction:
-
-```elixir
-NewRelic.ignore_transaction()
-```
-
-You can configure some paths to be automatically ignored:
-
-```elixir
-config :new_relic_agent,
-  ignore_paths: [
-    "/health",
-    ~r/longpoll/
-  ]
-```
-
----
-
-If you are using a `Task` to spawn work, you can use the pre-instrumented `NewRelic.Instrumented.Task` convenience module to make this easier. Just `alias` it in your module and all your Tasks will be instrumented. You may also use the functions directly.
-
-```elixir
-alias NewRelic.Instrumented.Task
-
-Task.Supervisor.async_nolink(MyTaskSupervisor, fn ->
-  # This process will be automatically connected to the current Transaction...
-end)
-```
-
----
-
-You may start an "Other" Transaction for non-HTTP related work. This could used be while consuming from a message queue, for example.
+You may start an Custom "Other" Transaction for work outside auto-instrumented systems. This could used be while consuming from a message queue, for example.
 
 ```elixir
 defmodule Worker do
@@ -177,9 +108,31 @@ defmodule Worker do
 end
 ```
 
-#### Function Tracing
+#### Transaction propagation
 
-`NewRelic.Tracer` enables detailed Function tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it. Install it by adding `use NewRelic.Tracer` to any module, and annotating any function with an `@trace` module attribute
+Transactions will propagate to any process spawned and linked (ex: `Task.async`), but will _not_ follow a process that isn't linked (ex: `Task.Supervisor.async_nolink`).
+
+If you are using a `Task.Supervisor.async_nolink` to spawn work, you can use the pre-instrumented `NewRelic.Instrumented.Task` wrapper module to make this easier. Just `alias` it in your module and all your Tasks will be instrumented. You may also use the functions directly.
+
+```elixir
+alias NewRelic.Instrumented.Task
+
+Task.Supervisor.async_nolink(MyTaskSupervisor, fn ->
+  # This process will be automatically connected to the current Transaction...
+end)
+```
+
+For more fine grained control of Transaction propagation, check out the following functions:
+
+* `NewRelic.exclude_from_transaction/0`
+* `NewRelic.ignore_transaction/0`
+* `NewRelic.get_transaction/0`
+* `NewRelic.connect_to_transaction/1`
+* `NewRelic.disconnect_from_transaction/0`
+
+#### Function tracing
+
+`NewRelic.Tracer` enables detailed function tracing. Annotate a function and it'll show up as a span in Transaction Traces / Distributed Traces, and we'll collect aggregate stats about it. Install it by adding `use NewRelic.Tracer` to any module, and annotating any function with an `@trace` module attribute.
 
 ```elixir
 defmodule MyModule do
@@ -213,7 +166,7 @@ end
 
 #### Distributed Tracing
 
-Requests to other services can be connected with an additional outgoing header.
+Incoming Distributed Traces are automatically connected if incoming HTTP requests have trace headers. Requests to other services can be connected with an additional outgoing header.
 
 ```elixir
 defmodule MyExternalService do
@@ -237,6 +190,31 @@ defmodule Mix.Tasks.Example do
     # ...
   end
 end
+```
+
+## Advanced configuration
+
+#### HTTP client settings
+
+`:httpc` client settings can be overridden if needed. For example, the HTTP connect timeout can be increased which can help alleviate errors related to timeouts connecting to New Relic:
+
+```elixir
+config :new_relic_agent,
+  app_name: "My App",
+  license_key: "license_key",
+  httpc_request_options: [connect_timeout: 5000]
+```
+
+#### Ignore paths
+
+You can configure some paths to be automatically ignored:
+
+```elixir
+config :new_relic_agent,
+  ignore_paths: [
+    "/health",
+    ~r/longpoll/
+  ]
 ```
 
 #### Disabling
