@@ -163,6 +163,15 @@ defmodule NewRelic do
 
   @doc """
   Call to exclude the current process from being part of the Transaction.
+
+  ## Example:
+
+  ```elixir
+  Task.async(fn ->
+    NewRelic.exclude_from_transaction()
+    Work.wont_be_included()
+  end)
+  ```
   """
   @spec exclude_from_transaction() :: any()
   defdelegate exclude_from_transaction(), to: NewRelic.Transaction.Reporter
@@ -186,6 +195,17 @@ defmodule NewRelic do
 
   This connection will persist until the process exits or
   `NewRelic.disconnect_from_transaction/0` is called.
+
+  ## Example:
+
+  ```elixir
+  tx = NewRelic.get_transaction()
+
+  spawn(fn ->
+    NewRelic.connect_to_transaction(tx)
+    # ...
+  end)
+  ```
   """
   @spec connect_to_transaction(tx_ref) :: any()
   defdelegate connect_to_transaction(ref), to: NewRelic.Transaction.Reporter

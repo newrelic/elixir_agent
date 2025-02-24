@@ -1,5 +1,16 @@
 ## CHANGELOG
 
+### `v1.33.0`
+
+#### Fixes
+* Fix unit for Oban queue time attribute [#504](https://github.com/newrelic/elixir_agent/pull/504)
+
+#### Tweaks
+* Improve nested attribute flattening [#505](https://github.com/newrelic/elixir_agent/pull/505)
+* Support Logger "report" messages in Logs in Context [#506](https://github.com/newrelic/elixir_agent/pull/506)
+
+------
+
 ### `v1.32.0`
 
 #### Features
