@@ -25,6 +25,10 @@ defmodule UtilTest do
     refute json =~ ":node"
   end
 
+  defmodule Data do
+    defstruct [:id, :name]
+  end
+
   test "flatten deeply nested map attributes" do
     flattened =
       NewRelic.Util.deep_flatten(
@@ -32,24 +36,35 @@ defmodule UtilTest do
         nested: %{foo: %{bar: %{baz: "qux"}}},
         nested_list: [%{one: %{two: "three"}}, %{four: "five"}, %{}, "string", ["nested string"]],
         super_long_list: Enum.map(0..99, & &1),
-        big_map: String.graphemes("abcdefghijklmnopqrstuvwxyz") |> Map.new(&{&1, &1})
+        big_map: String.graphemes("abcdefghijklmnopqrstuvwxyz") |> Map.new(&{&1, &1}),
+        struct: %Data{id: 1, name: "Foo"}
       )
 
     assert {"nested.foo.bar.baz", "qux"} in flattened
+    refute {"nested.size", 1} in flattened
+
     assert {:not_nested, "value"} in flattened
+
     assert {"nested_list.0.one.two", "three"} in flattened
     assert {"nested_list.1.four", "five"} in flattened
     assert {"nested_list.3", "string"} in flattened
     assert {"nested_list.4.0", "nested string"} in flattened
+    refute {"nested_list.length", 5} in flattened
+
     assert {"super_long_list.0", 0} in flattened
     assert {"super_long_list.1", 1} in flattened
     assert {"super_long_list.9", 9} in flattened
     refute {"super_long_list.10", 10} in flattened
     assert {"super_long_list.length", 100} in flattened
+
     assert {"big_map.a", "a"} in flattened
     assert {"big_map.j", "j"} in flattened
     refute {"big_map.k", "k"} in flattened
     assert {"big_map.size", 26} in flattened
+
+    assert {"struct.id", 1} in flattened
+    assert {"struct.name", "Foo"} in flattened
+    assert {"struct.__struct__", "UtilTest.Data"} in flattened
   end
 
   test "Truncates unicode strings correctly" do

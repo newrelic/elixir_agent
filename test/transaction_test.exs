@@ -251,7 +251,7 @@ defmodule TransactionTest do
     # Bad values
     assert event[:tuple] == "[BAD_VALUE]"
     assert event[:function] == "[BAD_VALUE]"
-    assert event[:struct] == "[BAD_VALUE]"
+    assert event["struct.__struct__"] == "NewRelic.Metric"
 
     # Don't report nil values
     refute Map.has_key?(event, :nilValue)
