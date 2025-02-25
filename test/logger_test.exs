@@ -36,6 +36,8 @@ defmodule LoggerTest do
     previous_logger = GenServer.call(NewRelic.Logger, {:logger, :logger})
     NewRelic.log(:info, "HELLO")
     NewRelic.log(:error, "DANG")
+    NewRelic.log(:warning, "OOPS")
+    NewRelic.log(:debug, "SHHH")
     GenServer.call(NewRelic.Logger, {:replace, previous_logger})
   end
 end
