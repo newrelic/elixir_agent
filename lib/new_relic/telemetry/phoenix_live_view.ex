@@ -78,10 +78,10 @@ defmodule NewRelic.Telemetry.PhoenixLiveView do
 
   def handle_event(@live_view_mount_start, meas, meta, config) do
     if meta.socket.transport_pid do
-      uri = URI.parse(meta.uri)
+      {host, path} = parse_uri(meta.uri)
 
       # We're in the LiveView WebSocket process, collect a Transaction
-      with :collect <- Transaction.Reporter.start_transaction(:web, uri.path) do
+      with :collect <- Transaction.Reporter.start_transaction(:web, path) do
         NewRelic.DistributedTrace.start(:other)
         framework_name = "/Phoenix.LiveView/Live/#{inspect(meta.socket.view)}/#{meta.socket.assigns.live_action}"
 
@@ -89,8 +89,8 @@ defmodule NewRelic.Telemetry.PhoenixLiveView do
           pid: inspect(self()),
           start_time: meas.system_time,
           framework_name: framework_name,
-          host: uri.host,
-          path: uri.path,
+          host: host,
+          path: path,
           "live_view.router": inspect(meta.socket.router),
           "live_view.endpoint": inspect(meta.socket.endpoint),
           "live_view.action": meta.socket.assigns[:live_action],
@@ -172,5 +172,13 @@ defmodule NewRelic.Telemetry.PhoenixLiveView do
 
   def handle_event(_event, _meas, _meta, _config) do
     :ignore
+  end
+
+  defp parse_uri(nil),
+    do: {"unknown", "unknown"}
+
+  defp parse_uri(uri) do
+    uri = URI.parse(uri)
+    {uri.host, uri.path}
   end
 end
