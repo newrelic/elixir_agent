@@ -50,9 +50,13 @@ defmodule NewRelic.Tracer.Direct do
           end
 
         name = Keyword.get(options, :name, name)
-        stop_attributes = Keyword.get(options, :attributes, []) |> Map.new()
-        attributes = Map.merge(start_attributes, stop_attributes)
         timestamp_ms = System.convert_time_unit(system_time, :native, :millisecond)
+        stop_attributes = Keyword.get(options, :attributes, []) |> Map.new()
+
+        attributes =
+          start_attributes
+          |> Map.merge(NewRelic.DistributedTrace.get_span_attrs())
+          |> Map.merge(stop_attributes)
 
         {primary_name, secondary_name} =
           case name do
