@@ -36,7 +36,9 @@ defmodule NewRelic.Telemetry.FinchTest do
 
     external_span = TestHelper.find_span(span_events, "External/httpstat.us/Finch/GET")
 
-    assert external_span[:"request.url"] == "https://httpstat.us/200"
+    assert external_span[:"http.url"] == "https://httpstat.us/200"
+    assert external_span[:"http.method"] == "GET"
+    assert external_span[:component] == "Finch"
     assert external_span[:"response.status"] == 200
   end
 
@@ -51,7 +53,7 @@ defmodule NewRelic.Telemetry.FinchTest do
 
     external_span = TestHelper.find_span(span_events, "External/httpstat.us/Finch/GET")
 
-    assert external_span[:"request.url"] == "https://httpstat.us/500"
+    assert external_span[:"http.url"] == "https://httpstat.us/500"
     assert external_span[:"response.status"] == 500
   end
 
@@ -66,7 +68,7 @@ defmodule NewRelic.Telemetry.FinchTest do
 
     external_span = TestHelper.find_span(span_events, "External/nxdomain/Finch/GET")
 
-    assert external_span[:"request.url"] == "https://nxdomain/"
+    assert external_span[:"http.url"] == "https://nxdomain/"
     assert external_span[:error] == true
     assert external_span[:"error.message"] |> is_binary()
   end
@@ -86,7 +88,7 @@ defmodule NewRelic.Telemetry.FinchTest do
 
     external_span = TestHelper.find_span(span_events, "External/httpstat.us/Finch/GET")
 
-    assert external_span[:"request.url"] == "https://httpstat.us/200"
+    assert external_span[:"http.url"] == "https://httpstat.us/200"
     assert external_span[:error] == true
     assert external_span[:"error.message"] =~ "Oops"
   end

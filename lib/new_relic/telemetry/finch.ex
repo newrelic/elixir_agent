@@ -130,9 +130,9 @@ defmodule NewRelic.Telemetry.Finch do
           category: "http",
           attributes:
             %{
-              "request.url": url,
-              "request.method": request.method,
-              "request.client": "Finch",
+              url: url,
+              method: request.method,
+              component: "Finch",
               "finch.pool": finch_pool
             }
             |> Map.merge(result_attrs)
@@ -193,12 +193,12 @@ defmodule NewRelic.Telemetry.Finch do
           edge: [span: id, parent: parent_id],
           category: "http",
           attributes: %{
+            url: url,
+            method: request.method,
+            component: "Finch",
+            "finch.pool": finch_pool,
             error: true,
-            "error.message": error_message,
-            "request.url": url,
-            "request.method": request.method,
-            "request.client": "Finch",
-            "finch.pool": finch_pool
+            "error.message": error_message
           }
         )
 
