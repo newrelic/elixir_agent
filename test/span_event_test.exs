@@ -117,6 +117,7 @@ defmodule SpanEventTest do
       end
 
       NewRelic.span "another.span", with: "an attribute" do
+        NewRelic.add_span_attributes(inside: "attribute!")
         Process.sleep(5)
       end
 
@@ -205,6 +206,7 @@ defmodule SpanEventTest do
 
     assert another_span[:category] == "generic"
     assert another_span[:with] == "an attribute"
+    assert another_span[:inside] == "attribute!"
 
     [single_span, _, _] =
       Enum.find(span_events, fn [ev, _, _] ->
