@@ -43,10 +43,10 @@ defmodule NewRelic.Tracer.Direct do
           case Keyword.get(options, :duration) do
             nil ->
               duration = System.monotonic_time() - monotonic_start_time
-              {duration, System.convert_time_unit(duration, :native, :millisecond) / 1_000}
+              {duration, System.convert_time_unit(duration, :native, :microsecond) / 1_000_000}
 
             duration ->
-              {duration, System.convert_time_unit(duration, :native, :millisecond) / 1_000}
+              {duration, System.convert_time_unit(duration, :native, :microsecond) / 1_000_000}
           end
 
         name = Keyword.get(options, :name, name)

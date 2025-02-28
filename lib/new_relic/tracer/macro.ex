@@ -224,7 +224,7 @@ defmodule NewRelic.Tracer.Macro do
             nil -> :root
           end
 
-        duration_ms = System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond) / 1000
+        duration_ms = System.convert_time_unit(end_time_mono - start_time_mono, :native, :microsecond) / 1_000
 
         duration_acc = Process.get({:nr_duration_acc, parent_ref}, 0)
         Process.put({:nr_duration_acc, parent_ref}, duration_acc + duration_ms)
