@@ -1,5 +1,18 @@
 ## CHANGELOG
 
+### `v1.34.0`
+
+#### Fixes
+* Handle when LiveView meta.uri is `nil` [#512](https://github.com/newrelic/elixir_agent/pull/512)
+* Enable adding span attributes inside span macro [#515](https://github.com/newrelic/elixir_agent/pull/515)
+* Fix NewRelic.Logger warning level [#510](https://github.com/newrelic/elixir_agent/pull/510) Thanks @thiagogsr!
+* Fix Finch category-specific attributes [#513](https://github.com/newrelic/elixir_agent/pull/513)
+
+#### Tweaks
+* Increase resolution of span duration attribute [#514](https://github.com/newrelic/elixir_agent/pull/514)
+
+------
+
 ### `v1.33.0`
 
 #### Fixes
