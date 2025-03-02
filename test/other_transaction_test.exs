@@ -186,7 +186,7 @@ defmodule OtherTransactionTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true, name: "Test/Error"})
+    spansaction = TestHelper.find_event(spans, %{"nr.entryPoint": true, name: "Test/Error"})
 
     assert spansaction.attributes[:error]
     assert spansaction.attributes[:error_reason] =~ "RuntimeError"
@@ -217,7 +217,7 @@ defmodule OtherTransactionTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true, name: "Test/ExpectedError"})
+    spansaction = TestHelper.find_event(spans, %{"nr.entryPoint": true, name: "Test/ExpectedError"})
 
     refute spansaction.attributes[:error]
   end

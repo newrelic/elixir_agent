@@ -59,26 +59,17 @@ defmodule TestHelper do
     end)
   end
 
-  def find_infinite_span(spans, attrs) when is_map(attrs) do
-    Enum.find(spans, fn %{attributes: attributes} ->
-      Enum.all?(attrs, fn {k, v} -> attributes[k] == v end)
-    end)
-  end
-
-  def find_infinite_span(spans, name) do
-    Enum.find(spans, fn %{attributes: attr} ->
-      attr[:name] == name
-    end)
-  end
-
   def find_event(events, name) when is_binary(name) do
     find_event(events, %{name: name})
   end
 
   def find_event(events, attrs) when is_map(attrs) do
     events
-    |> Enum.map(fn sections ->
-      Enum.reduce(sections, &Map.merge(&2, &1))
+    |> Enum.map(fn
+      # Telemetry SDK format
+      %{attributes: attrs} = span -> Map.merge(span, attrs)
+      # Collector format
+      [_ | _] = sections -> Enum.reduce(sections, &Map.merge(&2, &1))
     end)
     |> Enum.find_value(fn event ->
       Enum.all?(attrs, fn {k, v} -> event[k] == v end) && event

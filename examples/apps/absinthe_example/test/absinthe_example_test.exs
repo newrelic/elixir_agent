@@ -27,16 +27,16 @@ defmodule AbsintheExampleTest do
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
     spansaction =
-      TestHelper.find_infinite_span(spans, "Absinthe/AbsintheExample.Schema/query/one.two.three")
+      TestHelper.find_event(spans, "Absinthe/AbsintheExample.Schema/query/one.two.three")
 
-    tx_root_process = TestHelper.find_infinite_span(spans, "Transaction Root Process")
-    process = TestHelper.find_infinite_span(spans, "Process")
-    operation = TestHelper.find_infinite_span(spans, "Absinthe/Operation/query:TestQuery")
-    one_resolver = TestHelper.find_infinite_span(spans, "&AbsintheExample.Resolvers.one/3")
-    three_resolver = TestHelper.find_infinite_span(spans, "&AbsintheExample.Resolvers.three/3")
+    tx_root_process = TestHelper.find_event(spans, "Transaction Root Process")
+    process = TestHelper.find_event(spans, "Process")
+    operation = TestHelper.find_event(spans, "Absinthe/Operation/query:TestQuery")
+    one_resolver = TestHelper.find_event(spans, "&AbsintheExample.Resolvers.one/3")
+    three_resolver = TestHelper.find_event(spans, "&AbsintheExample.Resolvers.three/3")
 
     do_three_fn_trace =
-      TestHelper.find_infinite_span(spans, "AbsintheExample.Resolvers.do_three/1")
+      TestHelper.find_event(spans, "AbsintheExample.Resolvers.do_three/1")
 
     assert operation.attributes[:"absinthe.operation.name"] == "TestQuery"
     assert operation.attributes[:"absinthe.operation.type"] == "query"

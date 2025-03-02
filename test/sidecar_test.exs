@@ -256,33 +256,33 @@ defmodule SidecarTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    spansaction = TestHelper.find_infinite_span(spans, %{"nr.entryPoint": true})
+    spansaction = TestHelper.find_event(spans, %{"nr.entryPoint": true})
 
     assert spansaction.attributes[:root] == "YES"
     refute spansaction.attributes[:async_nolink]
     assert spansaction.attributes[:async_nolink_connected] == "YES"
     assert spansaction.attributes[:async_stream_nolink_connected] == "YES"
 
-    tx_root_process_span = TestHelper.find_infinite_span(spans, "Transaction Root Process")
+    tx_root_process_span = TestHelper.find_event(spans, "Transaction Root Process")
 
     task_triggering_function_span =
-      TestHelper.find_infinite_span(spans, "SidecarTest.Traced.instrumented_task_async_nolink/1")
+      TestHelper.find_event(spans, "SidecarTest.Traced.instrumented_task_async_nolink/1")
 
     assert task_triggering_function_span.attributes[:"parent.id"] == tx_root_process_span[:id]
 
     task_triggered_process_span =
-      TestHelper.find_infinite_span(spans, %{name: "Process", "parent.id": task_triggering_function_span[:id]})
+      TestHelper.find_event(spans, %{name: "Process", "parent.id": task_triggering_function_span[:id]})
 
-    hey_function_span = TestHelper.find_infinite_span(spans, "SidecarTest.Traced.hey/0")
+    hey_function_span = TestHelper.find_event(spans, "SidecarTest.Traced.hey/0")
 
     assert hey_function_span.attributes[:"parent.id"] == task_triggered_process_span[:id]
 
     connected_stream_task_process_span =
-      TestHelper.find_infinite_span(spans, %{"parent.id": task_triggered_process_span[:id]})
+      TestHelper.find_event(spans, %{"parent.id": task_triggered_process_span[:id]})
 
     assert connected_stream_task_process_span.attributes[:name] == "Process"
 
-    hello_function_span = TestHelper.find_infinite_span(spans, "SidecarTest.Traced.hello/0")
+    hello_function_span = TestHelper.find_event(spans, "SidecarTest.Traced.hello/0")
 
     assert hello_function_span.attributes[:"parent.id"] == connected_stream_task_process_span[:id]
   end
@@ -326,7 +326,7 @@ defmodule SidecarTest do
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
     spansaction =
-      TestHelper.find_infinite_span(spans, %{name: "Test/double_connect_test", "nr.entryPoint": true})
+      TestHelper.find_event(spans, %{name: "Test/double_connect_test", "nr.entryPoint": true})
 
     assert spansaction.attributes[:root] == "YES"
     assert spansaction.attributes[:async_nolink_connected] == "YES"
