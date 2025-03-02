@@ -212,11 +212,10 @@ defmodule TransactionTest do
     TestHelper.request(TestPlugApp, conn(:get, "/foo/1"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/foo/:blah"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/foo/:blah")
 
     assert event[:path] == "/foo/1"
-    assert event[:name] == "/Plug/GET/foo/:blah"
+    assert event[:name] == "WebTransaction/Plug/GET/foo/:blah"
     assert event[:foo] == "BAR"
     assert event[:duration_us] > 0
     assert event[:duration_us] < 50_000
@@ -233,7 +232,7 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/funky_attrs"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/funky_attrs")
 
     # Basic values
     assert event[:one] == 1
@@ -285,7 +284,7 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/fail"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/fail")
 
     assert event[:status] == 500
     assert event[:query] =~ "query{}"
@@ -301,7 +300,7 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/erlang_exit"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/erlang_exit")
 
     assert event[:status] == 500
     assert event[:query] =~ "query{}"
@@ -316,7 +315,7 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/await_timeout"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/await_timeout")
 
     assert event[:status] == 500
     assert event[:error]
@@ -332,7 +331,7 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/error"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/error")
 
     assert event[:status] == 200
     assert event[:error] == nil
@@ -346,7 +345,7 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/fail"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/fail")
 
     assert event[:status] == 500
     assert event[:error] == true
@@ -368,7 +367,7 @@ defmodule TransactionTest do
 
     refute TestHelper.find_event(custom_events, %{query: "query"})
 
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/service"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/service")
 
     assert event[:path] == "/service"
     assert event[:external_call_count] == 2
@@ -383,7 +382,7 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/spawn"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/spawn")
 
     assert event[:path] == "/spawn"
     assert event[:inside] == "spawned"
@@ -402,7 +401,7 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/map"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/map")
 
     assert event[:path] == "/map"
     assert event[:plain] == "attr"
@@ -417,7 +416,7 @@ defmodule TransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/map"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/map")
 
     assert event[:path] == "/map"
     assert event[:"host.displayName"] == "my-test-host"
@@ -447,7 +446,7 @@ defmodule TransactionTest do
     TestHelper.request(TestPlugApp, conn(:get, "/total_time"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/total_time"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/total_time")
 
     assert event[:duration_s] >= 0.220
     assert event[:total_time_s] >= 0.420
@@ -469,7 +468,7 @@ defmodule TransactionTest do
       TestHelper.request(TestPlugApp, conn)
 
       events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-      event = TestHelper.find_event(events, %{name: "/Plug/GET/total_time"})
+      event = TestHelper.find_event(events, "WebTransaction/Plug/GET/total_time")
 
       assert_in_delta event[:queueDuration], 1.5, 0.1
     end
@@ -485,7 +484,7 @@ defmodule TransactionTest do
       TestHelper.request(TestPlugApp, conn)
 
       events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-      event = TestHelper.find_event(events, %{name: "/Plug/GET/total_time"})
+      event = TestHelper.find_event(events, "WebTransaction/Plug/GET/total_time")
 
       assert event[:queueDuration] == 0
     end
@@ -502,7 +501,7 @@ defmodule TransactionTest do
       TestHelper.request(TestPlugApp, conn)
 
       events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-      event = TestHelper.find_event(events, %{name: "/Plug/GET/total_time"})
+      event = TestHelper.find_event(events, "WebTransaction/Plug/GET/total_time")
 
       refute event[:queueDuration]
     end
@@ -514,7 +513,7 @@ defmodule TransactionTest do
     {:error, :timeout} = TestHelper.request(TestPlugApp, conn, timeout: 10)
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/slow"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/slow")
 
     assert event[:"cowboy.socket_error"] == "closed"
   end
@@ -526,7 +525,7 @@ defmodule TransactionTest do
       TestHelper.request(TestPlugApp, conn, [], idle_timeout: 500)
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-    event = TestHelper.find_event(events, %{name: "/Plug/GET/slow"})
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/slow")
 
     assert event[:"cowboy.connection_error"] == "timeout"
   end
@@ -538,7 +537,7 @@ defmodule TransactionTest do
       TestHelper.request(TestPlugApp, conn(:get, "/fn_trace"))
 
       events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-      event = TestHelper.find_event(events, %{name: "/Plug/GET/fn_trace"})
+      event = TestHelper.find_event(events, "WebTransaction/Plug/GET/fn_trace")
 
       assert event[:"function.TransactionTest.HelperModule.function/1.call_count"] == 1
     end
@@ -549,7 +548,7 @@ defmodule TransactionTest do
       TestHelper.request(TestPlugApp, conn(:get, "/fn_trace"))
 
       events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-      event = TestHelper.find_event(events, %{name: "/Plug/GET/fn_trace"})
+      event = TestHelper.find_event(events, "WebTransaction/Plug/GET/fn_trace")
 
       refute event[:"function.TransactionTest.HelperModule.function/1.call_count"]
     end

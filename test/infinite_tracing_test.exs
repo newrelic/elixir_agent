@@ -139,7 +139,8 @@ defmodule InfiniteTracingTest do
     task_span = TestHelper.find_event(spans, %{name: "Process", "parent.id": cowboy_request_process_span[:id]})
     nested_external_span = TestHelper.find_event(spans, "External/example.com/HttpClient/GET")
 
-    [[_intrinsics, tx_event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    tx_event = TestHelper.find_event(events, "WebTransaction/Plug/GET/hello")
 
     # Everything shares the incoming trace.id
     assert tx_event[:traceId] == @trace_id

@@ -82,9 +82,10 @@ defmodule TransactionEventTest do
       user_attributes: %{long_entry: String.duplicate("1", 5000)}
     })
 
-    [[_, attrs]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "Ev1")
 
-    assert String.length(attrs.long_entry) == 4095
+    assert String.length(event.long_entry) == 4095
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end

@@ -29,7 +29,13 @@ defmodule PhxExampleTest do
                  "WebTransaction/Phoenix/PhxExampleWeb.PageController/index"
                )
 
-        [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+        event =
+          TestHelper.find_event(
+            events,
+            "WebTransaction/Phoenix/PhxExampleWeb.PageController/index"
+          )
 
         if event[:"bandit.resp_duration_ms"] do
           assert event[:"bandit.resp_duration_ms"] > 0
@@ -64,7 +70,10 @@ defmodule PhxExampleTest do
                  "WebTransaction/Phoenix/PhxExampleWeb.HomeLive/index"
                )
 
-        [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+        event =
+          TestHelper.find_event(events, "WebTransaction/Phoenix/PhxExampleWeb.HomeLive/index")
 
         assert event[:"phoenix.endpoint"] =~ "PhxExampleWeb"
         assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
@@ -104,11 +113,14 @@ defmodule PhxExampleTest do
         span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
         tx_span =
-          TestHelper.find_span(span_events, "/Phoenix.LiveView/Live/PhxExampleWeb.HomeLive/index")
+          TestHelper.find_event(
+            span_events,
+            "/Phoenix.LiveView/Live/PhxExampleWeb.HomeLive/index"
+          )
 
-        process_span = TestHelper.find_span(span_events, "Transaction Root Process")
-        mount_span = TestHelper.find_span(span_events, "PhxExampleWeb.HomeLive:index.mount")
-        render_span = TestHelper.find_span(span_events, "PhxExampleWeb.HomeLive:index.render")
+        process_span = TestHelper.find_event(span_events, "Transaction Root Process")
+        mount_span = TestHelper.find_event(span_events, "PhxExampleWeb.HomeLive:index.mount")
+        render_span = TestHelper.find_event(span_events, "PhxExampleWeb.HomeLive:index.render")
 
         assert tx_span[:"live_view.endpoint"] == "PhxExampleWeb.Endpoint"
 
@@ -130,7 +142,13 @@ defmodule PhxExampleTest do
                  "WebTransaction/Phoenix/PhxExampleWeb.PageController/error"
                )
 
-        [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+        event =
+          TestHelper.find_event(
+            events,
+            "WebTransaction/Phoenix/PhxExampleWeb.PageController/error"
+          )
 
         assert event[:status] == 500
         assert event[:"phoenix.endpoint"] =~ "PhxExampleWeb"
@@ -153,7 +171,10 @@ defmodule PhxExampleTest do
                  "WebTransaction/Phoenix/PhxExampleWeb.ErrorLive/index"
                )
 
-        [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+        event =
+          TestHelper.find_event(events, "WebTransaction/Phoenix/PhxExampleWeb.ErrorLive/index")
 
         assert event[:status] == 500
         assert event[:"phoenix.endpoint"] =~ "PhxExampleWeb"
@@ -177,7 +198,8 @@ defmodule PhxExampleTest do
 
         assert TestHelper.find_metric(metrics, metric)
 
-        [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+        event = TestHelper.find_event(events, metric)
 
         assert event[:status] == 404
         assert event[:"phoenix.endpoint"] =~ "PhxExampleWeb"

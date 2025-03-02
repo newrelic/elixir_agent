@@ -69,7 +69,7 @@ defmodule TestHelper do
       # Telemetry SDK format
       %{attributes: attrs} = span -> Map.merge(span, attrs)
       # Collector format
-      [_ | _] = sections -> Enum.reduce(sections, &Map.merge(&2, &1))
+      [_ | _] = sections -> Enum.reduce(sections, &Map.merge(&1, &2))
     end)
     |> Enum.find_value(fn event ->
       Enum.all?(attrs, fn {k, v} -> event[k] == v end) && event

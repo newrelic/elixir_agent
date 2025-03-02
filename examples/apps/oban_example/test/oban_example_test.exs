@@ -16,7 +16,7 @@ defmodule ObanExampleTest do
     |> Oban.insert()
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
-    [event | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
     assert TestHelper.find_metric(
              metrics,
@@ -24,23 +24,17 @@ defmodule ObanExampleTest do
              1
            )
 
-    assert [
-             %{
-               :name => "OtherTransaction/Oban/default/ObanExample.Worker/perform",
-               :timestamp => timestamp,
-               :duration => duration
-             },
-             %{
-               :"oban.worker" => "ObanExample.Worker",
-               :"oban.queue" => "default",
-               :"oban.job.result" => "success",
-               :"oban.job.tags" => "foo,bar"
-             }
-           ] = event
+    event =
+      TestHelper.find_event(events, "OtherTransaction/Oban/default/ObanExample.Worker/perform")
 
-    assert timestamp |> is_number
-    assert duration >= 0.015
-    assert duration <= 0.065
+    assert event[:timestamp] |> is_number
+    assert event[:duration] >= 0.015
+    assert event[:duration] <= 0.065
+    assert event[:duration] <= 0.065
+    assert event[:"oban.worker"] == "ObanExample.Worker"
+    assert event[:"oban.queue"] == "default"
+    assert event[:"oban.job.result"] == "success"
+    assert event[:"oban.job.tags"] == "foo,bar"
   end
 
   test "instruments a failed job" do
@@ -51,7 +45,7 @@ defmodule ObanExampleTest do
     |> Oban.insert()
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
-    [event | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
     assert TestHelper.find_metric(
              metrics,
@@ -59,16 +53,15 @@ defmodule ObanExampleTest do
              1
            )
 
-    assert [
-             %{:name => "OtherTransaction/Oban/default/ObanExample.Worker/perform"},
-             %{
-               :error => true,
-               :error_kind => :error,
-               :"oban.worker" => "ObanExample.Worker",
-               :"oban.queue" => "default",
-               :"oban.job.result" => "failure",
-               :"oban.job.tags" => "foo,bar"
-             }
-           ] = event
+    event =
+      TestHelper.find_event(events, "OtherTransaction/Oban/default/ObanExample.Worker/perform")
+
+    assert event[:timestamp] |> is_number
+    assert event[:error] == true
+    assert event[:error_kind] == :error
+    assert event[:"oban.worker"] == "ObanExample.Worker"
+    assert event[:"oban.queue"] == "default"
+    assert event[:"oban.job.result"] == "failure"
+    assert event[:"oban.job.tags"] == "foo,bar"
   end
 end

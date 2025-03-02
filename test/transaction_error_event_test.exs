@@ -90,9 +90,10 @@ defmodule TransactionErrorEventTest do
       user_attributes: %{long_entry: String.duplicate("1", 5000)}
     })
 
-    [[_, attrs, _]] = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
+    event = TestHelper.find_event(events, %{transactionName: "Ev1"})
 
-    assert String.length(attrs.long_entry) == 4095
+    assert String.length(event.long_entry) == 4095
 
     TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
   end
@@ -243,7 +244,9 @@ defmodule TransactionErrorEventTest do
     traces = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
     assert length(traces) == 1
 
-    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/caught/error")
+
     refute event[:error]
 
     Process.sleep(50)
