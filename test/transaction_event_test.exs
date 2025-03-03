@@ -63,9 +63,9 @@ defmodule TransactionEventTest do
     events = GenServer.call(harvester, :gather_harvest)
     assert length(events) == 2
 
-    assert Enum.find(events, fn [_, tx] -> tx.priority == 3 end)
-    assert Enum.find(events, fn [_, tx] -> tx.priority == 2 end)
-    refute Enum.find(events, fn [_, tx] -> tx.priority == 1 end)
+    assert TestHelper.find_event(events, %{priority: 3})
+    assert TestHelper.find_event(events, %{priority: 2})
+    refute TestHelper.find_event(events, %{priority: 1})
 
     # Verify that the Harvester shuts down w/o error
     Process.monitor(harvester)
@@ -82,9 +82,10 @@ defmodule TransactionEventTest do
       user_attributes: %{long_entry: String.duplicate("1", 5000)}
     })
 
-    [[_, attrs]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "Ev1")
 
-    assert String.length(attrs.long_entry) == 4095
+    assert String.length(event.long_entry) == 4095
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end

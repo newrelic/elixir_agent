@@ -60,10 +60,11 @@ defmodule CustomEventTest do
   test "user attributes can be truncated" do
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
-    NewRelic.report_custom_event("CustomEventTest", %{long_entry: String.duplicate("1", 5000)})
+    NewRelic.report_custom_event("CustomEventTest", %{name: "long", long_entry: String.duplicate("1", 5000)})
 
-    [[_, attrs, _]] = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
-    assert String.length(attrs.long_entry) == 4095
+    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    event = TestHelper.find_event(events, "long")
+    assert String.length(event.long_entry) == 4095
 
     TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
@@ -140,9 +141,7 @@ defmodule CustomEventTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
     NewRelic.JSON.encode!(events)
 
-    [[_, attrs, _]] = events
-    assert attrs[:bad_value] == "[BAD_VALUE]"
-    assert attrs[:good_value] == "A string"
+    assert TestHelper.find_event(events, %{good_value: "A string", bad_value: "[BAD_VALUE]"})
 
     TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
@@ -169,9 +168,7 @@ defmodule CustomEventTest do
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:key] == "TestEvent" && event[:test_attribute] == "test_value"
-           end)
+    assert TestHelper.find_event(events, %{key: "TestEvent", test_attribute: "test_value"})
   end
 
   test "Respect the reservoir_size" do

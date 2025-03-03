@@ -28,9 +28,7 @@ defmodule ErrorTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.class"] == "UndefinedFunctionError"
-           end)
+    assert TestHelper.find_event(events, %{"error.class": "UndefinedFunctionError"})
   end
 
   test "Redact arguments when not gathering stacktrace args" do
@@ -76,9 +74,7 @@ defmodule ErrorTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.message"] =~ "ERROR"
-           end)
+    assert TestHelper.find_event(events, %{"error.message": "(RuntimeError) ERROR"})
   end
 
   test "Catch a GenServer timeout error" do
@@ -93,10 +89,7 @@ defmodule ErrorTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.class"] == "EXIT" &&
-               intrinsic[:"error.message"] == "(GenServer.call/3) :timeout"
-           end)
+    assert TestHelper.find_event(events, %{"error.class": "EXIT", "error.message": "(GenServer.call/3) :timeout"})
   end
 
   test "Catch an erlang :badarg error" do
@@ -110,9 +103,7 @@ defmodule ErrorTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.class"] == "ArgumentError"
-           end)
+    assert TestHelper.find_event(events, %{"error.class": "ArgumentError"})
   end
 
   test "Handle Erlang exception when stacktrace arg colleection is turned off" do
@@ -145,9 +136,7 @@ defmodule ErrorTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.message"] =~ "RAISE"
-           end)
+    assert TestHelper.find_event(events, %{"error.message": "(RuntimeError) RAISE"})
   end
 
   test "Nicely format EXIT when it's an exception struct" do
@@ -161,10 +150,7 @@ defmodule ErrorTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.class"] == "EXIT" &&
-               intrinsic[:"error.message"] == "(RuntimeError) foo"
-           end)
+    assert TestHelper.find_event(events, %{"error.class": "EXIT", "error.message": "(RuntimeError) foo"})
   end
 
   test "Catch a file error" do
@@ -178,9 +164,7 @@ defmodule ErrorTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.class"] == "File.Error"
-           end)
+    assert TestHelper.find_event(events, %{"error.class": "File.Error"})
   end
 
   @tag :capture_log
@@ -195,8 +179,6 @@ defmodule ErrorTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.class"] == "FunctionClauseError"
-           end)
+    assert TestHelper.find_event(events, %{"error.class": "FunctionClauseError"})
   end
 end

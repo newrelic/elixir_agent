@@ -38,26 +38,17 @@ defmodule OtherTransactionTest do
     end)
     |> Task.await()
 
-    [event] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "OtherTransaction/TransactionCategory/MyTaskName")
 
-    [
-      %{name: name},
-      %{
-        other: "transaction",
-        duration_ms: duration_ms,
-        start_time: start_time,
-        end_time: end_time,
-        total_time_s: total_time_s,
-        traceId: _,
-        guid: _
-      }
-    ] = event
+    assert event[:other] == "transaction"
+    assert event[:traceId]
+    assert event[:guid]
 
-    assert name == "OtherTransaction/TransactionCategory/MyTaskName"
-    assert_in_delta end_time - start_time, duration_ms, 1
+    assert_in_delta event[:end_time] - event[:start_time], event[:duration_ms], 1
 
-    assert duration_ms >= 60
-    assert total_time_s >= (60 + 50) / 1000
+    assert event[:duration_ms] >= 60
+    assert event[:total_time_s] >= (60 + 50) / 1000
 
     [_trace] = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
 
@@ -151,7 +142,8 @@ defmodule OtherTransactionTest do
     assert name =~ "OtherTransaction"
     assert reason =~ "(RuntimeError) FAIL"
 
-    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "OtherTransaction/Task/FailingTask")
 
     assert event[:error]
 
@@ -186,10 +178,7 @@ defmodule OtherTransactionTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    spansaction =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:"nr.entryPoint"] == true && attr[:name] == "Test/Error"
-      end)
+    spansaction = TestHelper.find_event(spans, %{"nr.entryPoint": true, name: "Test/Error"})
 
     assert spansaction.attributes[:error]
     assert spansaction.attributes[:error_reason] =~ "RuntimeError"
@@ -220,10 +209,7 @@ defmodule OtherTransactionTest do
 
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
-    spansaction =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:"nr.entryPoint"] == true && attr[:name] == "Test/ExpectedError"
-      end)
+    spansaction = TestHelper.find_event(spans, %{"nr.entryPoint": true, name: "Test/ExpectedError"})
 
     refute spansaction.attributes[:error]
   end
@@ -249,8 +235,6 @@ defmodule OtherTransactionTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert Enum.find(events, fn [intrinsic, _, _] ->
-             intrinsic[:"error.message"] =~ "RESCUED"
-           end)
+    assert TestHelper.find_event(events, %{"error.message": "(RuntimeError) RESCUED"})
   end
 end

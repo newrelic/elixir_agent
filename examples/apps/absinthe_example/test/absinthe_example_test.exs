@@ -27,39 +27,16 @@ defmodule AbsintheExampleTest do
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
 
     spansaction =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "Absinthe/AbsintheExample.Schema/query/one.two.three"
-      end)
+      TestHelper.find_event(spans, "Absinthe/AbsintheExample.Schema/query/one.two.three")
 
-    tx_root_process =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "Transaction Root Process"
-      end)
-
-    process =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "Process"
-      end)
-
-    operation =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "Absinthe/Operation/query:TestQuery"
-      end)
-
-    one_resolver =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "&AbsintheExample.Resolvers.one/3"
-      end)
-
-    three_resolver =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "&AbsintheExample.Resolvers.three/3"
-      end)
+    tx_root_process = TestHelper.find_event(spans, "Transaction Root Process")
+    process = TestHelper.find_event(spans, "Process")
+    operation = TestHelper.find_event(spans, "Absinthe/Operation/query:TestQuery")
+    one_resolver = TestHelper.find_event(spans, "&AbsintheExample.Resolvers.one/3")
+    three_resolver = TestHelper.find_event(spans, "&AbsintheExample.Resolvers.three/3")
 
     do_three_fn_trace =
-      Enum.find(spans, fn %{attributes: attr} ->
-        attr[:name] == "AbsintheExample.Resolvers.do_three/1"
-      end)
+      TestHelper.find_event(spans, "AbsintheExample.Resolvers.do_three/1")
 
     assert operation.attributes[:"absinthe.operation.name"] == "TestQuery"
     assert operation.attributes[:"absinthe.operation.type"] == "query"

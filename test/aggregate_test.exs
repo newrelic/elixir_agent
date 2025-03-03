@@ -43,8 +43,6 @@ defmodule AggregateTest do
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event, _] ->
-             event[:category] == "Metric" && event[:meta] == "data" && event[:duration] == 15
-           end)
+    assert TestHelper.find_event(events, %{category: "Metric", meta: "data", duration: 15})
   end
 end

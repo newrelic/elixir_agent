@@ -68,7 +68,6 @@ defmodule TransactionTest do
     end
 
     get "/service" do
-      NewRelic.set_transaction_name("/service")
       NewRelic.add_attributes(query: "query{}")
       ExternalService.query(2)
       ExternalService.query(5)
@@ -204,30 +203,36 @@ defmodule TransactionTest do
     end
   end
 
-  test "Basic transaction" do
+  setup do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    :ok
+  end
 
+  test "Basic transaction" do
     TestHelper.request(TestPlugApp, conn(:get, "/foo/1"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/foo/:blah")
 
-    assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/foo/1" && event[:name] == "/Plug/GET/foo/:blah" &&
-               event[:foo] == "BAR" && event[:duration_us] > 0 && event[:duration_us] < 50_000 &&
-               event[:start_time] < 2_000_000_000_000 && event[:start_time] > 1_400_000_000_000 &&
-               event[:start_time_mono] == nil && event[:test_attribute] == "test_value" &&
-               event[:"nr.apdexPerfZone"] == "S" && event[:status] == 200
-           end)
+    assert event[:path] == "/foo/1"
+    assert event[:name] == "WebTransaction/Plug/GET/foo/:blah"
+    assert event[:foo] == "BAR"
+    assert event[:duration_us] > 0
+    assert event[:duration_us] < 50_000
+    assert event[:start_time] < 2_000_000_000_000
+    assert event[:start_time] > 1_400_000_000_000
+    assert event[:start_time_mono] == nil
+    assert event[:test_attribute] == "test_value"
+    assert event[:"nr.apdexPerfZone"] == "S"
+    assert event[:status] == 200
   end
 
   test "Attribute coercion" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     TestHelper.request(TestPlugApp, conn(:get, "/funky_attrs"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    [_, event] = Enum.find(events, fn [_, event] -> event[:name] == "/Plug/GET/funky_attrs" end)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/funky_attrs")
 
     # Basic values
     assert event[:one] == 1
@@ -261,172 +266,163 @@ defmodule TransactionTest do
   end
 
   test "Incrementing attribute counters" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     TestHelper.request(TestPlugApp, conn(:get, "/incr"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/incr" && event[:one] == 1 && event[:two] == 2 &&
-               event[:four] === 4.0 && event[:status] == 200
-           end)
+    event = TestHelper.find_event(events, %{path: "/incr"})
+
+    assert event[:one] == 1
+    assert event[:two] == 2
+    assert event[:four] === 4.0
+    assert event[:status] == 200
   end
 
   @tag capture_log: true
   test "Failure of the Transaction" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     TestHelper.request(TestPlugApp, conn(:get, "/fail"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event] ->
-             event[:status] == 500 &&
-               event[:query] =~ "query{}" &&
-               event[:error] &&
-               event[:name] == "/Plug/GET/fail" &&
-               event[:error_reason] =~ "TransactionError" &&
-               event[:error_kind] == :exit &&
-               event[:error_stack] =~ "test/transaction_test.exs"
-           end)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/fail")
+
+    assert event[:status] == 500
+    assert event[:query] =~ "query{}"
+    assert event[:error]
+    assert event[:error_reason] =~ "TransactionError"
+    assert event[:error_kind] == :exit
+    assert event[:error_stack] =~ "test/transaction_test.exs"
   end
 
   @tag capture_log: true
   test "Failure of the Transaction - erlang exit" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     TestHelper.request(TestPlugApp, conn(:get, "/erlang_exit"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event] ->
-             event[:status] == 500 &&
-               event[:query] =~ "query{}" &&
-               event[:error] &&
-               event[:name] == "/Plug/GET/erlang_exit" &&
-               event[:error_reason] =~ "something_bad" &&
-               event[:error_kind] == :exit
-           end)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/erlang_exit")
+
+    assert event[:status] == 500
+    assert event[:query] =~ "query{}"
+    assert event[:error]
+    assert event[:error_reason] =~ "something_bad"
+    assert event[:error_kind] == :exit
   end
 
   @tag capture_log: true
   test "Failure of the Transaction - await timeout" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     TestHelper.request(TestPlugApp, conn(:get, "/await_timeout"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event] ->
-             event[:status] == 500 &&
-               event[:error] &&
-               event[:name] == "/Plug/GET/await_timeout" &&
-               event[:error_reason] =~ "timeout" &&
-               event[:error_kind] == :exit
-           end)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/await_timeout")
+
+    assert event[:status] == 500
+    assert event[:error]
+    assert event[:error_reason] =~ "timeout"
+    assert event[:error_kind] == :exit
   end
 
   @tag :capture_log
   test "Error in Transaction" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     Task.Supervisor.start_link(name: TestTaskSup)
 
     TestHelper.request(TestPlugApp, conn(:get, "/error"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event] ->
-             event[:status] == 200 && event[:error] == nil
-           end)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/error")
+
+    assert event[:status] == 200
+    assert event[:error] == nil
   end
 
   @tag capture_log: true
   test "Allow disabling error detail collection" do
     TestHelper.run_with(:nr_features, error_collector: false)
 
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     TestHelper.request(TestPlugApp, conn(:get, "/fail"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event] ->
-             event[:status] == 500 && event[:error] == true && event[:error_reason] == nil &&
-               event[:error_kind] == nil && event[:error_stack] == nil
-           end)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/fail")
+
+    assert event[:status] == 500
+    assert event[:error] == true
+    refute event[:error_reason]
+    refute event[:error_kind]
+    refute event[:error_stack]
   end
 
   test "Transaction with traced external service call" do
     TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 
     TestHelper.request(TestPlugApp, conn(:get, "/service"))
 
     TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
 
-    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
-    tx_events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    custom_events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    refute Enum.find(events, fn [_, event, _] -> event[:query] == "query" end)
+    refute TestHelper.find_event(custom_events, %{query: "query"})
 
-    assert Enum.find(tx_events, fn [_, event] ->
-             event[:path] == "/service" && event[:external_call_count] == 2 &&
-               event[:"external.TransactionTest.ExternalService.query.call_count"] == 2 &&
-               event[:status] == 200
-           end)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/service")
+
+    assert event[:path] == "/service"
+    assert event[:external_call_count] == 2
+    assert event[:"external.TransactionTest.ExternalService.query.call_count"] == 2
+    assert event[:status] == 200
   end
 
   test "Track attrs inside proccesses spawned by the transaction" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     Task.Supervisor.start_link(name: TestTaskSup)
 
     TestHelper.request(TestPlugApp, conn(:get, "/spawn"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event =
-      Enum.find(events, fn [_, event] ->
-        event[:path] == "/spawn" && event[:inside] == "spawned" && event[:nested] == "spawn" &&
-          event[:not_linked] == "still_tracked" && event[:nested_inside] == "nolink" &&
-          event[:rabbit] == "hole" && event[:status] == 200
-      end)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/spawn")
 
-    assert event
+    assert event[:path] == "/spawn"
+    assert event[:inside] == "spawned"
+    assert event[:nested] == "spawn"
+    assert event[:not_linked] == "still_tracked"
+    assert event[:nested_inside] == "nolink"
+    assert event[:rabbit] == "hole"
+    assert event[:status] == 200
 
     # Don't track when manually excluded
     refute event[:not_tracked]
   end
 
   test "Flatten the keys of a nested map into a list of individual attributes" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     TestHelper.request(TestPlugApp, conn(:get, "/map"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/map" && event[:plain] == "attr" && event["deep.foo.bar"] == "baz" &&
-               event["deep.foo.baz"] == "bar"
-           end)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/map")
+
+    assert event[:path] == "/map"
+    assert event[:plain] == "attr"
+    assert event["deep.foo.bar"] == "baz"
+    assert event["deep.foo.baz"] == "bar"
   end
 
   test "Support setting host display name" do
     TestHelper.run_with(:nr_config, host_display_name: "my-test-host")
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
     TestHelper.request(TestPlugApp, conn(:get, "/map"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    assert Enum.find(events, fn [_, event] ->
-             event[:path] == "/map" && event[:"host.displayName"] == "my-test-host"
-           end)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/map")
+
+    assert event[:path] == "/map"
+    assert event[:"host.displayName"] == "my-test-host"
   end
 
   test "Allow a transaction to be ignored" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     Task.Supervisor.start_link(name: TestTaskSup)
 
     assert %{status_code: 200} = TestHelper.request(TestPlugApp, conn(:get, "/ignored"))
@@ -437,7 +433,6 @@ defmodule TransactionTest do
   end
 
   test "Allow a transaction to be ignored via configuration" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     Task.Supervisor.start_link(name: TestTaskSup)
 
     assert %{status_code: 200} = TestHelper.request(TestPlugApp, conn(:get, "/ignore/this"))
@@ -448,11 +443,10 @@ defmodule TransactionTest do
   end
 
   test "Calculate total time" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     TestHelper.request(TestPlugApp, conn(:get, "/total_time"))
 
-    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/total_time")
 
     assert event[:duration_s] >= 0.220
     assert event[:total_time_s] >= 0.420
@@ -465,8 +459,6 @@ defmodule TransactionTest do
 
   describe "Request queuing" do
     test "queueDuration is included in the transaction (in seconds)" do
-      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
       request_start = System.system_time(:microsecond) - 1_500_000
 
       conn =
@@ -475,14 +467,13 @@ defmodule TransactionTest do
 
       TestHelper.request(TestPlugApp, conn)
 
-      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      event = TestHelper.find_event(events, "WebTransaction/Plug/GET/total_time")
 
       assert_in_delta event[:queueDuration], 1.5, 0.1
     end
 
     test "account for clock skew - ignore a negative queue duration" do
-      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
       # request start somehow is in the future
       request_start = System.system_time(:microsecond) + 100_000
 
@@ -492,14 +483,14 @@ defmodule TransactionTest do
 
       TestHelper.request(TestPlugApp, conn)
 
-      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      event = TestHelper.find_event(events, "WebTransaction/Plug/GET/total_time")
 
       assert event[:queueDuration] == 0
     end
 
     test "Controlled via config" do
       TestHelper.run_with(:nr_features, request_queuing_metrics: false)
-      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
       request_start = System.system_time(:microsecond) - 1_500_000
 
@@ -509,33 +500,32 @@ defmodule TransactionTest do
 
       TestHelper.request(TestPlugApp, conn)
 
-      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      event = TestHelper.find_event(events, "WebTransaction/Plug/GET/total_time")
 
       refute event[:queueDuration]
     end
   end
 
   test "Client timeout" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     conn = conn(:get, "/slow")
 
     {:error, :timeout} = TestHelper.request(TestPlugApp, conn, timeout: 10)
 
-    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/slow")
 
     assert event[:"cowboy.socket_error"] == "closed"
   end
 
   test "Server timeout" do
-    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     conn = conn(:get, "/slow")
 
     {:error, :socket_closed_remotely} =
       TestHelper.request(TestPlugApp, conn, [], idle_timeout: 500)
 
-    [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/slow")
 
     assert event[:"cowboy.connection_error"] == "timeout"
   end
@@ -543,22 +533,22 @@ defmodule TransactionTest do
   describe "Extended attributes" do
     test "can be turned on" do
       TestHelper.run_with(:nr_features, extended_attributes: true)
-      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
       TestHelper.request(TestPlugApp, conn(:get, "/fn_trace"))
 
-      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      event = TestHelper.find_event(events, "WebTransaction/Plug/GET/fn_trace")
 
       assert event[:"function.TransactionTest.HelperModule.function/1.call_count"] == 1
     end
 
     test "can be turned off" do
       TestHelper.run_with(:nr_features, extended_attributes: false)
-      TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
 
       TestHelper.request(TestPlugApp, conn(:get, "/fn_trace"))
 
-      [[_, event]] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+      event = TestHelper.find_event(events, "WebTransaction/Plug/GET/fn_trace")
 
       refute event[:"function.TransactionTest.HelperModule.function/1.call_count"]
     end

@@ -71,15 +71,16 @@ defmodule DistributedTraceTest do
       |> put_req_header(@dt_header, generate_inbound_payload(:app))
     )
 
-    [[_, attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET")
 
-    assert attrs[:name]
-    refute attrs[:error_reason]
+    assert event[:name]
+    refute event[:error_reason]
 
-    refute attrs[:"parent.app"]
-    refute attrs[:parentId]
-    refute attrs[:parentSpanId]
-    refute attrs[:traceId]
+    refute event[:"parent.app"]
+    refute event[:parentId]
+    refute event[:parentSpanId]
+    refute event[:traceId]
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
@@ -93,13 +94,14 @@ defmodule DistributedTraceTest do
       |> put_req_header(@dt_header, generate_inbound_payload(:app))
     )
 
-    [[_, attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET")
 
-    assert attrs[:"parent.app"] == "2827902"
-    assert is_number(attrs[:"parent.transportDuration"])
-    assert attrs[:parentId] == "7d3efb1b173fecfa"
-    assert attrs[:parentSpanId] == "5f474d64b9cc9b2a"
-    assert attrs[:traceId] == "d6b4ba0c3a712ca"
+    assert event[:"parent.app"] == "2827902"
+    assert is_number(event[:"parent.transportDuration"])
+    assert event[:parentId] == "7d3efb1b173fecfa"
+    assert event[:parentSpanId] == "5f474d64b9cc9b2a"
+    assert event[:traceId] == "d6b4ba0c3a712ca"
 
     TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
@@ -123,13 +125,14 @@ defmodule DistributedTraceTest do
     assert get_in(outbound_payload, ["d", "ac"]) == "190"
     assert get_in(outbound_payload, ["d", "ap"]) == "1441"
 
-    [[_, attrs] | _] = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET")
 
-    assert attrs[:traceId] == "d6b4ba0c3a712ca"
-    assert attrs[:"parent.app"] == "2827902"
-    assert attrs[:"parent.type"] == "Browser"
-    assert attrs[:parentSpanId] == "5f474d64b9cc9b2a"
-    refute attrs[:parentId]
+    assert event[:traceId] == "d6b4ba0c3a712ca"
+    assert event[:"parent.app"] == "2827902"
+    assert event[:"parent.type"] == "Browser"
+    assert event[:parentSpanId] == "5f474d64b9cc9b2a"
+    refute event[:parentId]
   end
 
   test "Generate the expected metrics" do
