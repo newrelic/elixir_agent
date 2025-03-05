@@ -95,7 +95,7 @@ defmodule NewRelic.Telemetry.Finch do
         metric_name = "External/#{request.host}/Finch/#{request.method}"
         secondary_name = "#{request.host} - Finch/#{request.method}"
 
-        duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+        duration_ms = System.convert_time_unit(duration, :native, :microsecond) / 1000
         duration_s = duration_ms / 1000
 
         id = span
@@ -176,7 +176,7 @@ defmodule NewRelic.Telemetry.Finch do
            } <- Process.delete(config.handler_id) do
         metric_name = "External/#{request.host}/Finch/#{request.method}"
 
-        duration_ms = System.convert_time_unit(duration, :native, :millisecond)
+        duration_ms = System.convert_time_unit(duration, :native, :microsecond) / 1000
         duration_s = duration_ms / 1000
 
         id = span
