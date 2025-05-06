@@ -91,7 +91,7 @@ defmodule TransactionTest do
       send_resp(conn, 200, "won't get here")
     end
 
-    get "/error" do
+    get "/no_link_error" do
       Task.Supervisor.async_nolink(TestTaskSup, fn ->
         Process.sleep(20)
         raise "Oops"
@@ -205,6 +205,7 @@ defmodule TransactionTest do
 
   setup do
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
     :ok
   end
 
@@ -278,7 +279,7 @@ defmodule TransactionTest do
     assert event[:status] == 200
   end
 
-  @tag capture_log: true
+  @tag :capture_log
   test "Failure of the Transaction" do
     TestHelper.request(TestPlugApp, conn(:get, "/fail"))
 
@@ -288,13 +289,16 @@ defmodule TransactionTest do
 
     assert event[:status] == 500
     assert event[:query] =~ "query{}"
-    assert event[:error]
-    assert event[:error_reason] =~ "TransactionError"
-    assert event[:error_kind] == :exit
-    assert event[:error_stack] =~ "test/transaction_test.exs"
+
+    error_events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester, 0)
+    error = TestHelper.find_event(error_events, %{transactionName: "WebTransaction/Plug/GET/fail"})
+
+    assert error
+    assert error[:"error.message"] == "(RuntimeError) TransactionError"
+    assert error[:stacktrace] =~ "test/transaction_test.exs"
   end
 
-  @tag capture_log: true
+  @tag :capture_log
   test "Failure of the Transaction - erlang exit" do
     TestHelper.request(TestPlugApp, conn(:get, "/erlang_exit"))
 
@@ -304,12 +308,15 @@ defmodule TransactionTest do
 
     assert event[:status] == 500
     assert event[:query] =~ "query{}"
-    assert event[:error]
-    assert event[:error_reason] =~ "something_bad"
-    assert event[:error_kind] == :exit
+
+    error_events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester, 0)
+    error = TestHelper.find_event(error_events, %{transactionName: "WebTransaction/Plug/GET/erlang_exit"})
+
+    assert error
+    assert error[:"error.message"] == ":something_bad"
   end
 
-  @tag capture_log: true
+  @tag :capture_log
   test "Failure of the Transaction - await timeout" do
     TestHelper.request(TestPlugApp, conn(:get, "/await_timeout"))
 
@@ -319,25 +326,33 @@ defmodule TransactionTest do
 
     assert event[:status] == 500
     assert event[:error]
-    assert event[:error_reason] =~ "timeout"
-    assert event[:error_kind] == :exit
+
+    error_events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester, 0)
+    assert TestHelper.find_event(error_events, %{transactionName: "WebTransaction/Plug/GET/await_timeout"})
   end
 
   @tag :capture_log
   test "Error in Transaction" do
     Task.Supervisor.start_link(name: TestTaskSup)
 
-    TestHelper.request(TestPlugApp, conn(:get, "/error"))
+    TestHelper.request(TestPlugApp, conn(:get, "/no_link_error"))
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
-    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/error")
+    event = TestHelper.find_event(events, "WebTransaction/Plug/GET/no_link_error")
 
     assert event[:status] == 200
-    assert event[:error] == nil
+
+    error_events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester, 0)
+
+    refute TestHelper.find_event(error_events, %{transactionName: "WebTransaction/Plug/GET/no_link_error"})
+
+    assert TestHelper.find_event(error_events, %{
+             transactionName: "OtherTransaction/Elixir/ElixirProcess//UnknownProcess"
+           })
   end
 
-  @tag capture_log: true
+  @tag :capture_log
   test "Allow disabling error detail collection" do
     TestHelper.run_with(:nr_features, error_collector: false)
 
@@ -349,9 +364,6 @@ defmodule TransactionTest do
 
     assert event[:status] == 500
     assert event[:error] == true
-    refute event[:error_reason]
-    refute event[:error_kind]
-    refute event[:error_stack]
   end
 
   test "Transaction with traced external service call" do
@@ -362,8 +374,8 @@ defmodule TransactionTest do
 
     TestHelper.trigger_report(NewRelic.Aggregate.Reporter)
 
-    custom_events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
-    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    custom_events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester, 0)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester, 0)
 
     refute TestHelper.find_event(custom_events, %{query: "query"})
 

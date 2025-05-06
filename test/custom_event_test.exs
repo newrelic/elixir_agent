@@ -65,8 +65,6 @@ defmodule CustomEventTest do
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
     event = TestHelper.find_event(events, "long")
     assert String.length(event.long_entry) == 4095
-
-    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
 
   test "harvest cycle" do
@@ -85,8 +83,6 @@ defmodule CustomEventTest do
     refute first == second
     assert Process.alive?(second)
 
-    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
   end
@@ -99,8 +95,6 @@ defmodule CustomEventTest do
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
     assert length(events) == 2
-
-    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
 
   test "post supportability metrics" do
@@ -125,9 +119,6 @@ defmodule CustomEventTest do
              metrics,
              "Supportability/Elixir/Collector/HarvestSize/CustomEventData"
            )
-
-    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
   test "Handle non-serializable attribute values" do
@@ -142,8 +133,6 @@ defmodule CustomEventTest do
     NewRelic.JSON.encode!(events)
 
     assert TestHelper.find_event(events, %{good_value: "A string", bad_value: "[BAD_VALUE]"})
-
-    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
 
   test "Ignore late reports" do
@@ -158,8 +147,6 @@ defmodule CustomEventTest do
     GenServer.cast(harvester, {:report, :late_msg})
 
     assert :completed == GenServer.call(harvester, :send_harvest)
-
-    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
 
   test "Annotate events with user's configured attributes" do
@@ -183,7 +170,5 @@ defmodule CustomEventTest do
 
     events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
     assert length(events) == 3
-
-    TestHelper.pause_harvest_cycle(Collector.CustomEvent.HarvestCycle)
   end
 end

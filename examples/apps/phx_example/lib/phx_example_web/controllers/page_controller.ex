@@ -7,6 +7,7 @@ defmodule PhxExampleWeb.PageController do
   end
 
   def error(_, _) do
+    Process.sleep(100)
     raise "BAD"
   end
 end

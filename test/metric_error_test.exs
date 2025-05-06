@@ -32,7 +32,5 @@ defmodule MetricErrorTest do
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
     assert TestHelper.find_metric(metrics, "Errors/all", 2)
-
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 end

@@ -31,7 +31,7 @@ defmodule NewRelic.Error.Reporter.CrashReport do
     {kind, exception, stacktrace} = parse_error_info(report[:error_info])
     process_name = parse_process_name(report[:registered_name], stacktrace)
 
-    NewRelic.add_attributes(process: process_name)
+    NewRelic.add_attributes("error.process": process_name)
 
     NewRelic.Transaction.Reporter.error(%{
       kind: kind,

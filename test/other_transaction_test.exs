@@ -50,9 +50,9 @@ defmodule OtherTransactionTest do
     assert event[:duration_ms] >= 60
     assert event[:total_time_s] >= (60 + 50) / 1000
 
-    [_trace] = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester)
+    [_trace] = TestHelper.gather_harvest(Collector.TransactionTrace.Harvester, 0)
 
-    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+    metrics = TestHelper.gather_harvest(Collector.Metric.Harvester, 0)
     assert TestHelper.find_metric(metrics, "OtherTransaction/all")
     assert TestHelper.find_metric(metrics, "OtherTransaction/TransactionCategory/MyTaskName")
 
@@ -64,13 +64,8 @@ defmodule OtherTransactionTest do
              {"External/OtherTransactionTest.External.call", "OtherTransaction/TransactionCategory/MyTaskName"}
            )
 
-    span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
+    span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester, 0)
     assert length(span_events) == 4
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
   test "Rename an Other transaction" do
@@ -87,8 +82,6 @@ defmodule OtherTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
     assert TestHelper.find_metric(metrics, "OtherTransaction/DifferentCategory/DifferentName")
-
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
   test "NewRelic.other_transaction macro" do
@@ -109,8 +102,6 @@ defmodule OtherTransactionTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
     assert TestHelper.find_metric(metrics, "OtherTransaction/Category/ViaMacro")
-
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
   @tag :capture_log
@@ -151,17 +142,15 @@ defmodule OtherTransactionTest do
 
     assert TestHelper.find_metric(metrics, "Errors/all")
     assert TestHelper.find_metric(metrics, "Errors/allOther")
-
-    TestHelper.pause_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   @tag :capture_log
   test "do fail transaction on error exit" do
     TestHelper.run_with(:nr_config, trace_mode: :infinite)
-
     TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
+
     {:ok, _sup} = Task.Supervisor.start_link(name: TestTaskSup)
     test = self()
 
@@ -176,12 +165,22 @@ defmodule OtherTransactionTest do
     Process.monitor(sidecar)
     assert_receive {:DOWN, _, _, ^sidecar, _}
 
-    [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester, 0)
+    event = TestHelper.find_event(events, "OtherTransaction/Test/Error")
+
+    assert event[:error]
+
+    error_events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester, 0)
+    error_event = TestHelper.find_event(error_events, %{transactionName: "OtherTransaction/Test/Error"})
+
+    assert error_event[:"error.message"] =~ "(RuntimeError)"
+    assert error_event[:stacktrace] =~ "test/other_transaction_test.exs"
+
+    [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester, 0)
 
     spansaction = TestHelper.find_event(spans, %{"nr.entryPoint": true, name: "Test/Error"})
-
     assert spansaction.attributes[:error]
-    assert spansaction.attributes[:error_reason] =~ "RuntimeError"
+    refute spansaction.attributes[:root_process_error]
   end
 
   defmodule ExpectedError do

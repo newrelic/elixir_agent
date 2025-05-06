@@ -141,7 +141,10 @@ jobs:
 
     - name: Run integration tests
       run: |
+        set +e
         mix test
+        set -e
+        mix test --trace --failed
         mix instrumented_task
         mix uninstrumented_task
 

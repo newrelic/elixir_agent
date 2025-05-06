@@ -43,7 +43,7 @@ defmodule NewRelic.Error.LoggerFilter do
   def filter(
         %{
           meta: %{error_logger: %{tag: :error_msg}},
-          msg: {:report, %{report: %{} = report}}
+          msg: {:report, %{report: %{reason: _} = report}}
         },
         _opts
       ) do
