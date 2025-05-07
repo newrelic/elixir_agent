@@ -21,8 +21,6 @@ defmodule DimensionalMetricTest do
 
     assert metric2.name == "memory.foo_bar"
     assert metric2.type == :summary
-
-    TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
   end
 
   test "gauge dimensional metric is updated" do
@@ -42,8 +40,6 @@ defmodule DimensionalMetricTest do
     assert metric.name == "mem_percent.foo_baz"
     assert metric.type == :gauge
     assert metric.value == 90
-
-    TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
   end
 
   test "count dimensional metric is updated" do
@@ -63,8 +59,6 @@ defmodule DimensionalMetricTest do
     assert metric.name == "OOM"
     assert metric.type == :count
     assert metric.value == 4
-
-    TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
   end
 
   test "summary dimensional metric is updated" do
@@ -88,7 +82,5 @@ defmodule DimensionalMetricTest do
     assert metric.value.min == 9.5
     assert metric.value.max == 55.5
     assert metric.value.count == 4
-
-    TestHelper.pause_harvest_cycle(NewRelic.Harvest.TelemetrySdk.DimensionalMetrics.HarvestCycle)
   end
 end

@@ -88,8 +88,6 @@ defmodule SpanEventTest do
 
     assert attrs[:type] == "Span"
     assert attrs[:category] == "generic"
-
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
   defmodule Traced do
@@ -180,9 +178,6 @@ defmodule SpanEventTest do
 
     assert http_request[:category] == "http"
     assert http_request[:"http.url"]
-
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   test "span macro" do
@@ -201,9 +196,6 @@ defmodule SpanEventTest do
     single_span = TestHelper.find_event(span_events, "single.span")
 
     assert single_span[:category] == "generic"
-
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   test "report span events via function tracer inside transaction inside a DT" do
@@ -298,9 +290,6 @@ defmodule SpanEventTest do
     # Ensure these will encode properly
     NewRelic.JSON.encode!(tx_event)
     NewRelic.JSON.encode!(span_events)
-
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   describe "Generate span GUIDs" do

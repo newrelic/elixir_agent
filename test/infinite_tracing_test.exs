@@ -234,9 +234,6 @@ defmodule InfiniteTracingTest do
     # Ensure these will encode properly
     NewRelic.JSON.encode!(tx_event)
     NewRelic.JSON.encode!(spans)
-
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   @tag :capture_log
@@ -253,7 +250,6 @@ defmodule InfiniteTracingTest do
     assert error_span.attributes[:"error.message"] == "(RuntimeError) Err"
 
     Plug.Cowboy.shutdown(TestPlugApp.HTTP)
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
   @tag :capture_log
@@ -270,6 +266,5 @@ defmodule InfiniteTracingTest do
     assert exit_span.attributes[:"error.message"] == "(EXIT) :bad"
 
     Plug.Cowboy.shutdown(TestPlugApp.HTTP)
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 end

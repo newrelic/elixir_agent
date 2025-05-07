@@ -24,23 +24,18 @@ defmodule TestHelper do
     {:ok, %{status_code: status_code, body: to_string(body)}}
   end
 
-  def trigger_report(module) do
-    Process.sleep(300)
+  def trigger_report(module, wait \\ 300) do
+    Process.sleep(wait)
     GenServer.call(module, :report)
   end
 
-  def gather_harvest(harvester) do
-    Process.sleep(300)
+  def gather_harvest(harvester, wait \\ 300) do
+    Process.sleep(wait)
     harvester.gather_harvest()
   end
 
   def restart_harvest_cycle(harvest_cycle) do
-    Process.sleep(300)
     GenServer.call(harvest_cycle, :restart)
-  end
-
-  def pause_harvest_cycle(harvest_cycle) do
-    GenServer.call(harvest_cycle, :pause)
   end
 
   def find_metric(metrics, name, call_count \\ 1)

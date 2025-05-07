@@ -8,7 +8,7 @@ defmodule NewRelic.Error.Reporter.ErrorMsg do
     {exception, stacktrace} = report.reason
     process_name = parse_process_name(report[:registered_name], stacktrace)
 
-    NewRelic.add_attributes(process: process_name)
+    NewRelic.add_attributes("error.process": process_name)
 
     NewRelic.Transaction.Reporter.error(%{
       kind: :error,

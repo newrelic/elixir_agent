@@ -101,21 +101,8 @@ defmodule NewRelic.Transaction.Reporter do
     :ok
   end
 
-  def error(error) do
-    Transaction.Sidecar.add(transaction_error: {:error, error})
-  end
-
-  def fail(%{kind: kind, reason: reason, stack: stack}) do
-    if NewRelic.Config.feature?(:error_collector) do
-      Transaction.Sidecar.add(
-        error: true,
-        error_kind: kind,
-        error_reason: inspect(reason),
-        error_stack: inspect(stack)
-      )
-    else
-      Transaction.Sidecar.add(error: true)
-    end
+  def error(%{kind: _kind, reason: _reason, stack: _stack} = error) do
+    Transaction.Sidecar.add(error: true, transaction_error: {:error, error})
   end
 
   def add_trace_segment(segment) do

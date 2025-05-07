@@ -215,9 +215,13 @@ defmodule NewRelic.Transaction.Complete do
     :sampled,
     :priority,
     :tracingVendors,
-    :trustedParentId
+    :trustedParentId,
+    :root_process_error,
+    :error
   ]
   defp add_spansactions(spans, tx_attrs, pid) do
+    root_process_error_attribute = (tx_attrs[:root_process_error] && %{error: true}) || %{}
+
     [
       %NewRelic.Span.Event{
         guid: tx_attrs[:guid],
@@ -234,6 +238,7 @@ defmodule NewRelic.Transaction.Complete do
         category_attributes:
           tx_attrs
           |> Map.drop(@spansaction_exclude_attrs)
+          |> Map.merge(root_process_error_attribute)
           |> Map.merge(NewRelic.Config.automatic_attributes())
           |> Map.merge(%{
             "transaction.name": Util.metric_join(["#{tx_attrs[:transactionType]}Transaction", tx_attrs.name]),
@@ -476,7 +481,7 @@ defmodule NewRelic.Transaction.Complete do
   defp report_transaction_error_event(_tx_attrs, nil), do: :ignore
 
   defp report_transaction_error_event(tx_attrs, {:error, error}) do
-    attributes = Map.drop(tx_attrs, [:error, :error_kind, :error_reason, :error_stack])
+    attributes = Map.drop(tx_attrs, [:error, :"error.kind", :"error.reason", :"error.stack"])
     expected = parse_error_expected(error.reason)
 
     {exception_type, exception_reason, exception_stacktrace} =

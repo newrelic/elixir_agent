@@ -121,13 +121,18 @@ defmodule NewRelic.Telemetry.Plug do
   def handle_event(
         [server, :request, :exception],
         meas,
-        %{kind: kind} = meta,
+        meta,
         _config
       ) do
     add_stop_attrs(meas, meta, server)
-    {reason, stack} = NewRelic.Util.Telemetry.reason_and_stack(meta)
 
-    Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
+    if NewRelic.Config.feature?(:error_collector) do
+      {reason, stacktrace} = reason_and_stacktrace(meta)
+      Transaction.Reporter.error(%{kind: meta.kind, reason: reason, stack: stacktrace})
+    else
+      NewRelic.add_attributes(error: true)
+    end
+
     Transaction.Reporter.stop_transaction(:web)
   end
 
@@ -294,5 +299,14 @@ defmodule NewRelic.Telemetry.Plug do
     "/Plug/#{conn.method}#{match_path}"
     |> String.replace("/*glob", "")
     |> String.replace("/*_path", "")
+  end
+
+  defp reason_and_stacktrace(meta) do
+    case meta[:reason] || meta[:exception] do
+      {{reason, stacktrace}, _init_call} when is_list(stacktrace) -> {reason, stacktrace}
+      {{reason, _call}, _init_call} -> {reason, []}
+      {reason, _init_call} when is_atom(reason) -> {reason, []}
+      reason -> {reason, meta.stacktrace}
+    end
   end
 end

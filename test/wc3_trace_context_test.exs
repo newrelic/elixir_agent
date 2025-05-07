@@ -132,9 +132,6 @@ defmodule W3CTraceContextTest do
     assert span_attrs[:traceId] == "eb970877cfd349b4dcf5eb9957283bca"
     assert span_attrs[:parentId] == "5f474d64b9cc9b2a"
     assert span_attrs[:trustedParentId] == "5f474d64b9cc9b2a"
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
   test "Annotate Events with W3C attrs - incoming agent payload" do
@@ -175,9 +172,6 @@ defmodule W3CTraceContextTest do
     assert span_attrs[:parentId] == "27ddd2d8890283b4"
     assert span_attrs[:trustedParentId] == "27ddd2d8890283b4"
     refute span_attrs[:tracingVendors]
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
   test "Annotate Events with W3C attrs - incoming non-NR tracestate" do
@@ -206,9 +200,6 @@ defmodule W3CTraceContextTest do
 
     assert span_attrs[:traceId] == "74be672b84ddc4e4b28be285632bbc0a"
     assert span_attrs[:parentId] == "27ddd2d8890283b4"
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
   test "Annotate Events with W3C attrs - incoming non-NR parentId payload" do
@@ -247,9 +238,6 @@ defmodule W3CTraceContextTest do
     assert span_attrs[:parentId] == "7d3efb1b173fecfa"
     assert span_attrs[:trustedParentId] == "27ddd2d8890283b4"
     assert span_attrs[:tracingVendors] == "dd"
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
   end
 
   test "Generate expected outbound W3C headers" do
@@ -376,8 +364,6 @@ defmodule W3CTraceContextTest do
              metrics,
              "Supportability/TraceContext/TraceState/Parse/Exception"
            )
-
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
   test "Generate expected outbound W3C headers - NR tracestate - no sampled or priority" do
@@ -410,8 +396,6 @@ defmodule W3CTraceContextTest do
              metrics,
              "Supportability/TraceContext/TraceState/Parse/Exception"
            )
-
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
   test "Generate expected outbound W3C headers - future traceparent version" do

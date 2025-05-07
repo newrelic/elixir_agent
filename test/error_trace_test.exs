@@ -69,8 +69,6 @@ defmodule ErrorTraceTest do
     refute first == second
     assert Process.alive?(second)
 
-    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
   end
@@ -82,8 +80,6 @@ defmodule ErrorTraceTest do
 
     traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
     refute Enum.empty?(traces)
-
-    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
   end
 
   test "Ignore late reports" do
@@ -98,8 +94,6 @@ defmodule ErrorTraceTest do
     GenServer.cast(harvester, {:report, :late_msg})
 
     assert :completed == GenServer.call(harvester, :send_harvest)
-
-    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
   end
 
   defmodule CustomError do
@@ -134,8 +128,6 @@ defmodule ErrorTraceTest do
              ]
              | _
            ] = traces
-
-    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
   end
 
   test "Doesn't report an error if the handler is not installed" do

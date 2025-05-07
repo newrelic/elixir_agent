@@ -11,12 +11,6 @@ defmodule TransactionTraceTest do
     TestHelper.restart_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
     NewRelic.DistributedTrace.BackoffSampler.reset()
-
-    on_exit(fn ->
-      TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
-      TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
-      TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-    end)
   end
 
   defmodule HelperModule do
@@ -132,8 +126,6 @@ defmodule TransactionTraceTest do
     refute first == second
     assert Process.alive?(second)
 
-    TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
-
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
   end
@@ -150,8 +142,6 @@ defmodule TransactionTraceTest do
     GenServer.cast(harvester, {:report, :late_msg})
 
     assert :completed == GenServer.call(harvester, :send_harvest)
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionTrace.HarvestCycle)
   end
 
   test "Prepare a payload" do

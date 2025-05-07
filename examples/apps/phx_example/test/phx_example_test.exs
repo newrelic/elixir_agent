@@ -10,6 +10,7 @@ defmodule PhxExampleTest do
   setup do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     NewRelic.DistributedTrace.BackoffSampler.reset()
@@ -23,13 +24,12 @@ defmodule PhxExampleTest do
         assert body =~ "Welcome to Phoenix"
 
         metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester, 0)
 
         assert TestHelper.find_metric(
                  metrics,
                  "WebTransaction/Phoenix/PhxExampleWeb.PageController/index"
                )
-
-        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
         event =
           TestHelper.find_event(
@@ -64,13 +64,12 @@ defmodule PhxExampleTest do
         assert body =~ "Some content"
 
         metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester, 0)
 
         assert TestHelper.find_metric(
                  metrics,
                  "WebTransaction/Phoenix/PhxExampleWeb.HomeLive/index"
                )
-
-        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
         event =
           TestHelper.find_event(events, "WebTransaction/Phoenix/PhxExampleWeb.HomeLive/index")
@@ -136,13 +135,12 @@ defmodule PhxExampleTest do
         assert body =~ "Oops, Internal Server Error"
 
         metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester, 0)
 
         assert TestHelper.find_metric(
                  metrics,
                  "WebTransaction/Phoenix/PhxExampleWeb.PageController/error"
                )
-
-        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
 
         event =
           TestHelper.find_event(
@@ -151,11 +149,11 @@ defmodule PhxExampleTest do
           )
 
         assert event[:status] == 500
+        assert event[:error]
         assert event[:"phoenix.endpoint"] =~ "PhxExampleWeb"
         assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
         assert event[:"phoenix.controller"] == "PhxExampleWeb.PageController"
         assert event[:"phoenix.action"] == "error"
-        assert event[:error]
       end
 
       @tag :capture_log
@@ -165,23 +163,22 @@ defmodule PhxExampleTest do
         assert body =~ "Oops, Internal Server Error"
 
         metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester, 0)
 
         assert TestHelper.find_metric(
                  metrics,
                  "WebTransaction/Phoenix/PhxExampleWeb.ErrorLive/index"
                )
 
-        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
-
         event =
           TestHelper.find_event(events, "WebTransaction/Phoenix/PhxExampleWeb.ErrorLive/index")
 
         assert event[:status] == 500
+        assert event[:error]
         assert event[:"phoenix.endpoint"] =~ "PhxExampleWeb"
         assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
         assert event[:"phoenix.controller"] == "Phoenix.LiveView.Plug"
         assert event[:"phoenix.action"] == "index"
-        assert event[:error]
       end
 
       test "Phoenix route not found" do
@@ -189,6 +186,8 @@ defmodule PhxExampleTest do
         assert body =~ "Not Found"
 
         metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
+        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester, 0)
+        errors = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester, 0)
 
         metric =
           case unquote(server) do
@@ -198,7 +197,6 @@ defmodule PhxExampleTest do
 
         assert TestHelper.find_metric(metrics, metric)
 
-        events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
         event = TestHelper.find_event(events, metric)
 
         assert event[:status] == 404
@@ -207,7 +205,6 @@ defmodule PhxExampleTest do
         refute event[:"phoenix.controller"]
         refute event[:error]
 
-        errors = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
         assert errors == []
       end
     end

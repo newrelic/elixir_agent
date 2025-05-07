@@ -75,14 +75,11 @@ defmodule DistributedTraceTest do
     event = TestHelper.find_event(events, "WebTransaction/Plug/GET")
 
     assert event[:name]
-    refute event[:error_reason]
 
     refute event[:"parent.app"]
     refute event[:parentId]
     refute event[:parentSpanId]
     refute event[:traceId]
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   test "Annotate Transaction event with DT attrs" do
@@ -102,8 +99,6 @@ defmodule DistributedTraceTest do
     assert event[:parentId] == "7d3efb1b173fecfa"
     assert event[:parentSpanId] == "5f474d64b9cc9b2a"
     assert event[:traceId] == "d6b4ba0c3a712ca"
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   test "Generate linkage from a Browser app" do
@@ -152,8 +147,6 @@ defmodule DistributedTraceTest do
              metrics,
              "Supportability/DistributedTrace/AcceptPayload/Success"
            )
-
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
   test "propagate the context through connected Elixir processes" do
