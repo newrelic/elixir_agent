@@ -129,7 +129,7 @@ defmodule NewRelic.Telemetry.Oban do
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions],
       "oban.job.result": meta.state,
-      "oban.job.queue_time": System.convert_time_unit(meas.queue_time, :native, :millisecond)
+      "oban.job.queue_time": System.convert_time_unit(meas.queue_time, :native, :microsecond) / 1000
     ]
     |> NewRelic.add_attributes()
   end
