@@ -86,8 +86,6 @@ defmodule TransactionEventTest do
     event = TestHelper.find_event(events, "Ev1")
 
     assert String.length(event.long_entry) == 4095
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   test "harvest cycle" do
@@ -106,8 +104,6 @@ defmodule TransactionEventTest do
     refute first == second
     assert Process.alive?(second)
 
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
   end
@@ -122,8 +118,6 @@ defmodule TransactionEventTest do
 
     assert length(events) == 2
     assert [%{name: "WebTransaction/Plug/GET"}, _] = event
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   test "Ignore late reports" do
@@ -138,8 +132,6 @@ defmodule TransactionEventTest do
     GenServer.cast(harvester, {:report, :late_msg})
 
     assert :completed == GenServer.call(harvester, :send_harvest)
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   test "Respect the reservoir_size" do
@@ -154,7 +146,5 @@ defmodule TransactionEventTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
     assert length(events) == 3
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 end

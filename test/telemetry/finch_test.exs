@@ -6,13 +6,8 @@ defmodule NewRelic.Telemetry.FinchTest do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.SpanEvent.HarvestCycle)
     NewRelic.DistributedTrace.BackoffSampler.reset()
-
     start_supervised({Finch, name: __MODULE__})
-
-    on_exit(fn ->
-      TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
-      TestHelper.pause_harvest_cycle(Collector.SpanEvent.HarvestCycle)
-    end)
+    :ok
   end
 
   test "finch external metrics" do

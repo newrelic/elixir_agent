@@ -40,12 +40,14 @@ defmodule ObanExampleTest do
   test "instruments a failed job" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
 
     ObanExample.Worker.new(%{error: "error!"}, tags: ["foo", "bar"])
     |> Oban.insert()
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
-    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester, 0)
+    error_events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester, 0)
 
     assert TestHelper.find_metric(
              metrics,
@@ -58,10 +60,16 @@ defmodule ObanExampleTest do
 
     assert event[:timestamp] |> is_number
     assert event[:error] == true
-    assert event[:error_kind] == :error
     assert event[:"oban.worker"] == "ObanExample.Worker"
     assert event[:"oban.queue"] == "default"
     assert event[:"oban.job.result"] == "failure"
     assert event[:"oban.job.tags"] == "foo,bar"
+
+    error = TestHelper.find_event(error_events, "Oban/default/ObanExample.Worker/perform")
+
+    assert error
+
+    assert error[:"error.message"] =~
+             "(Oban.PerformError) ObanExample.Worker failed with {:error, \"error!\"}"
   end
 end

@@ -85,13 +85,17 @@ defmodule NewRelic.Telemetry.Oban do
   def handle_event(
         @oban_exception,
         %{duration: duration} = meas,
-        %{kind: kind} = meta,
+        meta,
         _config
       ) do
     add_stop_attrs(meas, meta, duration)
-    {reason, stack} = NewRelic.Util.Telemetry.reason_and_stack(meta)
 
-    Transaction.Reporter.fail(%{kind: kind, reason: reason, stack: stack})
+    if NewRelic.Config.feature?(:error_collector) do
+      Transaction.Reporter.error(%{kind: meta.kind, reason: meta.reason, stack: meta.stacktrace})
+    else
+      NewRelic.add_attributes(error: true)
+    end
+
     Transaction.Reporter.stop_transaction(:other)
   end
 
@@ -125,7 +129,7 @@ defmodule NewRelic.Telemetry.Oban do
       memory_kb: info[:memory] / @kb,
       reductions: info[:reductions],
       "oban.job.result": meta.state,
-      "oban.job.queue_time": System.convert_time_unit(meas.queue_time, :native, :millisecond)
+      "oban.job.queue_time": System.convert_time_unit(meas.queue_time, :native, :microsecond) / 1000
     ]
     |> NewRelic.add_attributes()
   end

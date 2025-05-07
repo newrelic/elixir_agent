@@ -34,8 +34,6 @@ defmodule TelemetrySdk.LogsHarvesterTest do
     refute first == second
     assert Process.alive?(second)
 
-    TestHelper.pause_harvest_cycle(TelemetrySdk.Logs.HarvestCycle)
-
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
   end
@@ -52,7 +50,5 @@ defmodule TelemetrySdk.LogsHarvesterTest do
     GenServer.cast(harvester, {:report, :late_msg})
 
     assert :completed == GenServer.call(harvester, :send_harvest)
-
-    TestHelper.pause_harvest_cycle(TelemetrySdk.Logs.HarvestCycle)
   end
 end

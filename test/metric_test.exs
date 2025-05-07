@@ -15,8 +15,6 @@ defmodule MetricTest do
     assert value == 150.0
     assert max == 100.0
     assert min == 50.0
-
-    TestHelper.pause_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
   end
 
   test "increment custom metrics" do
@@ -30,7 +28,5 @@ defmodule MetricTest do
     [_, [count, _, _, _, _, _]] = TestHelper.find_metric(metrics, "Custom/Foo/Bar", 3)
 
     assert count == 3
-
-    TestHelper.pause_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
   end
 end

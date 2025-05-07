@@ -91,10 +91,6 @@ defmodule TracerTest do
 
   setup do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-
-    on_exit(fn ->
-      TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
-    end)
   end
 
   test "function that has error" do

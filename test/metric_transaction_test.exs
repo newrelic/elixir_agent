@@ -88,10 +88,6 @@ defmodule MetricTransactionTest do
 
   setup do
     TestHelper.restart_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
-
-    on_exit(fn ->
-      TestHelper.pause_harvest_cycle(NewRelic.Harvest.Collector.Metric.HarvestCycle)
-    end)
   end
 
   test "Basic web transaction" do

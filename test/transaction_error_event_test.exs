@@ -94,8 +94,6 @@ defmodule TransactionErrorEventTest do
     event = TestHelper.find_event(events, %{transactionName: "Ev1"})
 
     assert String.length(event.long_entry) == 4095
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
   end
 
   test "collect and store some events" do
@@ -142,8 +140,6 @@ defmodule TransactionErrorEventTest do
     refute first == second
     assert Process.alive?(second)
 
-    TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
-
     # Ensure the last harvester has shut down
     assert_receive {:DOWN, _ref, _, ^second, :shutdown}, 1000
   end
@@ -174,10 +170,6 @@ defmodule TransactionErrorEventTest do
     assert NewRelic.JSON.encode!(traces)
 
     Logger.add_backend(:console)
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 
   @tag :capture_log
@@ -189,12 +181,11 @@ defmodule TransactionErrorEventTest do
     :httpc.request(~c"http://localhost:9999/async_error")
 
     traces = TestHelper.gather_harvest(Collector.ErrorTrace.Harvester)
-    assert Enum.find(traces, &match?([_, _, ":timeout", "EXIT", _, _], &1))
+    assert Enum.find(traces, &match?([_, _, _, "EXIT", _, _], &1))
 
     Plug.Cowboy.shutdown(TestPlugApp.HTTP)
 
     Logger.add_backend(:console)
-    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
   end
 
   test "Ignore late reports" do
@@ -209,8 +200,6 @@ defmodule TransactionErrorEventTest do
     GenServer.cast(harvester, {:report, :late_msg})
 
     assert :completed == GenServer.call(harvester, :send_harvest)
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
   end
 
   @tag :capture_log
@@ -247,14 +236,10 @@ defmodule TransactionErrorEventTest do
     events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
     event = TestHelper.find_event(events, "WebTransaction/Plug/GET/caught/error")
 
-    refute event[:error]
+    assert event[:error]
 
     Process.sleep(50)
     Logger.add_backend(:console)
-    TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
   end
 
   defmodule CustomError do
@@ -287,9 +272,5 @@ defmodule TransactionErrorEventTest do
              ]
              | _
            ] = traces
-
-    TestHelper.pause_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-    TestHelper.pause_harvest_cycle(Collector.Metric.HarvestCycle)
   end
 end
