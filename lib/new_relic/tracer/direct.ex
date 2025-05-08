@@ -84,6 +84,13 @@ defmodule NewRelic.Tracer.Direct do
           attributes: attributes
         )
 
+        if NewRelic.Config.feature?(:extended_attributes) do
+          NewRelic.incr_attributes(
+            "span.#{primary_name}.call_count": 1,
+            "span.#{primary_name}.duration_ms": duration
+          )
+        end
+
         NewRelic.report_metric({:function, primary_name}, duration_s: duration_s)
 
         NewRelic.DistributedTrace.reset_span(

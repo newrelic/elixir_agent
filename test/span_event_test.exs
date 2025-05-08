@@ -196,6 +196,11 @@ defmodule SpanEventTest do
     single_span = TestHelper.find_event(span_events, "single.span")
 
     assert single_span[:category] == "generic"
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    tx_event = TestHelper.find_event(events, "WebTransaction/Plug/GET/span_macro")
+
+    assert tx_event[:"span.another.span.call_count"] == 1
   end
 
   test "report span events via function tracer inside transaction inside a DT" do
