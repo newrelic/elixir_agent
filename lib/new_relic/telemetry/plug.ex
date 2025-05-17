@@ -205,7 +205,7 @@ defmodule NewRelic.Telemetry.Plug do
     resp_duration_ms = meas[:resp_start_time] && to_ms(meas[:resp_end_time]) - to_ms(meas[:resp_start_time])
 
     [
-      duration: meas[:duration] || 0,
+      duration: meas[:duration],
       error: meta[:error],
       status: status_code(meta) || 500,
       memory_kb: info[:memory] / @kb,

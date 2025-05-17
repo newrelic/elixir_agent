@@ -154,6 +154,7 @@ defmodule PhxExampleTest do
         assert event[:"phoenix.router"] == "PhxExampleWeb.Router"
         assert event[:"phoenix.controller"] == "PhxExampleWeb.PageController"
         assert event[:"phoenix.action"] == "error"
+        assert event[:duration] > 0.099
       end
 
       @tag :capture_log
