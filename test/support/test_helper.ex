@@ -47,6 +47,13 @@ defmodule TestHelper do
     end)
   end
 
+  def find_metric(metrics, name, :any) do
+    Enum.find(metrics, fn
+      [%{name: ^name, scope: ""}, [_, _, _, _, _, _]] -> true
+      _ -> false
+    end)
+  end
+
   def find_metric(metrics, name, call_count) do
     Enum.find(metrics, fn
       [%{name: ^name, scope: ""}, [^call_count, _, _, _, _, _]] -> true
