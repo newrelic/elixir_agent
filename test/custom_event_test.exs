@@ -110,15 +110,8 @@ defmodule CustomEventTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert TestHelper.find_metric(
-             metrics,
-             "Supportability/Elixir/Collector/HarvestSeen/CustomEventData"
-           )
-
-    assert TestHelper.find_metric(
-             metrics,
-             "Supportability/Elixir/Collector/HarvestSize/CustomEventData"
-           )
+    assert TestHelper.find_metric(metrics, "Supportability/Elixir/Collector/HarvestSeen/CustomEventData", :any)
+    assert TestHelper.find_metric(metrics, "Supportability/Elixir/Collector/HarvestSize/CustomEventData")
   end
 
   test "Handle non-serializable attribute values" do

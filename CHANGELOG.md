@@ -1,5 +1,19 @@
 ## CHANGELOG
 
+### `v1.35.0`
+
+#### Features
+* Add extended attributes for manual macro spans [#517](https://github.com/newrelic/elixir_agent/pull/517)
+
+#### Fixes
+* Fix bandit duration with exception [#524](https://github.com/newrelic/elixir_agent/pull/524)
+* Fix bandit error reporting [#523](https://github.com/newrelic/elixir_agent/pull/523)
+
+#### Tweaks
+* Increase resolution of finch request duration [#518](https://github.com/newrelic/elixir_agent/pull/518)
+
+------
+
 ### `v1.34.0`
 
 #### Fixes
