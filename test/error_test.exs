@@ -150,7 +150,7 @@ defmodule ErrorTest do
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
 
-    assert TestHelper.find_event(events, %{"error.class": "EXIT", "error.message": "(RuntimeError) foo"})
+    assert TestHelper.find_event(events, %{"error.class": "RuntimeError", "error.message": "(RuntimeError) foo"})
   end
 
   test "Catch a file error" do
