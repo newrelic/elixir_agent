@@ -164,6 +164,8 @@ defmodule TransactionErrorEventTest do
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
     assert TestHelper.find_metric(metrics, "Errors/all")
+    assert TestHelper.find_metric(metrics, "Errors/allWeb")
+    assert TestHelper.find_metric(metrics, "Errors/WebTransaction/Plug/GET/error")
 
     traces = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
     assert length(traces) == 1
