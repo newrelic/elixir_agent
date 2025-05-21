@@ -409,6 +409,22 @@ defmodule NewRelic.Metric.MetricData do
       }
     ]
 
+  def transform({:error, blame}, type: type, error_count: error_count),
+    do: [
+      %Metric{
+        name: join(["Errors", "#{type}Transaction", blame]),
+        call_count: error_count
+      },
+      %Metric{
+        name: "Errors/all#{type}",
+        call_count: error_count
+      },
+      %Metric{
+        name: :"Errors/all",
+        call_count: error_count
+      }
+    ]
+
   def transform(:error, error_count: error_count),
     do: %Metric{
       name: :"Errors/all",

@@ -480,7 +480,7 @@ defmodule NewRelic.Transaction.Complete do
 
   defp report_transaction_error_event(_tx_attrs, nil), do: :ignore
 
-  defp report_transaction_error_event(tx_attrs, {:error, error}) do
+  defp report_transaction_error_event(%{name: tx_name, transactionType: type} = tx_attrs, {:error, error}) do
     attributes = Map.drop(tx_attrs, [:error, :"error.kind", :"error.reason", :"error.stack"])
     expected = parse_error_expected(error.reason)
 
@@ -509,7 +509,7 @@ defmodule NewRelic.Transaction.Complete do
 
     unless expected do
       NewRelic.report_metric({:supportability, :error_event}, error_count: 1)
-      NewRelic.report_metric(:error, type: tx_attrs.transactionType, error_count: 1)
+      NewRelic.report_metric({:error, tx_name}, type: type, error_count: 1)
     end
   end
 
