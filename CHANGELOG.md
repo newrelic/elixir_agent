@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.36.0`
+
+#### Features
+* Add error blame metrics, tweak error classification [#526](https://github.com/newrelic/elixir_agent/pull/526)
+
+------
+
 ### `v1.35.0`
 
 #### Features
