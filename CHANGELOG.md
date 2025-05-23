@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.37.0`
+
+#### Fixes
+* Move `:os_mon` from included_applications to extra_applications (optional) to avoid release conflicts with other libraries [#529](https://github.com/newrelic/elixir_agent/pull/529)
+
+------
+
 ### `v1.36.0`
 
 #### Features
