@@ -1,6 +1,8 @@
 defmodule NewRelic.Telemetry.Phoenix do
   use GenServer
 
+  alias NewRelic.Tracer
+
   @moduledoc """
   Provides `Phoenix` instrumentation via `telemetry`.
 
@@ -20,10 +22,14 @@ defmodule NewRelic.Telemetry.Phoenix do
   end
 
   @phoenix_router_start [:phoenix, :router_dispatch, :start]
+  @phoenix_controller_render_start [:phoenix, :controller, :render, :start]
+  @phoenix_controller_render_stop [:phoenix, :controller, :render, :stop]
   @phoenix_error [:phoenix, :error_rendered]
 
   @phoenix_events [
     @phoenix_router_start,
+    @phoenix_controller_render_start,
+    @phoenix_controller_render_stop,
     @phoenix_error
   ]
 
@@ -81,6 +87,33 @@ defmodule NewRelic.Telemetry.Phoenix do
       "phoenix.router": conn.private[:phoenix_router] |> inspect()
     ]
     |> NewRelic.add_attributes()
+  end
+
+  def handle_event(
+        @phoenix_controller_render_start,
+        meas,
+        %{view: view, template: template, format: format} = meta,
+        _config
+      ) do
+    Tracer.Direct.start_span(
+      meta.telemetry_span_context,
+      "#{inspect(view)}.show",
+      system_time: meas.system_time,
+      attributes: [
+        "phoenix.view": inspect(view),
+        "phoenix.template": template,
+        "phoenix.format": format
+      ]
+    )
+  end
+
+  def handle_event(
+        @phoenix_controller_render_stop,
+        meas,
+        meta,
+        _config
+      ) do
+    Tracer.Direct.stop_span(meta.telemetry_span_context, duration: meas.duration)
   end
 
   def handle_event(_event, _measurements, _meta, _config) do

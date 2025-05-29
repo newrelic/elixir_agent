@@ -90,9 +90,11 @@ defmodule PhxExampleTest do
         tx_span = TestHelper.find_event(span_events, "/Phoenix/PhxExampleWeb.HomeLive/index")
         process_span = TestHelper.find_event(span_events, "Transaction Root Process")
         mount_span = TestHelper.find_event(span_events, "PhxExampleWeb.HomeLive:index.mount")
+        render_span = TestHelper.find_event(span_events, "PhxExampleWeb.Layouts.show")
 
         assert process_span[:parentId] == tx_span[:guid]
         assert mount_span[:"live_view.params"]
+        assert render_span[:"phoenix.view"]
       end
 
       @endpoint PhxExampleWeb.Endpoint
