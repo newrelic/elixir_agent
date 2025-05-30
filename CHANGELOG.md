@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.38.0`
+
+#### Features
+* Add spans for phoenix controller view rendering [#531](https://github.com/newrelic/elixir_agent/pull/531)
+
+------
+
 ### `v1.37.0`
 
 #### Fixes
