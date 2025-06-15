@@ -6,3 +6,4 @@ erl_crash.dump
 tmp
 config/secret.exs
 .DS_Store
+.tool-versions
