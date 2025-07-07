@@ -91,12 +91,13 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
       length(members) <= 32
   end
 
-  @key_wo_vendor ~r/^[0-9a-z][_0-9a-z\-\*\/]{0,255}$/
-  @key_with_vendor ~r/^[0-9a-z][_0-9a-z\-\*\/]{0,240}@[0-9a-z][_0-9a-z\-\*\/]{0,13}$/
-  @value ~r/^([\x20-\x2b\x2d-\x3c\x3e-\x7e]{0,255}[\x21-\x2b\x2d-\x3c\x3e-\x7e])$/
+  defp key_wo_vendor, do: ~r/^[0-9a-z][_0-9a-z\-\*\/]{0,255}$/
+  defp key_with_vendor, do: ~r/^[0-9a-z][_0-9a-z\-\*\/]{0,240}@[0-9a-z][_0-9a-z\-\*\/]{0,13}$/
+  defp valid_value, do: ~r/^([\x20-\x2b\x2d-\x3c\x3e-\x7e]{0,255}[\x21-\x2b\x2d-\x3c\x3e-\x7e])$/
+
   defp valid_member?([key, value]) do
-    valid_key? = Regex.match?(@key_wo_vendor, key) || Regex.match?(@key_with_vendor, key)
-    valid_value? = Regex.match?(@value, value)
+    valid_key? = Regex.match?(key_wo_vendor(), key) || Regex.match?(key_with_vendor(), key)
+    valid_value? = Regex.match?(valid_value(), value)
 
     valid_key? && valid_value?
   end
