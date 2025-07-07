@@ -43,17 +43,16 @@ defmodule NewRelic.Telemetry.Ecto.Metadata do
   #   Exqlite: table
   @esc ~w(" ` [ ])
 
-  @capture %{
-    select: ~r/FROM (?<table>\S+)/,
-    insert: ~r/INSERT INTO (?<table>\S+)/,
-    update: ~r/UPDATE (?<table>\S+)/,
-    delete: ~r/FROM (?<table>\S+)/,
-    create: ~r/CREATE TABLE( IF NOT EXISTS)? (?<table>\S+)/
-  }
   def parse_query(operation, query) do
-    case Regex.named_captures(@capture[operation], query) do
+    case Regex.named_captures(capture(operation), query) do
       %{"table" => table} -> {operation, String.replace(table, @esc, "")}
       _ -> {operation, :other}
     end
   end
+
+  defp capture(:select), do: ~r/FROM (?<table>\S+)/
+  defp capture(:insert), do: ~r/INSERT INTO (?<table>\S+)/
+  defp capture(:update), do: ~r/UPDATE (?<table>\S+)/
+  defp capture(:delete), do: ~r/FROM (?<table>\S+)/
+  defp capture(:create), do: ~r/CREATE TABLE( IF NOT EXISTS)? (?<table>\S+)/
 end
