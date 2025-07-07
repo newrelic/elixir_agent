@@ -46,11 +46,12 @@ defmodule NewRelic.Init do
     })
   end
 
-  @region_matcher ~r/^(?<prefix>.+?)x/
+  defp region_matcher, do: ~r/^(?<prefix>.+?)x/
+
   def determine_region(nil), do: nil
 
   def determine_region(license_key) do
-    case Regex.named_captures(@region_matcher, license_key) do
+    case Regex.named_captures(region_matcher(), license_key) do
       %{"prefix" => prefix} -> String.trim_trailing(prefix, "x")
       _ -> nil
     end
@@ -191,11 +192,12 @@ defmodule NewRelic.Init do
 
   def parse_labels(nil), do: []
 
-  @label_splitter ~r/;|:/
   def parse_labels(label_string) do
     label_string
-    |> String.split(@label_splitter, trim: true)
+    |> String.split(label_splitter(), trim: true)
     |> Enum.map(&String.trim/1)
     |> Enum.chunk_every(2, 2, :discard)
   end
+
+  defp label_splitter, do: ~r/;|:/
 end

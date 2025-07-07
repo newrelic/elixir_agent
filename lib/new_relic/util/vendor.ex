@@ -40,14 +40,15 @@ defmodule NewRelic.Util.Vendor do
     end
   end
 
-  @cgroup_matcher ~r/\d+:.*cpu[,:].*(?<id>[0-9a-f]{64}).*/
+  defp cgroup_matcher, do: ~r/\d+:.*cpu[,:].*(?<id>[0-9a-f]{64}).*/
+
   defp docker_vendor_map(cgroup_filename) do
     File.read(cgroup_filename)
     |> case do
       {:ok, cgroup_file} ->
         cgroup_file
         |> String.split("\n", trim: true)
-        |> Enum.find_value(&Regex.named_captures(@cgroup_matcher, &1))
+        |> Enum.find_value(&Regex.named_captures(cgroup_matcher(), &1))
 
       _ ->
         nil
