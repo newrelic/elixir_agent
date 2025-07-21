@@ -107,6 +107,11 @@ defmodule NewRelic.DistributedTrace.BackoffSampler do
     incr(@sampled_true_count)
   end
 
+  def track_manual_sampling() do
+    incr(@decided_count)
+    incr(@sampled_true_count)
+  end
+
   defp random(0), do: 0
   defp random(n), do: :rand.uniform(n)
 
