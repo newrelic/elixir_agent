@@ -109,6 +109,7 @@ defmodule NewRelic.Telemetry.Finch do
             {:ok, %{__struct__: Finch.Response} = response} -> %{"response.status": response.status}
             {:ok, _acc} -> %{}
             {:error, exception} -> %{error: true, "error.message": Exception.message(exception)}
+            {:error, exception, _req} -> %{error: true, "error.message": Exception.message(exception)}
           end
 
         NewRelic.Transaction.Reporter.add_trace_segment(%{
