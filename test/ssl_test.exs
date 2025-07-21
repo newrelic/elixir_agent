@@ -1,5 +1,5 @@
 defmodule SSLTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   describe "Verify SSL setup" do
     test "reject bad domains" do

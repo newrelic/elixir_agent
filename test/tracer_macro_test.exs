@@ -1,5 +1,5 @@
 defmodule NewRelic.Tracer.MacroTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   @doc """
   We re-inject the function args into the call to the Tracer reporter

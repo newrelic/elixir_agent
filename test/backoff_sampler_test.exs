@@ -1,5 +1,5 @@
 defmodule BackoffSamplerTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   alias NewRelic.DistributedTrace.BackoffSampler
 
   test "Backoff behavior as best as we can" do
@@ -33,7 +33,7 @@ defmodule BackoffSamplerTest do
 
     BackoffSampler.cycle()
 
-    # Next cycle it will adjust and take some, but not all
+    # Next cycle it will adjust and take some of the first 10 it sees, but not all
     decisions = [
       BackoffSampler.sample?(),
       BackoffSampler.sample?(),
@@ -49,7 +49,7 @@ defmodule BackoffSamplerTest do
     assert true in decisions
     assert false in decisions
 
-    # Next cycle it will adjust and take some, but not all
+    # Next cycle it will adjust and take some of the first 10 it sees, but not all
     decisions = [
       BackoffSampler.sample?(),
       BackoffSampler.sample?(),
