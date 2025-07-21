@@ -11,27 +11,27 @@ defmodule NewRelic.Telemetry.FinchTest do
   end
 
   test "finch external metrics" do
-    request("https://httpstat.us/200")
+    request("https://httpbin.org/200")
 
     metrics = TestHelper.gather_harvest(Collector.Metric.Harvester)
 
-    assert TestHelper.find_metric(metrics, "External/httpstat.us/Finch/GET", 1)
-    assert TestHelper.find_metric(metrics, "External/httpstat.us/all", 1)
+    assert TestHelper.find_metric(metrics, "External/httpbin.org/Finch/GET", 1)
+    assert TestHelper.find_metric(metrics, "External/httpbin.org/all", 1)
     assert TestHelper.find_metric(metrics, "External/all", 1)
   end
 
   test "[:finch, :request, :stop] - 200" do
     Task.async(fn ->
       NewRelic.start_transaction("FinchTest", "200")
-      request("https://httpstat.us/200")
+      request("https://httpbin.org/status/200")
     end)
     |> Task.await()
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    external_span = TestHelper.find_event(span_events, "External/httpstat.us/Finch/GET")
+    external_span = TestHelper.find_event(span_events, "External/httpbin.org/Finch/GET")
 
-    assert external_span[:"http.url"] == "https://httpstat.us/200"
+    assert external_span[:"http.url"] == "https://httpbin.org/status/200"
     assert external_span[:"http.method"] == "GET"
     assert external_span[:component] == "Finch"
     assert external_span[:"response.status"] == 200
@@ -40,15 +40,15 @@ defmodule NewRelic.Telemetry.FinchTest do
   test "[:finch, :request, :stop] - 500" do
     Task.async(fn ->
       NewRelic.start_transaction("FinchTest", "500")
-      request("https://httpstat.us/500")
+      request("https://httpbin.org/status/500")
     end)
     |> Task.await()
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    external_span = TestHelper.find_event(span_events, "External/httpstat.us/Finch/GET")
+    external_span = TestHelper.find_event(span_events, "External/httpbin.org/Finch/GET")
 
-    assert external_span[:"http.url"] == "https://httpstat.us/500"
+    assert external_span[:"http.url"] == "https://httpbin.org/status/500"
     assert external_span[:"response.status"] == 500
   end
 
@@ -73,7 +73,7 @@ defmodule NewRelic.Telemetry.FinchTest do
     {:ok, pid} =
       Task.start(fn ->
         NewRelic.start_transaction("FinchTest", "Exception")
-        request("https://httpstat.us/200", :exception)
+        request("https://httpbin.org/status/200", :exception)
       end)
 
     Process.monitor(pid)
@@ -81,9 +81,9 @@ defmodule NewRelic.Telemetry.FinchTest do
 
     span_events = TestHelper.gather_harvest(Collector.SpanEvent.Harvester)
 
-    external_span = TestHelper.find_event(span_events, "External/httpstat.us/Finch/GET")
+    external_span = TestHelper.find_event(span_events, "External/httpbin.org/Finch/GET")
 
-    assert external_span[:"http.url"] == "https://httpstat.us/200"
+    assert external_span[:"http.url"] == "https://httpbin.org/status/200"
     assert external_span[:error] == true
     assert external_span[:"error.message"] =~ "Oops"
   end
