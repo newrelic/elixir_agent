@@ -97,10 +97,12 @@ defmodule NewRelic.DistributedTrace do
         :ignore
 
       %{sampled: false} = context ->
-        context = %{context | sampled: true, priority: context.priority + 1}
-        NewRelic.add_attributes(sampled: true, priority: context.priority)
-        NewRelic.DistributedTrace.BackoffSampler.track_manual_sampling()
-        set_tracing_context(context)
+        if NewRelic.DistributedTrace.BackoffSampler.priority_sample?() do
+          context = %{context | sampled: true, priority: context.priority + 1}
+          NewRelic.add_attributes(sampled: true, priority: context.priority)
+          set_tracing_context(context)
+        end
+
         :ok
     end
   end

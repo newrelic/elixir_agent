@@ -64,6 +64,8 @@ defmodule BackoffSamplerTest do
 
     assert true in decisions
     assert false in decisions
+
+    assert BackoffSampler.priority_sample?()
   end
 
   test "all calculations at least can run" do
@@ -120,6 +122,11 @@ defmodule BackoffSamplerTest do
     refute BackoffSampler.sample?()
     refute BackoffSampler.sample?()
     refute BackoffSampler.sample?()
+    refute BackoffSampler.sample?()
+
+    # A priority sample will still be allowed
+    refute BackoffSampler.sample?()
+    assert BackoffSampler.priority_sample?()
     refute BackoffSampler.sample?()
 
     # Wait until the next cycle
