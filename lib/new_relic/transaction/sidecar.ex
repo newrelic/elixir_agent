@@ -186,6 +186,13 @@ defmodule NewRelic.Transaction.Sidecar do
       ) do
     end_time_mono = System.monotonic_time()
 
+    down_reason =
+      case down_reason do
+        {{exception, inner_stacktrace}, _initial_call} -> {exception, inner_stacktrace}
+        {exception, stacktrace} -> {exception, stacktrace}
+        reason -> reason
+      end
+
     attributes =
       with {reason, stack} when reason != :shutdown <- down_reason,
            false <- match?(%{expected: true}, reason) do
