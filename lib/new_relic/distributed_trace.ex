@@ -85,8 +85,9 @@ defmodule NewRelic.DistributedTrace do
     end
   end
 
-  # Danger: This can skew sampling heavily if used on high throughput transactions.
-  # Will only impact outgoing distributed traces instrumented after this function has been called.
+  # Danger:
+  # This function can heavily skew sampling if used on high throughput
+  # transactions, and can also lead to over sampling / rejected data
   def prioritize_tracing do
     case get_tracing_context() do
       nil ->
