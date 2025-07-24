@@ -130,8 +130,12 @@ defmodule NewRelic.Harvest.HarvestCycle do
         catch
           :exit, _exit ->
             NewRelic.log(:error, "Failed to send harvest from #{inspect(supervisor)}")
-        after
+        end
+
+        try do
           DynamicSupervisor.terminate_child(supervisor, harvester)
+        catch
+          :exit, _exit -> :ok
         end
       end,
       shutdown: @harvest_timeout
