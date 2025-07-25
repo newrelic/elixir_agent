@@ -1,5 +1,14 @@
 ## CHANGELOG
 
+### `v1.39.0`
+
+#### Fixes
+* Handle finch streaming error result tuple [#539](https://github.com/newrelic/elixir_agent/pull/539)
+* Handle nested error report [#541](https://github.com/newrelic/elixir_agent/pull/541)
+* Handle shutdown cleaner [#542](https://github.com/newrelic/elixir_agent/pull/542)
+
+------
+
 ### `v1.38.0`
 
 #### Features
