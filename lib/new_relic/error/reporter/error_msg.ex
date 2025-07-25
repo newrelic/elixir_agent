@@ -5,7 +5,12 @@ defmodule NewRelic.Error.Reporter.ErrorMsg do
   alias NewRelic.Harvest.Collector
 
   def report_error(:transaction, report) do
-    {exception, stacktrace} = report.reason
+    {exception, stacktrace} =
+      case report.reason do
+        {{{exception, _innner_stacktrace}, _initial_call}, stacktrace} -> {exception, stacktrace}
+        {exception, stacktrace} -> {exception, stacktrace}
+      end
+
     process_name = parse_process_name(report[:registered_name], stacktrace)
 
     NewRelic.add_attributes("error.process": process_name)

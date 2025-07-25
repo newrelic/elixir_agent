@@ -6,6 +6,27 @@ defmodule TransactionErrorEventTest do
   alias NewRelic.Harvest.Collector
   alias NewRelic.Error.Event
 
+  defmodule SomeGenServer do
+    use GenServer
+
+    def start_link(_) do
+      GenServer.start_link(__MODULE__, [], name: __MODULE__)
+    end
+
+    def init(_) do
+      {:ok, %{}}
+    end
+
+    def handle_call(:will_fail, _from, _state) do
+      raise "GenServer error"
+    end
+  end
+
+  setup_all do
+    start_supervised(SomeGenServer)
+    :ok
+  end
+
   defmodule TestPlugApp do
     use Plug.Router
 
@@ -242,6 +263,31 @@ defmodule TransactionErrorEventTest do
 
     Process.sleep(50)
     Logger.add_backend(:console)
+  end
+
+  @tag :capture_log
+  test "Report a GenServer call nested exit" do
+    TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+    start_supervised({Task.Supervisor, name: TestSupervisor})
+
+    {:exit, {_exception, _stacktrace}} =
+      Task.Supervisor.async_nolink(TestSupervisor, fn ->
+        NewRelic.start_transaction("Transaction", "GenServerCall")
+        Process.sleep(50)
+        GenServer.call(SomeGenServer, :will_fail)
+      end)
+      |> Task.yield()
+
+    traces = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
+    trace = TestHelper.find_event(traces, %{transactionName: "OtherTransaction/Transaction/GenServerCall"})
+    assert trace[:"error.class"] == "RuntimeError"
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "OtherTransaction/Transaction/GenServerCall")
+    assert event[:error]
   end
 
   defmodule CustomError do
