@@ -1,5 +1,5 @@
 defmodule PriorityQueueTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias NewRelic.Util.PriorityQueue
 

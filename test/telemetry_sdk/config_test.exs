@@ -1,5 +1,5 @@
 defmodule TelemetrySdk.ConfigTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias NewRelic.Harvest.TelemetrySdk
 
   test "determine correct Telemetry API hosts" do

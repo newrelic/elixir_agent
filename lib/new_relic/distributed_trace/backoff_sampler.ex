@@ -40,6 +40,21 @@ defmodule NewRelic.DistributedTrace.BackoffSampler do
     })
   end
 
+  @priority_multiplier 2
+  def priority_sample? do
+    result =
+      do_sample?(%{
+        cycle_number: get(@cycle_number),
+        sampled_true_count: get(@sampled_true_count),
+        decided_count: get(@decided_count),
+        decided_count_last: get(@decided_count_last),
+        sampling_target: get(@sampling_target) * @priority_multiplier
+      })
+
+    if result == true, do: update_state(true)
+    result
+  end
+
   def handle_info(:cycle, state) do
     cycle()
     trigger_next_cycle()

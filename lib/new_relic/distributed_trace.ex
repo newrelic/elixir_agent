@@ -85,6 +85,28 @@ defmodule NewRelic.DistributedTrace do
     end
   end
 
+  # Danger:
+  # This function can heavily skew sampling if used on high throughput
+  # transactions, and can also lead to over sampling / rejected data
+  def prioritize_tracing do
+    case get_tracing_context() do
+      nil ->
+        :ignore
+
+      %{sampled: true} ->
+        :ignore
+
+      %{sampled: false} = context ->
+        if NewRelic.DistributedTrace.BackoffSampler.priority_sample?() do
+          context = %{context | sampled: true, priority: context.priority + 1}
+          NewRelic.add_attributes(sampled: true, priority: context.priority)
+          set_tracing_context(context)
+        end
+
+        :ok
+    end
+  end
+
   defp generate_new_context() do
     {priority, sampled} = generate_sampling()
 
