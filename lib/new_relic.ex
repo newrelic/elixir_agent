@@ -376,7 +376,7 @@ defmodule NewRelic do
   NewRelic.report_custom_metric("My/Metric", 123)
   ```
   """
-  @spec report_custom_event(name :: String.t(), value :: number()) :: any()
+  @spec report_custom_metric(name :: String.t(), value :: number()) :: any()
   defdelegate report_custom_metric(name, value),
     to: NewRelic.Harvest.Collector.Metric.Harvester
 
