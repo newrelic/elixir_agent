@@ -7,7 +7,7 @@ defmodule NewRelic.Transaction.Complete do
   alias NewRelic.Transaction
 
   def run(tx_attrs, pid) do
-    {tx_segments, tx_attrs, tx_error, span_events, apdex, tx_metrics} =
+    {tx_segments, tx_attrs, tx_error_info, span_events, apdex, tx_metrics} =
       tx_attrs
       |> transform_name_attrs
       |> transform_time_attrs
@@ -18,7 +18,7 @@ defmodule NewRelic.Transaction.Complete do
 
     report_transaction_event(tx_attrs)
     report_transaction_trace(tx_attrs, tx_segments)
-    report_transaction_error_event(tx_attrs, tx_error)
+    report_transaction_error_event(tx_attrs, tx_error_info)
     report_http_dispatcher_metric(tx_attrs)
     report_transaction_metric(tx_attrs)
     report_queue_time_metric(tx_attrs)
@@ -144,13 +144,26 @@ defmodule NewRelic.Transaction.Complete do
 
     segment_tree = Map.update!(segment_tree, :children, &(&1 ++ top_children ++ stray_children))
 
+    tx_error_info =
+      case tx_error do
+        nil ->
+          nil
+
+        {:error, error} ->
+          expected = parse_error_expected(error.reason)
+          {type, reason, stacktrace} = Util.Error.normalize(error.kind, error.reason, error.stack)
+
+          {:error, error, type, reason, stacktrace, expected}
+      end
+
     span_events =
       extract_span_events(
         NewRelic.Config.feature(:infinite_tracing),
         tx_attrs,
         pid,
         process_spawns,
-        process_exits
+        process_exits,
+        tx_error_info
       )
 
     apdex = calculate_apdex(tx_attrs, tx_error)
@@ -167,7 +180,7 @@ defmodule NewRelic.Transaction.Complete do
       |> Map.put(:total_time_s, total_time_s(tx_attrs, concurrent_process_time_ms))
       |> Map.put(:process_spawns, length(process_spawns))
 
-    {[segment_tree], tx_attrs, tx_error, span_events, apdex, tx_metrics}
+    {[segment_tree], tx_attrs, tx_error_info, span_events, apdex, tx_metrics}
   end
 
   defp total_time_s(%{transactionType: :Web, "http.server": "cowboy"}, concurrent_process_time_ms) do
@@ -179,17 +192,17 @@ defmodule NewRelic.Transaction.Complete do
     (tx_attrs.duration_ms + concurrent_process_time_ms) / 1000
   end
 
-  defp extract_span_events(:infinite, tx_attrs, pid, spawns, exits) do
+  defp extract_span_events(:infinite, tx_attrs, pid, spawns, exits, tx_error_info) do
     spawned_process_span_events(tx_attrs, spawns, exits)
-    |> add_spansactions(tx_attrs, pid)
+    |> add_spansactions(tx_attrs, pid, tx_error_info)
   end
 
-  defp extract_span_events(:sampling, %{sampled: true} = tx_attrs, pid, spawns, exits) do
+  defp extract_span_events(:sampling, %{sampled: true} = tx_attrs, pid, spawns, exits, tx_error_info) do
     spawned_process_span_events(tx_attrs, spawns, exits)
-    |> add_spansactions(tx_attrs, pid)
+    |> add_spansactions(tx_attrs, pid, tx_error_info)
   end
 
-  defp extract_span_events(_trace_mode, _tx_attrs, _pid, _spawns, _exits) do
+  defp extract_span_events(_trace_mode, _tx_attrs, _pid, _spawns, _exits, _tx_error_info) do
     []
   end
 
@@ -216,11 +229,20 @@ defmodule NewRelic.Transaction.Complete do
     :priority,
     :tracingVendors,
     :trustedParentId,
-    :root_process_error,
     :error
   ]
-  defp add_spansactions(spans, tx_attrs, pid) do
-    root_process_error_attribute = (tx_attrs[:root_process_error] && %{error: true}) || %{}
+  defp add_spansactions(spans, tx_attrs, pid, tx_error_info) do
+    error_attrs =
+      case tx_error_info do
+        {:error, _error, type, reason, _stack, false = _expected} ->
+          %{"error.class": type, "error.message": reason}
+
+        {:error, _error, type, reason, _stack, true = _expected} ->
+          %{"error.class": type, "error.message": reason, "error.expected": true}
+
+        _ ->
+          %{}
+      end
 
     [
       %NewRelic.Span.Event{
@@ -238,7 +260,7 @@ defmodule NewRelic.Transaction.Complete do
         category_attributes:
           tx_attrs
           |> Map.drop(@spansaction_exclude_attrs)
-          |> Map.merge(root_process_error_attribute)
+          |> Map.merge(error_attrs)
           |> Map.merge(NewRelic.Config.automatic_attributes())
           |> Map.merge(%{
             "transaction.name": Util.metric_join(["#{tx_attrs[:transactionType]}Transaction", tx_attrs.name]),
@@ -480,12 +502,11 @@ defmodule NewRelic.Transaction.Complete do
 
   defp report_transaction_error_event(_tx_attrs, nil), do: :ignore
 
-  defp report_transaction_error_event(%{name: tx_name, transactionType: type} = tx_attrs, {:error, error}) do
+  defp report_transaction_error_event(
+         %{name: tx_name, transactionType: type} = tx_attrs,
+         {:error, error, exception_type, exception_reason, exception_stacktrace, expected}
+       ) do
     attributes = Map.drop(tx_attrs, [:error, :"error.kind", :"error.reason", :"error.stack"])
-    expected = parse_error_expected(error.reason)
-
-    {exception_type, exception_reason, exception_stacktrace} =
-      Util.Error.normalize(error.kind, error.reason, error.stack)
 
     report_error_trace(
       tx_attrs,
