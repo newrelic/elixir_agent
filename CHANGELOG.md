@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.40.0`
+
+#### Features
+* Improve Distributed Tracing error reporting [#545](https://github.com/newrelic/elixir_agent/pull/545)
+
+------
+
 ### `v1.39.0`
 
 #### Fixes
