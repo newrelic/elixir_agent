@@ -196,10 +196,7 @@ defmodule NewRelic.Transaction.Sidecar do
     attributes =
       with {reason, stack} when reason != :shutdown <- down_reason,
            false <- match?(%{expected: true}, reason) do
-        Map.merge(state.attributes, %{
-          root_process_error: true,
-          transaction_error: {:error, %{kind: :exit, reason: reason, stack: stack}}
-        })
+        Map.put(state.attributes, :transaction_error, {:error, %{kind: :exit, reason: reason, stack: stack}})
       else
         _ -> state.attributes
       end

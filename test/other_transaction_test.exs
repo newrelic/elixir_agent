@@ -179,8 +179,7 @@ defmodule OtherTransactionTest do
     [%{spans: spans}] = TestHelper.gather_harvest(TelemetrySdk.Spans.Harvester, 0)
 
     spansaction = TestHelper.find_event(spans, %{"nr.entryPoint": true, name: "Test/Error"})
-    assert spansaction.attributes[:error]
-    refute spansaction.attributes[:root_process_error]
+    assert spansaction.attributes[:"error.class"]
   end
 
   defmodule ExpectedError do
@@ -188,9 +187,9 @@ defmodule OtherTransactionTest do
   end
 
   @tag :capture_log
-  test "don't fail transaction on expected error exit" do
+  test "Mark expected error on Transaction event" do
     TestHelper.run_with(:nr_config, trace_mode: :infinite)
-
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(TelemetrySdk.Spans.HarvestCycle)
     {:ok, _sup} = Task.Supervisor.start_link(name: TestTaskSup)
     test = self()
@@ -211,6 +210,13 @@ defmodule OtherTransactionTest do
     spansaction = TestHelper.find_event(spans, %{"nr.entryPoint": true, name: "Test/ExpectedError"})
 
     refute spansaction.attributes[:error]
+    assert spansaction.attributes[:"error.class"]
+    assert spansaction.attributes[:"error.expected"]
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+    event = TestHelper.find_event(events, "OtherTransaction/Test/ExpectedError")
+
+    assert event[:error]
   end
 
   test "Report a raise that is rescued inside a Transaction" do

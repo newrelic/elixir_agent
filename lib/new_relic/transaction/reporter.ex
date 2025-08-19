@@ -101,7 +101,8 @@ defmodule NewRelic.Transaction.Reporter do
     :ok
   end
 
-  def error(%{kind: _kind, reason: _reason, stack: _stack} = error) do
+  def error(%{kind: kind, reason: reason, stack: stack} = error) do
+    Process.put(:nr_error_explicitly_reported, {kind, reason, List.first(stack)})
     Transaction.Sidecar.add(error: true, transaction_error: {:error, error})
   end
 
