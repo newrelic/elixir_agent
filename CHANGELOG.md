@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.40.1`
+
+#### Fixes
+* Fix a bug from bandit missing conn [#548](https://github.com/newrelic/elixir_agent/pull/548)
+
 ### `v1.40.0`
 
 #### Features
