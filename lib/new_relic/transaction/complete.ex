@@ -619,7 +619,7 @@ defmodule NewRelic.Transaction.Complete do
       transaction_name: Util.metric_join(["WebTransaction", tx_attrs.name]),
       agent_attributes: %{
         http_response_code: tx_attrs[:status],
-        request_method: tx_attrs.request_method
+        request_method: tx_attrs[:request_method]
       },
       user_attributes:
         Map.merge(attributes, %{
