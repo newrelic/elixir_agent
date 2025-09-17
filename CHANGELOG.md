@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.40.2`
+
+#### Tweaks
+* Lower log level for shutdown msg [#553](https://github.com/newrelic/elixir_agent/pull/553)
+
 ### `v1.40.1`
 
 #### Fixes
