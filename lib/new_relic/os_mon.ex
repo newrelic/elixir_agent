@@ -16,7 +16,11 @@ defmodule NewRelic.OsMon do
 
   def util() do
     when_enabled(fn ->
-      :cpu_sup.util()
+      case :cpu_sup.util() do
+        {:error, _} -> nil
+        0 -> nil
+        val -> val
+      end
     end)
   end
 
