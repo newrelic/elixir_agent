@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### `v1.40.3`
+
+#### Fixes
+* Handle errors in cpu_sup [#558](https://github.com/newrelic/elixir_agent/pull/558)
+
 ### `v1.40.2`
 
 #### Tweaks
