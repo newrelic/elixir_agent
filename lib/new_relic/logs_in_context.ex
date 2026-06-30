@@ -10,7 +10,7 @@ defmodule NewRelic.LogsInContext do
 
   def configure(:forwarder) do
     :logger.add_primary_filter(:nr_logs_in_context, {&primary_filter/2, %{mode: :forwarder}})
-    Logger.configure_backend(:console, format: {NewRelic.LogsInContext, :format})
+    configure_log_output()
   end
 
   def configure(:disabled) do
@@ -20,6 +20,25 @@ defmodule NewRelic.LogsInContext do
   def configure(unknown) do
     NewRelic.log(:error, "Unknown :logs_in_context mode: #{inspect(unknown)}")
     :skip
+  end
+
+  if NewRelic.Util.ConditionalCompile.match?(">= 1.15.0") do
+    defp configure_log_output do
+      :logger.update_handler_config(:default, :formatter, Logger.Formatter.new(format: "$message\n"))
+    end
+  else
+    defp configure_log_output do
+      Logger.configure_backend(:console, format: {NewRelic.LogsInContext, :format})
+    end
+
+    def format(_level, message, _timestamp, _metadata) when is_binary(message) do
+      message <> "\n"
+    end
+
+    def format(level, message, timestamp, metadata) do
+      config = Logger.Formatter.compile(nil)
+      Logger.Formatter.format(config, level, message, timestamp, metadata)
+    end
   end
 
   defp primary_filter(%{msg: {:string, msg}} = log, %{mode: :direct}) do
@@ -67,16 +86,6 @@ defmodule NewRelic.LogsInContext do
     |> Map.merge(log_metadata(log))
     |> Map.merge(custom_metadata(log))
     |> Map.merge(tracing_metadata())
-  end
-
-  def format(_level, message, _timestamp, _metadata) when is_binary(message) do
-    message <> "\n"
-  end
-
-  # Fallback to default formatter for future compatibility with Elixir structured logging
-  def format(level, message, timestamp, metadata) do
-    config = Logger.Formatter.compile(nil)
-    Logger.Formatter.format(config, level, message, timestamp, metadata)
   end
 
   defp log_metadata(log) do

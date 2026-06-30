@@ -21,9 +21,7 @@ defmodule ErrorTest do
     ErrorDummy.start_link()
 
     capture_log(fn ->
-      catch_exit do
-        GenServer.call(ErrorDummy, :nofun)
-      end
+      catch_exit(GenServer.call(ErrorDummy, :nofun))
     end)
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
@@ -40,9 +38,7 @@ defmodule ErrorTest do
     TestHelper.run_with(:nr_features, stacktrace_argument_collection: false)
 
     capture_log(fn ->
-      catch_exit do
-        GenServer.call(ErrorDummy, :secretfun)
-      end
+      catch_exit(GenServer.call(ErrorDummy, :secretfun))
     end)
 
     [[_, event_error, _]] = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
@@ -67,9 +63,7 @@ defmodule ErrorTest do
     ErrorDummy.start_link()
 
     capture_log(fn ->
-      catch_exit do
-        GenServer.call(ErrorDummy, :raise)
-      end
+      catch_exit(GenServer.call(ErrorDummy, :raise))
     end)
 
     events = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
@@ -115,9 +109,7 @@ defmodule ErrorTest do
     TestHelper.run_with(:nr_features, stacktrace_argument_collection: false)
 
     capture_log(fn ->
-      catch_exit do
-        GenServer.call(ErrorDummy, :erlang_error)
-      end
+      catch_exit(GenServer.call(ErrorDummy, :erlang_error))
     end)
 
     [[_, event_error, _]] = TestHelper.gather_harvest(Collector.TransactionErrorEvent.Harvester)
