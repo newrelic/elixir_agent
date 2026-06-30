@@ -82,7 +82,14 @@ defmodule NewRelic.Telemetry.Absinthe do
 
   def handle_event(@operation_stop, meas, meta, _config) do
     operation = apply(Absinthe.Blueprint, :current_operation, [meta.blueprint])
-    span_name = operation_span_name(meta.blueprint.execution.result.emitter)
+
+    emitter =
+      case meta.blueprint.execution.result do
+        %{emitter: emitter} -> emitter
+        _ -> operation
+      end
+
+    span_name = operation_span_name(emitter)
     transaction_name = transaction_name(meta.blueprint.schema, operation)
 
     NewRelic.Tracer.Direct.stop_span(

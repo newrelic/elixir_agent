@@ -28,7 +28,8 @@ defmodule AbsintheExample.MixProject do
       {:new_relic_agent, path: "../../../"},
       {:absinthe, "~> 1.6"},
       {:absinthe_plug, "~> 1.5"},
-      {:plug_cowboy, "~> 2.0"}
+      {:plug_cowboy, "~> 2.0"},
+      {:jason, "~> 1.0"}
     ]
   end
 end
