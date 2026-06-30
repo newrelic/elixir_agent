@@ -131,26 +131,24 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
            priority,
            timestamp
          ] <- String.split(value, "-"),
-         {sampled, priority} <-
-           decode_sampled_priority(sampled, priority),
-         [
-           trusted_account_key,
-           _
-         ] <- String.split(key, "@") do
+         {:ok, trusted_account_key} <- decode_trusted_account_key(key),
+         {:ok, parent_type} <- decode_type(parent_type),
+         {:ok, {sampled, priority}} <- decode_sampled_priority(sampled, priority),
+         {:ok, timestamp} <- decode_timestamp(timestamp) do
       [
         %{
           key: :new_relic,
           value: %__MODULE__.NewRelicState{
             trusted_account_key: trusted_account_key,
             version: 0,
-            parent_type: parent_type |> decode_type(),
+            parent_type: parent_type,
             account_id: account_id,
             app_id: app_id,
             span_id: span_id,
             transaction_id: transaction_id,
             sampled: sampled,
             priority: priority,
-            timestamp: timestamp |> String.to_integer()
+            timestamp: timestamp
           }
         }
       ]
@@ -183,24 +181,46 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
     if String.contains?(key, "@nr"), do: :new_relic, else: :other
   end
 
-  defp decode_type("0"), do: "App"
-  defp decode_type("1"), do: "Browser"
-  defp decode_type("2"), do: "Mobile"
+  defp decode_trusted_account_key(key) do
+    case String.split(key, "@") do
+      [trusted_account_key, _] -> {:ok, trusted_account_key}
+      _ -> :invalid
+    end
+  end
+
+  defp decode_timestamp(timestamp) do
+    case Integer.parse(timestamp) do
+      {timestamp, ""} -> {:ok, timestamp}
+      _ -> :invalid
+    end
+  end
+
+  defp decode_type("0"), do: {:ok, "App"}
+  defp decode_type("1"), do: {:ok, "Browser"}
+  defp decode_type("2"), do: {:ok, "Mobile"}
+  defp decode_type(_), do: :invalid
 
   defp encode_type("App"), do: "0"
   defp encode_type("Browser"), do: "1"
   defp encode_type("Mobile"), do: "2"
 
-  defp decode_sampled_priority("", ""), do: {nil, nil}
+  defp decode_sampled_priority("", ""), do: {:ok, {nil, nil}}
   defp decode_sampled_priority("", _), do: :invalid
   defp decode_sampled_priority(_, ""), do: :invalid
 
   defp decode_sampled_priority(sampled, priority) do
-    {decode_sampled(sampled), decode_priority(priority)}
+    case {decode_sampled(sampled), decode_priority(priority)} do
+      {{:ok, sampled}, {:ok, priority}} -> {:ok, {sampled, priority}}
+      _ -> :invalid
+    end
   end
 
-  defp decode_priority(""), do: nil
-  defp decode_priority(priority), do: String.to_float(priority)
+  defp decode_priority(priority) do
+    case Float.parse(priority) do
+      {priority, ""} -> {:ok, priority}
+      _ -> :invalid
+    end
+  end
 
   defp encode_priority(nil), do: ""
 
@@ -210,9 +230,9 @@ defmodule NewRelic.DistributedTrace.W3CTraceContext.TraceState do
   defp encode_priority(priority) when is_float(priority),
     do: priority |> :erlang.float_to_binary([:compact, decimals: 6])
 
-  defp decode_sampled("1"), do: true
-  defp decode_sampled("0"), do: false
-  defp decode_sampled(""), do: nil
+  defp decode_sampled("1"), do: {:ok, true}
+  defp decode_sampled("0"), do: {:ok, false}
+  defp decode_sampled(_), do: :invalid
 
   defp encode_sampled(true), do: "1"
   defp encode_sampled(false), do: "0"

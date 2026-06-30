@@ -72,6 +72,24 @@ defmodule W3CTraceContextTest do
     )
   end
 
+  test "TraceState parsing - malformed NR member is rejected without raising" do
+    # timestamp is not an integer
+    assert %{members: []} =
+             TraceState.decode("190@nr=0-0-709288-8599547-f85f42fd82a4cf1d-164d3b4b0d09cb05-1-0.789-NOTANUMBER")
+
+    # priority is not a float
+    assert %{members: []} =
+             TraceState.decode("190@nr=0-0-709288-8599547-f85f42fd82a4cf1d-164d3b4b0d09cb05-1-abc-1563574856827")
+
+    # sampled is neither "0" nor "1"
+    assert %{members: []} =
+             TraceState.decode("190@nr=0-0-709288-8599547-f85f42fd82a4cf1d-164d3b4b0d09cb05-X-0.789-1563574856827")
+
+    # parent_type is out of the known range
+    assert %{members: []} =
+             TraceState.decode("190@nr=0-3-709288-8599547-f85f42fd82a4cf1d-164d3b4b0d09cb05-1-0.789-1563574856827")
+  end
+
   test "header extraction & re-generation" do
     traceparent = "00-74be672b84ddc4e4b28be285632bbc0a-27ddd2d8890283b4-01"
 
