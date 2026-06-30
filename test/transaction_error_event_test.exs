@@ -171,7 +171,6 @@ defmodule TransactionErrorEventTest do
     TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
-    Logger.remove_backend(:console)
 
     TestHelper.request(TestPlugApp, conn(:get, "/error"))
 
@@ -191,14 +190,11 @@ defmodule TransactionErrorEventTest do
     traces = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
     assert length(traces) == 1
     assert NewRelic.JSON.encode!(traces)
-
-    Logger.add_backend(:console)
   end
 
   @tag :capture_log
   test "cowboy request process exit" do
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
-    Logger.remove_backend(:console)
 
     {:ok, _} = Plug.Cowboy.http(TestPlugApp, [], port: 9999)
     :httpc.request(~c"http://localhost:9999/async_error")
@@ -207,8 +203,6 @@ defmodule TransactionErrorEventTest do
     assert Enum.find(traces, &match?([_, _, _, "EXIT", _, _], &1))
 
     Plug.Cowboy.shutdown(TestPlugApp.HTTP)
-
-    Logger.add_backend(:console)
   end
 
   test "Ignore late reports" do
@@ -227,7 +221,6 @@ defmodule TransactionErrorEventTest do
 
   @tag :capture_log
   test "Report a nested error inside the transaction if we catch it" do
-    Logger.remove_backend(:console)
     TestHelper.restart_harvest_cycle(Collector.ErrorTrace.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionErrorEvent.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
@@ -262,7 +255,6 @@ defmodule TransactionErrorEventTest do
     assert event[:error]
 
     Process.sleep(50)
-    Logger.add_backend(:console)
   end
 
   @tag :capture_log
