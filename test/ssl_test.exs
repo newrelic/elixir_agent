@@ -1,6 +1,19 @@
 defmodule SSLTest do
   use ExUnit.Case, async: true
 
+  # Allow for badssl.com being slow
+  setup do
+    prev = Application.get_env(:new_relic_agent, :httpc_request_options)
+    Application.put_env(:new_relic_agent, :httpc_request_options, connect_timeout: 5_000)
+
+    on_exit(fn ->
+      case prev do
+        nil -> Application.delete_env(:new_relic_agent, :httpc_request_options)
+        prev -> Application.put_env(:new_relic_agent, :httpc_request_options, prev)
+      end
+    end)
+  end
+
   describe "Verify SSL setup" do
     test "reject bad domains" do
       assert {:error,
