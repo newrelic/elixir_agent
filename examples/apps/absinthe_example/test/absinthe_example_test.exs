@@ -4,6 +4,15 @@ defmodule AbsintheExampleTest do
   alias NewRelic.Harvest.TelemetrySdk
   alias NewRelic.Harvest.Collector
 
+  defmodule PubSub do
+    @behaviour Absinthe.Subscription.Pubsub
+
+    def node_name(), do: to_string(node())
+    def subscribe(_topic), do: :ok
+    def publish_mutation(_proxy_topic, _mutation_result, _subscribed_fields), do: :ok
+    def publish_subscription(_topic, _data), do: :ok
+  end
+
   setup_all do
     TestHelper.simulate_agent_enabled()
     TestHelper.simulate_agent_run(trace_mode: :infinite)
@@ -72,6 +81,27 @@ defmodule AbsintheExampleTest do
       assert span[:"trace.id"] == spansaction[:"trace.id"]
       assert span.attributes[:transactionId] == spansaction.attributes[:transactionId]
     end)
+  end
+
+  test "Absinthe subscription registration does not detach the telemetry handler" do
+    start_supervised!({Absinthe.Subscription, PubSub})
+
+    assert absinthe_handler_attached?()
+
+    assert {:ok, %{"subscribed" => _topic}} =
+             Absinthe.run(
+               "subscription NewThing { newThing { two { three } } }",
+               AbsintheExample.Schema,
+               context: %{pubsub: PubSub}
+             )
+
+    assert absinthe_handler_attached?()
+  end
+
+  defp absinthe_handler_attached? do
+    [:absinthe, :execute, :operation, :stop]
+    |> :telemetry.list_handlers()
+    |> Enum.any?(&(&1.id == {:new_relic, :absinthe}))
   end
 
   defp request(query) do

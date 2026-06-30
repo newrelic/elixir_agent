@@ -12,6 +12,12 @@ defmodule AbsintheExample.Schema do
     end
   end
 
+  subscription do
+    field :new_thing, :one_thing do
+      config fn _args, _info -> {:ok, topic: "new_thing"} end
+    end
+  end
+
   object :one_thing do
     field :two, :two_thing
   end
