@@ -89,17 +89,26 @@ defmodule NewRelic.LogsInContext do
   end
 
   defp log_metadata(log) do
-    {module, function, arity} = log.meta.mfa
+    meta_attributes =
+      case log.meta do
+        %{mfa: {m, f, a}, file: file, line: line} ->
+          %{
+            "file.name": to_string(file),
+            "line.number": line,
+            "module.name": inspect(m),
+            "function.name": "#{f}/#{a}"
+          }
+
+        _ ->
+          %{}
+      end
 
     %{
       timestamp: System.convert_time_unit(log.meta.time, :microsecond, :millisecond),
       "log.level": log.level,
-      "line.number": log.meta.line,
-      "file.name": log.meta.file |> to_string,
-      "module.name": inspect(module),
-      "function.name": "#{function}/#{arity}",
       "process.pid": inspect(log.meta.pid)
     }
+    |> Map.merge(meta_attributes)
   end
 
   @ignored [:domain, :file, :gl, :line, :mfa, :pid, :time]
