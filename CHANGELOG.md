@@ -1,5 +1,17 @@
 ## CHANGELOG
 
+### `v1.41.0`
+
+#### Features
+* Deep flatten attributes for Spans and Custom Events [#568](https://github.com/newrelic/elixir_agent/pull/568)
+
+#### Fixes
+* Safely access log meta attributes [#557](https://github.com/newrelic/elixir_agent/pull/557)
+* Fix absinthe subscription registration [#566](https://github.com/newrelic/elixir_agent/pull/566)
+* Safely decode tracestate header [#563](https://github.com/newrelic/elixir_agent/pull/563)
+
+------
+
 ### `v1.40.3`
 
 #### Fixes
