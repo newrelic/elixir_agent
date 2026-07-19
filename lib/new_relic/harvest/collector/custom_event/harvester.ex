@@ -76,7 +76,10 @@ defmodule NewRelic.Harvest.Collector.CustomEvent.Harvester do
 
   defp process(event) do
     event
+    |> Enum.to_list()
+    |> NewRelic.Util.deep_flatten()
     |> NewRelic.Util.coerce_attributes()
+    |> Map.new()
     |> Map.merge(NewRelic.Config.automatic_attributes())
   end
 
