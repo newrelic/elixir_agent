@@ -114,6 +114,24 @@ defmodule CustomEventTest do
     assert TestHelper.find_metric(metrics, "Supportability/Elixir/Collector/HarvestSize/CustomEventData")
   end
 
+  test "Flatten nested attribute values" do
+    TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
+
+    NewRelic.report_custom_event("CustomEventTest", %{
+      name: "nested",
+      map: %{foo: "bar", baz: "qux"},
+      list: ["a", "b"]
+    })
+
+    events = TestHelper.gather_harvest(Collector.CustomEvent.Harvester)
+    event = TestHelper.find_event(events, "nested")
+
+    assert event["map.foo"] == "bar"
+    assert event["map.baz"] == "qux"
+    assert event["list.0"] == "a"
+    assert event["list.1"] == "b"
+  end
+
   test "Handle non-serializable attribute values" do
     TestHelper.restart_harvest_cycle(Collector.CustomEvent.HarvestCycle)
 

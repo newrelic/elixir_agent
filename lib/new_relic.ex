@@ -248,10 +248,16 @@ defmodule NewRelic do
   Useful for reporting additional information about work being done in, for example,
   a function being traced with `@trace`
 
+  Reporting nested data structures is supported by auto-flattening them
+  into a list of key-value pairs, the same way `add_attributes/1` does.
+
   ## Example
 
   ```elixir
   NewRelic.add_span_attributes(some: "attribute")
+
+  NewRelic.add_span_attributes(map: %{foo: "bar"})
+    # "map.foo" => "bar"
   ```
   """
   @spec add_span_attributes(attributes :: Keyword.t()) :: any()
@@ -337,10 +343,16 @@ defmodule NewRelic do
   @doc """
   Report a Custom event to NRDB.
 
+  Reporting nested data structures is supported by auto-flattening them
+  into a list of key-value pairs, the same way `add_attributes/1` does.
+
   ## Example
 
   ```elixir
   NewRelic.report_custom_event("EventType", %{"foo" => "bar"})
+
+  NewRelic.report_custom_event("EventType", %{map: %{foo: "bar"}})
+    # "map.foo" => "bar"
   ```
   """
   @spec report_custom_event(type :: String.t(), event :: map()) :: any()

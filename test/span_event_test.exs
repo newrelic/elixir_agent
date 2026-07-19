@@ -116,6 +116,8 @@ defmodule SpanEventTest do
 
       NewRelic.span "another.span", with: "an attribute" do
         NewRelic.add_span_attributes(inside: "attribute!")
+        NewRelic.add_span_attributes(nested: %{foo: "bar", baz: "qux"})
+        NewRelic.add_span_attributes(list: ["a", "b"])
         Process.sleep(5)
       end
 
@@ -192,6 +194,10 @@ defmodule SpanEventTest do
     assert another_span[:category] == "generic"
     assert another_span[:with] == "an attribute"
     assert another_span[:inside] == "attribute!"
+    assert another_span["nested.foo"] == "bar"
+    assert another_span["nested.baz"] == "qux"
+    assert another_span["list.0"] == "a"
+    assert another_span["list.1"] == "b"
 
     single_span = TestHelper.find_event(span_events, "single.span")
 

@@ -265,9 +265,15 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def add_span_attributes(attrs) do
+    flattened =
+      attrs
+      |> Enum.to_list()
+      |> NewRelic.Util.deep_flatten()
+      |> Map.new()
+
     Process.put(
       :nr_current_span_attrs,
-      Map.merge(get_span_attrs(), Map.new(attrs))
+      Map.merge(get_span_attrs(), flattened)
     )
 
     :ok
