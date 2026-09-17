@@ -12,7 +12,7 @@ defmodule NewRelic.DistributedTrace do
   def start(type, headers \\ %{})
 
   def start(:http, headers) do
-    if NewRelic.Config.feature?(:distributed_tracing) do
+    if NewRelic.Config.enabled?() && NewRelic.Config.feature?(:distributed_tracing) do
       determine_context(headers)
       |> track_transaction(transport_type: "HTTP")
     end
@@ -21,7 +21,7 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def start(:other, headers) do
-    if NewRelic.Config.feature?(:distributed_tracing) do
+    if NewRelic.Config.enabled?() && NewRelic.Config.feature?(:distributed_tracing) do
       determine_context(headers)
       |> track_transaction(transport_type: "Other")
     end
@@ -29,14 +29,36 @@ defmodule NewRelic.DistributedTrace do
     :ok
   end
 
+  def accept_distributed_trace_headers(headers) do
+    with true <- NewRelic.Config.enabled?() && NewRelic.Config.feature?(:distributed_tracing),
+         true <- Transaction.Sidecar.tracking?(),
+         false <- accepted_inbound_headers?(get_tracing_context()),
+         %Context{} = context <- extract_context(normalize_headers(headers)) do
+      track_transaction(context, transport_type: "Other")
+      :ok
+    else
+      _ -> :ignore
+    end
+  end
+
+  defp accepted_inbound_headers?(%Context{source: source}) when source != :new, do: true
+  defp accepted_inbound_headers?(_), do: false
+
+  defp normalize_headers(headers) when is_map(headers), do: headers
+
+  defp normalize_headers(headers) when is_list(headers),
+    do: Map.new(headers, fn {key, value} -> {to_string(key), value} end)
+
+  defp normalize_headers(_), do: %{}
+
   defp determine_context(headers) do
-    case accept_distributed_trace_headers(headers) do
+    case extract_context(headers) do
       %Context{} = context -> context
       _ -> generate_new_context()
     end
   end
 
-  defp accept_distributed_trace_headers(headers) do
+  defp extract_context(headers) do
     w3c_headers(headers) || newrelic_header(headers) || :no_payload
   end
 
@@ -63,25 +85,24 @@ defmodule NewRelic.DistributedTrace do
   end
 
   def distributed_trace_headers(:http) do
-    case get_tracing_context() do
-      nil ->
-        []
+    with true <- NewRelic.Config.enabled?(),
+         %Context{} = context <- get_tracing_context() do
+      context = %{
+        context
+        | span_guid: get_current_span_guid(),
+          timestamp: System.system_time(:millisecond)
+      }
 
-      context ->
-        context = %{
-          context
-          | span_guid: get_current_span_guid(),
-            timestamp: System.system_time(:millisecond)
-        }
+      nr_header = NewRelic.DistributedTrace.NewRelicContext.generate(context)
+      {traceparent, tracestate} = NewRelic.DistributedTrace.W3CTraceContext.generate(context)
 
-        nr_header = NewRelic.DistributedTrace.NewRelicContext.generate(context)
-        {traceparent, tracestate} = NewRelic.DistributedTrace.W3CTraceContext.generate(context)
-
-        [
-          {@nr_header, nr_header},
-          {@w3c_traceparent, traceparent},
-          {@w3c_tracestate, tracestate}
-        ]
+      [
+        {@nr_header, nr_header},
+        {@w3c_traceparent, traceparent},
+        {@w3c_tracestate, tracestate}
+      ]
+    else
+      _ -> []
     end
   end
 

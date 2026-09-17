@@ -177,6 +177,24 @@ defmodule MyExternalService do
 end
 ```
 
+When an "Other" Transaction is started automatically but the trace headers arrive some other way, such as in Oban job metadata or a message attribute, connect it to the trace with `NewRelic.accept_distributed_trace_headers/1`:
+
+```elixir
+defmodule MyWorker do
+  use Oban.Worker
+
+  def enqueue(args) do
+    Oban.insert(new(args, meta: %{dt_headers: NewRelic.distributed_trace_headers(:other)}))
+  end
+
+  @impl Oban.Worker
+  def perform(%Oban.Job{meta: meta}) do
+    NewRelic.accept_distributed_trace_headers(meta["dt_headers"])
+    # ...
+  end
+end
+```
+
 #### Mix Tasks
 
 `NewRelic.Instrumented.Mix.Task` To enable the agent and record an Other Transaction during a `Mix.Task`, simply `use NewRelic.Instrumented.Mix.Task`. This will ensure the agent is properly started, records a Transaction, and is shut down.

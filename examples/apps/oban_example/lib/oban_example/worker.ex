@@ -6,7 +6,9 @@ defmodule ObanExample.Worker do
     {:error, message}
   end
 
-  def perform(%Oban.Job{args: _args}) do
+  def perform(%Oban.Job{meta: meta}) do
+    NewRelic.accept_distributed_trace_headers(meta["dt_headers"])
+
     Process.sleep(15 + :rand.uniform(50))
     :ok
   end

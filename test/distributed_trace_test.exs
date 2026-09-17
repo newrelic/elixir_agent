@@ -202,6 +202,128 @@ defmodule DistributedTraceTest do
     |> Task.await()
   end
 
+  test "does not generate outbound headers when the agent is disabled" do
+    TestHelper.run_with(:nr_config, harvest_enabled: false)
+
+    Task.async(fn ->
+      NewRelic.start_transaction("Category", "Name")
+
+      assert [] == NewRelic.distributed_trace_headers(:http)
+      assert %{} == NewRelic.distributed_trace_headers(:other)
+    end)
+    |> Task.await()
+  end
+
+  test "does not track inbound headers when the agent is disabled" do
+    TestHelper.run_with(:nr_config, harvest_enabled: false)
+    headers = %{@dt_header => generate_inbound_payload(:browser)}
+
+    Task.async(fn ->
+      NewRelic.start_transaction("Category", "Name", headers)
+
+      assert nil == DistributedTrace.get_tracing_context()
+    end)
+    |> Task.await()
+  end
+
+  test "trace context started outside a transaction does not leak to other processes" do
+    headers = %{@dt_header => generate_inbound_payload(:browser)}
+
+    Task.async(fn -> DistributedTrace.start(:other, headers) end)
+    |> Task.await()
+
+    Task.async(fn ->
+      assert nil == DistributedTrace.get_tracing_context()
+      assert [] == NewRelic.distributed_trace_headers(:http)
+    end)
+    |> Task.await()
+  end
+
+  test "accept inbound DT headers inside an existing Other transaction" do
+    headers = %{@dt_header => generate_inbound_payload(:browser)}
+
+    Task.async(fn ->
+      NewRelic.start_transaction("Category", "Name")
+      assert :ok = NewRelic.accept_distributed_trace_headers(headers)
+
+      outbound = NewRelic.distributed_trace_headers(:other)
+      context = DistributedTrace.NewRelicContext.decode(Map.get(outbound, @dt_header))
+
+      assert context.trace_id == "d6b4ba0c3a712ca"
+    end)
+    |> Task.await()
+  end
+
+  test "accept DT headers in the list format returned for :http" do
+    outbound =
+      Task.async(fn ->
+        NewRelic.start_transaction("Category", "Origin")
+        NewRelic.distributed_trace_headers(:http)
+      end)
+      |> Task.await()
+
+    {_, traceparent} = List.keyfind(outbound, "traceparent", 0)
+    [_, trace_id, _, _] = String.split(traceparent, "-")
+
+    Task.async(fn ->
+      NewRelic.start_transaction("Category", "Destination")
+      assert :ok = NewRelic.accept_distributed_trace_headers(outbound)
+
+      assert %DistributedTrace.Context{trace_id: ^trace_id} = DistributedTrace.get_tracing_context()
+    end)
+    |> Task.await()
+  end
+
+  test "accepting DT headers is ignored outside a transaction" do
+    headers = %{@dt_header => generate_inbound_payload(:browser)}
+
+    assert :ignore = NewRelic.accept_distributed_trace_headers(headers)
+    assert nil == DistributedTrace.get_tracing_context()
+  end
+
+  test "accepting DT headers is ignored once inbound headers were already accepted" do
+    headers = %{@dt_header => generate_inbound_payload(:browser)}
+
+    w3c_headers = %{
+      "traceparent" => "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+      "tracestate" => "190@nr=0-0-190-2827902-b7ad6b7169203331-e8b91a159289ff74-1-0.789-1563574856827"
+    }
+
+    Task.async(fn ->
+      NewRelic.start_transaction("Category", "Name", headers)
+      assert :ignore = NewRelic.accept_distributed_trace_headers(w3c_headers)
+
+      assert %DistributedTrace.Context{trace_id: "d6b4ba0c3a712ca"} = DistributedTrace.get_tracing_context()
+    end)
+    |> Task.await()
+  end
+
+  test "accepting undecodable DT headers keeps the existing context" do
+    Task.async(fn ->
+      NewRelic.start_transaction("Category", "Name")
+      %DistributedTrace.Context{trace_id: trace_id} = DistributedTrace.get_tracing_context()
+
+      assert :ignore = NewRelic.accept_distributed_trace_headers(%{@dt_header => "garbage"})
+      assert :ignore = NewRelic.accept_distributed_trace_headers(nil)
+
+      assert %DistributedTrace.Context{trace_id: ^trace_id} = DistributedTrace.get_tracing_context()
+    end)
+    |> Task.await()
+  end
+
+  test "accepting DT headers is ignored when the agent is disabled" do
+    TestHelper.run_with(:nr_config, harvest_enabled: false)
+    headers = %{@dt_header => generate_inbound_payload(:browser)}
+
+    Task.async(fn ->
+      NewRelic.start_transaction("Category", "Name")
+
+      assert :ignore = NewRelic.accept_distributed_trace_headers(headers)
+      assert nil == DistributedTrace.get_tracing_context()
+    end)
+    |> Task.await()
+  end
+
   test "Start an Other transaction with inbound DT headers" do
     headers = %{@dt_header => generate_inbound_payload(:browser)}
 
