@@ -1,5 +1,15 @@
 ## CHANGELOG
 
+### `v1.42.0`
+
+#### Features
+* Provide `NewRelic.accept_distributed_trace_headers/1` function [#570](https://github.com/newrelic/elixir_agent/pull/570)
+
+#### Fixes
+* Don't track or propagate Distributed Trace headers when the agent is disabled [#570](https://github.com/newrelic/elixir_agent/pull/570)
+
+------
+
 ### `v1.41.0`
 
 #### Features
