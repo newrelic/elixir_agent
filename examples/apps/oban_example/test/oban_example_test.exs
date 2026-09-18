@@ -37,6 +37,32 @@ defmodule ObanExampleTest do
     assert event[:"oban.job.tags"] == "foo,bar"
   end
 
+  test "connects a job to the Distributed Trace that enqueued it" do
+    TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)
+
+    dt_headers =
+      Task.async(fn ->
+        NewRelic.start_transaction("Test", "Origin")
+        NewRelic.distributed_trace_headers(:other)
+      end)
+      |> Task.await()
+
+    ObanExample.Worker.new(%{some: "args"}, meta: %{dt_headers: dt_headers})
+    |> Oban.insert()
+
+    events = TestHelper.gather_harvest(Collector.TransactionEvent.Harvester)
+
+    origin = TestHelper.find_event(events, "OtherTransaction/Test/Origin")
+
+    job =
+      TestHelper.find_event(events, "OtherTransaction/Oban/default/ObanExample.Worker/perform")
+
+    assert job[:traceId] == origin[:traceId]
+    assert job[:parentId] == origin[:guid]
+    assert job[:"parent.type"] == "App"
+    assert job[:"parent.transportType"] == "Other"
+  end
+
   test "instruments a failed job" do
     TestHelper.restart_harvest_cycle(Collector.Metric.HarvestCycle)
     TestHelper.restart_harvest_cycle(Collector.TransactionEvent.HarvestCycle)

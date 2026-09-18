@@ -277,10 +277,43 @@ defmodule NewRelic do
 
   * Call `distributed_trace_headers` immediately before making the
   request since calling the function marks the "start" time of the request.
+  * Returns an empty list (or map) when the agent is not enabled or
+  when called outside of a Transaction.
   """
   @spec distributed_trace_headers(:http) :: [{key :: String.t(), value :: String.t()}]
   @spec distributed_trace_headers(:other) :: map()
   defdelegate distributed_trace_headers(type), to: NewRelic.DistributedTrace
+
+  @doc """
+  Connect the current "Other" Transaction to an existing Distributed Trace.
+
+  Use this when an "Other" Transaction is started automatically (for example by
+  the Oban instrumentation) but the trace headers arrive some other way, such as
+  in job metadata or a message attribute. The headers can be W3C "traceparent"
+  and "tracestate" headers or another New Relic agent's "newrelic" header.
+
+  ```elixir
+  # When enqueueing
+  Oban.insert(MyWorker.new(args, meta: %{dt_headers: NewRelic.distributed_trace_headers(:other)}))
+
+  # When performing
+  def perform(%Oban.Job{meta: meta}) do
+    NewRelic.accept_distributed_trace_headers(meta["dt_headers"])
+    # ...
+  end
+  ```
+
+  ## Notes
+
+  * Web Transactions read inbound headers automatically, so this is only
+  needed for "Other" Transactions.
+  * Call this as early as possible in the Transaction so all Spans are linked.
+  * Ignored when called outside of a Transaction, when the headers can't be
+  decoded, when the Transaction already accepted inbound headers, or when the
+  agent is disabled.
+  """
+  @spec accept_distributed_trace_headers(headers :: map()) :: :ok | :ignore
+  defdelegate accept_distributed_trace_headers(headers), to: NewRelic.DistributedTrace
 
   @type name :: String.t() | {primary_name :: String.t(), secondary_name :: String.t()}
 

@@ -83,13 +83,21 @@ defmodule NewRelic.Transaction.Sidecar do
   end
 
   def trace_context(context) do
-    :ets.insert(__MODULE__.ContextStore, {{:context, get_sidecar()}, context})
+    case get_sidecar() do
+      sidecar when is_pid(sidecar) ->
+        :ets.insert(__MODULE__.ContextStore, {{:context, sidecar}, context})
+
+      _ ->
+        :no_sidecar
+    end
   end
 
   def trace_context() do
-    case :ets.lookup(__MODULE__.ContextStore, {:context, get_sidecar()}) do
-      [{_, value}] -> value
-      [] -> nil
+    with sidecar when is_pid(sidecar) <- get_sidecar(),
+         [{_, value}] <- :ets.lookup(__MODULE__.ContextStore, {:context, sidecar}) do
+      value
+    else
+      _ -> nil
     end
   end
 
