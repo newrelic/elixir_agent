@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### Unreleased
+
+#### Fixes
+* Retry connecting to the collector with backoff (15, 15, 30, 60, 120, 300 seconds) when `preconnect` or `connect` fails, instead of staying disconnected until the application restarts. A failed reconnect is retried the same way, and a successful retry completes the agent boot (harvesters start).
+
+------
+
 ### `v1.42.0`
 
 #### Features

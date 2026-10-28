@@ -129,4 +129,147 @@ defmodule EvilCollectorTest do
     GenServer.call(NewRelic.Logger, {:replace, previous_logger})
     EvilCollector.stop()
   end
+
+  describe "connect retry" do
+    @connect_response %{
+      "return_value" => %{
+        "redirect_host" => "localhost",
+        "agent_run_id" => "retry-run-id",
+        "entity_guid" => "retry-entity-guid",
+        "trusted_account_key" => "190",
+        "account_id" => 190,
+        "primary_application_id" => "1",
+        "apdex_t" => 0.5,
+        "request_headers_map" => %{},
+        "sampling_target" => 10,
+        "sampling_target_period_in_seconds" => 60,
+        "data_methods" => %{},
+        "data_report_period" => 60,
+        "event_harvest_config" => %{
+          "report_period_ms" => 60_000,
+          "harvest_limits" => %{
+            "analytic_event_data" => 100,
+            "custom_event_data" => 100,
+            "error_event_data" => 100,
+            "span_event_data" => 100
+          }
+        }
+      }
+    }
+
+    @tag :capture_log
+    test "Schedule a retry when unable to preconnect" do
+      TestHelper.run_with(:application_config, connect_backoff_seconds: [0])
+
+      # Don't start an EvilCollector
+      {:noreply, state} = Collector.AgentRun.handle_continue(:preconnect, %{})
+
+      assert state.status == :error_during_preconnect
+      assert state.connect_attempts == 1
+      assert_receive :retry_connect
+
+      assert {:noreply, state, {:continue, :preconnect}} =
+               Collector.AgentRun.handle_info(:retry_connect, state)
+
+      refute Map.has_key?(state, :retry_timer)
+    end
+
+    @tag :capture_log
+    test "Back off between retries following the agent spec sequence" do
+      state =
+        Enum.reduce([15, 15, 30, 60, 120, 300, 300], %{}, fn expected_seconds, state ->
+          {:noreply, state} = Collector.AgentRun.handle_continue(:preconnect, state)
+
+          remaining_ms = Process.read_timer(state.retry_timer)
+          assert remaining_ms <= :timer.seconds(expected_seconds)
+          assert remaining_ms > :timer.seconds(expected_seconds) - 1_000
+
+          state
+        end)
+
+      assert state.connect_attempts == 7
+      Process.cancel_timer(state.retry_timer)
+    end
+
+    @tag :capture_log
+    test "Keep a single pending retry" do
+      {:noreply, state} = Collector.AgentRun.handle_continue(:preconnect, %{})
+      first_timer = state.retry_timer
+
+      {:noreply, state} = Collector.AgentRun.handle_info(:reconnect, state)
+
+      assert Process.read_timer(first_timer) == false
+      assert is_integer(Process.read_timer(state.retry_timer))
+      Process.cancel_timer(state.retry_timer)
+    end
+
+    @tag :capture_log
+    test "Retry when a reconnect fails" do
+      TestHelper.run_with(:application_config, connect_backoff_seconds: [0])
+
+      {:noreply, state} = Collector.AgentRun.handle_info(:reconnect, %{status: :connected})
+
+      assert state.status != :connected
+      assert_receive :retry_connect
+    end
+
+    @tag :capture_log
+    test "Don't retry when the agent is disabled" do
+      TestHelper.run_with(:application_config, connect_backoff_seconds: [0])
+      TestHelper.run_with(:nr_config, harvest_enabled: false)
+
+      {:noreply, state} = Collector.AgentRun.handle_continue(:preconnect, %{})
+
+      assert state.status == :error_during_preconnect
+      refute Map.has_key?(state, :retry_timer)
+      refute_receive :retry_connect, 50
+    end
+
+    @tag :capture_log
+    test "Don't retry when the collector is bypassed" do
+      TestHelper.run_with(:application_config, connect_backoff_seconds: [0])
+      TestHelper.run_with(:application_config, bypass_collector: true)
+
+      {:noreply, state} = Collector.AgentRun.handle_continue(:preconnect, %{})
+
+      assert state.status == :error_during_preconnect
+      refute Map.has_key?(state, :retry_timer)
+      refute_receive :retry_connect, 50
+    end
+
+    @tag :capture_log
+    test "Complete the boot once a retry connects" do
+      TestHelper.run_with(:application_config, connect_backoff_seconds: [0])
+      TestHelper.run_with(:nr_agent_run, [])
+      TestHelper.run_with(:nr_entity_metadata, [])
+      saved_agent_run = :ets.tab2list(Collector.AgentRun)
+
+      on_exit(fn ->
+        :ets.delete_all_objects(Collector.AgentRun)
+        :ets.insert(Collector.AgentRun, saved_agent_run)
+      end)
+
+      # First attempt fails: no collector is running yet
+      {:noreply, state} = Collector.AgentRun.handle_continue(:preconnect, %{})
+      assert_receive :retry_connect
+
+      EvilCollector.start(code: 200, body: NewRelic.JSON.encode!(@connect_response))
+
+      {:noreply, state, {:continue, :preconnect}} =
+        Collector.AgentRun.handle_info(:retry_connect, state)
+
+      {:noreply, state, {:continue, :connect}} =
+        Collector.AgentRun.handle_continue(:preconnect, state)
+
+      {:noreply, state, {:continue, :complete_boot}} =
+        Collector.AgentRun.handle_continue(:connect, state)
+
+      assert state.status == :connected
+      assert state.connect_attempts == 0
+      refute Map.has_key?(state, :retry_timer)
+      refute_receive :retry_connect, 50
+
+      EvilCollector.stop()
+    end
+  end
 end

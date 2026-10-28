@@ -8,6 +8,11 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
 
   alias NewRelic.Harvest.Collector
 
+  # Backoff sequence (in seconds) between connect attempts when the agent
+  # fails to connect, matching the other New Relic agents. The last value
+  # repeats until a connection succeeds.
+  @connect_backoff_seconds [15, 15, 30, 60, 120, 300]
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -37,20 +42,28 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
 
   def reconnect, do: send(__MODULE__, :reconnect)
 
-  def handle_continue(:preconnect, _state) do
+  def handle_continue(:preconnect, state) do
     case Collector.Protocol.preconnect() do
       {:ok, %{"redirect_host" => redirect_host}} ->
         Application.put_env(:new_relic_agent, :collector_instance_host, redirect_host)
-        {:noreply, %{status: :preconnected}, {:continue, :connect}}
+        {:noreply, Map.put(state, :status, :preconnected), {:continue, :connect}}
+
+      {:error, :bypass_collector} ->
+        {:noreply, Map.put(state, :status, :error_during_preconnect)}
 
       _error ->
-        {:noreply, %{status: :error_during_preconnect}}
+        {:noreply, schedule_retry(state, :error_during_preconnect)}
     end
   end
 
-  def handle_continue(:connect, _state) do
-    status = connect()
-    {:noreply, %{status: status}, {:continue, :complete_boot}}
+  def handle_continue(:connect, state) do
+    case connect() do
+      :connected ->
+        {:noreply, connected(state), {:continue, :complete_boot}}
+
+      status ->
+        {:noreply, schedule_retry(state, status)}
+    end
   end
 
   def handle_continue(:complete_boot, %{status: :connected} = state) do
@@ -62,9 +75,18 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     {:noreply, state}
   end
 
-  def handle_info(:reconnect, _state) do
-    status = connect()
-    {:noreply, %{status: status}}
+  def handle_info(:reconnect, state) do
+    case connect() do
+      :connected ->
+        {:noreply, connected(state), {:continue, :complete_boot}}
+
+      status ->
+        {:noreply, schedule_retry(state, status)}
+    end
+  end
+
+  def handle_info(:retry_connect, state) do
+    {:noreply, Map.delete(state, :retry_timer), {:continue, :preconnect}}
   end
 
   def handle_call(:ping, _from, state) do
@@ -75,6 +97,43 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     Collector.Connect.payload()
     |> Collector.Protocol.connect()
     |> store_agent_run()
+  end
+
+  defp connected(state) do
+    state
+    |> cancel_retry()
+    |> Map.merge(%{status: :connected, connect_attempts: 0})
+  end
+
+  # Schedule another full connect sequence (preconnect -> connect -> boot)
+  # after the next backoff interval. Never retry once the agent is disabled,
+  # e.g. after the collector responds with a 410 (force disconnect).
+  defp schedule_retry(state, status) do
+    state = state |> cancel_retry() |> Map.put(:status, status)
+
+    if NewRelic.Config.enabled?() do
+      attempt = Map.get(state, :connect_attempts, 0)
+      backoff = connect_backoff_seconds(attempt)
+
+      NewRelic.log(:warning, "Unable to connect to New Relic (#{status}), retrying in #{backoff} seconds")
+      timer = Process.send_after(self(), :retry_connect, :timer.seconds(backoff))
+
+      Map.merge(state, %{connect_attempts: attempt + 1, retry_timer: timer})
+    else
+      state
+    end
+  end
+
+  defp cancel_retry(%{retry_timer: timer} = state) do
+    Process.cancel_timer(timer)
+    Map.delete(state, :retry_timer)
+  end
+
+  defp cancel_retry(state), do: state
+
+  defp connect_backoff_seconds(attempt) do
+    backoff = Application.get_env(:new_relic_agent, :connect_backoff_seconds, @connect_backoff_seconds)
+    Enum.at(backoff, attempt, List.last(backoff))
   end
 
   defp get(key),
