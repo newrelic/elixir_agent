@@ -9,7 +9,6 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
   alias NewRelic.Harvest.Collector
 
   @connect_backoff_seconds [15, 15, 30, 60, 120, 300]
-  @init_state %{status: :not_connected, connect_backoff: @connect_backoff_seconds}
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -19,10 +18,19 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     NewRelic.sample_process()
     :ets.new(__MODULE__, [:named_table, :public, :set])
 
+    connect_backoff_seconds =
+      Application.get_env(:new_relic_agent, :connect_backoff_seconds, @connect_backoff_seconds)
+
+    state = %{
+      status: :not_connected,
+      connect_backoff_seconds: connect_backoff_seconds,
+      connect_backoff: connect_backoff_seconds
+    }
+
     if NewRelic.Config.enabled?() do
-      {:ok, @init_state, {:continue, :preconnect}}
+      {:ok, state, {:continue, :preconnect}}
     else
-      {:ok, @init_state}
+      {:ok, state}
     end
   end
 
@@ -57,7 +65,8 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
   def handle_continue(:connect, state) do
     case connect() do
       :connected ->
-        {:noreply, %{@init_state | status: :connected}, {:continue, :complete_boot}}
+        state = %{state | status: :connected, connect_backoff: state.connect_backoff_seconds}
+        {:noreply, state, {:continue, :complete_boot}}
 
       status ->
         {:noreply, %{state | status: status}, {:continue, :retry_connect}}
@@ -90,9 +99,12 @@ defmodule NewRelic.Harvest.Collector.AgentRun do
     {:noreply, state}
   end
 
+  def handle_info(:reconnect, %{status: :connected} = state) do
+    {:noreply, state, {:continue, :preconnect}}
+  end
+
   def handle_info(:reconnect, state) do
-    status = connect()
-    {:noreply, %{state | status: status}}
+    {:noreply, state}
   end
 
   def handle_info(:retry_connect, state) do
