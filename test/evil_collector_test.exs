@@ -60,8 +60,10 @@ defmodule EvilCollectorTest do
   test "Handle unexpected HTTP code" do
     EvilCollector.start(code: 404, body: "??")
 
-    {:noreply, %{status: :error_during_preconnect}} =
-      Collector.AgentRun.handle_continue(:preconnect, %{})
+    state = %{status: :not_connected, connect_backoff: [0]}
+
+    {:noreply, %{status: :error_during_preconnect}, {:continue, :retry_connect}} =
+      Collector.AgentRun.handle_continue(:preconnect, state)
 
     assert_received(:attempt)
 
@@ -128,5 +130,67 @@ defmodule EvilCollectorTest do
 
     GenServer.call(NewRelic.Logger, {:replace, previous_logger})
     EvilCollector.stop()
+  end
+
+  @tag :capture_log
+  test "Retry when unable to preconnect" do
+    # Don't start an EvilCollector
+    state = %{status: :not_connected, connect_backoff: [0, 1]}
+
+    {:noreply, state, {:continue, :retry_connect}} =
+      Collector.AgentRun.handle_continue(:preconnect, state)
+
+    assert state.status == :error_during_preconnect
+
+    {:noreply, state} = Collector.AgentRun.handle_continue(:retry_connect, state)
+
+    assert state.connect_backoff == [1]
+    assert_receive :retry_connect
+  end
+
+  @tag :capture_log
+  test "Retry when unable to connect" do
+    EvilCollector.start(code: 404, body: "??")
+    state = %{status: :preconnected, connect_backoff: [0]}
+
+    {:noreply, state, {:continue, :retry_connect}} =
+      Collector.AgentRun.handle_continue(:connect, state)
+
+    assert state.status == :bad_connect_response
+
+    EvilCollector.stop()
+  end
+
+  test "Retry restarts the connect sequence" do
+    state = %{status: :error_during_preconnect, connect_backoff: [0]}
+
+    {:noreply, ^state, {:continue, :preconnect}} =
+      Collector.AgentRun.handle_info(:retry_connect, state)
+  end
+
+  @tag :capture_log
+  test "Don't retry when the collector forces a disconnect" do
+    TestHelper.run_with(:application_config, harvest_enabled: true)
+    TestHelper.run_with(:nr_config, [])
+    EvilCollector.start(code: 410, body: "")
+    state = %{status: :not_connected, connect_backoff: [0]}
+
+    {:noreply, state, {:continue, :retry_connect}} =
+      Collector.AgentRun.handle_continue(:preconnect, state)
+
+    {:noreply, state} = Collector.AgentRun.handle_continue(:retry_connect, state)
+
+    assert state.connect_backoff == [0]
+    refute_receive :retry_connect
+
+    EvilCollector.stop()
+  end
+
+  test "Don't retry when bypassing the collector" do
+    TestHelper.run_with(:application_config, bypass_collector: true)
+    state = %{status: :not_connected, connect_backoff: [0]}
+
+    {:noreply, %{status: :error_during_preconnect}} =
+      Collector.AgentRun.handle_continue(:preconnect, state)
   end
 end
