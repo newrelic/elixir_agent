@@ -4,7 +4,7 @@ defmodule NewRelic.AlwaysOnSupervisor do
   @moduledoc false
 
   def start_link(_) do
-    Supervisor.start_link(__MODULE__, [])
+    Supervisor.start_link(__MODULE__, [], name: __MODULE__)
   end
 
   def init(_) do

@@ -24,6 +24,12 @@ defmodule TestHelper do
     {:ok, %{status_code: status_code, body: to_string(body)}}
   end
 
+  def restart_agent_run() do
+    :ok = Supervisor.terminate_child(NewRelic.AlwaysOnSupervisor, NewRelic.Harvest.Collector.AgentRun)
+    {:ok, _} = Supervisor.restart_child(NewRelic.AlwaysOnSupervisor, NewRelic.Harvest.Collector.AgentRun)
+    NewRelic.Harvest.Collector.AgentRun.ensure_initialized()
+  end
+
   def trigger_report(module, wait \\ 300) do
     Process.sleep(wait)
     GenServer.call(module, :report)
