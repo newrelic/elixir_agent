@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### `v1.43.0`
+
+#### Fixes
+* Retry connecting with backoff when the agent fails to connect at boot [#573](https://github.com/newrelic/elixir_agent/pull/573)
+
+------
+
 ### `v1.42.0`
 
 #### Features
